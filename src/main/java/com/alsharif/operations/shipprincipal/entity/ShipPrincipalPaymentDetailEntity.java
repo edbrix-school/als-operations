@@ -84,8 +84,8 @@ public class ShipPrincipalPaymentDetailEntity {
     private Long beneficiaryCountry;
 
     @Column(name = "ACTIVE", length = 1)
-    private String active;
+    private String active = "N";
 
     @Column(name = "DEFAULTS", length = 1)
-    private String defaults;
+    private String defaults = "N";
 }

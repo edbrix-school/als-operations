@@ -48,11 +48,11 @@ public class PaymentItemDTO {
     @Schema(description = "Intermediary country POID", example = "1")
     private Long intermediaryCountryPoid;
     
-    @Schema(description = "Active status", example = "Y")
-    private String active;
+    @Schema(description = "Active status")
+    private boolean active;
     
     @Schema(description = "Default payment", example = "N")
-    private String defaults;
+    private boolean defaults;
     
     @Schema(description = "Remarks")
     private String remarks;

@@ -1,5 +1,6 @@
 package com.alsharif.operations.shipprincipal.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@Schema(description = "Principal detail response")
 public class PrincipalDetailDTO {
     private Long principalPoid;
     private Long groupPoid;
@@ -38,6 +40,12 @@ public class PrincipalDetailDTO {
     private String taxSlab;
     private String exemptionReason;
     
+    @Schema(description = "List of charges")
     private List<ChargeItemDTO> charges;
+    
+    @Schema(description = "List of payment details")
     private List<PaymentItemDTO> payments;
+    
+    @Schema(description = "List of address details")
+    private List<AddressDetailDTO> addressDetails;
 }

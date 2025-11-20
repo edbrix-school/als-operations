@@ -76,7 +76,7 @@ public class PrincipalController {
                             description = "Successfully created principal",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = Long.class)
+                                    schema = @Schema(implementation = PrincipalDetailDTO.class)
                             )
                     ),
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -98,9 +98,9 @@ public class PrincipalController {
             @Parameter(description = "User POID from request context", required = true) @RequestHeader("X-User-Poid") Long userPoid) {
         log.info("Creating principal with code: {}, documentId: {}, userPoid: {}", dto.getPrincipalCode(), documentId, userPoid);
         try {
-            Long id = principalService.createPrincipal(dto);
-            log.info("Successfully created principal with id: {}", id);
-            return ApiResponse.success("Principal created successfully", id);
+            PrincipalDetailDTO result = principalService.createPrincipal(dto, userPoid);
+            log.info("Successfully created principal with id: {}", result.getPrincipalPoid());
+            return ApiResponse.success("Principal created successfully", result);
         } catch (RuntimeException e) {
             log.error("Bad request while creating principal: {}", dto.getPrincipalCode(), e);
             return ApiResponse.badRequest(e.getMessage());
@@ -140,9 +140,9 @@ public class PrincipalController {
             @Parameter(description = "User POID from request context", required = true) @RequestHeader("X-User-Poid") Long userPoid) {
         log.info("Updating principal with id: {}, documentId: {}, userPoid: {}", id, documentId, userPoid);
         try {
-            principalService.updatePrincipal(id, dto);
+            PrincipalDetailDTO result = principalService.updatePrincipal(id, dto);
             log.info("Successfully updated principal with id: {}", id);
-            return ApiResponse.success("Principal updated successfully");
+            return ApiResponse.success("Principal updated successfully", result);
         } catch (RuntimeException e) {
             log.error("Principal not found with id: {}", id, e);
             return ApiResponse.notFound(e.getMessage());

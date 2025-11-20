@@ -15,6 +15,7 @@ public class ShipPrincipalEntity {
 
     @Id
     @Column(name = "PRINCIPAL_POID", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long principalPoid;
 
     @Column(name = "GROUP_POID")
