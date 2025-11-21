@@ -1,5 +1,4 @@
 package com.alsharif.operations.commonlov.service;
-
 import com.alsharif.operations.commonlov.dto.LovResponse;
 import com.alsharif.operations.commonlov.repository.LovRepository;
 import lombok.extern.slf4j.Slf4j;
