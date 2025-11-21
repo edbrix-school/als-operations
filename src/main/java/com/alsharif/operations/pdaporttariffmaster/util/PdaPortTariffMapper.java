@@ -225,9 +225,6 @@ public class PdaPortTariffMapper {
         response.setTransactionDate(entity.getTransactionDate());
         response.setDocRef(entity.getDocRef());
 
-
-
-
         response.setPorts(stringToList(entity.getPorts()));
         if (stringToList(entity.getPorts()) != null && !stringToList(entity.getPorts()).isEmpty()) {
 
@@ -251,15 +248,6 @@ public class PdaPortTariffMapper {
 
             response.setVesselTypeNames(vesselNames);
         }
-
-
-
-
-
-
-
-
-
 
         response.setPeriodFrom(entity.getPeriodFrom());
         response.setPeriodTo(entity.getPeriodTo());
