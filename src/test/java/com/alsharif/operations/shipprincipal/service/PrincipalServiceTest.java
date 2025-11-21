@@ -3,6 +3,7 @@ package com.alsharif.operations.shipprincipal.service;
 import com.alsharif.operations.shipprincipal.dto.*;
 import com.alsharif.operations.shipprincipal.entity.*;
 import com.alsharif.operations.shipprincipal.repository.*;
+import com.alsharif.operations.shipprincipal.util.PrincipalMasterMapper;
 import com.alsharif.operations.user.entity.User;
 import com.alsharif.operations.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +12,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
@@ -45,15 +50,18 @@ class PrincipalServiceTest {
     @Mock
     private DataSource dataSource;
     
-    @InjectMocks
-    private PrincipalService principalService;
+    @Mock
+    private PrincipalMasterMapper mapper;
     
-    private ShipPrincipalEntity mockPrincipal;
+    @InjectMocks
+    private PrincipalMasterService principalMasterService;
+    
+    private ShipPrincipalMaster mockPrincipal;
     private User mockUser;
     
     @BeforeEach
     void setUp() {
-        mockPrincipal = new ShipPrincipalEntity();
+        mockPrincipal = new ShipPrincipalMaster();
         mockPrincipal.setPrincipalPoid(1L);
         mockPrincipal.setGroupPoid(100L);
         mockPrincipal.setPrincipalCode("PRIN001");
@@ -70,11 +78,17 @@ class PrincipalServiceTest {
     
     @Test
     void testGetPrincipal_Success() {
+        PrincipalMasterDto mockDto = new PrincipalMasterDto();
+        mockDto.setPrincipalPoid(1L);
+        mockDto.setPrincipalCode("PRIN001");
+        mockDto.setPrincipalName("Test Principal");
+        
         when(principalRepository.findById(1L)).thenReturn(Optional.of(mockPrincipal));
+        when(mapper.mapToDetailDTO(any(ShipPrincipalMaster.class))).thenReturn(mockDto);
         when(chargeRepository.findByPrincipalPoidOrderByDetRowIdAsc(1L)).thenReturn(Arrays.asList());
         when(paymentRepository.findByPrincipalPoidOrderByDetRowIdAsc(1L)).thenReturn(Arrays.asList());
         
-        PrincipalDetailDTO result = principalService.getPrincipal(1L);
+        PrincipalMasterDto result = principalMasterService.getPrincipal(1L);
         
         assertNotNull(result);
         assertEquals(1L, result.getPrincipalPoid());
@@ -87,7 +101,7 @@ class PrincipalServiceTest {
     void testGetPrincipal_NotFound() {
         when(principalRepository.findById(999L)).thenReturn(Optional.empty());
         
-        assertThrows(RuntimeException.class, () -> principalService.getPrincipal(999L));
+        assertThrows(RuntimeException.class, () -> principalMasterService.getPrincipal(999L));
         verify(principalRepository).findById(999L);
     }
     
@@ -98,12 +112,20 @@ class PrincipalServiceTest {
         addressDetail.setContactPerson("John Doe");
         addressDetail.setEmail1("john@example.com");
         
+        PrincipalMasterDto mockDto = new PrincipalMasterDto();
+        mockDto.setPrincipalPoid(1L);
+        
+        AddressDetailsDTO addressDto = new AddressDetailsDTO();
+        addressDto.setContactPerson("John Doe");
+        
         when(principalRepository.findById(1L)).thenReturn(Optional.of(mockPrincipal));
+        when(mapper.mapToDetailDTO(any(ShipPrincipalMaster.class))).thenReturn(mockDto);
         when(chargeRepository.findByPrincipalPoidOrderByDetRowIdAsc(1L)).thenReturn(Arrays.asList());
         when(paymentRepository.findByPrincipalPoidOrderByDetRowIdAsc(1L)).thenReturn(Arrays.asList());
         when(addressDetailsRepository.findByAddressMasterPoid(200L)).thenReturn(Arrays.asList(addressDetail));
+        when(mapper.mapToAddressDetailDTO(any(AddressDetails.class))).thenReturn(addressDto);
         
-        PrincipalDetailDTO result = principalService.getPrincipal(1L);
+        PrincipalMasterDto result = principalMasterService.getPrincipal(1L);
         
         assertNotNull(result);
         assertNotNull(result.getAddressDetails());
@@ -114,22 +136,37 @@ class PrincipalServiceTest {
     @Test
     void testToggleActive_Success() {
         when(principalRepository.findById(1L)).thenReturn(Optional.of(mockPrincipal));
-        when(principalRepository.save(any(ShipPrincipalEntity.class))).thenReturn(mockPrincipal);
+        when(principalRepository.save(any(ShipPrincipalMaster.class))).thenReturn(mockPrincipal);
         
-        principalService.toggleActive(1L);
+        principalMasterService.toggleActive(1L);
         
         verify(principalRepository).findById(1L);
-        verify(principalRepository).save(any(ShipPrincipalEntity.class));
+        verify(principalRepository).save(any(ShipPrincipalMaster.class));
     }
     
     @Test
     void testDeletePrincipal_Success() {
-        when(principalRepository.findById(1L)).thenReturn(Optional.of(mockPrincipal));
-        when(principalRepository.save(any(ShipPrincipalEntity.class))).thenReturn(mockPrincipal);
+        when(principalRepository.findByIdAndNotDeleted(1L)).thenReturn(Optional.of(mockPrincipal));
+        when(principalRepository.save(any(ShipPrincipalMaster.class))).thenReturn(mockPrincipal);
         
-        principalService.deletePrincipal(1L);
+        principalMasterService.deletePrincipal(1L);
         
-        verify(principalRepository).findById(1L);
-        verify(principalRepository).save(any(ShipPrincipalEntity.class));
+        verify(principalRepository).findByIdAndNotDeleted(1L);
+        verify(principalRepository).save(any(ShipPrincipalMaster.class));
+    }
+    
+    @Test
+    void testGetPrincipalList_Success() {
+        Page<ShipPrincipalMaster> mockPage = new PageImpl<>(Arrays.asList(mockPrincipal));
+        PrincipalMasterListDto mockListDto = new PrincipalMasterListDto();
+        mockListDto.setPrincipalPoid(1L);
+        
+        when(principalRepository.findAllNonDeletedWithSearch(any(), any(PageRequest.class))).thenReturn(mockPage);
+        when(mapper.toListDto(any(ShipPrincipalMaster.class))).thenReturn(mockListDto);
+        
+        Page result = principalMasterService.getPrincipalList(null, PageRequest.of(0, 20));
+        
+        assertNotNull(result);
+        verify(principalRepository).findAllNonDeletedWithSearch(any(), any(PageRequest.class));
     }
 }

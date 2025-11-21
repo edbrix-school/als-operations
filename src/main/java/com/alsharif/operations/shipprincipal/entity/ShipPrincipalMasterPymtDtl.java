@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Table(name = "SHIP_PRINCIPAL_MASTER_PYMT_DTL")
-@IdClass(ShipPrincipalDetailId.class)
-public class ShipPrincipalPaymentDetailEntity {
+@IdClass(ShipPrincipalMasterDtlId.class)
+public class ShipPrincipalMasterPymtDtl {
     @Id
     @Column(name = "PRINCIPAL_POID", nullable = false)
     private Long principalPoid;

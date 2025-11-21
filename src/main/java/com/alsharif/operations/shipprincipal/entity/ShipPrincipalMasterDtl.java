@@ -11,8 +11,10 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Table(name = "SHIP_PRINCIPAL_MASTER_DTL")
-@IdClass(ShipPrincipalDetailId.class)
-public class ShipPrincipalDetailEntity {
+@IdClass(ShipPrincipalMasterDtlId.class)
+public class ShipPrincipalMasterDtl {
+
+
     @Id
     @Column(name = "PRINCIPAL_POID", nullable = false)
     private Long principalPoid;
@@ -25,7 +27,7 @@ public class ShipPrincipalDetailEntity {
     private Long chargePoid;
 
     @Column(name = "RATE")
-    private BigDecimal rate;
+    private Long rate;
 
     @Column(name = "REMARKS", length = 100)
     private String remarks;
@@ -41,4 +43,21 @@ public class ShipPrincipalDetailEntity {
 
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PRINCIPAL_POID", insertable = false, updatable = false)
+    private ShipPrincipalMaster principalMaster;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdDate == null) {
+            createdDate = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        lastModifiedDate = LocalDateTime.now();
+    }
+
 }

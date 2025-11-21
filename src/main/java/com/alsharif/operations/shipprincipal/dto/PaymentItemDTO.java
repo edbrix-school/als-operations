@@ -1,11 +1,21 @@
 package com.alsharif.operations.shipprincipal.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Schema(description = "Payment item information")
 public class PaymentItemDTO {
+
+    @Schema(description = "Principal Poid", example = "1")
+    private Long principalPoid;
+
     @Schema(description = "Detail row ID", example = "1")
     private Long detRowId;
     
@@ -49,10 +59,10 @@ public class PaymentItemDTO {
     private Long intermediaryCountryPoid;
     
     @Schema(description = "Active status")
-    private boolean active;
+    private String active;
     
     @Schema(description = "Default payment", example = "N")
-    private boolean defaults;
+    private String defaults;
     
     @Schema(description = "Remarks")
     private String remarks;
@@ -65,4 +75,5 @@ public class PaymentItemDTO {
     
     @Schema(description = "Special instructions")
     private String specialInstruction;
+
 }

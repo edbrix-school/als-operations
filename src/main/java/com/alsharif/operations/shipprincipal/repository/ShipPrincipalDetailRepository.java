@@ -1,14 +1,17 @@
 package com.alsharif.operations.shipprincipal.repository;
 
-import com.alsharif.operations.shipprincipal.entity.ShipPrincipalDetailEntity;
-import com.alsharif.operations.shipprincipal.entity.ShipPrincipalDetailId;
+import com.alsharif.operations.shipprincipal.entity.ShipPrincipalMasterDtl;
+import com.alsharif.operations.shipprincipal.entity.ShipPrincipalMasterDtlId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface ShipPrincipalDetailRepository extends JpaRepository<ShipPrincipalDetailEntity, ShipPrincipalDetailId> {
-    List<ShipPrincipalDetailEntity> findByPrincipalPoidOrderByDetRowIdAsc(Long principalPoid);
+public interface ShipPrincipalDetailRepository extends JpaRepository<ShipPrincipalMasterDtl, ShipPrincipalMasterDtlId> {
+
+    List<ShipPrincipalMasterDtl> findByPrincipalPoidOrderByDetRowIdAsc(Long principalPoid);
+
     void deleteByPrincipalPoid(Long principalPoid);
+
 }
