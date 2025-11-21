@@ -1,7 +1,5 @@
 package com.alsharif.operations.crew.service.impl;
 
-import com.alsharif.operations.commonlov.dto.LovItem;
-import com.alsharif.operations.commonlov.service.LovService;
 import com.alsharif.operations.crew.dto.ContractCrewResponse;
 import com.alsharif.operations.crew.dto.*;
 import com.alsharif.operations.crew.entity.ContractCrew;
@@ -20,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -106,20 +103,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         // Validate request
         validateCrewRequest(request);
 
-        // Check if nationality exists
-//        if (request.getCrewNationalityPoid() != null) {
-//            boolean nationalityExists = nationalityRepository.existsById(request.getCrewNationalityPoid());
-//            if (!nationalityExists) {
-//                throw new ValidationException(
-//                        "Nationality not found",
-//                        List.of(new ValidationError(
-//                                "crewNationalityPoid",
-//                                "Nationality does not exist"
-//                        ))
-//                );
-//            }
-//        }
-
         // Map request to entity
         ContractCrew crew = entityMapper.toContractCrewEntity(companyPoid, groupPoid,userId, request);
 
@@ -178,25 +161,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         // Get detail records
         List<ContractCrewDtl> details = crewDtlRepository.findByIdCrewPoidOrderByIdDetRowId(crewPoid);
-/*
-        // Get document type information
-        Map<String, String[]> documentTypeMap = new HashMap<>();
-        details.stream()
-                .map(ContractCrewDtl::getDocumentType)
-                .distinct()
-                .forEach(docType -> {
-                    visaTypeRepository.findById(docType)
-                            .ifPresent(vt -> {
-                                documentTypeMap.put(docType, new String[]{vt.getCode(), vt.getDescription()});
-                            });
-                });*/
-
-        // Map to responses
-//        List<ContractCrewDtlResponse> detailResponses = entityMapper.toContractCrewDtlResponseList(
-//                details,
-//
-//        );
-
         CrewDetailsResponse response = new CrewDetailsResponse();
         response.setCrewPoid(crewPoid);
         response.setDetails(this.toContractCrewDtlResponseList(details));
@@ -228,16 +192,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             // Validate document types and other business rules
             for (int i = 0; i < request.getDetails().size(); i++) {
                 ContractCrewDtlRequest detail = request.getDetails().get(i);
-
-                // Validate document type exists
-//                boolean docTypeExists = visaTypeRepository.existsByCode(detail.getDocumentType());
-//                if (!docTypeExists) {
-//                    validationErrors.add(new ValidationError(
-//                            i,
-//                            "documentType",
-//                            "Document type does not exist: " + detail.getDocumentType()
-//                    ));
-//                }
 
                 // Determine operation (INSERT or UPDATE)
                 String operation = detail.getOperation();
@@ -279,12 +233,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
                 }
             }
         }
-//        if (request.getDeletedRowIds() != null && !request.getDeletedRowIds().isEmpty()) {
-//            for(Long  :request.getDeletedRowIds()){
-//                crewDtlRepository.existsByIdCrewPoidAndIdDetRowId(crewPoid, request.getDeletedRowIds());
-//
-//            }
-//        }
 
         // Step 2: Update existing records
         if (request.getDetails() != null) {
@@ -325,23 +273,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             }
         }
 
-        // Get document type information for response
-//        Map<String, String[]> documentTypeMap = new HashMap<>();
-//        savedDetails.stream()
-//                .map(ContractCrewDtl::getDocumentType)
-//                .distinct()
-//                .forEach(docType -> {
-//                    visaTypeRepository.findById(docType)
-//                            .ifPresent(vt -> {
-//                                documentTypeMap.put(docType, new String[]{vt.getCode(), vt.getDescription()});
-//                            });
-//                });
-
-        // Map to responses
-//        List<ContractCrewDtlResponse> detailResponses = entityMapper.toContractCrewDtlResponseList(
-//                savedDetails,
-//                documentTypeMap
-//        );
 
         CrewDetailsResponse response = new CrewDetailsResponse();
         response.setCrewPoid(crewPoid);
@@ -370,10 +301,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         crewDtlRepository.deleteById(contractCrewDtl.getId());
     }
 
-    //
-//    /**
-//     * Validate crew master request
-//     */
     private void validateCrewRequest(ContractCrewRequest request) {
         List<ValidationError> errors = new ArrayList<>();
 

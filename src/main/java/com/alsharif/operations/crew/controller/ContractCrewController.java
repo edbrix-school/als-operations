@@ -425,46 +425,48 @@ public class ContractCrewController {
      * DELETE /api/v1/contract-crew-masters/{crewPoid}/details/{detRowId}
      * Delete single crew detail record
      */
-//    @Operation(
-//            summary = "Delete single crew detail",
-//            description = "Deletes a single crew detail (visa) record by its detRowId. " +
-//                    "This is an alternative to the bulk save API for single-row deletion. " +
-//                    "Returns 404 if crew master or detail record is not found.",
-//            responses = {
-//                    @ApiResponse(
-//                            responseCode = "200",
-//                            description = "Successfully deleted detail record",
-//                            content = @Content(mediaType = "application/json")
-//                    ),
-//                    @ApiResponse(
-//                            responseCode = "401",
-//                            description = "Unauthorized - Authentication required",
-//                            content = @Content(mediaType = "application/json")
-//                    ),
-//                    @ApiResponse(
-//                            responseCode = "404",
-//                            description = "Crew master or detail record not found",
-//                            content = @Content(mediaType = "application/json")
-//                    )
-//            },
-//            security = @SecurityRequirement(name = "bearerAuth")
-//    )
-//    @DeleteMapping("/{crewPoid}/details/{detRowId}")
-//    public ResponseEntity<Map<String, Object>> deleteCrewDetail(
-//            @Parameter(description = "Primary key of the crew master", required = true)
-//            @PathVariable Long crewPoid,
-//            @Parameter(description = "Detail row ID to delete", required = true)
-//            @PathVariable Long detRowId
-//    ) {
-//        crewService.deleteCrewDetail(crewPoid, detRowId);
-//
-//        Map<String, Object> response = new HashMap<>();
-//        response.put("message", "Detail record deleted successfully");
-//        response.put("crewPoid", crewPoid);
-//        response.put("detRowId", detRowId);
-//
-//        return ResponseEntity.ok(response);
-//    }
+    @Operation(
+            summary = "Delete single crew detail",
+            description = "Deletes a single crew detail (visa) record by its detRowId. " +
+                    "This is an alternative to the bulk save API for single-row deletion. " +
+                    "Returns 404 if crew master or detail record is not found.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully deleted detail record",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Crew master or detail record not found",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @DeleteMapping("/{crewPoid}/details/{detRowId}")
+    public ResponseEntity<Map<String, Object>> deleteCrewDetail(
+            @RequestHeader("companyPoid") Long companyPoid,
+
+            @Parameter(description = "Primary key of the crew master", required = true)
+            @PathVariable Long crewPoid,
+            @Parameter(description = "Detail row ID to delete", required = true)
+            @PathVariable Long detRowId
+    ) {
+        crewService.deleteCrewDetail(companyPoid,crewPoid, detRowId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Detail record deleted successfully");
+        response.put("crewPoid", crewPoid);
+        response.put("detRowId", detRowId);
+
+        return ResponseEntity.ok(response);
+    }
 
     /**
      * Parse sort parameter string into Sort object
