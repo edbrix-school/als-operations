@@ -34,21 +34,18 @@ public class ContractCrewServiceImpl implements ContractCrewService {
     private final ContractCrewDtlRepository crewDtlRepository;
     private final EntityMapper entityMapper;
     private final CrewCodeGenerator codeGenerator;
-    private final LovService lovService;
 
     @Autowired
     public ContractCrewServiceImpl(
             ContractCrewRepository crewRepository,
             ContractCrewDtlRepository crewDtlRepository,
             EntityMapper entityMapper,
-            CrewCodeGenerator codeGenerator,
-            LovService lovService
+            CrewCodeGenerator codeGenerator
     ) {
         this.crewRepository = crewRepository;
         this.crewDtlRepository = crewDtlRepository;
         this.entityMapper = entityMapper;
         this.codeGenerator = codeGenerator;
-        this.lovService = lovService;
     }
 
     @Override
@@ -81,19 +78,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         // Map entities to responses with nationality lookup
         List<ContractCrewResponse> responses = crewPage.getContent().stream()
-                .map(crew -> {
-                    // Get nationality information
-                    final String[] natCode = {null};
-                    final String[] natName = {null};
-                    if (crew.getCrewNationPoid() != null) {
-                        LovItem lovItem = lovService.getLovItem(crew.getCrewNationPoid(), "NATIONALITY_MASTER");
-                        if (lovItem != null) {
-                            natCode[0] = lovItem.getCode();
-                            natName[0] = lovItem.getDescription();
-                        }
-                    }
-                    return entityMapper.toContractCrewResponse(crew, natCode[0], natName[0]);
-                })
+                .map(entityMapper::toContractCrewResponse)
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
@@ -112,18 +97,8 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         ContractCrew crew = crewRepository.findByCrewPoid(crewPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
 
-        // Get nationality information
-        AtomicReference<String> natCode = new AtomicReference<>();
-        AtomicReference<String> natName = new AtomicReference<>();
-        if (crew.getCrewNationPoid() != null) {
-        LovItem lovItem = lovService.getLovItem(crew.getCrewNationPoid(), "NATIONALITY_MASTER");
-        if (lovItem != null) {
-            natCode.set(lovItem.getCode());
-            natName.set(lovItem.getDescription());
-        }
-        }
 
-        return entityMapper.toContractCrewResponse(crew, natCode.get(), natName.get());
+        return entityMapper.toContractCrewResponse(crew);
     }
 
     @Override
@@ -158,17 +133,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         // Save entity
         crew = crewRepository.save(crew);
 
-        // Get nationality information for response
-//        AtomicReference<String> natCode = new AtomicReference<>();
-//        AtomicReference<String> natName = new AtomicReference<>();
-//        if (crew.getCrewNationPoid() != null) {
-//            nationalityRepository.findByNationPoid(crew.getCrewNationPoid())
-//                    .ifPresent(nat -> {
-//                        natCode.set(nat.getNationalityCode());
-//                        natName.set(nat.getNationalityDescription());
-//                    });
-//        }
-
         return entityMapper.toContractCrewRes(crew);
     }
 
@@ -182,38 +146,12 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         ContractCrew crew = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
 
-        // Check if nationality exists
-       /* if (request.getCrewNationalityPoid() != null) {
-            boolean nationalityExists = nationalityRepository.existsById(request.getCrewNationalityPoid());
-            if (!nationalityExists) {
-                throw new ValidationException(
-                        "Nationality not found",
-                        List.of(new ValidationError(
-                                "crewNationalityPoid",
-                                "Nationality does not exist"
-                        ))
-                );
-            }
-        }*/
-
         // Update entity
         entityMapper.updateContractCrewEntity(crew, request);
 
         // Save updated entity
         crew = crewRepository.save(crew);
-
-        // Get nationality information for response
-        AtomicReference<String> natCode = new AtomicReference<>();
-        AtomicReference<String> natName = new AtomicReference<>();
-        if (crew.getCrewNationPoid() != null) {
-           LovItem lovItem = lovService.getLovItem(crew.getCrewNationPoid(), "NATIONALITY_MASTER");
-           if (lovItem != null) {
-               natCode.set(lovItem.getCode());
-               natName.set(lovItem.getDescription());
-           }
-        }
-
-        return entityMapper.toContractCrewResponse(crew, natCode.get(), natName.get());
+        return entityMapper.toContractCrewResponse(crew);
     }
 
     @Override

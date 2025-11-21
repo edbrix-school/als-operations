@@ -24,7 +24,7 @@ public class EntityMapper {
     /**
      * Map ContractCrew entity to ContractCrewResponse DTO
      */
-    public ContractCrewResponse toContractCrewResponse(ContractCrew entity, String nationalityCode, String nationalityName) {
+    public ContractCrewResponse toContractCrewResponse(ContractCrew entity) {
         if (entity == null) {
             return null;
         }
@@ -34,8 +34,7 @@ public class EntityMapper {
         //response.setCrewCode(entity.getCrewCode());
         response.setCrewName(entity.getCrewName());
         response.setCrewNationalityPoid(entity.getCrewNationPoid());
-        response.setCrewNationalityCode(nationalityCode);
-        response.setCrewNationalityName(nationalityName);
+
         response.setCrewCdcNumber(entity.getCrewCdcNumber());
         response.setCrewCompany(entity.getCrewCompany());
         response.setCrewDesignation(entity.getCrewDesignation());

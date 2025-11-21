@@ -1,10 +1,13 @@
 package com.alsharif.operations.crew.dto;
 
+import lombok.Data;
+
 import java.util.List;
 
 /**
  * Standard error response DTO
  */
+@Data
 public class ErrorResponse {
 
     private String error;
@@ -25,29 +28,5 @@ public class ErrorResponse {
         this.fieldErrors = fieldErrors;
     }
 
-    // Getters and Setters
-    public String getError() {
-        return error;
-    }
-
-    public void setError(String error) {
-        this.error = error;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public List<ValidationError> getFieldErrors() {
-        return fieldErrors;
-    }
-
-    public void setFieldErrors(List<ValidationError> fieldErrors) {
-        this.fieldErrors = fieldErrors;
-    }
 }
 

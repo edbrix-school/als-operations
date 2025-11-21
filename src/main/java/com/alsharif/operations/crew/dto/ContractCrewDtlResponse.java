@@ -50,7 +50,5 @@ public class ContractCrewDtlResponse {
     private String lastModifiedBy;
     private String active;
 
-
-
 }
 
