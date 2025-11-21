@@ -1,17 +1,11 @@
 package com.alsharif.operations.commonlov.service;
 
-import com.alsharif.operations.commonlov.dto.LovItem;
 import com.alsharif.operations.commonlov.dto.LovResponse;
 import com.alsharif.operations.commonlov.repository.LovRepository;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
-
 
 @Service
 @Slf4j

@@ -2,8 +2,6 @@ package com.alsharif.operations.commonlov.repository;
 
 import com.alsharif.operations.commonlov.dto.LovItem;
 import com.alsharif.operations.commonlov.dto.LovResponse;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import oracle.jdbc.OracleTypes;
 import org.springframework.beans.factory.annotation.Autowired;
