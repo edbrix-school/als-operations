@@ -8,6 +8,4 @@ import org.springframework.stereotype.Service;
 public interface LovService {
     LovResponse getLovList(String lovName, Long docKeyPoid, String filterValue);
 
-    LovItem getLovItem(Long poid, String lovName);
-
 }

@@ -28,28 +28,4 @@ public class LovServiceImpl implements LovService {
                 response != null && response.getItems() != null ? response.getItems().size() : 0);
         return response;
     }
-
-    @Override
-    public LovItem getLovItem(Long poid, String lovName) {
-        log.info("poid : {}, lovName : {}", poid, lovName);
-
-        LovItem dto = new LovItem();
-        LovResponse listValue = this.getLovList(lovName, poid, "");
-
-        if (listValue != null) {
-
-
-            List<LovItem> lovGetListDtos = listValue.getItems();
-
-            if (lovGetListDtos != null) {
-
-                //   dto = lovGetListDtos.stream().filter(x -> x.getPoid().equals(poid)).findAny().orElseThrow(()-> new ResourceNotFoundException("Master Data", "POID", poid));
-
-                dto = lovGetListDtos.stream().filter(x -> x.getPoid().equals(poid)).findAny().orElse(new LovItem(poid, null, null));
-
-            }
-        }
-        return dto;
-    }
-
 }
