@@ -1,0 +1,39 @@
+package com.alsharif.operations.shipprincipal.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Schema(description = "Charge item information")
+public class ChargeDetailDto {
+
+    private Long principalPoid;
+
+    @Schema(description = "Detail row ID", example = "1")
+    private Long detRowId;
+    
+    @Schema(description = "Charge POID", example = "100")
+    private Long chargePoid;
+
+    @Schema(description = "Charge Code", example = "100")
+    private String chargeCode;
+
+    @Schema(description = "Charge Name", example = "100")
+    private String chargeName;
+    
+    @Schema(description = "Rate", example = "150.50")
+    private Long rate;
+    
+    @Schema(description = "Remarks")
+    private String remarks;
+
+
+}
