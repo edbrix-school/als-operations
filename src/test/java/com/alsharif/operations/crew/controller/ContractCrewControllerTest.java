@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -79,7 +80,6 @@ class ContractCrewControllerTest {
         long companyPoid = 100L;
         String userId = "tester";
         long crewPoid = 10L;
-        BulkSaveDetailsRequest req = new BulkSaveDetailsRequest();
 
         ContractCrewDtlResponse dtl = new ContractCrewDtlResponse();
         dtl.setCrewPoid(crewPoid);
@@ -91,11 +91,22 @@ class ContractCrewControllerTest {
         when(crewService.saveCrewDetails(eq(companyPoid), eq(userId), eq(crewPoid), any(BulkSaveDetailsRequest.class)))
                 .thenReturn(serviceResp);
 
+
+        String reqJson = "{\n" +
+                "  \"details\": [\n" +
+                "    {\n" +
+                "      \"documentType\": \"PASSPORT\",\n" +
+                "      \"documentNumber\": \"123\",\n" +
+                "      \"documentAppliedDate\": \"2025-01-01\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
         mockMvc.perform(post("/api/v1/contract-crew-masters/{crewPoid}/details", crewPoid)
                         .header("companyPoid", companyPoid)
                         .header("userId", userId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+                        .content(reqJson))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Details saved successfully"))
                 .andExpect(jsonPath("$.crewPoid").value((int) crewPoid))
