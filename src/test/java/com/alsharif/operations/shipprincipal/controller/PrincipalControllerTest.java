@@ -97,6 +97,8 @@ class PrincipalControllerTest {
     void testUpdatePrincipal_Success() throws Exception {
         PrincipalUpdateDTO updateDTO = new PrincipalUpdateDTO();
         updateDTO.setPrincipalName("Updated Principal");
+        updateDTO.setCompanyPoid(20L);
+
         
         when(principalMasterService.updatePrincipal(eq(1L), any(PrincipalUpdateDTO.class), anyLong(), anyLong()))
                 .thenReturn(mockPrincipalDetail);

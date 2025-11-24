@@ -1,13 +1,12 @@
-package com.alsharif.operations;
+package com.alsharif.operations.pdaratetypemaster.service;
 
 import com.alsharif.operations.common.Util.FormulaValidator;
-import com.alsharif.operations.common.Util.PdaRateTypeMapper;
-import com.alsharif.operations.commonlov.dto.PdaRateTypeRequestDTO;
-import com.alsharif.operations.commonlov.dto.PdaRateTypeResponseDTO;
-import com.alsharif.operations.commonlov.repository.PdaRateTypeRepository;
-import com.alsharif.operations.commonlov.service.PdaRateTypeServiceImpl;
+import com.alsharif.operations.pdaratetypemaster.dto.*;
+import com.alsharif.operations.pdaratetypemaster.entity.PdaRateTypeMaster;
+import com.alsharif.operations.pdaratetypemaster.repository.PdaRateTypeRepository;
+import com.alsharif.operations.pdaratetypemaster.service.PdaRateTypeServiceImpl;
+import com.alsharif.operations.pdaratetypemaster.util.PdaRateTypeMapper;
 import com.alsharif.operations.exceptions.ResourceNotFoundException;
-import com.alsharif.operations.group.entity.PdaRateTypeMaster;
 import jakarta.validation.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +26,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class PdaRateTypeServiceTests {
+public class PdaRateTypeServiceImplTest {
 
     @Mock
     private PdaRateTypeRepository repository;
@@ -78,11 +77,11 @@ public class PdaRateTypeServiceTests {
         when(formulaValidator.validate(anyString(), any())).thenReturn(
             new FormulaValidator.FormulaValidationResult(true, new ArrayList<>(), new ArrayList<>(), "GRT * 0.5", Arrays.asList("GRT"))
         );
-        when(mapper.toEntity(requestDTO)).thenReturn(entity);
+        when(mapper.toEntity(requestDTO, BigDecimal.ONE, "testUser")).thenReturn(entity);
         when(repository.save(any(PdaRateTypeMaster.class))).thenReturn(entity);
         when(mapper.toResponse(entity)).thenReturn(new PdaRateTypeResponseDTO());
 
-        PdaRateTypeResponseDTO result = service.createRateType(requestDTO);
+        PdaRateTypeResponseDTO result = service.createRateType(requestDTO, 1L, "testUser");
 
         assertNotNull(result);
         verify(repository).save(any(PdaRateTypeMaster.class));
@@ -93,7 +92,7 @@ public class PdaRateTypeServiceTests {
         when(repository.existsByRateTypeCodeAndGroupPoid("GRT", BigDecimal.ONE)).thenReturn(true);
 
         ValidationException exception = assertThrows(ValidationException.class, 
-            () -> service.createRateType(requestDTO));
+            () -> service.createRateType(requestDTO, 1L, "testUser"));
         
         assertEquals("Rate type code already exists: GRT", exception.getMessage());
     }
@@ -103,7 +102,7 @@ public class PdaRateTypeServiceTests {
         when(repository.findByRateTypePoidAndGroupPoid(1L, BigDecimal.ONE)).thenReturn(Optional.of(entity));
         when(mapper.toResponse(entity)).thenReturn(new PdaRateTypeResponseDTO());
 
-        PdaRateTypeResponseDTO result = service.getRateTypeById(1L);
+        PdaRateTypeResponseDTO result = service.getRateTypeById(1L, 1L);
 
         assertNotNull(result);
         verify(mapper).toResponse(entity);
@@ -114,9 +113,9 @@ public class PdaRateTypeServiceTests {
         when(repository.findByRateTypePoidAndGroupPoid(1L, BigDecimal.ONE)).thenReturn(Optional.empty());
 
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, 
-            () -> service.getRateTypeById(1L));
+            () -> service.getRateTypeById(1L, 1L));
         
-        assertTrue(exception.getMessage().contains("Rate type not found with id: 1"));
+        assertTrue(exception.getMessage().contains("rateTypePoid"));
     }
 
     @Test
@@ -124,7 +123,7 @@ public class PdaRateTypeServiceTests {
         when(repository.findByRateTypePoidAndGroupPoid(1L, BigDecimal.ONE)).thenReturn(Optional.of(entity));
         when(repository.save(any(PdaRateTypeMaster.class))).thenReturn(entity);
 
-        assertDoesNotThrow(() -> service.deleteRateType(1L, false));
+        assertDoesNotThrow(() -> service.deleteRateType(1L, 1L, "testUser", false));
         
         verify(repository).save(argThat(e -> "Y".equals(e.getDeleted()) && "N".equals(e.getActive())));
     }
