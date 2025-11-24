@@ -1,6 +1,7 @@
 package com.alsharif.operations.exceptions;
 
 import com.alsharif.operations.common.ApiResponse;
+import com.alsharif.operations.crew.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.xml.bind.ValidationException;
 import org.apache.commons.lang3.StringUtils;
@@ -122,5 +123,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleGeneralException(Exception ex, HttpServletRequest request) {
         log.error("Unexpected error at {} ", request.getRequestURI(), ex);
         return ApiResponse.error(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    @ExceptionHandler(com.alsharif.operations.exceptions.ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(com.alsharif.operations.exceptions.ValidationException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                "Validation Error",
+                ex.getMessage(),
+                ex.getFieldErrors()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }

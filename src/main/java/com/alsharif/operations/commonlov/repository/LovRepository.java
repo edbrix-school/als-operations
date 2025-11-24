@@ -20,6 +20,7 @@ import java.util.List;
 public class LovRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
     public LovResponse getLovList(String lovName, Long docKeyPoid, String filterValue) {
         try {
             final String sql = "BEGIN PROC_LOV_GETLIST(?,?,?,?,?,?,?); END;";
@@ -62,7 +63,6 @@ public class LovRepository {
         }catch (Exception e){
             log.error("Unexpected error fetching LOV list for lovName={}", lovName, e);
             throw new RuntimeException();
-
         }
     }
 }
