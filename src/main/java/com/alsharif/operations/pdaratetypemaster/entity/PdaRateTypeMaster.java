@@ -1,4 +1,4 @@
-package com.alsharif.operations.group.entity;
+package com.alsharif.operations.pdaratetypemaster.entity;
 
 
 import jakarta.persistence.*;

@@ -1,21 +1,23 @@
-package com.alsharif.operations.commonlov.service;
+package com.alsharif.operations.pdaratetypemaster.service;
 
 import com.alsharif.operations.common.Util.FormulaValidator;
-import com.alsharif.operations.common.Util.PdaRateTypeMapper;
-import com.alsharif.operations.commonlov.dto.*;
-import com.alsharif.operations.commonlov.repository.PdaRateTypeRepository;
+import com.alsharif.operations.pdaratetypemaster.util.PdaRateTypeMapper;
+import com.alsharif.operations.pdaratetypemaster.dto.*;
+import com.alsharif.operations.pdaratetypemaster.repository.PdaRateTypeRepository;
 import com.alsharif.operations.exceptions.ResourceNotFoundException;
-import com.alsharif.operations.group.entity.PdaRateTypeMaster;
+import com.alsharif.operations.pdaratetypemaster.entity.PdaRateTypeMaster;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.data.domain.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -26,22 +28,16 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     private final PdaRateTypeMapper mapper;
     private final FormulaValidator formulaValidator;
 
-    // HARD-CODED VALUES (since SecurityContextUtil is removed)
-    private static final BigDecimal HARD_CODED_GROUP_POID = BigDecimal.valueOf(1);
-    private static final BigDecimal HARD_CODED_USER_POID = BigDecimal.valueOf(1);
-
-    // ----------------------------------------------------------
-    // GET LIST
-    // ----------------------------------------------------------
     @Override
     @Transactional(readOnly = true)
-    public Page<PdaRateTypeResponseDTO> getRateTypeList(
+    public PageResponse<PdaRateTypeResponseDTO> getRateTypeList(
             String code,
             String name,
             String active,
+            Long groupPoid,
             Pageable pageable
     ) {
-        BigDecimal groupPoid = HARD_CODED_GROUP_POID;
+        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
         String normalizedCode = code != null ? code.toUpperCase() : null;
         String normalizedName = name != null ? name.toUpperCase() : null;
@@ -51,47 +47,49 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
                 normalizedCode,
                 normalizedName,
                 activeFilter,
-                groupPoid,
+                groupPoidBD,
                 pageable
         );
 
-        List<PdaRateTypeResponseDTO> responses = mapper.toResponseList(rateTypePage.getContent());
+        List<PdaRateTypeResponseDTO> content = rateTypePage.getContent().stream()
+                .map(mapper::toResponse)
+                .collect(Collectors.toList());
 
-        return new PageImpl<>(responses, pageable, rateTypePage.getTotalElements());
+        return new PageResponse<>(
+                content,
+                rateTypePage.getNumber(),
+                rateTypePage.getSize(),
+                rateTypePage.getTotalElements(),
+                rateTypePage.getTotalPages(),
+                rateTypePage.isFirst(),
+                rateTypePage.isLast(),
+                rateTypePage.getNumberOfElements()
+        );
     }
 
-    // ----------------------------------------------------------
-    // GET BY ID
-    // ----------------------------------------------------------
     @Override
     @Transactional(readOnly = true)
-    public PdaRateTypeResponseDTO getRateTypeById(Long rateTypeId) {
-        BigDecimal groupPoid = HARD_CODED_GROUP_POID;
+    public PdaRateTypeResponseDTO getRateTypeById(Long rateTypePoid, Long groupPoid) {
+        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        PdaRateTypeMaster rateType = repository.findByRateTypePoidAndGroupPoid(rateTypeId, groupPoid)
+        PdaRateTypeMaster rateType = repository.findByRateTypePoidAndGroupPoid(rateTypePoid, groupPoidBD)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "PDA Rate Type",
-                        "rateTypeId",
-                        rateTypeId
-                ));
+                        "PdaRateTypeMaster", "rateTypePoid", rateTypePoid));
 
         return mapper.toResponse(rateType);
     }
 
-    // ----------------------------------------------------------
-    // CREATE
-    // ----------------------------------------------------------
     @Override
-    public PdaRateTypeResponseDTO createRateType(PdaRateTypeRequestDTO request) {
-        validateRateTypeRequest(request, null);
+    public PdaRateTypeResponseDTO createRateType(PdaRateTypeRequestDTO request, Long groupPoid, String userId) {
+        validateCreateRequest(request, groupPoid);
 
-        BigDecimal groupPoid = HARD_CODED_GROUP_POID;
+        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
         String normalizedCode = request.getRateTypeCode() != null
                 ? request.getRateTypeCode().trim().toUpperCase()
                 : null;
 
-        if (repository.existsByRateTypeCodeAndGroupPoid(normalizedCode, groupPoid)) {
+        if (repository.existsByRateTypeCodeAndGroupPoid(normalizedCode, groupPoidBD)) {
             throw new ValidationException("Rate type code already exists: " + normalizedCode);
         }
 
@@ -99,77 +97,59 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
                 ? request.getRateTypeName().trim()
                 : null;
 
-        if (normalizedName != null && repository.existsByRateTypeNameAndGroupPoid(normalizedName, groupPoid)) {
+        if (normalizedName != null && repository.existsByRateTypeNameAndGroupPoid(normalizedName, groupPoidBD)) {
             throw new ValidationException("Rate type name already exists: " + normalizedName);
         }
 
-        // Validate formula
         validateFormulaString(request.getRateTypeFormula());
 
-        PdaRateTypeMaster rateType = mapper.toEntity(request);
+        PdaRateTypeMaster rateType = mapper.toEntity(request, groupPoidBD, userId);
 
-        // Auto-generate seqno
         if (rateType.getSeqno() == null) {
-            BigInteger maxSeqno = repository.findMaxSeqnoByGroupPoid(groupPoid)
+            BigInteger maxSeqno = repository.findMaxSeqnoByGroupPoid(groupPoidBD)
                     .orElse(BigInteger.ZERO);
             rateType.setSeqno(maxSeqno.add(BigInteger.valueOf(10)));
         }
 
-        rateType = repository.save(rateType);
-
-        return mapper.toResponse(rateType);
+        PdaRateTypeMaster savedRateType = repository.save(rateType);
+        return mapper.toResponse(savedRateType);
     }
 
-    // ----------------------------------------------------------
-    // UPDATE
-    // ----------------------------------------------------------
     @Override
-    public PdaRateTypeResponseDTO updateRateType(Long rateTypeId, PdaRateTypeRequestDTO request) {
-        validateRateTypeRequest(request, rateTypeId);
+    public PdaRateTypeResponseDTO updateRateType(Long rateTypePoid, PdaRateTypeRequestDTO request, Long groupPoid, String userId) {
+        validateUpdateRequest(request, groupPoid);
 
-        BigDecimal groupPoid = HARD_CODED_GROUP_POID;
+        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        PdaRateTypeMaster rateType = repository.findByRateTypePoidAndGroupPoid(rateTypeId, groupPoid)
+        PdaRateTypeMaster existingRateType = repository.findByRateTypePoidAndGroupPoid(rateTypePoid, groupPoidBD)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "PDA Rate Type",
-                        "rateTypeId",
-                        rateTypeId
-                ));
+                        "PdaRateTypeMaster", "rateTypePoid", rateTypePoid));
 
-        // Name uniqueness check
         String normalizedName = request.getRateTypeName() != null
                 ? request.getRateTypeName().trim()
                 : null;
 
-        if (normalizedName != null && !normalizedName.equals(rateType.getRateTypeName())) {
-            if (repository.existsByRateTypeNameAndGroupPoid(normalizedName, groupPoid)) {
+        if (normalizedName != null && !normalizedName.equals(existingRateType.getRateTypeName())) {
+            if (repository.existsByRateTypeNameAndGroupPoid(normalizedName, groupPoidBD)) {
                 throw new ValidationException("Rate type name already exists: " + normalizedName);
             }
         }
 
-        // Validate formula
         validateFormulaString(request.getRateTypeFormula());
 
-        mapper.updateEntity(rateType, request);
-        rateType = repository.save(rateType);
+        mapper.updateEntityFromRequest(existingRateType, request, userId);
+        repository.save(existingRateType);
 
-        return mapper.toResponse(rateType);
+        return mapper.toResponse(existingRateType);
     }
 
-    // ----------------------------------------------------------
-    // DELETE
-    // ----------------------------------------------------------
     @Override
-    public void deleteRateType(Long rateTypeId, boolean hardDelete) {
-        BigDecimal groupPoid = HARD_CODED_GROUP_POID;
-        BigDecimal userId = HARD_CODED_USER_POID;
+    public void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, boolean hardDelete) {
+        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        PdaRateTypeMaster rateType = repository.findByRateTypePoidAndGroupPoid(rateTypeId, groupPoid)
+        PdaRateTypeMaster rateType = repository.findByRateTypePoidAndGroupPoid(rateTypePoid, groupPoidBD)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "PDA Rate Type",
-                        "rateTypeId",
-                        rateTypeId
-                ));
+                        "PdaRateTypeMaster", "rateTypePoid", rateTypePoid));
 
         if (hardDelete) {
             try {
@@ -180,19 +160,15 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         } else {
             rateType.setActive("N");
             rateType.setDeleted("Y");
-            rateType.setLastmodifiedBy("system");
+            rateType.setLastmodifiedBy(userId);
             rateType.setLastmodifiedDate(LocalDateTime.now());
             repository.save(rateType);
         }
     }
 
-    // ----------------------------------------------------------
-    // FORMULA VALIDATION ENDPOINT SERVICE
-    // ----------------------------------------------------------
     @Override
     @Transactional(readOnly = true)
     public FormulaValidationResponse validateFormula(FormulaValidationRequest request) {
-
         List<String> allowableTokens = null;
 
         if (request.getContext() != null &&
@@ -215,10 +191,14 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         return response;
     }
 
-    // ----------------------------------------------------------
-    // COMMON VALIDATION
-    // ----------------------------------------------------------
-    private void validateRateTypeRequest(PdaRateTypeRequestDTO request, Long rateTypeId) {
+    private void validateCreateRequest(PdaRateTypeRequestDTO request, Long groupPoid) {
+        if (request.getDefDays() != null &&
+                request.getDefDays().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidationException("Default days must be ≥ 0");
+        }
+    }
+
+    private void validateUpdateRequest(PdaRateTypeRequestDTO request, Long groupPoid) {
         if (request.getDefDays() != null &&
                 request.getDefDays().compareTo(BigDecimal.ZERO) < 0) {
             throw new ValidationException("Default days must be ≥ 0");

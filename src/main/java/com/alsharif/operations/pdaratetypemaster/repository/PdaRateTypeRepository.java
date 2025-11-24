@@ -1,8 +1,8 @@
-package com.alsharif.operations.commonlov.repository;
+package com.alsharif.operations.pdaratetypemaster.repository;
 
 
 
-import com.alsharif.operations.group.entity.PdaRateTypeMaster;
+import com.alsharif.operations.pdaratetypemaster.entity.PdaRateTypeMaster;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -46,4 +46,6 @@ public interface PdaRateTypeRepository extends JpaRepository<PdaRateTypeMaster, 
 
     @Query("SELECT MAX(prtm.seqno) FROM PdaRateTypeMaster prtm WHERE prtm.groupPoid = :groupPoid")
     Optional<BigInteger> findMaxSeqnoByGroupPoid(@Param("groupPoid") BigDecimal groupPoid);
+
+    boolean existsByRateTypePoidAndDeletedIgnoreCase(Long rateTypePoid, String deleted);
 }

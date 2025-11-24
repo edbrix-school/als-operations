@@ -1,4 +1,4 @@
-package com.alsharif.operations.commonlov.dto;
+package com.alsharif.operations.pdaratetypemaster.dto;
 
 import java.util.List;
 

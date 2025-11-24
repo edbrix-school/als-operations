@@ -1,4 +1,4 @@
-package com.alsharif.operations.commonlov.dto;
+package com.alsharif.operations.pdaratetypemaster.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
