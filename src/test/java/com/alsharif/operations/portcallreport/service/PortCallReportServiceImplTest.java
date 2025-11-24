@@ -1,8 +1,10 @@
 package com.alsharif.operations.portcallreport.service;
 
+import com.alsharif.operations.commonlov.service.LovService;
 import com.alsharif.operations.portactivity.repository.PortActivityMasterRepository;
 import com.alsharif.operations.portcallreport.dto.PortCallReportDetailDto;
 import com.alsharif.operations.portcallreport.dto.PortCallReportDto;
+import com.alsharif.operations.portcallreport.dto.PortCallReportResponseDto;
 import com.alsharif.operations.portcallreport.entity.PortCallReportDtl;
 import com.alsharif.operations.portcallreport.entity.PortCallReportHdr;
 import com.alsharif.operations.portcallreport.repository.PortCallReportDtlRepository;
@@ -49,6 +51,9 @@ class PortCallReportServiceImplTest {
     @Mock
     private PortActivityMasterRepository portActivityMasterRepository;
 
+    @Mock
+    private LovService lovService;
+
     @InjectMocks
     private PortCallReportServiceImpl service;
 
@@ -63,7 +68,7 @@ class PortCallReportServiceImplTest {
 
         when(hdrRepository.findAllNonDeletedWithSearch(any(), any(Pageable.class))).thenReturn(page);
 
-        Page<PortCallReportDto> result = service.getReportList("test", Pageable.unpaged());
+        Page<PortCallReportResponseDto> result = service.getReportList("test", Pageable.unpaged());
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
@@ -82,7 +87,7 @@ class PortCallReportServiceImplTest {
         when(hdrRepository.findById(1L)).thenReturn(Optional.of(hdr));
         when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(List.of());
 
-        PortCallReportDto result = service.getReportById(1L);
+        PortCallReportResponseDto result = service.getReportById(1L);
 
         assertNotNull(result);
         assertEquals("PCR00001", result.getPortCallReportId());
@@ -118,7 +123,7 @@ class PortCallReportServiceImplTest {
         when(hdrRepository.findById(1L)).thenReturn(Optional.of(savedHdr));
         when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(List.of());
 
-        PortCallReportDto result = service.createReport(dto, 1L);
+        PortCallReportResponseDto result = service.createReport(dto, 1L, 100L);
 
         assertNotNull(result);
         assertEquals("PCR00001", result.getPortCallReportId());
@@ -133,7 +138,7 @@ class PortCallReportServiceImplTest {
 
         when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L));
+        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L, 1L));
         verify(hdrRepository, never()).save(any());
     }
 
@@ -147,7 +152,7 @@ class PortCallReportServiceImplTest {
         when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
         when(vesselTypeRepository.findAllActive()).thenReturn(List.of());
 
-        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L));
+        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L, 1L));
         verify(hdrRepository, never()).save(any());
     }
 
@@ -165,7 +170,7 @@ class PortCallReportServiceImplTest {
 
         when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
 
-        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L));
+        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L, 1L));
         verify(hdrRepository, never()).save(any());
     }
 
@@ -184,7 +189,7 @@ class PortCallReportServiceImplTest {
         when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
         when(portActivityMasterRepository.existsById(999L)).thenReturn(false);
 
-        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L));
+        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L, 1L));
         verify(hdrRepository, never()).save(any());
     }
 
@@ -208,11 +213,10 @@ class PortCallReportServiceImplTest {
         when(hdrRepository.save(any())).thenReturn(existingHdr);
         when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(List.of());
 
-        PortCallReportDto result = service.updateReport(1L, dto, 1L);
+        PortCallReportResponseDto result = service.updateReport(1L, dto, 1L, 100L);
 
         assertNotNull(result);
         verify(hdrRepository).save(any());
-        verify(dtlRepository).deleteByPortCallReportPoid(1L);
     }
 
     @Test

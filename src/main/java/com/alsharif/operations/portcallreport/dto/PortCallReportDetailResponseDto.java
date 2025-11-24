@@ -1,7 +1,6 @@
 package com.alsharif.operations.portcallreport.dto;
 
-import com.alsharif.operations.portcallreport.enums.ActionType;
-import jakarta.validation.constraints.NotNull;
+import com.alsharif.operations.commonlov.dto.LovItem;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,12 +10,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PortCallReportDetailDto {
+public class PortCallReportDetailResponseDto {
     private Long portCallReportPoid;
     private Long detRowId;
-    @NotNull(message = "Port activity type is required")
     private Long portActivityTypePoid;
     private String portActivityTypeName;
     private String activityMandatory;
-    private ActionType actionType;
+    private LovItem portActivityDet;
 }

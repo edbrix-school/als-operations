@@ -1,6 +1,7 @@
 package com.alsharif.operations.portcallreport.controller;
 
 import com.alsharif.operations.portcallreport.dto.PortCallReportDto;
+import com.alsharif.operations.portcallreport.dto.PortCallReportResponseDto;
 import com.alsharif.operations.portcallreport.service.PortCallReportService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -34,12 +35,12 @@ class PortCallReportControllerTest {
 
     @Test
     void getReportList_ShouldReturnPagedReports() throws Exception {
-        PortCallReportDto dto = PortCallReportDto.builder()
+        PortCallReportResponseDto dto = PortCallReportResponseDto.builder()
                 .portCallReportPoid(1L)
                 .portCallReportId("PCR00001")
                 .portCallReportName("Test Report")
                 .build();
-        Page<PortCallReportDto> page = new PageImpl<>(List.of(dto));
+        Page<PortCallReportResponseDto> page = new PageImpl<>(List.of(dto));
 
         when(portCallReportService.getReportList(any(), any())).thenReturn(page);
 
@@ -54,7 +55,7 @@ class PortCallReportControllerTest {
 
     @Test
     void getReportById_ShouldReturnReport() throws Exception {
-        PortCallReportDto dto = PortCallReportDto.builder()
+        PortCallReportResponseDto dto = PortCallReportResponseDto.builder()
                 .portCallReportPoid(1L)
                 .portCallReportId("PCR00001")
                 .portCallReportName("Test Report")
@@ -73,52 +74,56 @@ class PortCallReportControllerTest {
     void createReport_ShouldReturnCreatedReport() throws Exception {
         PortCallReportDto dto = PortCallReportDto.builder()
                 .portCallReportName("New Report")
+                .portCallApplVesselType(List.of("TANKER"))
                 .active("Y")
                 .build();
 
-        PortCallReportDto created = PortCallReportDto.builder()
+        PortCallReportResponseDto created = PortCallReportResponseDto.builder()
                 .portCallReportPoid(1L)
                 .portCallReportId("PCR00001")
                 .portCallReportName("New Report")
                 .active("Y")
                 .build();
 
-        when(portCallReportService.createReport(any(), eq(1L))).thenReturn(created);
+        when(portCallReportService.createReport(any(), eq(1L), eq(100L))).thenReturn(created);
 
         mockMvc.perform(post("/port-call-reports")
                         .header("X-User-Poid", "1")
+                        .header("X-Group-Poid", "100")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.data.portCallReportId").value("PCR00001"));
 
-        verify(portCallReportService).createReport(any(), eq(1L));
+        verify(portCallReportService).createReport(any(), eq(1L), eq(100L));
     }
 
     @Test
     void updateReport_ShouldReturnUpdatedReport() throws Exception {
         PortCallReportDto dto = PortCallReportDto.builder()
                 .portCallReportName("Updated Report")
+                .portCallApplVesselType(List.of("TANKER"))
                 .active("Y")
                 .build();
 
-        PortCallReportDto updated = PortCallReportDto.builder()
+        PortCallReportResponseDto updated = PortCallReportResponseDto.builder()
                 .portCallReportPoid(1L)
                 .portCallReportId("PCR00001")
                 .portCallReportName("Updated Report")
                 .active("Y")
                 .build();
 
-        when(portCallReportService.updateReport(eq(1L), any(), eq(1L))).thenReturn(updated);
+        when(portCallReportService.updateReport(eq(1L), any(), eq(1L), eq(100L))).thenReturn(updated);
 
         mockMvc.perform(put("/port-call-reports/1")
                         .header("X-User-Poid", "1")
+                        .header("X-Group-Poid", "100")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.data.portCallReportName").value("Updated Report"));
 
-        verify(portCallReportService).updateReport(eq(1L), any(), eq(1L));
+        verify(portCallReportService).updateReport(eq(1L), any(), eq(1L), eq(100L));
     }
 
     @Test

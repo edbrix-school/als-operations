@@ -1,7 +1,9 @@
 package com.alsharif.operations.portcallreport.controller;
 
 import com.alsharif.operations.common.ApiResponse;
+import com.alsharif.operations.portcallreport.dto.PortActivityResponseDto;
 import com.alsharif.operations.portcallreport.dto.PortCallReportDto;
+import com.alsharif.operations.portcallreport.dto.PortCallReportResponseDto;
 import com.alsharif.operations.portcallreport.service.PortCallReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -66,7 +68,7 @@ public class PortCallReportController {
             }
             
             Pageable pageable = PageRequest.of(page, size, sortObj);
-            Page<PortCallReportDto> reports = portCallReportService.getReportList(search, pageable);
+            Page<PortCallReportResponseDto> reports = portCallReportService.getReportList(search, pageable);
             return ApiResponse.success("Reports retrieved successfully", reports);
         } catch (Exception e) {
             log.error("Error fetching report list", e);
@@ -88,7 +90,7 @@ public class PortCallReportController {
     )
     public ResponseEntity<?> getReportById(@Parameter(description = "Report ID") @PathVariable Long id) {
         try {
-            PortCallReportDto report = portCallReportService.getReportById(id);
+            PortCallReportResponseDto report = portCallReportService.getReportById(id);
             if (report == null) {
                 return ApiResponse.notFound("Report not found");
             }
@@ -114,9 +116,10 @@ public class PortCallReportController {
     )
     public ResponseEntity<?> createReport(
             @Valid @RequestBody PortCallReportDto dto,
-            @Parameter(description = "User POID") @RequestHeader("X-User-Poid") Long userPoid) {
+            @Parameter(description = "User POID") @RequestHeader("X-User-Poid") Long userPoid,
+            @Parameter(description = "Group POID") @RequestHeader("X-Group-Poid") Long groupPoid) {
         try {
-            PortCallReportDto created = portCallReportService.createReport(dto, userPoid);
+            PortCallReportResponseDto created = portCallReportService.createReport(dto, userPoid, groupPoid);
             return ApiResponse.success("Report created successfully", created);
         } catch (Exception e) {
             log.error("Error creating report", e);
@@ -141,9 +144,10 @@ public class PortCallReportController {
     public ResponseEntity<?> updateReport(
             @Parameter(description = "Report ID") @PathVariable Long id,
             @Valid @RequestBody PortCallReportDto dto,
-            @Parameter(description = "User POID") @RequestHeader("X-User-Poid") Long userPoid) {
+            @Parameter(description = "User POID") @RequestHeader("X-User-Poid") Long userPoid,
+            @Parameter(description = "Group POID") @RequestHeader("X-Group-Poid") Long groupPoid) {
         try {
-            PortCallReportDto updated = portCallReportService.updateReport(id, dto, userPoid);
+            PortCallReportResponseDto updated = portCallReportService.updateReport(id, dto, userPoid, groupPoid);
             return ApiResponse.success("Report updated successfully", updated);
         } catch (Exception e) {
             log.error("Error updating report id: {}", id, e);
@@ -188,7 +192,7 @@ public class PortCallReportController {
     public ResponseEntity<?> getPortActivities(
             @Parameter(description = "User POID") @RequestHeader("X-User-Poid") Long userPoid) {
         try {
-            List<Map<String, Object>> activities = portCallReportService.getPortActivities(userPoid);
+            List<PortActivityResponseDto> activities = portCallReportService.getPortActivities(userPoid);
             return ApiResponse.success("Activities retrieved successfully", activities);
         } catch (Exception e) {
             log.error("Error fetching port activities", e);

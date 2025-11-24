@@ -1,6 +1,8 @@
 package com.alsharif.operations.portcallreport.service;
 
+import com.alsharif.operations.portcallreport.dto.PortActivityResponseDto;
 import com.alsharif.operations.portcallreport.dto.PortCallReportDto;
+import com.alsharif.operations.portcallreport.dto.PortCallReportResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -9,17 +11,17 @@ import java.util.Map;
 
 public interface PortCallReportService {
 
-    Page<PortCallReportDto> getReportList(String search, Pageable pageable);
+    Page<PortCallReportResponseDto> getReportList(String search, Pageable pageable);
 
-    PortCallReportDto getReportById(Long id);
+    PortCallReportResponseDto getReportById(Long id);
 
-    PortCallReportDto createReport(PortCallReportDto dto, Long userPoid);
+    PortCallReportResponseDto createReport(PortCallReportDto dto, Long userPoid, Long groupPoid);
 
-    PortCallReportDto updateReport(Long id, PortCallReportDto dto, Long userPoid);
+    PortCallReportResponseDto updateReport(Long id, PortCallReportDto dto, Long userPoid, Long groupPoid);
 
     void deleteReport(Long id);
 
-    List<Map<String, Object>> getPortActivities(Long userPoid);
+    List<PortActivityResponseDto> getPortActivities(Long userPoid);
 
     List<Map<String, Object>> getVesselTypes();
 
