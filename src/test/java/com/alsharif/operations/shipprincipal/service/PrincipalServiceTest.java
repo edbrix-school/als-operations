@@ -54,7 +54,7 @@ class PrincipalServiceTest {
     private PrincipalMasterMapper mapper;
     
     @InjectMocks
-    private PrincipalMasterService principalMasterService;
+    private PrincipalMasterServiceImpl principalMasterService;
     
     private ShipPrincipalMaster mockPrincipal;
     private User mockUser;
