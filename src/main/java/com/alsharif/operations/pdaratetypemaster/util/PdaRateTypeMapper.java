@@ -1,8 +1,8 @@
-package com.alsharif.operations.common.Util;
+package com.alsharif.operations.pdaratetypemaster.util;
 
-import com.alsharif.operations.commonlov.dto.PdaRateTypeRequestDTO;
-import com.alsharif.operations.commonlov.dto.PdaRateTypeResponseDTO;
-import com.alsharif.operations.group.entity.PdaRateTypeMaster;
+import com.alsharif.operations.pdaratetypemaster.dto.PdaRateTypeRequestDTO;
+import com.alsharif.operations.pdaratetypemaster.dto.PdaRateTypeResponseDTO;
+import com.alsharif.operations.pdaratetypemaster.entity.PdaRateTypeMaster;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -48,20 +48,18 @@ public class PdaRateTypeMapper {
     /**
      * Map PdaRateTypeMasterRequest DTO to PdaRateTypeMaster entity (for create)
      */
-    public PdaRateTypeMaster toEntity(PdaRateTypeRequestDTO request) {
+    public PdaRateTypeMaster toEntity(PdaRateTypeRequestDTO request, BigDecimal groupPoid, String userId) {
         if (request == null) {
             return null;
         }
 
         PdaRateTypeMaster entity = new PdaRateTypeMaster();
 
-        // Trim and uppercase code
         String code = request.getRateTypeCode() != null
                 ? request.getRateTypeCode().trim().toUpperCase()
                 : null;
         entity.setRateTypeCode(code);
 
-        // Trim name fields
         entity.setRateTypeName(request.getRateTypeName() != null
                 ? request.getRateTypeName().trim()
                 : null);
@@ -69,12 +67,10 @@ public class PdaRateTypeMapper {
                 ? request.getRateTypeName2().trim()
                 : null);
 
-        // Formula (trim but preserve case)
         entity.setRateTypeFormula(request.getRateTypeFormula() != null
                 ? request.getRateTypeFormula().trim()
                 : null);
 
-        // Other fields
         entity.setDefQty(request.getDefQty() != null
                 ? request.getDefQty().trim()
                 : null);
@@ -84,14 +80,12 @@ public class PdaRateTypeMapper {
         entity.setActive(activeValue.equals("true") || activeValue.equals("Y") ? "Y" : "N");
         entity.setDeleted("N");
 
-        // Set audit fields
-        entity.setCreatedBy("system");
+        entity.setCreatedBy(userId);
         entity.setCreatedDate(LocalDateTime.now());
-        entity.setLastmodifiedBy("system");
+        entity.setLastmodifiedBy(userId);
         entity.setLastmodifiedDate(LocalDateTime.now());
 
-        // Set multi-tenant fields
-        entity.setGroupPoid(BigDecimal.valueOf(1));
+        entity.setGroupPoid(groupPoid);
 
         return entity;
     }
@@ -99,15 +93,11 @@ public class PdaRateTypeMapper {
     /**
      * Update PdaRateTypeMaster entity from PdaRateTypeMasterRequest DTO (for update)
      */
-    public void updateEntity(PdaRateTypeMaster entity, PdaRateTypeRequestDTO request) {
+    public void updateEntityFromRequest(PdaRateTypeMaster entity, PdaRateTypeRequestDTO request, String userId) {
         if (entity == null || request == null) {
             return;
         }
 
-        // Do not update rateTypeCode (immutable after creation)
-        // Do not update groupPoid (tenant field)
-
-        // Update name fields
         if (request.getRateTypeName() != null) {
             entity.setRateTypeName(request.getRateTypeName().trim());
         }
@@ -115,12 +105,10 @@ public class PdaRateTypeMapper {
             entity.setRateTypeName2(request.getRateTypeName2().trim());
         }
 
-        // Update formula
         if (request.getRateTypeFormula() != null) {
             entity.setRateTypeFormula(request.getRateTypeFormula().trim());
         }
 
-        // Update other fields
         if (request.getDefQty() != null) {
             entity.setDefQty(request.getDefQty().trim());
         }
@@ -130,8 +118,7 @@ public class PdaRateTypeMapper {
             entity.setActive(request.getActive());
         }
 
-        // Update audit fields (only modified fields)
-//        entity.setLastmodifiedBy(securityContextUtil.getCurrentUserId());
+        entity.setLastmodifiedBy(userId);
         entity.setLastmodifiedDate(LocalDateTime.now());
     }
 

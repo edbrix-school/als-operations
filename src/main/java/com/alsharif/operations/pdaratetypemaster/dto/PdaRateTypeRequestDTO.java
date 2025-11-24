@@ -1,4 +1,4 @@
-package com.alsharif.operations.commonlov.dto;
+package com.alsharif.operations.pdaratetypemaster.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
