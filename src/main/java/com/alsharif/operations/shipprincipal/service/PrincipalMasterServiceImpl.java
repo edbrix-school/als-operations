@@ -1,5 +1,7 @@
 package com.alsharif.operations.shipprincipal.service;
 
+import com.alsharif.operations.commonlov.repository.LovRepository;
+import com.alsharif.operations.commonlov.service.LovService;
 import com.alsharif.operations.exceptions.ResourceAlreadyExistsException;
 import com.alsharif.operations.exceptions.ResourceNotFoundException;
 import com.alsharif.operations.shipprincipal.dto.*;
@@ -11,6 +13,7 @@ import com.alsharif.operations.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -34,8 +37,10 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
     private final GLMasterService glMasterService;
     private final AddressMasterService addressMasterService;
     private final PrincipalMasterMapper mapper;
+    private final LovService lovService;
 
 
+    @Override
     @Transactional
     public Page<PrincipalMasterListDto> getPrincipalList(String search, Pageable pageable) {
         Page<ShipPrincipalMaster> page = principalRepository.findAllNonDeletedWithSearch(search, pageable);
@@ -61,6 +66,10 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
         List<ShipPrincipalMasterPymtDtl> payments = paymentRepository.findByPrincipalPoidOrderByDetRowIdAsc(id);
         dto.setPayments(payments.stream().map(mapper::mapToPaymentDTO).collect(Collectors.toList()));
+        
+        dto.setCountryDet(lovService.getLovItem(principal.getCountryPoid(), "COUNTRY"));
+        dto.setGlCodeDet(lovService.getLovItem(principal.getGlCodePoid(), "GL_CODE"));
+        dto.setCompanyDet(lovService.getLovItem(principal.getCompanyPoid(), "COMPANY"));
 
         if (principal.getAddressPoid() != null) {
             List<AddressDetails> addressDetails = addressDetailsRepository.findByAddressMasterPoid(principal.getAddressPoid());
