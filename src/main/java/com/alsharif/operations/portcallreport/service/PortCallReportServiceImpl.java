@@ -3,7 +3,7 @@ package com.alsharif.operations.portcallreport.service;
 import com.alsharif.operations.commonlov.dto.LovItem;
 import com.alsharif.operations.commonlov.dto.LovResponse;
 import com.alsharif.operations.commonlov.service.LovService;
-import com.alsharif.operations.portactivity.repository.PortActivityMasterRepository;
+import com.alsharif.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
 import com.alsharif.operations.portcallreport.dto.PortActivityResponseDto;
 import com.alsharif.operations.portcallreport.dto.PortCallReportDetailDto;
 import com.alsharif.operations.portcallreport.dto.PortCallReportDetailResponseDto;
@@ -54,16 +54,16 @@ public class PortCallReportServiceImpl implements PortCallReportService {
     @Override
     public Page<PortCallReportResponseDto> getReportList(String search, Pageable pageable) {
         log.info("Fetching port call report list with search: {}", search);
-        
+
         Page<PortCallReportHdr> hdrPage = hdrRepository.findAllNonDeletedWithSearch(search, pageable);
-        
+
         LovResponse vesselTypeLov = lovService.getLovList("VESSEL_TYPE_MASTER", null, null);
         Map<String, LovItem> vesselTypeMap = new HashMap<>();
         if (vesselTypeLov != null && vesselTypeLov.getItems() != null) {
             vesselTypeMap = vesselTypeLov.getItems().stream()
                     .collect(Collectors.toMap(LovItem::getCode, item -> item));
         }
-        
+
         Map<String, LovItem> finalVesselTypeMap = vesselTypeMap;
         List<PortCallReportResponseDto> reports = hdrPage.getContent().stream()
                 .map(hdr -> {
@@ -85,10 +85,10 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                             .build();
                 })
                 .collect(Collectors.toList());
-        
+
         return new PageImpl<>(reports, pageable, hdrPage.getTotalElements());
     }
-    
+
     private String generateReportId() {
         Long maxId = jdbcTemplate.queryForObject(
                 "SELECT NVL(MAX(TO_NUMBER(REGEXP_SUBSTR(PORT_CALL_REPORT_ID, '[0-9]+'))), 0) FROM OPS_PORT_CALL_REPORT_HDR",
@@ -99,12 +99,12 @@ public class PortCallReportServiceImpl implements PortCallReportService {
     @Override
     public PortCallReportResponseDto getReportById(Long id) {
         log.info("Fetching port call report by id: {}", id);
-        
+
         PortCallReportHdr hdr = hdrRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Port call report not found"));
-        
+
         List<PortCallReportDtl> details = dtlRepository.findByPortCallReportPoid(id);
-        
+
         String vesselTypes = hdr.getPortCallApplVesselType();
         List<LovItem> vesselTypeLovItems = null;
         if (vesselTypes != null) {
@@ -116,14 +116,14 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                         .collect(Collectors.toList());
             }
         }
-        
+
         LovResponse portActivityLov = lovService.getLovList("PORT_ACTIVITY", null, null);
         Map<Long, LovItem> portActivityMap = new HashMap<>();
         if (portActivityLov != null && portActivityLov.getItems() != null) {
             portActivityMap = portActivityLov.getItems().stream()
                     .collect(Collectors.toMap(LovItem::getPoid, item -> item));
         }
-        
+
         Map<Long, LovItem> finalPortActivityMap = portActivityMap;
         List<PortCallReportDetailResponseDto> detailDtos = details.stream()
                 .map(dtl -> PortCallReportDetailResponseDto.builder()
@@ -135,7 +135,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                         .portActivityDet(finalPortActivityMap.get(dtl.getPortActivityTypePoid()))
                         .build())
                 .collect(Collectors.toList());
-        
+
         return PortCallReportResponseDto.builder()
                 .portCallReportPoid(hdr.getPortCallReportPoid())
                 .portCallReportId(hdr.getPortCallReportId())
@@ -152,15 +152,15 @@ public class PortCallReportServiceImpl implements PortCallReportService {
     @Transactional
     public PortCallReportResponseDto createReport(PortCallReportDto dto, Long userPoid, Long groupPoid) {
         log.info("Creating port call report: {}", dto.getPortCallReportName());
-        
+
         if (groupPoid == null) {
             throw new RuntimeException("Group POID is required");
         }
-        
+
         if (hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(dto.getPortCallReportName(), null)) {
             throw new RuntimeException("Port call report name already exists");
         }
-        
+
         if (dto.getPortCallApplVesselType() != null && !dto.getPortCallApplVesselType().isEmpty()) {
             List<String> validVesselTypes = vesselTypeRepository.findAllActive().stream()
                     .map(VesselType::getVesselTypeCode)
@@ -171,7 +171,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 }
             }
         }
-        
+
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             for (PortCallReportDetailDto detail : dto.getDetails()) {
                 if (detail.getPortActivityTypePoid() == null) {
@@ -182,12 +182,12 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 }
             }
         }
-        
+
         String reportId = generateReportId();
-        
+
         User user = userRepository.findByUserPoid(userPoid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         PortCallReportHdr hdr = PortCallReportHdr.builder()
                 .portCallReportId(reportId)
                 .groupPoid(groupPoid)
@@ -198,9 +198,9 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 .remarks(dto.getRemarks())
                 .createdBy(user.getUserId())
                 .build();
-        
+
         hdr = hdrRepository.save(hdr);
-        
+
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             Long reportPoid = hdr.getPortCallReportPoid();
             List<PortCallReportDtl> details = dto.getDetails().stream()
@@ -214,7 +214,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                     .collect(Collectors.toList());
             dtlRepository.saveAll(details);
         }
-        
+
         return getReportById(hdr.getPortCallReportPoid());
     }
 
@@ -222,15 +222,15 @@ public class PortCallReportServiceImpl implements PortCallReportService {
     @Transactional
     public PortCallReportResponseDto updateReport(Long id, PortCallReportDto dto, Long userPoid, Long groupPoid) {
         log.info("Updating port call report id: {}", id);
-        
+
         if (groupPoid == null) {
             throw new RuntimeException("Group POID is required");
         }
-        
+
         if (hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(dto.getPortCallReportName(), id)) {
             throw new RuntimeException("Port call report name already exists");
         }
-        
+
         if (dto.getPortCallApplVesselType() != null && !dto.getPortCallApplVesselType().isEmpty()) {
             List<String> validVesselTypes = vesselTypeRepository.findAllActive().stream()
                     .map(VesselType::getVesselTypeCode)
@@ -241,7 +241,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 }
             }
         }
-        
+
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             for (PortCallReportDetailDto detail : dto.getDetails()) {
                 if (detail.getPortActivityTypePoid() == null) {
@@ -252,13 +252,13 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 }
             }
         }
-        
+
         User user = userRepository.findByUserPoid(userPoid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         PortCallReportHdr hdr = hdrRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Port call report not found"));
-        
+
         hdr.setGroupPoid(groupPoid);
         hdr.setPortCallReportName(dto.getPortCallReportName());
         hdr.setPortCallApplVesselType(dto.getPortCallApplVesselType() != null ? String.join(",", dto.getPortCallApplVesselType()) : null);
@@ -266,13 +266,13 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         hdr.setSeqno(dto.getSeqno());
         hdr.setRemarks(dto.getRemarks());
         hdr.setLastModifiedBy(user.getUserId());
-        
+
         hdrRepository.save(hdr);
-        
+
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             for (PortCallReportDetailDto detailDto : dto.getDetails()) {
                 ActionType action = detailDto.getActionType();
-                
+
                 if (action == ActionType.isCreated) {
                     PortCallReportDtl newDetail = PortCallReportDtl.builder()
                             .portCallReportPoid(id)
@@ -295,7 +295,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 }
             }
         }
-        
+
         return getReportById(id);
     }
 
@@ -303,10 +303,10 @@ public class PortCallReportServiceImpl implements PortCallReportService {
     @Transactional
     public void deleteReport(Long id) {
         log.info("Deleting port call report id: {}", id);
-        
+
         PortCallReportHdr hdr = hdrRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Port call report not found"));
-        
+
         hdr.setActive("N");
         hdr.setDeleted("Y");
         hdrRepository.save(hdr);
@@ -315,15 +315,15 @@ public class PortCallReportServiceImpl implements PortCallReportService {
     @Override
     public List<PortActivityResponseDto> getPortActivities(Long userPoid) {
         log.info("Fetching port activities");
-        
+
         String sql = "{call PROC_PORT_ACTIVITIES_GET_LIST(?, ?)}";
-        
+
         List<PortActivityResponseDto> activities = jdbcTemplate.execute((Connection conn) -> {
             try (CallableStatement cs = conn.prepareCall(sql)) {
                 cs.setLong(1, userPoid);
                 cs.registerOutParameter(2, Types.REF_CURSOR);
                 cs.execute();
-                
+
                 List<PortActivityResponseDto> result = new ArrayList<>();
                 try (ResultSet rs = (ResultSet) cs.getObject(2)) {
                     while (rs.next()) {
@@ -338,23 +338,23 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 return result;
             }
         });
-        
+
         LovResponse portActivityLov = lovService.getLovList("PORT_ACTIVITY", null, null);
         if (portActivityLov != null && portActivityLov.getItems() != null) {
             Map<Long, LovItem> lovMap = portActivityLov.getItems().stream()
                     .collect(Collectors.toMap(LovItem::getPoid, item -> item));
             activities.forEach(activity -> activity.setPortActivityDet(lovMap.get(activity.getPortActivityTypePoid())));
         }
-        
+
         return activities;
     }
 
     @Override
     public List<Map<String, Object>> getVesselTypes() {
         log.info("Fetching vessel types");
-        
+
         List<VesselType> vesselTypes = vesselTypeRepository.findAllActive();
-        
+
         return vesselTypes.stream()
                 .map(vt -> {
                     Map<String, Object> map = new HashMap<>();

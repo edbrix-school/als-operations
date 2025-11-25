@@ -1,7 +1,8 @@
 package com.alsharif.operations.portcallreport.service;
 
 import com.alsharif.operations.commonlov.service.LovService;
-import com.alsharif.operations.portactivity.repository.PortActivityMasterRepository;
+//import com.alsharif.operations.portactivity.repository.PortActivityMasterRepository;
+import com.alsharif.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
 import com.alsharif.operations.portcallreport.dto.PortCallReportDetailDto;
 import com.alsharif.operations.portcallreport.dto.PortCallReportDto;
 import com.alsharif.operations.portcallreport.dto.PortCallReportResponseDto;
