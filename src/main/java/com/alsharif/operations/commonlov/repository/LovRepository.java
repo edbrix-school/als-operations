@@ -47,7 +47,14 @@ public class LovRepository {
                                 Long poid = rs.getLong("POID");
                                 String code = rs.getString("CODE");
                                 String description = rs.getString("DESCRIPTION");
-                                items.add(new LovItem(poid, code, description));
+                                Integer seqNo;
+
+                                try {
+                                    seqNo = rs.getInt("SEQNO");
+                                } catch (SQLException ignored) {
+                                   seqNo = 0;
+                                }
+                                items.add(new LovItem(poid, code, description, description, poid, seqNo));
                             }
                         }
                     }
