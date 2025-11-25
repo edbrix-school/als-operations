@@ -1,6 +1,7 @@
 package com.alsharif.operations.crew.util;
 
 
+import com.alsharif.operations.commonlov.service.LovService;
 import com.alsharif.operations.crew.dto.ContractCrewDtlRequest;
 import com.alsharif.operations.crew.dto.ContractCrewDtlResponse;
 import com.alsharif.operations.crew.dto.ContractCrewRequest;
@@ -8,6 +9,7 @@ import com.alsharif.operations.crew.dto.ContractCrewResponse;
 import com.alsharif.operations.crew.entity.ContractCrew;
 import com.alsharif.operations.crew.entity.ContractCrewDtl;
 import com.alsharif.operations.crew.entity.ContractCrewDtlId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -19,6 +21,13 @@ import java.util.stream.Collectors;
  */
 @Component
 public class EntityMapper {
+
+    private final LovService lovService;
+
+    @Autowired
+    public EntityMapper(LovService lovService) {
+        this.lovService = lovService;
+    }
 
 
     /**
@@ -48,6 +57,8 @@ public class EntityMapper {
         response.setCreatedDate(entity.getCreatedDate());
         response.setLastModifiedBy(entity.getLastModifiedBy());
         response.setLastModifiedDate(entity.getLastModifiedDate());
+        response.setCompanyPoid(entity.getCompanyPoid());
+        response.setCompanyDet(lovService.getLovItem(entity.getCompanyPoid(), "COMPANY"));
 
 
         return response;
