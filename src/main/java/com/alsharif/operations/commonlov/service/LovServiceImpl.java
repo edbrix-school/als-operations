@@ -39,35 +39,11 @@ public class LovServiceImpl implements LovService {
 
             if (lovGetListDtos != null) {
 
-                //   dto = lovGetListDtos.stream().filter(x -> x.getPoid().equals(poid)).findAny().orElseThrow(()-> new ResourceNotFoundException("Master Data", "POID", poid));
-
                 dto = lovGetListDtos.stream().filter(x -> x.getPoid().equals(poid)).findAny().orElse(new LovItem(poid, null, null));
 
             }
         }
         return dto;
     }
-    
 
-    public LovItem getDetailsByCodeAndLovName(String code, String lovName) {
-        log.info("code : {}, lovName : {}", code, lovName);
-
-        LovItem dto = new LovItem();
-        LovResponse listValue = this.getLovList(lovName, null, "");
-
-        if (listValue != null) {
-
-            List<LovItem> lovGetListDtos = listValue.getItems();
-
-            if (lovGetListDtos != null) {
-
-                dto = lovGetListDtos.stream()
-                        .filter(x -> x.getCode().equalsIgnoreCase(code))
-                        .findAny()
-                        .orElseThrow(() -> new ResourceNotFoundException("Master Data", "CODE", code));
-
-            }
-        }
-        return dto;
-    }
 }
