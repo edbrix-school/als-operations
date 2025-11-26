@@ -247,12 +247,13 @@ public class ContractCrewController {
     @PutMapping("/{crewPoid}")
     public ResponseEntity<?> updateCrew(
             @RequestHeader("companyPoid") Long companyPoid,
+            @RequestHeader("userId") String userPoid,
             @Parameter(description = "Primary key of the crew master to update", required = true)
             @PathVariable Long crewPoid,
             @Parameter(description = "Crew master request object with updated fields", required = true)
             @Valid @RequestBody ContractCrewRequest request
     ) {
-        ContractCrewResponse response = crewService.updateCrew(companyPoid,crewPoid, request);
+        ContractCrewResponse response = crewService.updateCrew(companyPoid,userPoid,crewPoid, request);
         return ApiResponse.success("Crew updated successfully", response);
     }
 
@@ -307,51 +308,54 @@ public class ContractCrewController {
         return ApiResponse.success("Crew master deleted successfully");
     }
 
-    /**
-     * GET /api/v1/contract-crew-masters/{crewPoid}/details
-     * Get crew details list
-     */
-    @Operation(
-            summary = "Get crew details (visa details)",
-            description = "Retrieves all visa/document details for a specific crew master. " +
-                    "Details are returned ordered by detRowId. " +
-                    "Each detail record includes document type code and name from the CREW_VISA_TYPE master. " +
-                    "Returns 404 if crew master is not found.",
-            responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "200",
-                            description = "Successfully retrieved crew details",
-                            content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = CrewDetailsResponse.class)
-                            )
-                    ),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "404",
-                            description = "Crew master not found",
-                            content = @Content(mediaType = "application/json")
-                    ),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "401",
-                            description = "Unauthorized - Authentication required",
-                            content = @Content(mediaType = "application/json")
-                    )
-            },
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @GetMapping("/{crewPoid}/details")
-    public ResponseEntity<?> getCrewDetails(
-            @RequestHeader("companyPoid") Long companyPoid,
-            @Parameter(description = "Primary key of the crew master", required = true)
-            @PathVariable Long crewPoid) {
-        CrewDetailsResponse response = crewService.getCrewDetails(companyPoid,crewPoid);
-        return ApiResponse.success("Crew details retrieved successfully", response);
-    }
+//    /**
+//     * GET /api/v1/contract-crew-masters/{crewPoid}/details
+//     * Get crew details list
+//     * @deprecated This endpoint is deprecated. Use GET /api/v1/contract-crew-masters/{crewPoid} instead.
+//     * The main GET API now includes child details in the response.
+//     */
+//    @Deprecated
+//    @Operation(
+//            summary = "Get crew details (visa details) - DEPRECATED",
+//            description = "⚠ DEPRECATED: Use GET /api/v1/contract-crew-masters/{crewPoid} instead. " +
+//                    "The main GET API now includes child details in the response. " +
+//                    "This endpoint is kept for backward compatibility only.",
+//            responses = {
+//                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+//                            responseCode = "200",
+//                            description = "Successfully retrieved crew details",
+//                            content = @Content(
+//                                    mediaType = "application/json",
+//                                    schema = @Schema(implementation = CrewDetailsResponse.class)
+//                            )
+//                    ),
+//                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+//                            responseCode = "404",
+//                            description = "Crew master not found",
+//                            content = @Content(mediaType = "application/json")
+//                    ),
+//                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+//                            responseCode = "401",
+//                            description = "Unauthorized - Authentication required",
+//                            content = @Content(mediaType = "application/json")
+//                    )
+//            },
+//            security = @SecurityRequirement(name = "bearerAuth")
+//    )
+//    @GetMapping("/{crewPoid}/details")
+//    public ResponseEntity<?> getCrewDetails(
+//            @RequestHeader("companyPoid") Long companyPoid,
+//            @Parameter(description = "Primary key of the crew master", required = true)
+//            @PathVariable Long crewPoid) {
+//        CrewDetailsResponse response = crewService.getCrewDetails(companyPoid,crewPoid);
+//        return ApiResponse.success("Crew details retrieved successfully", response);
+//    }
 
-    /**
+/*
+    *//**
      * POST /api/v1/contract-crew-masters/{crewPoid}/details
      * Bulk save crew details
-     */
+     *//*
     @Operation(
             summary = "Bulk save crew details",
             description = "Saves all crew detail (visa) records in a single transaction. Supports insert, update, and delete operations. " +
@@ -406,7 +410,7 @@ public class ContractCrewController {
         return ApiResponse.success("Crew details saved successfully", response);
     }
 
-    /**
+  */  /**
      * DELETE /api/v1/contract-crew-masters/{crewPoid}/details/{detRowId}
      * Delete single crew detail record
      */

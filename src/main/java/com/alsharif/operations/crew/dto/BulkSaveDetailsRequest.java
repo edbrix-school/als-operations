@@ -15,8 +15,5 @@ public class BulkSaveDetailsRequest {
     @Valid
     @NotEmpty(message = "Details list cannot be empty")
     private List<ContractCrewDtlRequest> details;
-
-    private List<Long> deletedRowIds;
-
 }
 
