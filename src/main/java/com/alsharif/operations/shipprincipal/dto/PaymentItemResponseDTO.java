@@ -1,8 +1,7 @@
 package com.alsharif.operations.shipprincipal.dto;
 
-import com.alsharif.operations.portcallreport.enums.ActionType;
+import com.alsharif.operations.commonlov.dto.LovItem;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,8 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "Payment item information")
-public class PaymentItemDTO {
+@Schema(description = "Payment item response information")
+public class PaymentItemResponseDTO {
 
     @Schema(description = "Principal Poid", example = "1")
     private Long principalPoid;
@@ -21,8 +20,8 @@ public class PaymentItemDTO {
     @Schema(description = "Detail row ID", example = "1")
     private Long detRowId;
     
-    @Schema(description = "Payment type", example = "BANK_TRANSFER")
-    private String type;
+    @Schema(description = "Payment type")
+    private LovItem type;
     
     @Schema(description = "Beneficiary name", example = "ABC Company")
     private String beneficiaryName;
@@ -67,7 +66,6 @@ public class PaymentItemDTO {
     private String defaults;
     
     @Schema(description = "Remarks")
-    @Size(max = 200, message = "Remarks cannot exceed 200 characters")
     private String remarks;
     
     @Schema(description = "Beneficiary ID")
@@ -78,6 +76,4 @@ public class PaymentItemDTO {
     
     @Schema(description = "Special instructions")
     private String specialInstruction;
-
-    private ActionType actionType;
 }

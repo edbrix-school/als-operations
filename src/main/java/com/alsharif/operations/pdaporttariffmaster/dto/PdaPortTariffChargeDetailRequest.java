@@ -1,6 +1,7 @@
 package com.alsharif.operations.pdaporttariffmaster.dto;
 
 import com.alsharif.operations.pdaporttariffmaster.annotation.TariffSlabValidation;
+import com.alsharif.operations.portcallreport.enums.ActionType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Pattern;
@@ -50,4 +51,6 @@ public class PdaPortTariffChargeDetailRequest {
 
     @Valid
     private List<PdaPortTariffSlabDetailRequest> slabDetails;
+
+    private ActionType actionType;
 }

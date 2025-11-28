@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,8 +43,11 @@ public class PrincipalCreateDTO {
     private BigDecimal currencyRate;
     private BigDecimal buyingRate;
     private BigDecimal sellingRate;
+    @Size(max = 200, message = "Remarks cannot exceed 200 characters")
     private String remarks;
     private Integer seqNo;
+
+    @Pattern(regexp = "Y|N", message = "Active must be 'Y' or 'N'")
     private String active;
     private String principalCodeOld;
     private Long countryPoid;
@@ -57,4 +62,7 @@ public class PrincipalCreateDTO {
     
     @Schema(description = "List of payment details")
     private List<PaymentItemDTO> payments;
+    
+    @Schema(description = "List of port activity report details")
+    private List<ShipPrincipalPaRptDetailDto> portActivityReportDetails;
 }

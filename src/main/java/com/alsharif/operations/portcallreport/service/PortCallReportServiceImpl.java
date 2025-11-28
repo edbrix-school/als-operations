@@ -64,14 +64,21 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                     .collect(Collectors.toMap(LovItem::getCode, item -> item));
         }
 
-        Map<String, LovItem> finalVesselTypeMap = vesselTypeMap;
+        Map<Long, LovItem> vesselTypeByPoidMap = new HashMap<>();
+        if (vesselTypeLov != null && vesselTypeLov.getItems() != null) {
+            vesselTypeByPoidMap = vesselTypeLov.getItems().stream()
+                    .collect(Collectors.toMap(LovItem::getPoid, item -> item));
+        }
+
+        Map<Long, LovItem> finalVesselTypeByPoidMap = vesselTypeByPoidMap;
         List<PortCallReportResponseDto> reports = hdrPage.getContent().stream()
                 .map(hdr -> {
                     String vesselTypes = hdr.getPortCallApplVesselType();
                     List<LovItem> vesselTypeLovItems = null;
                     if (vesselTypes != null) {
                         vesselTypeLovItems = List.of(vesselTypes.split(",")).stream()
-                                .map(finalVesselTypeMap::get)
+                                .map(Long::parseLong)
+                                .map(finalVesselTypeByPoidMap::get)
                                 .filter(item -> item != null)
                                 .collect(Collectors.toList());
                     }
@@ -110,9 +117,12 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (vesselTypes != null) {
             LovResponse lovResponse = lovService.getLovList("VESSEL_TYPE_MASTER", null, null);
             if (lovResponse != null && lovResponse.getItems() != null) {
-                List<String> selectedCodes = List.of(vesselTypes.split(","));
-                vesselTypeLovItems = lovResponse.getItems().stream()
-                        .filter(item -> selectedCodes.contains(item.getCode()))
+                Map<Long, LovItem> vesselTypeByPoidMap = lovResponse.getItems().stream()
+                        .collect(Collectors.toMap(LovItem::getPoid, item -> item));
+                vesselTypeLovItems = List.of(vesselTypes.split(",")).stream()
+                        .map(Long::parseLong)
+                        .map(vesselTypeByPoidMap::get)
+                        .filter(item -> item != null)
                         .collect(Collectors.toList());
             }
         }
@@ -162,12 +172,12 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         }
 
         if (dto.getPortCallApplVesselType() != null && !dto.getPortCallApplVesselType().isEmpty()) {
-            List<String> validVesselTypes = vesselTypeRepository.findAllActive().stream()
-                    .map(VesselType::getVesselTypeCode)
+            List<Long> validVesselTypePoids = vesselTypeRepository.findAllActive().stream()
+                    .map(VesselType::getVesselTypePoid)
                     .toList();
-            for (String vesselType : dto.getPortCallApplVesselType()) {
-                if (!validVesselTypes.contains(vesselType)) {
-                    throw new RuntimeException("Invalid vessel type: " + vesselType);
+            for (String vesselTypePoid : dto.getPortCallApplVesselType()) {
+                if (!validVesselTypePoids.contains(Long.parseLong(vesselTypePoid))) {
+                    throw new RuntimeException("Invalid vessel type POID: " + vesselTypePoid);
                 }
             }
         }
@@ -203,15 +213,17 @@ public class PortCallReportServiceImpl implements PortCallReportService {
 
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             Long reportPoid = hdr.getPortCallReportPoid();
-            List<PortCallReportDtl> details = dto.getDetails().stream()
-                    .map(detailDto -> PortCallReportDtl.builder()
-                            .portCallReportPoid(reportPoid)
-                            .detRowId(detailDto.getDetRowId())
-                            .portActivityTypePoid(detailDto.getPortActivityTypePoid())
-                            .activityMandatory(detailDto.getActivityMandatory())
-                            .createdBy(user.getUserId())
-                            .build())
-                    .collect(Collectors.toList());
+            Long nextDetRowId = dtlRepository.findMaxDetRowIdByPortCallReportPoid(reportPoid) + 1;
+            List<PortCallReportDtl> details = new ArrayList<>();
+            for (PortCallReportDetailDto detailDto : dto.getDetails()) {
+                details.add(PortCallReportDtl.builder()
+                        .portCallReportPoid(reportPoid)
+                        .detRowId(nextDetRowId++)
+                        .portActivityTypePoid(detailDto.getPortActivityTypePoid())
+                        .activityMandatory(detailDto.getActivityMandatory())
+                        .createdBy(user.getUserId())
+                        .build());
+            }
             dtlRepository.saveAll(details);
         }
 
@@ -232,12 +244,12 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         }
 
         if (dto.getPortCallApplVesselType() != null && !dto.getPortCallApplVesselType().isEmpty()) {
-            List<String> validVesselTypes = vesselTypeRepository.findAllActive().stream()
-                    .map(VesselType::getVesselTypeCode)
+            List<Long> validVesselTypePoids = vesselTypeRepository.findAllActive().stream()
+                    .map(VesselType::getVesselTypePoid)
                     .toList();
-            for (String vesselType : dto.getPortCallApplVesselType()) {
-                if (!validVesselTypes.contains(vesselType)) {
-                    throw new RuntimeException("Invalid vessel type: " + vesselType);
+            for (String vesselTypePoid : dto.getPortCallApplVesselType()) {
+                if (!validVesselTypePoids.contains(Long.parseLong(vesselTypePoid))) {
+                    throw new RuntimeException("Invalid vessel type POID: " + vesselTypePoid);
                 }
             }
         }
@@ -274,9 +286,10 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 ActionType action = detailDto.getActionType();
 
                 if (action == ActionType.isCreated) {
+                    Long nextDetRowId = dtlRepository.findMaxDetRowIdByPortCallReportPoid(id) + 1;
                     PortCallReportDtl newDetail = PortCallReportDtl.builder()
                             .portCallReportPoid(id)
-                            .detRowId(detailDto.getDetRowId())
+                            .detRowId(nextDetRowId)
                             .portActivityTypePoid(detailDto.getPortActivityTypePoid())
                             .activityMandatory(detailDto.getActivityMandatory())
                             .createdBy(user.getUserId())
