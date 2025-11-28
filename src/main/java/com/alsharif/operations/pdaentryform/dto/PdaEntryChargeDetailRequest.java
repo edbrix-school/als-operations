@@ -54,7 +54,7 @@ public class PdaEntryChargeDetailRequest {
     private String dataSource;
 
     @Size(max = 100)
-    private String detailsFrom;
+    private String detailFrom;
 
     @Size(max = 1)
     private String manual;
@@ -210,12 +210,12 @@ public class PdaEntryChargeDetailRequest {
         this.dataSource = dataSource;
     }
 
-    public String getDetailsFrom() {
-        return detailsFrom;
+    public String getDetailFrom() {
+        return detailFrom;
     }
 
-    public void setDetailsFrom(String detailsFrom) {
-        this.detailsFrom = detailsFrom;
+    public void setDetailFrom(String detailFrom) {
+        this.detailFrom = detailFrom;
     }
 
     public String getManual() {

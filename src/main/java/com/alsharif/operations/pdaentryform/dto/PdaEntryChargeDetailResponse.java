@@ -28,7 +28,7 @@ public class PdaEntryChargeDetailResponse {
     private BigDecimal fdaPoid;
     private String fdaCreationType;
     private String dataSource;
-    private String detailsFrom;
+    private String detailFrom;
     private String manual;
     private Integer seqno;
     private String remarks;
@@ -197,12 +197,12 @@ public class PdaEntryChargeDetailResponse {
         this.dataSource = dataSource;
     }
 
-    public String getDetailsFrom() {
-        return detailsFrom;
+    public String getDetailFrom() {
+        return detailFrom;
     }
 
-    public void setDetailsFrom(String detailsFrom) {
-        this.detailsFrom = detailsFrom;
+    public void setDetailFrom(String detailFrom) {
+        this.detailFrom = detailFrom;
     }
 
     public String getManual() {

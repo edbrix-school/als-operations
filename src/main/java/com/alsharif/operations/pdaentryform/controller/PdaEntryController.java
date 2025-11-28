@@ -943,6 +943,33 @@ public class PdaEntryController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{transactionPoid}/acknow/upload-details")
+    public ResponseEntity<Map<String, String>> uploadAcknowledgmentDetails(
+            @PathVariable Long transactionPoid,
+            @RequestHeader("X-Group-Poid") BigDecimal groupPoid,
+            @RequestHeader("X-Company-Poid") BigDecimal companyPoid,
+            @RequestHeader("X-User-Id") String userId
+    ) {
+        pdaEntryService.uploadAcknowledgmentDetails(transactionPoid, groupPoid, companyPoid, userId);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Acknowledgment details uploaded successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{transactionPoid}/acknow/clear-details")
+    public ResponseEntity<Map<String, String>> clearAcknowledgmentDetails(
+            @PathVariable Long transactionPoid,
+            @RequestHeader("X-Group-Poid") BigDecimal groupPoid,
+            @RequestHeader("X-Company-Poid") BigDecimal companyPoid,
+            @RequestHeader("X-User-Id") String userId
+    ) {
+        pdaEntryService.clearAcknowledgmentDetails(transactionPoid, groupPoid, companyPoid, userId);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Acknowledgment details cleared successfully");
+        return ResponseEntity.ok(response);
+    }
+
+
     // ==================== Special Operations ====================
 
     @Operation(

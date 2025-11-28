@@ -85,9 +85,9 @@ public class PdaEntryDtl {
     @Size(max = 20)
     private String dataSource;
 
-    @Column(name = "DETAILS_FROM", length = 100)
+    @Column(name = "DETAIL_FROM", length = 100)
     @Size(max = 100)
-    private String detailsFrom;
+    private String detailFrom;
 
     @Column(name = "MANUAL", length = 1)
     @Size(max = 1)

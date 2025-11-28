@@ -3,6 +3,7 @@ package com.alsharif.operations.pdaentryform.service.impl;
 import com.alsharif.operations.crew.dto.ValidationError;
 import com.alsharif.operations.exceptions.ResourceNotFoundException;
 import com.alsharif.operations.exceptions.ValidationException;
+import jakarta.persistence.EntityManager;
 import com.alsharif.operations.pdaentryform.dto.*;
 import com.alsharif.operations.pdaentryform.entity.*;
 import com.alsharif.operations.pdaentryform.repository.*;
@@ -46,6 +47,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     //private final SecurityContextUtil securityContextUtil;
     private final PdaEntryDocumentRefGenerator docRefGenerator;
     private final JdbcTemplate jdbcTemplate;
+    private final EntityManager entityManager;
 
     @Autowired
     public PdaEntryServiceImpl(
@@ -56,7 +58,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             PdaEntryAcknowledgmentDtlRepository acknowledgmentDtlRepository,
            // SecurityContextUtil securityContextUtil,
             PdaEntryDocumentRefGenerator docRefGenerator,
-            JdbcTemplate jdbcTemplate
+            JdbcTemplate jdbcTemplate,
+            EntityManager entityManager
     ) {
         this.entryHdrRepository = entryHdrRepository;
         this.entryDtlRepository = entryDtlRepository;
@@ -66,6 +69,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
        // this.securityContextUtil = securityContextUtil;
         this.docRefGenerator = docRefGenerator;
         this.jdbcTemplate = jdbcTemplate;
+        this.entityManager = entityManager;
     }
 
     @Override
@@ -352,7 +356,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     // Charge Details Methods - Batch 5
 
     @Override
-    @Transactional(readOnly = true)
     public List<PdaEntryChargeDetailResponse> getChargeDetails(Long transactionPoid, BigDecimal groupPoid, BigDecimal companyPoid) {
 
         // Validate transaction exists
@@ -361,6 +364,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         ).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
+
+        entityManager.flush();
 
         // Get all charge details
         List<PdaEntryDtl> details = entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid);
@@ -510,7 +515,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         validateRecalculateFields(entry);
 
         // Call stored procedure to recalculate
-        callRecalculateDetails(
+        callReCalculateCharges(
                 groupPoid, userId, companyPoid, transactionPoid,
                 entry.getVesselPoid(), entry.getVesselTypePoid(),
                 entry.getGrt(), entry.getNrt(), entry.getDwt(),
@@ -566,7 +571,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     // Vehicle Details Methods - Batch 6
 
     @Override
-    @Transactional(readOnly = true)
     public List<PdaEntryVehicleDetailResponse> getVehicleDetails(Long transactionPoid, BigDecimal groupPoid, BigDecimal companyPoid) {
 
         // Validate transaction exists
@@ -575,6 +579,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         ).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
+
+        entityManager.flush();
 
         // Get all vehicle details
         List<PdaEntryVehicleDtl> details = vehicleDtlRepository.findByTransactionPoidOrderByDetRowIdAsc(transactionPoid);
@@ -751,7 +757,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     // TDR Details Methods - Batch 6
 
     @Override
-    @Transactional(readOnly = true)
     public List<PdaEntryTdrDetailResponse> getTdrDetails(Long transactionPoid, BigDecimal groupPoid, BigDecimal companyPoid) {
 
         // Validate transaction exists
@@ -760,6 +765,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         ).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
+
+        entityManager.flush();
 
         // Get all TDR details
         List<PdaEntryTdrDetail> details = tdrDetailRepository.findByTransactionPoidOrderByDetRowIdAsc(transactionPoid);
@@ -818,7 +825,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     // Acknowledgment Details Methods - Batch 6
 
     @Override
-    @Transactional(readOnly = true)
     public List<PdaEntryAcknowledgmentDetailResponse> getAcknowledgmentDetails(Long transactionPoid, BigDecimal groupPoid, BigDecimal companyPoid) {
 
         // Validate transaction exists
@@ -827,6 +833,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         ).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
+
+        entityManager.flush();
 
         // Get all acknowledgment details
         List<PdaEntryAcknowledgmentDtl> details = acknowledgmentDtlRepository.findByTransactionPoidOrderByDetRowIdAsc(transactionPoid);
@@ -1259,6 +1267,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setCreatedDate(entity.getCreatedDate());
         response.setLastModifiedBy(entity.getLastModifiedBy());
         response.setLastModifiedDate(entity.getLastModifiedDate());
+        response.setChargeDetails(getChargeDetails(entity.getTransactionPoid(), entity.getGroupPoid(), entity.getCompanyPoid()));
+        response.setVehicleDetails(getVehicleDetails(entity.getTransactionPoid(), entity.getGroupPoid(), entity.getCompanyPoid()));
+        response.setTdrDetails(getTdrDetails(entity.getTransactionPoid(), entity.getGroupPoid(), entity.getCompanyPoid()));
+        response.setAcknowledgmentDetails(getAcknowledgmentDetails(entity.getTransactionPoid(), entity.getGroupPoid(), entity.getCompanyPoid()));
         return response;
     }
 
@@ -1537,7 +1549,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entity.setFdaPoid(request.getFdaPoid());
         entity.setFdaCreationType(request.getFdaCreationType());
         entity.setDataSource(request.getDataSource());
-        entity.setDetailsFrom(request.getDetailsFrom());
+        entity.setDetailFrom(request.getDetailFrom());
         entity.setManual(request.getManual());
         entity.setSeqno(request.getSeqno());
         entity.setRemarks(request.getRemarks());
@@ -1686,7 +1698,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setFdaPoid(entity.getFdaPoid());
         response.setFdaCreationType(entity.getFdaCreationType());
         response.setDataSource(entity.getDataSource());
-        response.setDetailsFrom(entity.getDetailsFrom());
+        response.setDetailFrom(entity.getDetailFrom());
         response.setManual(entity.getManual());
         response.setSeqno(entity.getSeqno());
         response.setRemarks(entity.getRemarks());
@@ -1710,22 +1722,68 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
-    private void callRecalculateDetails(
+    private void callReCalculateCharges(
             BigDecimal groupPoid, String userId, BigDecimal companyPoid, Long transactionPoid,
             BigDecimal vesselPoid, BigDecimal vesselTypePoid, BigDecimal grt, BigDecimal nrt, BigDecimal dwt,
             BigDecimal portPoid, LocalDate arrivalDate, LocalDate sailDate,
             String harbourCallType, BigDecimal totalQuantity, BigDecimal numberOfDays, BigDecimal principalPoid
     ) {
         try {
-            logger.info("[SP-22] PROC_PDA_RE_CALCULATE_DTLS - transactionPoid: {}, vesselPoid: {}", transactionPoid, vesselPoid);
-            String sql = "{ call PROC_PDA_RE_CALCULATE_DTLS(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, userId, companyPoid, transactionPoid, vesselPoid, vesselTypePoid,
-                    grt, nrt, dwt, portPoid, arrivalDate, sailDate, harbourCallType, totalQuantity, numberOfDays, principalPoid);
-            logger.info("[SP-22] PROC_PDA_RE_CALCULATE_DTLS - Completed");
+            logger.info("[SP-3] PROC_PDA_RE_CALCULATE - transactionPoid: {}, vesselPoid: {}",
+                    transactionPoid, vesselPoid);
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_RE_CALCULATE_DTLS")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.NUMERIC),
+                            new SqlParameter("P_VESSEL_POID", Types.NUMERIC),
+                            new SqlParameter("P_VESSEL_TYPE_POID", Types.NUMERIC),
+                            new SqlParameter("P_GRT", Types.NUMERIC),
+                            new SqlParameter("P_NRT", Types.NUMERIC),
+                            new SqlParameter("P_DWT", Types.NUMERIC),
+                            new SqlParameter("P_PORT_POID", Types.NUMERIC),
+                            new SqlParameter("P_ARRIVAL_DATE", Types.DATE),
+                            new SqlParameter("P_SAIL_DATE", Types.DATE),
+                            new SqlParameter("P_HARBOR_CALL_TYPE", Types.VARCHAR),
+                            new SqlParameter("P_TOTAL_QTY", Types.NUMERIC),
+                            new SqlParameter("P_DAYS", Types.NUMERIC),
+                            new SqlParameter("P_PRINCIPAL_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userId.trim()));
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
+            inputMap.put("P_VESSEL_POID", vesselPoid);
+            inputMap.put("P_VESSEL_TYPE_POID", vesselTypePoid);
+            inputMap.put("P_GRT", grt);
+            inputMap.put("P_NRT", nrt);
+            inputMap.put("P_DWT", dwt);
+            inputMap.put("P_PORT_POID", portPoid);
+            inputMap.put("P_ARRIVAL_DATE", java.sql.Date.valueOf(arrivalDate));
+            inputMap.put("P_SAIL_DATE", java.sql.Date.valueOf(sailDate));
+            inputMap.put("P_HARBOR_CALL_TYPE", harbourCallType);
+            inputMap.put("P_TOTAL_QTY", totalQuantity);
+            inputMap.put("P_DAYS", numberOfDays);
+            inputMap.put("P_PRINCIPAL_POID", principalPoid);
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+
+            String status = (String) result.get("P_STATUS");
+
+            logger.info("[SP-3] PROC_PDA_RE_CALCULATE - Completed. Status: {}", status);
+
         } catch (Exception e) {
-            logger.error("[SP-22] PROC_PDA_RE_CALCULATE_DTLS - Error: {}", e.getMessage());
+            logger.error("[SP-3] PROC_PDA_RE_CALCULATE - Error: {}", e.getMessage(), e);
         }
     }
+
 
     private void callLoadDefaultCharges(
             BigDecimal groupPoid, String userId, BigDecimal companyPoid, Long transactionPoid,
@@ -1735,12 +1793,56 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     ) {
         try {
             logger.info("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - transactionPoid: {}, vesselPoid: {}", transactionPoid, vesselPoid);
-            String sql = "{ call PROC_PDA_LOAD_DEF_CHARGE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, userId, companyPoid, transactionPoid, vesselPoid, vesselTypePoid,
-                    grt, nrt, dwt, portPoid, arrivalDate, sailDate, harbourCallType, totalQuantity, numberOfDays, principalPoid);
-            logger.info("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - Completed");
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_LOAD_DEF_CHARGE")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.NUMERIC),
+                            new SqlParameter("P_VESSEL_POID", Types.NUMERIC),
+                            new SqlParameter("P_VESSEL_TYPE_POID", Types.NUMERIC),
+                            new SqlParameter("P_GRT", Types.NUMERIC),
+                            new SqlParameter("P_NRT", Types.NUMERIC),
+                            new SqlParameter("P_DWT", Types.NUMERIC),
+                            new SqlParameter("P_PORT_POID", Types.NUMERIC),
+                            new SqlParameter("P_ARRIVAL_DATE", Types.DATE),
+                            new SqlParameter("P_SAIL_DATE", Types.DATE),
+                            new SqlParameter("P_HARBOR_CALL_TYPE", Types.VARCHAR),
+                            new SqlParameter("P_TOTAL_QTY", Types.NUMERIC),
+                            new SqlParameter("P_DAYS", Types.NUMERIC),
+                            new SqlParameter("P_PRINCIPAL_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userId.trim()));
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
+            inputMap.put("P_VESSEL_POID", vesselPoid);
+            inputMap.put("P_VESSEL_TYPE_POID", vesselTypePoid);
+            inputMap.put("P_GRT", grt);
+            inputMap.put("P_NRT", nrt);
+            inputMap.put("P_DWT", dwt);
+            inputMap.put("P_PORT_POID", portPoid);
+            inputMap.put("P_ARRIVAL_DATE", java.sql.Date.valueOf(arrivalDate));
+            inputMap.put("P_SAIL_DATE", java.sql.Date.valueOf(sailDate));
+            inputMap.put("P_HARBOR_CALL_TYPE", harbourCallType);
+            inputMap.put("P_TOTAL_QTY", totalQuantity);
+            inputMap.put("P_DAYS", numberOfDays);
+            inputMap.put("P_PRINCIPAL_POID", principalPoid);
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+
+            String status = (String) result.get("P_STATUS");
+
+            logger.info("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - Completed. Status: {}", status);
+
         } catch (Exception e) {
-            logger.error("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - Error: {}", e.getMessage());
+            logger.error("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - Error: {}", e.getMessage(), e);
         }
     }
 
@@ -1836,6 +1938,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_IMPORT_VEHICLE_DTL")
+                    .withoutProcedureColumnMetaDataAccess()
                     .declareParameters(
                             new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
                             new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
@@ -1865,6 +1968,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_VEHICLE_DTL_CLEAR")
+                    .withoutProcedureColumnMetaDataAccess()
                     .declareParameters(
                             new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
                             new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
@@ -1875,7 +1979,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> inParams = new HashMap<>();
             inParams.put("P_LOGIN_GROUP_POID", groupPoid);
-            inParams.put("P_LOGIN_USER_POID", userPoid);
+            inParams.put("P_LOGIN_USER_POID", new BigDecimal(userPoid.trim()));
             inParams.put("P_LOGIN_COMPANY_POID", companyPoid);
             inParams.put("P_PDA_POID", transactionPoid);
 
@@ -1897,9 +2001,16 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     private void callPublishForImport(BigDecimal groupPoid, String userId, BigDecimal companyPoid, Long transactionPoid) {
         try {
             logger.info("[SP-16] PROC_PDA_PUBLISH_FOR_IMPORT - START - transactionPoid: {}", transactionPoid);
+            logger.debug("[SP-16] Input params - groupPoid: {}, userId: {}, companyPoid: {}, transactionPoid: {}", groupPoid, userId, companyPoid, transactionPoid);
+
+            if (groupPoid == null || userId == null || companyPoid == null || transactionPoid == null) {
+                logger.error("[SP-16] NULL parameter detected - groupPoid: {}, userId: {}, companyPoid: {}, transactionPoid: {}", groupPoid, userId, companyPoid, transactionPoid);
+                return;
+            }
 
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_PUBLISH_FOR_IMPORT")
+                    .withoutProcedureColumnMetaDataAccess()
                     .declareParameters(
                             new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
                             new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
@@ -1910,9 +2021,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> inParams = new HashMap<>();
             inParams.put("P_LOGIN_GROUP_POID", groupPoid);
-            inParams.put("P_LOGIN_USER_POID", new BigDecimal(userId));
+            inParams.put("P_LOGIN_USER_POID", new BigDecimal(userId.trim()));
             inParams.put("P_LOGIN_COMPANY_POID", companyPoid);
             inParams.put("P_PDA_POID", transactionPoid);
+
+            logger.debug("[SP-16] Executing with params: {}", inParams);
 
             Map<String, Object> result = jdbcCall.execute(inParams);
             String spStatus = (String) result.get("P_STATUS");
@@ -2336,25 +2449,76 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
-    public void callUploadAcknowledgmentDetails(BigDecimal groupPoid, String userId, BigDecimal companyPoid, Long transactionPoid) {
+    public void callUploadAcknowledgmentDetails(
+            BigDecimal groupPoid,
+            String userId,
+            BigDecimal companyPoid,
+            Long transactionPoid
+    ) {
         try {
             logger.info("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - transactionPoid: {}", transactionPoid);
-            String sql = "{ call PROC_PDA_ACKNOW_DTLS_UPLOAD(?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, userId, companyPoid, transactionPoid);
-            logger.info("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - Completed");
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_ACKNOW_DTLS_UPLOAD")
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_TRANSACTION_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+
+            Map<String, Object> params = new HashMap<>();
+            params.put("P_LOGIN_GROUP_POID", groupPoid);
+            params.put("P_LOGIN_USER_POID", new BigDecimal(userId));
+            params.put("P_LOGIN_COMPANY_POID", companyPoid);
+            params.put("P_TRANSACTION_POID", new BigDecimal(transactionPoid));
+
+            Map<String, Object> result = jdbcCall.execute(params);
+
+            String status = (String) result.get("P_STATUS");
+
+            logger.info("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - Completed. Status: {}", status);
+
         } catch (Exception e) {
-            logger.error("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - Error: {}", e.getMessage());
+            logger.error("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - Error: {}", e.getMessage(), e);
         }
     }
 
-    public void callClearAcknowledgmentDetails(BigDecimal groupPoid, String userId, BigDecimal companyPoid, Long transactionPoid) {
+
+    public void callClearAcknowledgmentDetails(
+            BigDecimal groupPoid,
+            String userId,
+            BigDecimal companyPoid,
+            Long transactionPoid
+    ) {
         try {
             logger.info("[SP-13] PROC_PDA_ACKNOW_DTL_CLEAR - transactionPoid: {}", transactionPoid);
-            String sql = "{ call PROC_PDA_ACKNOW_DTL_CLEAR(?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, userId, companyPoid, transactionPoid);
-            logger.info("[SP-13] PROC_PDA_ACKNOW_DTL_CLEAR - Completed");
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_ACKNOW_DTL_CLEAR")
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+
+            Map<String, Object> params = new HashMap<>();
+            params.put("P_LOGIN_GROUP_POID", groupPoid);
+            params.put("P_LOGIN_USER_POID", new BigDecimal(userId));
+            params.put("P_LOGIN_COMPANY_POID", companyPoid);
+            params.put("P_PDA_POID", new BigDecimal(transactionPoid));
+
+            Map<String, Object> result = jdbcCall.execute(params);
+
+            String status = (String) result.get("P_STATUS");
+
+            logger.info("[SP-13] PROC_PDA_ACKNOW_DTL_CLEAR - Completed. Status: {}", status);
+
         } catch (Exception e) {
-            logger.error("[SP-13] PROC_PDA_ACKNOW_DTL_CLEAR - Error: {}", e.getMessage());
+            logger.error("[SP-13] PROC_PDA_ACKNOW_DTL_CLEAR - Error: {}", e.getMessage(), e);
         }
     }
 

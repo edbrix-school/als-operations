@@ -146,5 +146,20 @@ public interface PdaEntryService {
      * Create FDA from PDA entry
      */
     String createFda(Long transactionPoid, BigDecimal groupPoid, BigDecimal companyPoid, String userId);
+
+    /**
+     * Upload acknowledgment details
+     */
+    void uploadAcknowledgmentDetails(Long transactionPoid, BigDecimal groupPoid, BigDecimal companyPoid, String userId);
+
+    /**
+     * Clear acknowledgment details
+     */
+    void clearAcknowledgmentDetails(Long transactionPoid, BigDecimal groupPoid, BigDecimal companyPoid, String userId);
+
+    /**
+     * Save acknowledgment details
+     */
+
 }
 
