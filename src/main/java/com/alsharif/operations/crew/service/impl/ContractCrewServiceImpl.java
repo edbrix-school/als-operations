@@ -77,7 +77,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         // Map entities to responses with nationality lookup
         List<ContractCrewResponse> responses = crewPage.getContent().stream()
-                .map(entityMapper::toContractCrewResponse)
+                .map(entityMapper::toContractCrewRes)
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
@@ -99,7 +99,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         // Get crew details
         List<ContractCrewDtl> details = crewDtlRepository.findByIdCrewPoidOrderByIdDetRowId(crewPoid);
 
-        ContractCrewResponse response = entityMapper.toContractCrewResponse(crew);
+        ContractCrewResponse response = entityMapper.toContractCrewRes(crew);
         response.setDetails(details.stream()
                 .map(entityMapper::toContractCrewDtlResponse)
                 .collect(Collectors.toList()));
@@ -163,7 +163,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         }
 
 
-        return entityMapper.toContractCrewResponse(crew);
+        return entityMapper.toContractCrewRes(crew);
     }
 
     @Override
