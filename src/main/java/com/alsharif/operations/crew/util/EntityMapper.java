@@ -9,7 +9,7 @@ import com.alsharif.operations.crew.dto.ContractCrewResponse;
 import com.alsharif.operations.crew.entity.ContractCrew;
 import com.alsharif.operations.crew.entity.ContractCrewDtl;
 import com.alsharif.operations.crew.entity.ContractCrewDtlId;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -20,15 +20,10 @@ import java.util.stream.Collectors;
  * Utility class for mapping between entities and DTOs
  */
 @Component
+@RequiredArgsConstructor
 public class EntityMapper {
 
     private final LovService lovService;
-
-    @Autowired
-    public EntityMapper(LovService lovService) {
-        this.lovService = lovService;
-    }
-
 
     /**
      * Map ContractCrew entity to ContractCrewResponse DTO
@@ -58,7 +53,9 @@ public class EntityMapper {
         response.setLastModifiedBy(entity.getLastModifiedBy());
         response.setLastModifiedDate(entity.getLastModifiedDate());
         response.setCompanyPoid(entity.getCompanyPoid());
-        response.setCompanyDet(lovService.getLovItem(entity.getCompanyPoid(), "COMPANY"));
+        if (entity.getCompanyPoid() != null) {
+            response.setCompanyDet(lovService.getLovItem(entity.getCompanyPoid(), "COMPANY"));
+        }
 
 
         return response;

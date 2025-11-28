@@ -67,9 +67,15 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         List<ShipPrincipalMasterPymtDtl> payments = paymentRepository.findByPrincipalPoidOrderByDetRowIdAsc(id);
         dto.setPayments(payments.stream().map(mapper::mapToPaymentDTO).collect(Collectors.toList()));
         
-        dto.setCountryDet(lovService.getLovItem(principal.getCountryPoid(), "COUNTRY"));
-        dto.setGlCodeDet(lovService.getLovItem(principal.getGlCodePoid(), "GL_CODE"));
-        dto.setCompanyDet(lovService.getLovItem(principal.getCompanyPoid(), "COMPANY"));
+        if (principal.getCountryPoid() != null) {
+            dto.setCountryDet(lovService.getLovItem(principal.getCountryPoid(), "COUNTRY"));
+        }
+        if (principal.getGlCodePoid() != null) {
+            dto.setGlCodeDet(lovService.getLovItem(principal.getGlCodePoid(), "GL_CODE"));
+        }
+        if (principal.getCompanyPoid() != null) {
+            dto.setCompanyDet(lovService.getLovItem(principal.getCompanyPoid(), "COMPANY"));
+        }
 
         if (principal.getAddressPoid() != null) {
             List<AddressDetails> addressDetails = addressDetailsRepository.findByAddressMasterPoid(principal.getAddressPoid());

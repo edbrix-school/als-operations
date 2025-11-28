@@ -46,6 +46,6 @@ public class ContractCrewDtlRequest {
     //private String operation; // INSERT, UPDATE, DELETE (optional, can be inferred from detRowId presence)
 
     @NotBlank(message = "Action is mandatory")
-    private String action; // iscreated, isupdated isdeleted
+    private String actionType; // iscreated, isupdated isdeleted
 }
 

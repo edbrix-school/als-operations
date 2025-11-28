@@ -152,7 +152,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         for (ContractCrewDtlRequest det : request.getDetails()) {
             //this.saveCrewDetail(companyPoid,"",crew.getCrewPoid(),det);
-            String action = det.getAction();
+            String action = det.getActionType();
             log.info("Action: " + action);
             switch (action) {
                 case "iscreated" -> this.saveCrewDetail(companyPoid, userPoid, crew.getCrewPoid(), det);
@@ -240,7 +240,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             for (int i = 0; i < request.getDetails().size(); i++) {
                 ContractCrewDtlRequest detail = request.getDetails().get(i);
 
-                String operation = detail.getAction();
+                String operation = detail.getActionType();
 
                 // For UPDATE operations, verify record exists
                 if ("isupdated".equals(operation) && detail.getDetRowId() != null) {
@@ -271,7 +271,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         // Step 2: Update existing records
         if (request.getDetails() != null) {
             for (ContractCrewDtlRequest detailRequest : request.getDetails()) {
-                String operation = detailRequest.getAction();
+                String operation = detailRequest.getActionType();
                 if ("isdeleted".equalsIgnoreCase(operation)) {
                     this.deleteCrewDetail(companyPoid, crewPoid, detailRequest.getDetRowId());
                 } else if ("isupdated".equalsIgnoreCase(operation) && detailRequest.getDetRowId() != null) {
