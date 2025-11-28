@@ -68,13 +68,16 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         dto.setPayments(payments.stream().map(mapper::mapToPaymentDTO).collect(Collectors.toList()));
         
         if (principal.getCountryPoid() != null) {
-            dto.setCountryDet(lovService.getLovItem(principal.getCountryPoid(), "COUNTRY"));
+            dto.setCountryDet(lovService.getLovItem(principal.getCountryPoid(), "COUNTRY",
+                    principal.getGroupPoid(), principal.getCompanyPoid(), null));
         }
         if (principal.getGlCodePoid() != null) {
-            dto.setGlCodeDet(lovService.getLovItem(principal.getGlCodePoid(), "GL_CODE"));
+            dto.setGlCodeDet(lovService.getLovItem(principal.getGlCodePoid(), "GL_CODE",
+                    principal.getGroupPoid(), principal.getCompanyPoid(), null));
         }
         if (principal.getCompanyPoid() != null) {
-            dto.setCompanyDet(lovService.getLovItem(principal.getCompanyPoid(), "COMPANY"));
+            dto.setCompanyDet(lovService.getLovItem(principal.getCompanyPoid(), "COMPANY",
+                    principal.getGroupPoid(), principal.getCompanyPoid(), null));
         }
 
         if (principal.getAddressPoid() != null) {

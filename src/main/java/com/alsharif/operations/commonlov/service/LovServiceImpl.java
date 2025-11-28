@@ -17,23 +17,24 @@ public class LovServiceImpl implements LovService {
     LovRepository lovRepository;
 
     @Override
-    public LovResponse getLovList(String lovName, Long docKeyPoid, String filterValue) {
-        log.info("Fetching LOV list for lovName={} docKeyPoid={} filterValue={}", lovName, docKeyPoid, filterValue);
-        LovResponse response = lovRepository.getLovList(lovName, docKeyPoid, filterValue);
+    public LovResponse getLovList(String lovName, Long docKeyPoid, String filterValue, Long groupPoid, Long companyPoid, String userId) {
+        log.info("Fetching LOV list for lovName={} docKeyPoid={} filterValue={} groupPoid={} companyPoid={} userId={}", 
+                lovName, docKeyPoid, filterValue, groupPoid, companyPoid, userId);
+        LovResponse response = lovRepository.getLovList(lovName, docKeyPoid, filterValue, groupPoid, companyPoid, userId);
         log.info("Fetched LOV list for lovName={} itemCount={}", lovName,
                 response != null && response.getItems() != null ? response.getItems().size() : 0);
         return response;
     }
 
     @Override
-    public LovItem getLovItem(Long poid, String lovName) {
-        log.info("poid : {}, lovName : {}", poid, lovName);
+    public LovItem getLovItem(Long poid, String lovName, Long groupPoid, Long companyPoid, String userId) {
+        log.info("poid : {}, lovName : {}, groupPoid : {}, companyPoid : {}, userId : {}", 
+                poid, lovName, groupPoid, companyPoid, userId);
 
         LovItem dto = new LovItem();
-        LovResponse listValue = this.getLovList(lovName, poid, "");
+        LovResponse listValue = this.getLovList(lovName, poid, "", groupPoid, companyPoid, userId);
 
         if (listValue != null) {
-
 
             List<LovItem> lovGetListDtos = listValue.getItems();
 

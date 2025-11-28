@@ -26,9 +26,9 @@ public class EntityMapper {
     private final LovService lovService;
 
     /**
-     * Map ContractCrew entity to ContractCrewResponse DTO
+     * Map ContractCrew entity to ContractCrewResponse DTO with context parameters
      */
-    public ContractCrewResponse toContractCrewResponse(ContractCrew entity) {
+    public ContractCrewResponse toContractCrewResponse(ContractCrew entity, Long groupPoid, Long companyPoid, String userId) {
         if (entity == null) {
             return null;
         }
@@ -54,7 +54,11 @@ public class EntityMapper {
         response.setLastModifiedDate(entity.getLastModifiedDate());
         response.setCompanyPoid(entity.getCompanyPoid());
         if (entity.getCompanyPoid() != null) {
-            response.setCompanyDet(lovService.getLovItem(entity.getCompanyPoid(), "COMPANY"));
+
+            Long effectiveGroupPoid = groupPoid != null ? groupPoid : entity.getGroupPoid();
+            Long effectiveCompanyPoid = companyPoid != null ? companyPoid : entity.getCompanyPoid();
+            response.setCompanyDet(lovService.getLovItem(entity.getCompanyPoid(), "COMPANY",
+                    effectiveGroupPoid, effectiveCompanyPoid, userId));
         }
 
 

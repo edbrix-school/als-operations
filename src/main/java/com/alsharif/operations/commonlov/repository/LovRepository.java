@@ -21,15 +21,17 @@ public class LovRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public LovResponse getLovList(String lovName, Long docKeyPoid, String filterValue) {
+    public LovResponse getLovList(String lovName, Long docKeyPoid, String filterValue, Long groupPoid, Long companyPoid, String userId) {
         try {
             final String sql = "BEGIN PROC_LOV_GETLIST(?,?,?,?,?,?,?); END;";
-            log.info("Executing PROC_LOV_GETLIST for lovName={} docKeyPoid={} filterValue={}", lovName, docKeyPoid, filterValue);
+            log.info("Executing PROC_LOV_GETLIST for lovName={} docKeyPoid={} filterValue={} groupPoid={} companyPoid={} userId={}", 
+                    lovName, docKeyPoid, filterValue, groupPoid, companyPoid, userId);
             return jdbcTemplate.execute((Connection con) -> {
                 try (CallableStatement cs = con.prepareCall(sql)) {
-                    cs.setLong(1, 1);
-                    cs.setLong(2, 1);
-                    cs.setLong(3, 1);
+
+                    cs.setLong(1, groupPoid != null ? groupPoid : 1);
+                    cs.setLong(2, companyPoid != null ? companyPoid : 1);
+                    cs.setLong(3, userId != null && !userId.isEmpty() ? Long.parseLong(userId) : 1);
                     cs.setString(4, lovName);
                     if (docKeyPoid != null) {
                         cs.setString(5, "");

@@ -25,13 +25,16 @@ public class LovController {
     public ResponseEntity<?> getLovList(
                                   @RequestParam("lovName") String lovName,
                                   @RequestParam(value = "docKeyPoid", required = false) Long docKeyPoid,
-                                  @RequestParam(value = "filterValue", required = false) String filterValue) {
-        log.info("getLovList started for lovName={} docKeyPoid={} filterValue={}", lovName, docKeyPoid, filterValue);
-        LovResponse lovResponse = lovService.getLovList( lovName, docKeyPoid, filterValue);
+                                  @RequestParam(value = "filterValue", required = false) String filterValue,
+                                  @org.springframework.web.bind.annotation.RequestHeader("X-Group-Poid") Long groupPoid,
+                                  @org.springframework.web.bind.annotation.RequestHeader("X-Company-Poid") Long companyPoid,
+                                  @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Id", required = false) String userId) {
+        log.info("getLovList started for lovName={} docKeyPoid={} filterValue={} groupPoid={} companyPoid={} userId={}", 
+                lovName, docKeyPoid, filterValue, groupPoid, companyPoid, userId);
+        LovResponse lovResponse = lovService.getLovList(lovName, docKeyPoid, filterValue, groupPoid, companyPoid, userId);
         log.info("getLovList completed for lovName={} itemsReturned={}", lovName,
                 lovResponse != null && lovResponse.getItems() != null ? lovResponse.getItems().size() : 0);
         return  success("Task fetched successfully", lovResponse);
 
     }
-
 }
