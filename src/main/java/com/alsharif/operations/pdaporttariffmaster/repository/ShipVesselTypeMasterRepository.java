@@ -13,6 +13,8 @@ import java.util.List;
 public interface ShipVesselTypeMasterRepository extends JpaRepository<ShipVesselTypeMaster, BigDecimal> {
     boolean existsByVesselTypePoidAndGroupPoid(BigDecimal vesselTypePoid, BigDecimal groupPoid);
 
+    boolean existsByVesselTypePoid(BigDecimal vesselTypePoid);
+
     @Query("SELECT v.vesselTypeName " +
             "FROM ShipVesselTypeMaster v " +
             "WHERE v.vesselTypePoid IN :vesselTypePoidList " +

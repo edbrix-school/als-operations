@@ -13,6 +13,8 @@ import java.util.Optional;
 @Repository
 public interface ShipPrincipalRepository extends JpaRepository<ShipPrincipalMaster, Long> {
 
+    boolean existsByPrincipalPoid(Long principalPoid);
+
     boolean existsByPrincipalName(String principalName);
     
     @Query("SELECT p FROM ShipPrincipalMaster p WHERE " +
