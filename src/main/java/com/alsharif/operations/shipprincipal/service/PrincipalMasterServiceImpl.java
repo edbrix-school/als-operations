@@ -534,7 +534,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
     }
 
     private Map<Long, LovItem> getLovMap(String lovName) {
-        LovResponse lovResponse = lovService.getLovList(lovName, null, null);
+        LovResponse lovResponse = lovService.getLovList(lovName, null, null, null, null, null);
         if (lovResponse != null && lovResponse.getItems() != null) {
             return lovResponse.getItems().stream()
                     .collect(Collectors.toMap(LovItem::getPoid, item -> item));
@@ -543,7 +543,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
     }
 
     private Map<String, LovItem> getLovMapByCode(String lovName) {
-        LovResponse lovResponse = lovService.getLovList(lovName, null, null);
+        LovResponse lovResponse = lovService.getLovList(lovName, null, null, null, null, null);
         if (lovResponse != null && lovResponse.getItems() != null) {
             return lovResponse.getItems().stream()
                     .collect(Collectors.toMap(LovItem::getCode, item -> item));

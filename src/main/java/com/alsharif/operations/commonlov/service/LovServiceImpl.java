@@ -40,7 +40,7 @@ public class LovServiceImpl implements LovService {
 
             if (lovGetListDtos != null) {
 
-                dto = lovGetListDtos.stream().filter(x -> x.getPoid().equals(poid)).findAny().orElse(new LovItem(poid, null, null));
+                dto = lovGetListDtos.stream().filter(x -> x.getPoid().equals(poid)).findAny().orElse(new LovItem(poid, null, null, null, null, null));
 
             }
         }

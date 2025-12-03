@@ -57,7 +57,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
 
         Page<PortCallReportHdr> hdrPage = hdrRepository.findAllNonDeletedWithSearch(search, pageable);
 
-        LovResponse vesselTypeLov = lovService.getLovList("VESSEL_TYPE_MASTER", null, null);
+        LovResponse vesselTypeLov = lovService.getLovList("VESSEL_TYPE_MASTER", null, null, null, null, null);
         Map<String, LovItem> vesselTypeMap = new HashMap<>();
         if (vesselTypeLov != null && vesselTypeLov.getItems() != null) {
             vesselTypeMap = vesselTypeLov.getItems().stream()
@@ -115,7 +115,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         String vesselTypes = hdr.getPortCallApplVesselType();
         List<LovItem> vesselTypeLovItems = null;
         if (vesselTypes != null) {
-            LovResponse lovResponse = lovService.getLovList("VESSEL_TYPE_MASTER", null, null);
+            LovResponse lovResponse = lovService.getLovList("VESSEL_TYPE_MASTER", null, null, null, null, null);
             if (lovResponse != null && lovResponse.getItems() != null) {
                 Map<Long, LovItem> vesselTypeByPoidMap = lovResponse.getItems().stream()
                         .collect(Collectors.toMap(LovItem::getPoid, item -> item));
@@ -127,7 +127,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
             }
         }
 
-        LovResponse portActivityLov = lovService.getLovList("PORT_ACTIVITY", null, null);
+        LovResponse portActivityLov = lovService.getLovList("PORT_ACTIVITY", null, null, null, null, null);
         Map<Long, LovItem> portActivityMap = new HashMap<>();
         if (portActivityLov != null && portActivityLov.getItems() != null) {
             portActivityMap = portActivityLov.getItems().stream()
@@ -352,7 +352,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
             }
         });
 
-        LovResponse portActivityLov = lovService.getLovList("PORT_ACTIVITY", null, null);
+        LovResponse portActivityLov = lovService.getLovList("PORT_ACTIVITY", null, null, null, null, null);
         if (portActivityLov != null && portActivityLov.getItems() != null) {
             Map<Long, LovItem> lovMap = portActivityLov.getItems().stream()
                     .collect(Collectors.toMap(LovItem::getPoid, item -> item));
