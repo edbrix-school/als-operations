@@ -6,6 +6,7 @@ import com.alsharif.operations.shipprincipal.repository.*;
 import com.alsharif.operations.shipprincipal.util.PrincipalMasterMapper;
 import com.alsharif.operations.user.entity.User;
 import com.alsharif.operations.user.repository.UserRepository;
+import com.alsharif.operations.commonlov.service.LovService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +53,9 @@ class PrincipalServiceTest {
     
     @Mock
     private PrincipalMasterMapper mapper;
+    
+    @Mock
+    private LovService lovService;
     
     @InjectMocks
     private PrincipalMasterServiceImpl principalMasterService;

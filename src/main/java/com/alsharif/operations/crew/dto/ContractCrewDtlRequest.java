@@ -43,6 +43,9 @@ public class ContractCrewDtlRequest {
     @Size(max = 500, message = "Remarks must not exceed 500 characters")
     private String remarks;
 
-    private String operation; // INSERT, UPDATE, DELETE (optional, can be inferred from detRowId presence)
+    //private String operation; // INSERT, UPDATE, DELETE (optional, can be inferred from detRowId presence)
+
+    @NotBlank(message = "Action is mandatory")
+    private String actionType; // iscreated, isupdated isdeleted
 }
 
