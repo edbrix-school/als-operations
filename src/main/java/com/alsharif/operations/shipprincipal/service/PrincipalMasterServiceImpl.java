@@ -1,5 +1,7 @@
 package com.alsharif.operations.shipprincipal.service;
 
+import com.alsharif.operations.commonlov.repository.LovRepository;
+import com.alsharif.operations.commonlov.service.LovService;
 import com.alsharif.operations.crew.dto.ValidationError;
 import com.alsharif.operations.exceptions.ResourceAlreadyExistsException;
 import com.alsharif.operations.exceptions.ResourceNotFoundException;
@@ -20,6 +22,7 @@ import com.alsharif.operations.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +51,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
     private final VesselTypeRepository vesselTypeRepository;
 
 
+    @Override
     @Transactional
     public Page<PrincipalMasterListDto> getPrincipalList(String search, Pageable pageable) {
         Page<ShipPrincipalMaster> page = principalRepository.findAllNonDeletedWithSearch(search, pageable);
@@ -67,6 +71,19 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 });
 
         PrincipalMasterDto dto = mapper.mapToDetailDTO(principal);
+
+        if (principal.getCountryPoid() != null) {
+            dto.setCountryDet(lovService.getLovItem(principal.getCountryPoid(), "COUNTRY",
+                    principal.getGroupPoid(), principal.getCompanyPoid(), null));
+        }
+        if (principal.getGlCodePoid() != null) {
+            dto.setGlCodeDet(lovService.getLovItem(principal.getGlCodePoid(), "GL_CODE",
+                    principal.getGroupPoid(), principal.getCompanyPoid(), null));
+        }
+        if (principal.getCompanyPoid() != null) {
+            dto.setCompanyDet(lovService.getLovItem(principal.getCompanyPoid(), "COMPANY",
+                    principal.getGroupPoid(), principal.getCompanyPoid(), null));
+        }
 
         List<ShipPrincipalMasterDtl> charges = chargeRepository.findByPrincipalPoidOrderByDetRowIdAsc(id);
         dto.setCharges(mapChargesWithLov(charges));

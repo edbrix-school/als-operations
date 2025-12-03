@@ -33,7 +33,7 @@ public interface ContractCrewService {
     /**
      * Update existing crew master
      */
-    ContractCrewResponse updateCrew(Long companyPoid,Long crewPoid, ContractCrewRequest request);
+    ContractCrewResponse updateCrew(Long companyPoid, String userPoid,Long crewPoid, ContractCrewRequest request);
 
     /**
      * Delete crew master (soft or hard delete)

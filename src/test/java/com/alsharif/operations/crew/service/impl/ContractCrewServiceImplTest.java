@@ -52,7 +52,7 @@ class ContractCrewServiceImplTest {
         ContractCrew entity = new ContractCrew();
         ContractCrewResponse mapped = new ContractCrewResponse();
         when(crewRepository.findByCrewPoid(10L)).thenReturn(Optional.of(entity));
-        when(entityMapper.toContractCrewResponse(entity)).thenReturn(mapped);
+        when(entityMapper.toContractCrewRes(entity)).thenReturn(mapped);
 
         ContractCrewResponse res = service.getCrewById(10L);
 
@@ -73,7 +73,7 @@ class ContractCrewServiceImplTest {
         ContractCrew crew = new ContractCrew();
         Page<ContractCrew> page = new PageImpl<>(List.of(crew), PageRequest.of(0, 20), 1);
         when(crewRepository.searchCrews(any(), any(), any(), any(), anyLong(), any())).thenReturn(page);
-        when(entityMapper.toContractCrewResponse(crew)).thenReturn(new ContractCrewResponse());
+        when(entityMapper.toContractCrewRes(crew)).thenReturn(new ContractCrewResponse());
 
         PageResponse<ContractCrewResponse> res = service.getCrewList(null, null, null, null, PageRequest.of(0, 20), 1L);
 

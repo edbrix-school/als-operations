@@ -1,13 +1,13 @@
 package com.alsharif.operations.crew.controller;
 
 
+import com.alsharif.operations.common.ApiResponse;
 import com.alsharif.operations.crew.dto.*;
 import com.alsharif.operations.crew.service.ContractCrewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -15,12 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * REST Controller for Contract Crew Master operations
@@ -48,7 +44,7 @@ public class ContractCrewController {
                     "Results are paginated and can be sorted by any field. " +
                     "Only records accessible to the user's company are returned (multi-tenant filtering).",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved crew master list",
                             content = @Content(
@@ -56,12 +52,12 @@ public class ContractCrewController {
                                     schema = @Schema(implementation = PageResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "500",
                             description = "Internal server error",
                             content = @Content(mediaType = "application/json")
@@ -70,7 +66,7 @@ public class ContractCrewController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @GetMapping
-    public ResponseEntity<PageResponse<ContractCrewResponse>> getCrewList(
+    public ResponseEntity<?> getCrewList(
             @RequestHeader("companyPoid") Long companyPoid,
             @RequestParam(required = false) String crewName,
             @RequestParam(required = false) Long nationality,
@@ -96,7 +92,7 @@ public class ContractCrewController {
                 companyPoid
         );
 
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Crew list retrieved successfully", response);
     }
 
     /**
@@ -109,7 +105,7 @@ public class ContractCrewController {
                     "Includes nationality code and name from the NATIONALITY master. " +
                     "Returns 404 if crew master is not found or not accessible to the user's company.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved crew master",
                             content = @Content(
@@ -117,17 +113,17 @@ public class ContractCrewController {
                                     schema = @Schema(implementation = ContractCrewResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "Crew master not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - User doesn't have access to this record",
                             content = @Content(mediaType = "application/json")
@@ -136,11 +132,11 @@ public class ContractCrewController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @GetMapping("/{crewPoid}")
-    public ResponseEntity<ContractCrewResponse> getCrewById(
+    public ResponseEntity<?> getCrewById(
             @Parameter(description = "Primary key of the crew master", required = true)
             @PathVariable Long crewPoid) {
         ContractCrewResponse response = crewService.getCrewById(crewPoid);
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Crew retrieved successfully", response);
     }
 
     /**
@@ -156,7 +152,7 @@ public class ContractCrewController {
                     "Audit fields (created by, created date, company POID, group POID) are automatically populated. " +
                     "Default value for active status is 'Y' if not provided.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "201",
                             description = "Successfully created crew master",
                             content = @Content(
@@ -164,7 +160,7 @@ public class ContractCrewController {
                                     schema = @Schema(implementation = ContractCrewResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(
@@ -172,17 +168,17 @@ public class ContractCrewController {
                                     schema = @Schema(implementation = ErrorResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "Nationality not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "409",
                             description = "Conflict - Crew code already exists",
                             content = @Content(mediaType = "application/json")
@@ -191,7 +187,7 @@ public class ContractCrewController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PostMapping
-    public ResponseEntity<ContractCrewResponse> createCrew(
+    public ResponseEntity<?> createCrew(
             @Parameter(description = "Crew master request object with all required and optional fields", required = true)
             @Valid @RequestBody ContractCrewRequest request,
             @RequestHeader("companyPoid") Long companyPoid,
@@ -199,7 +195,7 @@ public class ContractCrewController {
             @RequestHeader("userId") String userId
     ) {
         ContractCrewResponse response = crewService.createCrew(request, companyPoid, groupPoid,userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ApiResponse.success("Crew created successfully", response);
     }
 
     /**
@@ -214,7 +210,7 @@ public class ContractCrewController {
                     "Created by and created date remain unchanged. " +
                     "Returns 404 if crew master is not found or not accessible to the user's company.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully updated crew master",
                             content = @Content(
@@ -222,7 +218,7 @@ public class ContractCrewController {
                                     schema = @Schema(implementation = ContractCrewResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(
@@ -230,17 +226,17 @@ public class ContractCrewController {
                                     schema = @Schema(implementation = ErrorResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - User doesn't have permission to update this record",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "Crew master not found",
                             content = @Content(mediaType = "application/json")
@@ -249,15 +245,16 @@ public class ContractCrewController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PutMapping("/{crewPoid}")
-    public ResponseEntity<ContractCrewResponse> updateCrew(
+    public ResponseEntity<?> updateCrew(
             @RequestHeader("companyPoid") Long companyPoid,
+            @RequestHeader("userId") String userPoid,
             @Parameter(description = "Primary key of the crew master to update", required = true)
             @PathVariable Long crewPoid,
             @Parameter(description = "Crew master request object with updated fields", required = true)
             @Valid @RequestBody ContractCrewRequest request
     ) {
-        ContractCrewResponse response = crewService.updateCrew(companyPoid,crewPoid, request);
-        return ResponseEntity.ok(response);
+        ContractCrewResponse response = crewService.updateCrew(companyPoid,userPoid,crewPoid, request);
+        return ApiResponse.success("Crew updated successfully", response);
     }
 
     /**
@@ -271,27 +268,27 @@ public class ContractCrewController {
                     "Hard delete (hardDelete=true): Physically deletes all detail records first (cascade), then deletes the master record. " +
                     "Returns 404 if crew master is not found. Returns 409 if crew is referenced in other records (if business rules exist).",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully deleted crew master",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - User doesn't have permission to delete",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "Crew master not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "409",
                             description = "Conflict - Cannot delete crew referenced in other records",
                             content = @Content(mediaType = "application/json")
@@ -300,7 +297,7 @@ public class ContractCrewController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @DeleteMapping("/{crewPoid}")
-    public ResponseEntity<Map<String, Object>> deleteCrew(
+    public ResponseEntity<?> deleteCrew(
             @RequestHeader("companyPoid") Long companyPoid,
             @Parameter(description = "Primary key of the crew master to delete", required = true)
             @PathVariable Long crewPoid,
@@ -308,164 +305,7 @@ public class ContractCrewController {
             @RequestParam(defaultValue = "false") boolean hardDelete
     ) {
         crewService.deleteCrew(companyPoid,crewPoid);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Crew master deleted successfully");
-        response.put("crewPoid", crewPoid);
-
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * GET /api/v1/contract-crew-masters/{crewPoid}/details
-     * Get crew details list
-     */
-    @Operation(
-            summary = "Get crew details (visa details)",
-            description = "Retrieves all visa/document details for a specific crew master. " +
-                    "Details are returned ordered by detRowId. " +
-                    "Each detail record includes document type code and name from the CREW_VISA_TYPE master. " +
-                    "Returns 404 if crew master is not found.",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Successfully retrieved crew details",
-                            content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = CrewDetailsResponse.class)
-                            )
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Crew master not found",
-                            content = @Content(mediaType = "application/json")
-                    ),
-                    @ApiResponse(
-                            responseCode = "401",
-                            description = "Unauthorized - Authentication required",
-                            content = @Content(mediaType = "application/json")
-                    )
-            },
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @GetMapping("/{crewPoid}/details")
-    public ResponseEntity<CrewDetailsResponse> getCrewDetails(
-            @RequestHeader("companyPoid") Long companyPoid,
-            @Parameter(description = "Primary key of the crew master", required = true)
-            @PathVariable Long crewPoid) {
-        CrewDetailsResponse response = crewService.getCrewDetails(companyPoid,crewPoid);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * POST /api/v1/contract-crew-masters/{crewPoid}/details
-     * Bulk save crew details
-     */
-    @Operation(
-            summary = "Bulk save crew details",
-            description = "Saves all crew detail (visa) records in a single transaction. Supports insert, update, and delete operations. " +
-                    "This API consolidates multiple legacy operations into one bulk operation for better performance and transaction integrity. " +
-                    "Validates all detail records including date validations (expiry after issue, issue after applied). " +
-                    "Validates document types exist in CREW_VISA_TYPE master. " +
-                    "Operations are processed in order: deletions first, then updates, then inserts. " +
-                    "All operations are executed within a single database transaction. " +
-                    "If any validation fails, the entire operation is rolled back.",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Successfully saved crew details",
-                            content = @Content(mediaType = "application/json")
-                    ),
-                    @ApiResponse(
-                            responseCode = "400",
-                            description = "Invalid input parameters or validation error",
-                            content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = ErrorResponse.class)
-                            )
-                    ),
-                    @ApiResponse(
-                            responseCode = "401",
-                            description = "Unauthorized - Authentication required",
-                            content = @Content(mediaType = "application/json")
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Crew master not found",
-                            content = @Content(mediaType = "application/json")
-                    ),
-                    @ApiResponse(
-                            responseCode = "409",
-                            description = "Conflict - Detail row not found for UPDATE operations",
-                            content = @Content(mediaType = "application/json")
-                    )
-            },
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @PostMapping("/{crewPoid}/details")
-    public ResponseEntity<Map<String, Object>> saveCrewDetails(
-            @RequestHeader("companyPoid") Long companyPoid,
-            @RequestHeader("userId") String userId,
-            @Parameter(description = "Primary key of the crew master", required = true)
-            @PathVariable Long crewPoid,
-            @Parameter(description = "Bulk save request containing details list and deleted row IDs", required = true)
-            @Valid @RequestBody BulkSaveDetailsRequest request
-    ) {
-        CrewDetailsResponse response = crewService.saveCrewDetails(companyPoid,userId,crewPoid, request);
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("message", "Details saved successfully");
-        result.put("crewPoid", response.getCrewPoid());
-        result.put("savedDetails", response.getDetails());
-
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * DELETE /api/v1/contract-crew-masters/{crewPoid}/details/{detRowId}
-     * Delete single crew detail record
-     */
-    @Operation(
-            summary = "Delete single crew detail",
-            description = "Deletes a single crew detail (visa) record by its detRowId. " +
-                    "This is an alternative to the bulk save API for single-row deletion. " +
-                    "Returns 404 if crew master or detail record is not found.",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Successfully deleted detail record",
-                            content = @Content(mediaType = "application/json")
-                    ),
-                    @ApiResponse(
-                            responseCode = "401",
-                            description = "Unauthorized - Authentication required",
-                            content = @Content(mediaType = "application/json")
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Crew master or detail record not found",
-                            content = @Content(mediaType = "application/json")
-                    )
-            },
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @DeleteMapping("/{crewPoid}/details/{detRowId}")
-    public ResponseEntity<Map<String, Object>> deleteCrewDetail(
-            @RequestHeader("companyPoid") Long companyPoid,
-
-            @Parameter(description = "Primary key of the crew master", required = true)
-            @PathVariable Long crewPoid,
-            @Parameter(description = "Detail row ID to delete", required = true)
-            @PathVariable Long detRowId
-    ) {
-        crewService.deleteCrewDetail(companyPoid,crewPoid, detRowId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Detail record deleted successfully");
-        response.put("crewPoid", crewPoid);
-        response.put("detRowId", detRowId);
-
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Crew master deleted successfully");
     }
 
     /**

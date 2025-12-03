@@ -34,7 +34,7 @@ public class PrincipalController {
             description = "Retrieve paginated list of principals with optional search and sorting",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<Page<PrincipalMasterListDto>> getPrincipalList(
+    public ResponseEntity<?> getPrincipalList(
             @Parameter(description = "Page number (0-based)") @RequestParam(required = false, defaultValue = "0") int page,
             @Parameter(description = "Page size") @RequestParam(required = false, defaultValue = "20") int size,
             @Parameter(description = "Sort field and direction (e.g., 'principalCode,asc')") @RequestParam(required = false) String sort,
@@ -53,7 +53,7 @@ public class PrincipalController {
 
         Pageable pageable = PageRequest.of(page, size, sortObj);
         Page<PrincipalMasterListDto> result = principalMasterService.getPrincipalList(search, pageable);
-        return ResponseEntity.ok(result);
+        return ApiResponse.success("Principal list retrieved successfully", result);
     }
 
 

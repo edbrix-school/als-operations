@@ -1,6 +1,7 @@
 package com.alsharif.operations.crew.util;
 
 
+import com.alsharif.operations.commonlov.service.LovService;
 import com.alsharif.operations.crew.dto.ContractCrewDtlRequest;
 import com.alsharif.operations.crew.dto.ContractCrewDtlResponse;
 import com.alsharif.operations.crew.dto.ContractCrewRequest;
@@ -8,6 +9,7 @@ import com.alsharif.operations.crew.dto.ContractCrewResponse;
 import com.alsharif.operations.crew.entity.ContractCrew;
 import com.alsharif.operations.crew.entity.ContractCrewDtl;
 import com.alsharif.operations.crew.entity.ContractCrewDtlId;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -18,13 +20,15 @@ import java.util.stream.Collectors;
  * Utility class for mapping between entities and DTOs
  */
 @Component
+@RequiredArgsConstructor
 public class EntityMapper {
 
+    private final LovService lovService;
 
     /**
-     * Map ContractCrew entity to ContractCrewResponse DTO
+     * Map ContractCrew entity to ContractCrewResponse DTO with context parameters
      */
-    public ContractCrewResponse toContractCrewResponse(ContractCrew entity) {
+    public ContractCrewResponse toContractCrewResponse(ContractCrew entity, Long groupPoid, Long companyPoid, String userId) {
         if (entity == null) {
             return null;
         }
@@ -48,6 +52,14 @@ public class EntityMapper {
         response.setCreatedDate(entity.getCreatedDate());
         response.setLastModifiedBy(entity.getLastModifiedBy());
         response.setLastModifiedDate(entity.getLastModifiedDate());
+        response.setCompanyPoid(entity.getCompanyPoid());
+        if (entity.getCompanyPoid() != null) {
+
+            Long effectiveGroupPoid = groupPoid != null ? groupPoid : entity.getGroupPoid();
+            Long effectiveCompanyPoid = companyPoid != null ? companyPoid : entity.getCompanyPoid();
+            response.setCompanyDet(lovService.getLovItem(entity.getCompanyPoid(), "COMPANY",
+                    effectiveGroupPoid, effectiveCompanyPoid, userId));
+        }
 
 
         return response;

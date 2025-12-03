@@ -1,10 +1,12 @@
 package com.alsharif.operations.crew.dto;
 
+import com.alsharif.operations.commonlov.dto.LovItem;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Response DTO for Contract Crew Master
@@ -40,6 +42,10 @@ public class ContractCrewResponse {
     private String createdBy;
     private String lastModifiedBy;
     private LocalDateTime lastModifiedDate;
+    private Long companyPoid;
+    private LovItem companyDet;
+
+    private List<ContractCrewDtlResponse> details;
 
 }
 

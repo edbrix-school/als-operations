@@ -5,9 +5,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.springframework.validation.annotation.Validated;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Request DTO for creating/updating Contract Crew Master
@@ -55,6 +57,9 @@ public class ContractCrewRequest {
 
     @Size(max = 1)
     private String active;
+
+
+    private List<ContractCrewDtlRequest> details;
 
 }
 

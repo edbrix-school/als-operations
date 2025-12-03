@@ -8,6 +8,7 @@ import com.alsharif.operations.commonlov.service.LovService;
 import com.alsharif.operations.vesseltype.repository.VesselTypeRepository;
 import com.alsharif.operations.user.entity.User;
 import com.alsharif.operations.user.repository.UserRepository;
+import com.alsharif.operations.commonlov.service.LovService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

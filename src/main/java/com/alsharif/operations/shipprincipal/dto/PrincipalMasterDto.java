@@ -1,5 +1,6 @@
 package com.alsharif.operations.shipprincipal.dto;
 
+import com.alsharif.operations.commonlov.dto.LovItem;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,9 +23,11 @@ public class PrincipalMasterDto {
     private String principalName;
     private String principalName2;
     private Long countryPoid;
+    private LovItem countryDet;
     private Long addressPoid;
     private Long creditPeriod;
     private Long glCodePoid;
+    private LovItem glCodeDet;
     private String remarks;
     private String active;
     private Integer seqNo;
@@ -37,6 +40,7 @@ public class PrincipalMasterDto {
     private String principalCodeOld;
     private String deleted;
     private Long companyPoid;
+    private LovItem companyDet;
     private String currencyCode;
     private BigDecimal currencyRate;
     private Long agreedPeriod;

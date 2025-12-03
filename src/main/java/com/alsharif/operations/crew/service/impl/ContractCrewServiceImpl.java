@@ -10,6 +10,7 @@ import com.alsharif.operations.exceptions.ValidationException;
 import com.alsharif.operations.crew.repository.*;
 import com.alsharif.operations.crew.service.ContractCrewService;
 import com.alsharif.operations.crew.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 /**
  * Service implementation for Contract Crew Master operations
  */
+@Slf4j
 @Service
 @Transactional
 public class ContractCrewServiceImpl implements ContractCrewService {
@@ -75,7 +77,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         // Map entities to responses with nationality lookup
         List<ContractCrewResponse> responses = crewPage.getContent().stream()
-                .map(entityMapper::toContractCrewResponse)
+                .map(entityMapper::toContractCrewRes)
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
@@ -94,8 +96,15 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         ContractCrew crew = crewRepository.findByCrewPoid(crewPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
 
+        // Get crew details
+        List<ContractCrewDtl> details = crewDtlRepository.findByIdCrewPoidOrderByIdDetRowId(crewPoid);
 
-        return entityMapper.toContractCrewResponse(crew);
+        ContractCrewResponse response = entityMapper.toContractCrewRes(crew);
+        response.setDetails(details.stream()
+                .map(entityMapper::toContractCrewDtlResponse)
+                .collect(Collectors.toList()));
+
+        return response;
     }
 
     @Override
@@ -104,23 +113,29 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         validateCrewRequest(request);
 
         // Map request to entity
-        ContractCrew crew = entityMapper.toContractCrewEntity(companyPoid, groupPoid,userId, request);
+        ContractCrew crew = entityMapper.toContractCrewEntity(companyPoid, groupPoid, userId, request);
 
         // Generate crew code
         String crewCode = codeGenerator.generateCrewCode(
-               companyPoid,
-               groupPoid
+                companyPoid,
+                groupPoid
         );
         //crew.setCrewCode(crewCode);
 
         // Save entity
         crew = crewRepository.save(crew);
 
+        log.info("Crew created successfully with id: " + crew.getCrewPoid());
+        for (ContractCrewDtlRequest det : request.getDetails()) {
+            this.saveCrewDetail(companyPoid, userId, crew.getCrewPoid(), det);
+        }
+
+
         return entityMapper.toContractCrewRes(crew);
     }
 
     @Override
-    public ContractCrewResponse updateCrew(Long companyPoid,Long crewPoid, ContractCrewRequest request) {
+    public ContractCrewResponse updateCrew(Long companyPoid, String userPoid,Long crewPoid, ContractCrewRequest request) {
         // Validate request
         validateCrewRequest(request);
 
@@ -134,12 +149,25 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         // Save updated entity
         crew = crewRepository.save(crew);
-        return entityMapper.toContractCrewResponse(crew);
+
+        for (ContractCrewDtlRequest det : request.getDetails()) {
+            //this.saveCrewDetail(companyPoid,"",crew.getCrewPoid(),det);
+            String action = det.getActionType();
+            log.info("Action: " + action);
+            switch (action) {
+                case "iscreated" -> this.saveCrewDetail(companyPoid, userPoid, crew.getCrewPoid(), det);
+                case "isupdated" -> this.updateCrewDetail(companyPoid, userPoid, crew.getCrewPoid(), det);
+                case "isdeleted" -> this.deleteCrewDetail(companyPoid, crew.getCrewPoid(), det.getDetRowId());
+            }
+
+        }
+
+
+        return entityMapper.toContractCrewRes(crew);
     }
 
     @Override
-    public void deleteCrew(Long companyPoid,Long crewPoid) {
-
+    public void deleteCrew(Long companyPoid, Long crewPoid) {
 
 
         ContractCrew crew = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid)
@@ -151,7 +179,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
     @Override
     @Transactional(readOnly = true)
-    public CrewDetailsResponse getCrewDetails(Long companyPoid,Long crewPoid) {
+    public CrewDetailsResponse getCrewDetails(Long companyPoid, Long crewPoid) {
         // Verify crew exists
 
         boolean crewExists = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid).isPresent();
@@ -174,13 +202,32 @@ public class ContractCrewServiceImpl implements ContractCrewService {
                 .collect(Collectors.toList());
     }
 
+    private void saveCrewDetail(Long companyPoid, String userId, Long crewPoid, ContractCrewDtlRequest detailRequest) {
+
+        ContractCrewDtl newDetail = entityMapper.toContractCrewDtlEntity(userId, detailRequest, crewPoid);
+        Long max = crewDtlRepository.findMaxDetRowIdByCrewPoid(crewPoid);
+        Long next = (max == null ? 0L : max) + 1L;
+        newDetail.getId().setDetRowId(next);
+        crewDtlRepository.save(newDetail);
+    }
+
+    public void updateCrewDetail(Long companyPoid, String userId, Long crewPoid, ContractCrewDtlRequest detailRequest) {
+        ContractCrewDtlId id = new ContractCrewDtlId(crewPoid, detailRequest.getDetRowId());
+        ContractCrewDtl detail = crewDtlRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
+
+        entityMapper.updateContractCrewDtlEntity(detail, detailRequest);
+        crewDtlRepository.save(detail);
+
+    }
+
 
     @Override
-    public CrewDetailsResponse saveCrewDetails(Long companyPoid,String userId,Long crewPoid, BulkSaveDetailsRequest request) {
+    public CrewDetailsResponse saveCrewDetails(Long companyPoid, String userId, Long crewPoid, BulkSaveDetailsRequest request) {
         // Verify crew exists
 
         ContractCrew crew = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
+
 
         // Validate detail records
         List<ValidationError> validationErrors = new ArrayList<>();
@@ -193,14 +240,10 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             for (int i = 0; i < request.getDetails().size(); i++) {
                 ContractCrewDtlRequest detail = request.getDetails().get(i);
 
-                // Determine operation (INSERT or UPDATE)
-                String operation = detail.getOperation();
-                if (operation == null || operation.isEmpty()) {
-                    operation = detail.getDetRowId() != null ? "UPDATE" : "INSERT";
-                }
+                String operation = detail.getActionType();
 
                 // For UPDATE operations, verify record exists
-                if ("UPDATE".equals(operation) && detail.getDetRowId() != null) {
+                if ("isupdated".equals(operation) && detail.getDetRowId() != null) {
                     boolean recordExists = crewDtlRepository.existsByIdCrewPoidAndIdDetRowId(crewPoid, detail.getDetRowId());
                     if (!recordExists) {
                         validationErrors.add(new ValidationError(
@@ -224,25 +267,14 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         // Execute bulk save within transaction
         List<ContractCrewDtl> savedDetails = new ArrayList<>();
 
-        // Step 1: Delete records
-        if (request.getDeletedRowIds() != null && !request.getDeletedRowIds().isEmpty()) {
-            for (Long detRowId : request.getDeletedRowIds()) {
-                ContractCrewDtlId id = new ContractCrewDtlId(crewPoid, detRowId);
-                if (crewDtlRepository.existsById(id)) {
-                    crewDtlRepository.deleteById(id);
-                }
-            }
-        }
 
         // Step 2: Update existing records
         if (request.getDetails() != null) {
             for (ContractCrewDtlRequest detailRequest : request.getDetails()) {
-                String operation = detailRequest.getOperation();
-                if (operation == null || operation.isEmpty()) {
-                    operation = detailRequest.getDetRowId() != null ? "UPDATE" : "INSERT";
-                }
-
-                if ("UPDATE".equals(operation) && detailRequest.getDetRowId() != null) {
+                String operation = detailRequest.getActionType();
+                if ("isdeleted".equalsIgnoreCase(operation)) {
+                    this.deleteCrewDetail(companyPoid, crewPoid, detailRequest.getDetRowId());
+                } else if ("isupdated".equalsIgnoreCase(operation) && detailRequest.getDetRowId() != null) {
                     // Update existing record
                     ContractCrewDtlId id = new ContractCrewDtlId(
                             crewPoid,
@@ -255,9 +287,9 @@ public class ContractCrewServiceImpl implements ContractCrewService {
                         detail = crewDtlRepository.save(detail);
                         savedDetails.add(detail);
                     }
-                } else if ("INSERT".equals(operation)) {
+                } else if ("iscreated".equalsIgnoreCase(operation)) {
                     // Insert new record
-                    ContractCrewDtl newDetail = entityMapper.toContractCrewDtlEntity(userId,detailRequest, crewPoid);
+                    ContractCrewDtl newDetail = entityMapper.toContractCrewDtlEntity(userId, detailRequest, crewPoid);
                     // Ensure embedded id has a detRowId. If missing, assign next available.
                     if (newDetail.getId() == null) {
                         newDetail.setId(new ContractCrewDtlId(crewPoid, null));
@@ -282,7 +314,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
     }
 
     @Override
-    public void deleteCrewDetail(Long companyPoid,Long crewPoid, Long detRowId) {
+    public void deleteCrewDetail(Long companyPoid, Long crewPoid, Long detRowId) {
         // Verify crew exists
 
         boolean crewExists = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid).isPresent();

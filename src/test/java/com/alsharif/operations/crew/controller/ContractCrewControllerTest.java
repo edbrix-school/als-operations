@@ -43,23 +43,6 @@ class ContractCrewControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /api/v1/contract-crew-masters/{crewPoid}/details/{detRowId} calls service with 3 args and returns 200")
-    void deleteCrewDetail_ok() throws Exception {
-        long companyPoid = 100L;
-        long crewPoid = 10L;
-        long detRowId = 5L;
-
-        mockMvc.perform(delete("/api/v1/contract-crew-masters/{crewPoid}/details/{detRowId}", crewPoid, detRowId)
-                        .header("companyPoid", companyPoid))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Detail record deleted successfully"))
-                .andExpect(jsonPath("$.crewPoid").value((int) crewPoid))
-                .andExpect(jsonPath("$.detRowId").value((int) detRowId));
-
-        then(crewService).should().deleteCrewDetail(companyPoid, crewPoid, detRowId);
-    }
-
-    @Test
     @DisplayName("GET /api/v1/contract-crew-masters returns paged list")
     void getCrewList_ok() throws Exception {
         PageResponse<ContractCrewResponse> page = new PageResponse<>(List.of(new ContractCrewResponse()), 0, 20, 1);
@@ -71,46 +54,97 @@ class ContractCrewControllerTest {
                         .param("size", "20")
                         .param("sort", "crewName,asc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(1));
+                .andExpect(jsonPath("$.result.data.totalElements").value(1));
     }
 
     @Test
-    @DisplayName("POST /api/v1/contract-crew-masters/{crewPoid}/details saves details and returns message + payload")
-    void saveCrewDetails_ok() throws Exception {
+    @DisplayName("GET /api/v1/contract-crew-masters/{crewPoid} returns ApiResponse with data")
+    void getCrewById_ok() throws Exception {
+        long crewPoid = 42L;
+        ContractCrewResponse res = new ContractCrewResponse();
+        res.setCrewPoid(crewPoid);
+        res.setCrewName("John Doe");
+        when(crewService.getCrewById(crewPoid)).thenReturn(res);
+
+        mockMvc.perform(get("/api/v1/contract-crew-masters/{crewPoid}", crewPoid))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Crew retrieved successfully"))
+                .andExpect(jsonPath("$.result.data.crewPoid").value((int) crewPoid))
+                .andExpect(jsonPath("$.result.data.crewName").value("John Doe"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/contract-crew-masters creates crew and returns ApiResponse with data")
+    void createCrew_ok() throws Exception {
         long companyPoid = 100L;
+        long groupPoid = 200L;
         String userId = "tester";
-        long crewPoid = 10L;
+        long createdPoid = 55L;
 
-        ContractCrewDtlResponse dtl = new ContractCrewDtlResponse();
-        dtl.setCrewPoid(crewPoid);
-        dtl.setDetRowId(1L);
-        CrewDetailsResponse serviceResp = new CrewDetailsResponse();
-        serviceResp.setCrewPoid(crewPoid);
-        serviceResp.setDetails(List.of(dtl));
-
-        when(crewService.saveCrewDetails(eq(companyPoid), eq(userId), eq(crewPoid), any(BulkSaveDetailsRequest.class)))
-                .thenReturn(serviceResp);
-
+        ContractCrewResponse res = new ContractCrewResponse();
+        res.setCrewPoid(createdPoid);
+        res.setCrewName("New Crew");
+        when(crewService.createCrew(any(ContractCrewRequest.class), eq(companyPoid), eq(groupPoid), eq(userId)))
+                .thenReturn(res);
 
         String reqJson = "{\n" +
-                "  \"details\": [\n" +
-                "    {\n" +
-                "      \"documentType\": \"PASSPORT\",\n" +
-                "      \"documentNumber\": \"123\",\n" +
-                "      \"documentAppliedDate\": \"2025-01-01\"\n" +
-                "    }\n" +
-                "  ]\n" +
+                "  \"crewName\": \"New Crew\",\n" +
+                "  \"crewNationalityPoid\": 1,\n" +
+                "  \"crewCompany\": \"ALS\",\n" +
+                "  \"crewDesignation\": \"Seaman\",\n" +
+                "  \"crewPassportNumber\": \"P123456\",\n" +
+                "  \"crewPassportIssueDate\": \"2025-01-01\",\n" +
+                "  \"crewPassportExpiryDate\": \"2027-01-01\"\n" +
                 "}";
 
-        mockMvc.perform(post("/api/v1/contract-crew-masters/{crewPoid}/details", crewPoid)
+        mockMvc.perform(post("/api/v1/contract-crew-masters")
+                        .header("companyPoid", companyPoid)
+                        .header("groupPoid", groupPoid)
+                        .header("userId", userId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(reqJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Crew created successfully"))
+                .andExpect(jsonPath("$.result.data.crewPoid").value((int) createdPoid))
+                .andExpect(jsonPath("$.result.data.crewName").value("New Crew"));
+
+        then(crewService).should().createCrew(any(ContractCrewRequest.class), eq(companyPoid), eq(groupPoid), eq(userId));
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/contract-crew-masters/{crewPoid} updates and returns ApiResponse with data")
+    void updateCrew_ok() throws Exception {
+        long companyPoid = 100L;
+        String userId = "tester";
+        long crewPoid = 77L;
+
+        ContractCrewResponse res = new ContractCrewResponse();
+        res.setCrewPoid(crewPoid);
+        res.setCrewName("Updated Crew");
+        when(crewService.updateCrew(eq(companyPoid), eq(userId), eq(crewPoid), any(ContractCrewRequest.class)))
+                .thenReturn(res);
+
+        String reqJson = "{\n" +
+                "  \"crewName\": \"Updated Crew\",\n" +
+                "  \"crewNationalityPoid\": 1,\n" +
+                "  \"crewCompany\": \"ALS\",\n" +
+                "  \"crewDesignation\": \"Seaman\",\n" +
+                "  \"crewPassportNumber\": \"P123456\",\n" +
+                "  \"crewPassportIssueDate\": \"2025-01-01\",\n" +
+                "  \"crewPassportExpiryDate\": \"2027-01-01\"\n" +
+                "}";
+
+        mockMvc.perform(put("/api/v1/contract-crew-masters/{crewPoid}", crewPoid)
                         .header("companyPoid", companyPoid)
                         .header("userId", userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Details saved successfully"))
-                .andExpect(jsonPath("$.crewPoid").value((int) crewPoid))
-                .andExpect(jsonPath("$.savedDetails[0].detRowId").value(1));
+                .andExpect(jsonPath("$.message").value("Crew updated successfully"))
+                .andExpect(jsonPath("$.result.data.crewPoid").value((int) crewPoid))
+                .andExpect(jsonPath("$.result.data.crewName").value("Updated Crew"));
+
+        then(crewService).should().updateCrew(eq(companyPoid), eq(userId), eq(crewPoid), any(ContractCrewRequest.class));
     }
 
     @Test
@@ -122,8 +156,7 @@ class ContractCrewControllerTest {
         mockMvc.perform(delete("/api/v1/contract-crew-masters/{crewPoid}", crewPoid)
                         .header("companyPoid", companyPoid))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Crew master deleted successfully"))
-                .andExpect(jsonPath("$.crewPoid").value((int) crewPoid));
+                .andExpect(jsonPath("$.message").value("Crew master deleted successfully"));
 
         then(crewService).should().deleteCrew(companyPoid, crewPoid);
     }
