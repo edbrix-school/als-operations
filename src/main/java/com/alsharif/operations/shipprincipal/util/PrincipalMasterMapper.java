@@ -6,6 +6,7 @@ import com.alsharif.operations.shipprincipal.entity.AddressDetails;
 import com.alsharif.operations.shipprincipal.entity.ShipPrincipalMaster;
 import com.alsharif.operations.shipprincipal.entity.ShipPrincipalMasterDtl;
 import com.alsharif.operations.shipprincipal.entity.ShipPrincipalMasterPymtDtl;
+import com.alsharif.operations.shipprincipal.entity.ShipPrincipalPaRptDtl;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -17,65 +18,6 @@ import java.util.stream.Collectors;
  */
 @Component
 public class PrincipalMasterMapper {
-
-    /**
-     * Convert Entity to DTO
-     */
-    public PrincipalMasterDto toDto(ShipPrincipalMaster entity,
-                                    List<ShipPrincipalMasterDtl> chargeDetails,
-                                    List<ShipPrincipalMasterPymtDtl> paymentDetails) {
-        if (entity == null) {
-            return null;
-        }
-
-        PrincipalMasterDto dto = PrincipalMasterDto.builder()
-                .principalPoid(entity.getPrincipalPoid())
-                .principalCode(entity.getPrincipalCode())
-                .principalName(entity.getPrincipalName())
-                .principalName2(entity.getPrincipalName2())
-                .groupPoid(entity.getGroupPoid())
-                .companyPoid(entity.getCompanyPoid())
-                .groupName(entity.getGroupName())
-                .countryPoid(entity.getCountryPoid())
-                .addressPoid(entity.getAddressPoid())
-                .creditPeriod(entity.getCreditPeriod())
-                .agreedPeriod(entity.getAgreedPeriod())
-                .currencyCode(entity.getCurrencyCode())
-                .currencyRate(entity.getCurrencyRate())
-                .buyingRate(entity.getBuyingRate())
-                .sellingRate(entity.getSellingRate())
-                .glCodePoid(entity.getGlCodePoid())
-                .glAcctNo(entity.getGlAcctno())
-                .tinNumber(entity.getTinNumber())
-                .taxSlab(entity.getTaxSlab())
-                .exemptionReason(entity.getExemptionReason())
-                .remarks(entity.getRemarks())
-                .seqNo(entity.getSeqno())
-                .active(entity.getActive())
-                .principalCodeOld(entity.getPrincipalCodeOld())
-                .deleted(entity.getDeleted())
-                .createdBy(entity.getCreatedBy())
-                .createdDate(entity.getCreatedDate())
-                .lastModifiedBy(entity.getLastModifiedBy())
-                .lastModifiedDate(entity.getLastModifiedDate())
-                .build();
-
-        // Map charge details
-        if (chargeDetails != null) {
-            dto.setCharges(chargeDetails.stream()
-                    .map(this::toChargeDetailDto)
-                    .collect(Collectors.toList()));
-        }
-
-        // Map payment details
-        if (paymentDetails != null) {
-            dto.setPayments(paymentDetails.stream()
-                    .map(this::toPaymentDetailDto)
-                    .collect(Collectors.toList()));
-        }
-
-        return dto;
-    }
 
     /**
      * Convert Entity to List DTO
@@ -258,7 +200,6 @@ public class PrincipalMasterMapper {
     }
 
     public void mapPaymentDTOToEntity(PaymentItemDTO dto, ShipPrincipalMasterPymtDtl entity) {
-        entity.setDetRowId(dto.getDetRowId());
         entity.setBank(dto.getBank());
         entity.setSwiftCode(dto.getSwiftCode());
         entity.setAccountNumber(dto.getAccountNumber());
@@ -325,6 +266,56 @@ public class PrincipalMasterMapper {
         dto.setInstagram(entity.getInstagram());
         dto.setFacebook(entity.getFacebook());
         return dto;
+    }
+
+    public ShipPrincipalPaRptDetailDto mapToPaRptDetailDTO(ShipPrincipalPaRptDtl entity) {
+        ShipPrincipalPaRptDetailDto dto = new ShipPrincipalPaRptDetailDto();
+        dto.setDetRowId(entity.getDetRowId());
+        dto.setPortCallReportType(entity.getPortCallReportType());
+        dto.setPdfTemplatePoid(entity.getPdfTemplatePoid());
+        dto.setEmailTemplatePoid(entity.getEmailTemplatePoid());
+        dto.setAssignedToRolePoid(entity.getAssignedToRolePoid());
+        dto.setVesselType(entity.getVesselType());
+        dto.setResponseTimeHrs(entity.getResponseTimeHrs());
+        dto.setFrequenceHrs(entity.getFrequenceHrs());
+        dto.setEscalationRole1(entity.getEscalationRole1());
+        dto.setEscalationRole2(entity.getEscalationRole2());
+        dto.setRemarks(entity.getRemarks());
+        return dto;
+    }
+
+    public ShipPrincipalPaRptDetailResponseDto mapToPaRptDetailResponseDTO(ShipPrincipalPaRptDtl entity) {
+        return ShipPrincipalPaRptDetailResponseDto.builder()
+                .detRowId(entity.getDetRowId())
+                .responseTimeHrs(entity.getResponseTimeHrs())
+                .frequencyHrs(entity.getFrequenceHrs())
+                .remarks(entity.getRemarks())
+                .build();
+    }
+
+    public PaymentItemResponseDTO mapToPaymentResponseDTO(ShipPrincipalMasterPymtDtl entity) {
+        return PaymentItemResponseDTO.builder()
+                .principalPoid(entity.getPrincipalPoid())
+                .detRowId(entity.getDetRowId())
+                .beneficiaryName(entity.getBeneficiaryName())
+                .address(entity.getAddress())
+                .bank(entity.getBank())
+                .bankAddress(entity.getBankAddress())
+                .beneficiaryCountry(entity.getBeneficiaryCountry())
+                .swiftCode(entity.getSwiftCode())
+                .accountNumber(entity.getAccountNumber())
+                .iban(entity.getIban())
+                .intermediaryBank(entity.getIntermediaryBank())
+                .intermediaryAcct(entity.getIntermediaryAcct())
+                .bankSwiftCode(entity.getBankSwiftCode())
+                .intermediaryCountryPoid(entity.getIntermediaryCountryPoid())
+                .active(entity.getActive())
+                .defaults(entity.getDefaults())
+                .remarks(entity.getRemarks())
+                .beneficiaryId(entity.getBeneficiaryId())
+                .intermediaryOth(entity.getIntermediaryOth())
+                .specialInstruction(entity.getSpecialInstruction())
+                .build();
     }
 }
 

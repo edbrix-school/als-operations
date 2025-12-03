@@ -54,9 +54,11 @@ public class PrincipalMasterDto {
     private List<ChargeDetailDto> charges;
     
     @Schema(description = "List of payment details")
-    private List<PaymentItemDTO> payments;
+    private List<PaymentItemResponseDTO> payments;
     
     @Schema(description = "List of address details")
     private List<AddressDetailsDTO> addressDetails;
 
+    @Schema(description = "List of port activity report details")
+    private List<ShipPrincipalPaRptDetailResponseDto> portActivityReportDetails;
 }

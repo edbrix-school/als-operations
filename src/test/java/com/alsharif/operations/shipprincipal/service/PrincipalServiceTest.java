@@ -4,6 +4,8 @@ import com.alsharif.operations.shipprincipal.dto.*;
 import com.alsharif.operations.shipprincipal.entity.*;
 import com.alsharif.operations.shipprincipal.repository.*;
 import com.alsharif.operations.shipprincipal.util.PrincipalMasterMapper;
+import com.alsharif.operations.commonlov.service.LovService;
+import com.alsharif.operations.vesseltype.repository.VesselTypeRepository;
 import com.alsharif.operations.user.entity.User;
 import com.alsharif.operations.user.repository.UserRepository;
 import com.alsharif.operations.commonlov.service.LovService;
@@ -40,6 +42,9 @@ class PrincipalServiceTest {
     private ShipPrincipalPaymentDetailRepository paymentRepository;
     
     @Mock
+    private ShipPrincipalPaRptDtlRepository paRptDtlRepository;
+    
+    @Mock
     private AddressMasterRepository addressMasterRepository;
     
     @Mock
@@ -56,6 +61,15 @@ class PrincipalServiceTest {
     
     @Mock
     private LovService lovService;
+    
+    @Mock
+    private GLMasterService glMasterService;
+    
+    @Mock
+    private AddressMasterService addressMasterService;
+    
+    @Mock
+    private VesselTypeRepository vesselTypeRepository;
     
     @InjectMocks
     private PrincipalMasterServiceImpl principalMasterService;
@@ -91,6 +105,7 @@ class PrincipalServiceTest {
         when(mapper.mapToDetailDTO(any(ShipPrincipalMaster.class))).thenReturn(mockDto);
         when(chargeRepository.findByPrincipalPoidOrderByDetRowIdAsc(1L)).thenReturn(Arrays.asList());
         when(paymentRepository.findByPrincipalPoidOrderByDetRowIdAsc(1L)).thenReturn(Arrays.asList());
+        when(paRptDtlRepository.findByPrincipalPoidOrderByDetRowIdAsc(1L)).thenReturn(Arrays.asList());
         
         PrincipalMasterDto result = principalMasterService.getPrincipal(1L);
         
@@ -126,6 +141,7 @@ class PrincipalServiceTest {
         when(mapper.mapToDetailDTO(any(ShipPrincipalMaster.class))).thenReturn(mockDto);
         when(chargeRepository.findByPrincipalPoidOrderByDetRowIdAsc(1L)).thenReturn(Arrays.asList());
         when(paymentRepository.findByPrincipalPoidOrderByDetRowIdAsc(1L)).thenReturn(Arrays.asList());
+        when(paRptDtlRepository.findByPrincipalPoidOrderByDetRowIdAsc(1L)).thenReturn(Arrays.asList());
         when(addressDetailsRepository.findByAddressMasterPoid(200L)).thenReturn(Arrays.asList(addressDetail));
         when(mapper.mapToAddressDetailDTO(any(AddressDetails.class))).thenReturn(addressDto);
         

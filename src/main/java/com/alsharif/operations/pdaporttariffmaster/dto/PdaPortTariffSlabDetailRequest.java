@@ -1,6 +1,7 @@
 package com.alsharif.operations.pdaporttariffmaster.dto;
 
 import com.alsharif.operations.pdaporttariffmaster.annotation.QuantityRangeAndSlab;
+import com.alsharif.operations.portcallreport.enums.ActionType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -52,5 +53,6 @@ public class PdaPortTariffSlabDetailRequest {
 
     @Size(max = 200, message = "Remarks cannot exceed 200 characters")
     private String remarks;
-}
 
+    private ActionType actionType;
+}

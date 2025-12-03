@@ -40,6 +40,9 @@ class PdaEntryServiceTest {
     @Mock
     private JdbcTemplate jdbcTemplate;
 
+    @Mock
+    private jakarta.persistence.EntityManager entityManager;
+
     @InjectMocks
     private PdaEntryServiceImpl pdaEntryService;
 

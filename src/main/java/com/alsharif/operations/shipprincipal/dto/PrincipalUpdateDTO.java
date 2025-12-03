@@ -56,4 +56,7 @@ public class PrincipalUpdateDTO {
     
     @Schema(description = "List of payment details")
     private List<PaymentItemDTO> payments;
+    
+    @Schema(description = "List of port activity report details")
+    private List<ShipPrincipalPaRptDetailDto> portActivityReportDetails;
 }
