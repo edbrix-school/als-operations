@@ -22,6 +22,8 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mockStatic;
+import org.mockito.MockedStatic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -29,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ContractCrewControllerTest {
 
     private MockMvc mockMvc;
+    private MockedStatic<com.asg.common.lib.security.util.UserContext> mockedUserContext;
 
     @Mock
     private ContractCrewService crewService;
@@ -40,17 +43,29 @@ class ContractCrewControllerTest {
 
     @BeforeEach
     void setUp() {
+        mockedUserContext = mockStatic(com.asg.common.lib.security.util.UserContext.class);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getCompanyPoid).thenReturn(100L);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getGroupPoid).thenReturn(200L);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getUserId).thenReturn("tester");
+        
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
         objectMapper = new ObjectMapper();
     }
 
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        if (mockedUserContext != null) {
+            mockedUserContext.close();
+        }
+    }
+
     @Test
-    @DisplayName("GET /api/v1/contract-crew-masters returns paged list")
+    @DisplayName("GET /v1/contract-crew-masters returns paged list")
     void getCrewList_ok() throws Exception {
         PageResponse<ContractCrewResponse> page = new PageResponse<>(List.of(new ContractCrewResponse()), 0, 20, 1);
         when(crewService.getCrewList(any(), any(), any(), any(), any(), anyLong())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/contract-crew-masters")
+        mockMvc.perform(get("/v1/contract-crew-masters")
                         .header("companyPoid", 100L)
                         .param("page", "0")
                         .param("size", "20")
@@ -60,7 +75,7 @@ class ContractCrewControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/contract-crew-masters/{crewPoid} returns ApiResponse with data")
+    @DisplayName("GET /v1/contract-crew-masters/{crewPoid} returns ApiResponse with data")
     void getCrewById_ok() throws Exception {
         long crewPoid = 42L;
         ContractCrewResponse res = new ContractCrewResponse();
@@ -68,7 +83,7 @@ class ContractCrewControllerTest {
         res.setCrewName("John Doe");
         when(crewService.getCrewById(crewPoid)).thenReturn(res);
 
-        mockMvc.perform(get("/api/v1/contract-crew-masters/{crewPoid}", crewPoid))
+        mockMvc.perform(get("/v1/contract-crew-masters/{crewPoid}", crewPoid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Crew retrieved successfully"))
                 .andExpect(jsonPath("$.result.data.crewPoid").value((int) crewPoid))
@@ -76,7 +91,7 @@ class ContractCrewControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/contract-crew-masters creates crew and returns ApiResponse with data")
+    @DisplayName("POST /v1/contract-crew-masters creates crew and returns ApiResponse with data")
     void createCrew_ok() throws Exception {
         long companyPoid = 100L;
         long groupPoid = 200L;
@@ -99,7 +114,7 @@ class ContractCrewControllerTest {
                 "  \"crewPassportExpiryDate\": \"2027-01-01\"\n" +
                 "}";
 
-        mockMvc.perform(post("/api/v1/contract-crew-masters")
+        mockMvc.perform(post("/v1/contract-crew-masters")
                         .header("companyPoid", companyPoid)
                         .header("groupPoid", groupPoid)
                         .header("userId", userId)
@@ -114,7 +129,7 @@ class ContractCrewControllerTest {
     }
 
     @Test
-    @DisplayName("PUT /api/v1/contract-crew-masters/{crewPoid} updates and returns ApiResponse with data")
+    @DisplayName("PUT /v1/contract-crew-masters/{crewPoid} updates and returns ApiResponse with data")
     void updateCrew_ok() throws Exception {
         long companyPoid = 100L;
         String userId = "tester";
@@ -136,7 +151,7 @@ class ContractCrewControllerTest {
                 "  \"crewPassportExpiryDate\": \"2027-01-01\"\n" +
                 "}";
 
-        mockMvc.perform(put("/api/v1/contract-crew-masters/{crewPoid}", crewPoid)
+        mockMvc.perform(put("/v1/contract-crew-masters/{crewPoid}", crewPoid)
                         .header("companyPoid", companyPoid)
                         .header("userId", userId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -150,12 +165,12 @@ class ContractCrewControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /api/v1/contract-crew-masters/{crewPoid} soft-deletes and returns 200")
+    @DisplayName("DELETE /v1/contract-crew-masters/{crewPoid} soft-deletes and returns 200")
     void deleteCrew_ok() throws Exception {
         long companyPoid = 100L;
         long crewPoid = 10L;
 
-        mockMvc.perform(delete("/api/v1/contract-crew-masters/{crewPoid}", crewPoid)
+        mockMvc.perform(delete("/v1/contract-crew-masters/{crewPoid}", crewPoid)
                         .header("companyPoid", companyPoid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Crew master deleted successfully"));
