@@ -1,6 +1,8 @@
 package com.asg.operations.pdaentryform.controller;
 
 
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
@@ -73,6 +75,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping
     public ResponseEntity<PageResponse<PdaEntryResponse>> getPdaEntryList(
             @Parameter(description = "Document reference (partial match)") @RequestParam(required = false) String docRef,
@@ -128,6 +131,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}")
     public ResponseEntity<PdaEntryResponse> getPdaEntryById(
             @Parameter(description = "Transaction POID", required = true)
@@ -165,6 +169,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     public ResponseEntity<PdaEntryResponse> createPdaEntry(
             @Parameter(description = "PDA Entry request", required = true)
@@ -213,6 +218,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{transactionPoid}")
     public ResponseEntity<PdaEntryResponse> updatePdaEntry(
             @Parameter(description = "Transaction POID", required = true)
@@ -253,6 +259,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}")
     public ResponseEntity<Map<String, String>> deletePdaEntry(
             @Parameter(description = "Transaction POID", required = true)
@@ -291,6 +298,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/charge-details")
     public ResponseEntity<List<PdaEntryChargeDetailResponse>> getChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -338,6 +346,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/charge-details/bulk-save")
     public ResponseEntity<List<PdaEntryChargeDetailResponse>> bulkSaveChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -376,6 +385,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}/charge-details/{detRowId}")
     public ResponseEntity<Map<String, String>> deleteChargeDetail(
             @Parameter(description = "Transaction POID", required = true)
@@ -419,6 +429,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/charge-details/clear")
     public ResponseEntity<Map<String, String>> clearChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -467,6 +478,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/recalculate")
     public ResponseEntity<List<PdaEntryChargeDetailResponse>> recalculateChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -513,6 +525,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/{transactionPoid}/load-default-charges")
     public ResponseEntity<List<PdaEntryChargeDetailResponse>> loadDefaultCharges(
             @Parameter(description = "Transaction POID", required = true)
@@ -549,6 +562,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/vehicle-details")
     public ResponseEntity<List<PdaEntryVehicleDetailResponse>> getVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -594,6 +608,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/vehicle-details/bulk-save")
     public ResponseEntity<List<PdaEntryVehicleDetailResponse>> bulkSaveVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -633,6 +648,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/vehicle-details/import")
     public ResponseEntity<Map<String, String>> importVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -672,6 +688,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/vehicle-details/clear")
     public ResponseEntity<Map<String, String>> clearVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -711,6 +728,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/vehicle-details/publish")
     public ResponseEntity<Map<String, String>> publishVehicleDetailsForImport(
             @Parameter(description = "Transaction POID", required = true)
@@ -749,6 +767,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/tdr-details")
     public ResponseEntity<List<PdaEntryTdrDetailResponse>> getTdrDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -795,6 +814,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/tdr-details/bulk-save")
     public ResponseEntity<List<PdaEntryTdrDetailResponse>> bulkSaveTdrDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -833,6 +853,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/acknowledgment-details")
     public ResponseEntity<List<PdaEntryAcknowledgmentDetailResponse>> getAcknowledgmentDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -879,6 +900,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/acknowledgment-details/bulk-save")
     public ResponseEntity<List<PdaEntryAcknowledgmentDetailResponse>> bulkSaveAcknowledgmentDetails(
             @Parameter(description = "Transaction POID", required = true)
@@ -890,6 +912,7 @@ public class PdaEntryController {
         return ResponseEntity.ok(response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/acknow/upload-details")
     public ResponseEntity<Map<String, String>> uploadAcknowledgmentDetails(
             @PathVariable Long transactionPoid
@@ -900,6 +923,7 @@ public class PdaEntryController {
         return ResponseEntity.ok(response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/acknow/clear-details")
     public ResponseEntity<Map<String, String>> clearAcknowledgmentDetails(
             @PathVariable Long transactionPoid
@@ -941,6 +965,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/validate-before-save")
     public ResponseEntity<ValidationResponse> validateBeforeSave(
             @Parameter(description = "Transaction POID (optional, for existing records)")
@@ -979,6 +1004,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/{transactionPoid}/validate-after-save")
     public ResponseEntity<ValidationResponse> validateAfterSave(
             @Parameter(description = "Transaction POID", required = true)
@@ -1015,6 +1041,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/vessel-details")
     public ResponseEntity<VesselDetailsResponse> getVesselDetails(
             @Parameter(description = "Vessel POID", required = true)
@@ -1056,6 +1083,7 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping("/{transactionPoid}/create-fda")
     public ResponseEntity<Map<String, String>> createFda(
             @Parameter(description = "Transaction POID", required = true)

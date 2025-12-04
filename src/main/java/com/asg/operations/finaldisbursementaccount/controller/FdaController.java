@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 //import org.springframework.core.io.Resource;
 //import org.springframework.http.HttpHeaders;
 //import org.springframework.http.MediaType;
@@ -33,6 +35,7 @@ public class FdaController {
 
     private final FdaService fdaService;
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping
     @Operation(summary = "Get FDA list", description = "Retrieve paginated list of Final Disbursement Accounts with optional filters")
     @ApiResponses({
@@ -51,6 +54,7 @@ public class FdaController {
         return ApiResponse.success("FDA list fetched successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}")
     @Operation(summary = "Get FDA by ID", description = "Retrieve a specific Final Disbursement Account by transaction ID")
     @ApiResponses({
@@ -63,6 +67,7 @@ public class FdaController {
         return ApiResponse.success("FDA fetched successfully", fdaService.getFdaHeader(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid()));
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     @Operation(summary = "Create FDA", description = "Create a new Final Disbursement Account")
     @ApiResponses({
@@ -75,6 +80,7 @@ public class FdaController {
         return ApiResponse.success("FDA created successfully", fdaService.createFdaHeader(dto, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId()));
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{transactionPoid}")
     @Operation(summary = "Update FDA", description = "Update an existing Final Disbursement Account")
     @ApiResponses({
@@ -89,6 +95,7 @@ public class FdaController {
         return ApiResponse.success("FDA updated successfully", fdaService.updateFdaHeader(transactionPoid, dto, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId()));
     }
 
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}")
     @Operation(summary = "Delete FDA", description = "Soft delete a Final Disbursement Account")
     @ApiResponses({
@@ -102,6 +109,7 @@ public class FdaController {
         return ApiResponse.success("FDA soft deleted successfully");
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/details")
     @Operation(summary = "Get FDA charges", description = "Retrieve paginated list of charges for a specific FDA")
     @ApiResponses({
@@ -116,6 +124,7 @@ public class FdaController {
         return ApiResponse.success("Charges fetched successfully", charges);
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("{transactionPoid}/details/bulk-save")
     @Operation(summary = "Bulk save charges", description = "Save multiple charges for a specific FDA")
     @ApiResponses({
@@ -130,6 +139,7 @@ public class FdaController {
         return ApiResponse.success("Charges saved successfully");
     }
 
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}/details/{detRowId}")
     @Operation(summary = "Delete FDA charge", description = "Delete a specific charge from an FDA")
     @ApiResponses({
@@ -144,6 +154,7 @@ public class FdaController {
         return ApiResponse.success("FDA detail deleted successfully");
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/close")
     @Operation(summary = "Close FDA", description = "Close a Final Disbursement Account")
     @ApiResponses({
@@ -165,6 +176,7 @@ public class FdaController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/reopen")
     @Operation(summary = "Reopen FDA", description = "Reopen a closed Final Disbursement Account")
     @ApiResponses({
@@ -187,6 +199,7 @@ public class FdaController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/submit")
     @Operation(summary = "Submit FDA", description = "Submit a Final Disbursement Account for approval")
     @ApiResponses({
@@ -208,6 +221,7 @@ public class FdaController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/verify")
     @Operation(summary = "Verify FDA", description = "Verify a submitted Final Disbursement Account")
     @ApiResponses({
@@ -229,6 +243,7 @@ public class FdaController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/return")
     @Operation(summary = "Return FDA", description = "Return a Final Disbursement Account for corrections")
     @ApiResponses({
@@ -251,6 +266,7 @@ public class FdaController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping("/{transactionPoid}/supplementary")
     @Operation(summary = "Create supplementary FDA", description = "Create a supplementary Final Disbursement Account")
     @ApiResponses({
@@ -271,6 +287,7 @@ public class FdaController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/supplementary-info")
     @Operation(summary = "Get supplementary info", description = "Retrieve supplementary information for an FDA")
     @ApiResponses({
@@ -284,6 +301,7 @@ public class FdaController {
         return ApiResponse.success("Supplementary info fetched successfully", dtos);
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/close-without-amount")
     @Operation(summary = "Close FDA without amount", description = "Close a Final Disbursement Account without specifying amounts")
     @ApiResponses({
@@ -305,6 +323,7 @@ public class FdaController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/party-gl")
     @Operation(summary = "Get party GL", description = "Retrieve General Ledger information for a specific party")
     @ApiResponses({
@@ -320,6 +339,7 @@ public class FdaController {
         return ApiResponse.success("Party General Ledger fetched successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping("/from-pda/{pdaTransactionPoid}")
     @Operation(summary = "Create FDA from PDA", description = "Create a Final Disbursement Account from a Preliminary Disbursement Account")
     @ApiResponses({
@@ -340,6 +360,7 @@ public class FdaController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/logs/pda")
     @Operation(summary = "Get PDA logs", description = "Retrieve PDA-related logs for an FDA")
     @ApiResponses({
@@ -355,6 +376,7 @@ public class FdaController {
         return ApiResponse.success("Logs fetched successfully", logs);
     }
 
+//    @AllowedAction(UserRolesRightsEnum.PRINT)
 //    @GetMapping(path = "/{transactionPoid}/print", produces = MediaType.APPLICATION_PDF_VALUE)
 //    @Operation(summary = "Print FDA report", description = "Generate and download PDF report for an FDA")
 //    @ApiResponses({

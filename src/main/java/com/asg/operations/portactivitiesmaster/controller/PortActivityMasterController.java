@@ -1,5 +1,7 @@
 package com.asg.operations.portactivitiesmaster.controller;
 
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.portactivitiesmaster.dto.PageResponse;
@@ -24,6 +26,7 @@ public class PortActivityMasterController {
 
     private final PortActivityMasterService portActivityService;
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping
     public ResponseEntity<?> getPortActivityList(
             @RequestParam(required = false) String code,
@@ -36,6 +39,7 @@ public class PortActivityMasterController {
         return ApiResponse.success("Port activity list retrieved successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{portActivityTypePoid}")
     public ResponseEntity<?> getPortActivityById(
             @PathVariable @NotNull @Positive Long portActivityTypePoid
@@ -44,6 +48,7 @@ public class PortActivityMasterController {
         return ApiResponse.success("Port activity retrieved successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     public ResponseEntity<?> createPortActivity(
             @Valid @RequestBody PortActivityMasterRequest request
@@ -52,6 +57,7 @@ public class PortActivityMasterController {
         return ApiResponse.success("Port activity created successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{portActivityTypePoid}")
     public ResponseEntity<?> updatePortActivity(
             @PathVariable @NotNull @Positive Long portActivityTypePoid,
@@ -62,6 +68,7 @@ public class PortActivityMasterController {
         return ApiResponse.success("Port activity updated successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{portActivityTypePoid}")
     public ResponseEntity<?> deletePortActivity(
             @PathVariable @NotNull @Positive Long portActivityTypePoid,

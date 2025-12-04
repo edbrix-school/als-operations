@@ -1,5 +1,7 @@
 package com.asg.operations.pdaporttariffmaster.controller;
 
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaporttariffmaster.dto.*;
@@ -23,6 +25,7 @@ public class PdaPortTariffMasterController {
 
     private final PdaPortTariffHdrService tariffService;
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping
     public ResponseEntity<?> getTariffList(
             @RequestParam(required = false) String portPoid,
@@ -36,6 +39,7 @@ public class PdaPortTariffMasterController {
         return ApiResponse.success("Tariff list retrieved successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}")
     public ResponseEntity<?> getTariffById(
             @PathVariable @NotNull @Positive Long transactionPoid
@@ -44,6 +48,7 @@ public class PdaPortTariffMasterController {
         return ApiResponse.success("Tariff retrieved successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     public ResponseEntity<?> createTariff(
             @Valid @RequestBody PdaPortTariffMasterRequest request
@@ -52,6 +57,7 @@ public class PdaPortTariffMasterController {
         return ApiResponse.success("Tariff created successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{transactionPoid}")
     public ResponseEntity<?> updateTariff(
             @PathVariable @NotNull @Positive Long transactionPoid,
@@ -61,6 +67,7 @@ public class PdaPortTariffMasterController {
         return ApiResponse.success("Tariff updated successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}")
     public ResponseEntity<?> deleteTariff(
             @PathVariable @NotNull @Positive Long transactionPoid,
@@ -70,6 +77,7 @@ public class PdaPortTariffMasterController {
         return ApiResponse.success("Tariff deleted successfully");
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping("/{transactionPoid}/copy")
     public ResponseEntity<?> copyTariff(
             @PathVariable @NotNull @Positive Long transactionPoid,
@@ -79,6 +87,7 @@ public class PdaPortTariffMasterController {
         return ApiResponse.success("Tariff copied successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/charges")
     public ResponseEntity<?> getChargeDetails(
             @PathVariable @NotNull @Positive Long transactionPoid,
@@ -88,6 +97,7 @@ public class PdaPortTariffMasterController {
         return ApiResponse.success("Charge details retrieved successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/charges/bulk")
     public ResponseEntity<?> bulkSaveChargeDetails(
             @PathVariable @NotNull @Positive Long transactionPoid,

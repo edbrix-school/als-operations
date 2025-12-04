@@ -1,5 +1,7 @@
 package com.asg.operations.portcallreport.controller;
 
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.portcallreport.dto.PortActivityResponseDto;
@@ -45,6 +47,7 @@ public class PortCallReportController {
      * @param search search term for filtering
      * @return paginated list of port call reports
      */
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping
     @Operation(
             summary = "Get port call report list",
@@ -83,6 +86,7 @@ public class PortCallReportController {
      * @param id report ID
      * @return port call report details
      */
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{id}")
     @Operation(
             summary = "Get port call report by ID",
@@ -108,6 +112,7 @@ public class PortCallReportController {
      * @param dto port call report data
      * @return created port call report
      */
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     @Operation(
             summary = "Create port call report",
@@ -132,6 +137,7 @@ public class PortCallReportController {
      * @param dto port call report data
      * @return updated port call report
      */
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{id}")
     @Operation(
             summary = "Update port call report",
@@ -156,6 +162,7 @@ public class PortCallReportController {
      * @param id report ID
      * @return success response
      */
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete port call report",
@@ -177,6 +184,7 @@ public class PortCallReportController {
      *
      * @return list of port activities
      */
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/port-activities")
     @Operation(
             summary = "Get port activities",
@@ -198,6 +206,7 @@ public class PortCallReportController {
      *
      * @return list of vessel types
      */
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/vessel-types")
     @Operation(
             summary = "Get vessel types",
