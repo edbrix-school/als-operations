@@ -23,6 +23,7 @@ import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import org.mockito.MockedStatic;
 
 
 
@@ -35,6 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(MockitoExtension.class)
 public class PdaRateTypeControllerTest {
+
+    private MockedStatic<com.asg.common.lib.security.util.UserContext> mockedUserContext;
 
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -50,6 +53,10 @@ public class PdaRateTypeControllerTest {
 
     @BeforeEach
     void setup() {
+        mockedUserContext = mockStatic(com.asg.common.lib.security.util.UserContext.class);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getGroupPoid).thenReturn(1L);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getUserId).thenReturn("testUser");
+        
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
@@ -76,12 +83,19 @@ public class PdaRateTypeControllerTest {
         responseDTO.setActive(requestDTO.getActive());
     }
 
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        if (mockedUserContext != null) {
+            mockedUserContext.close();
+        }
+    }
+
     // CREATE
     @Test
     void testCreatePdaRateType() throws Exception {
         when(service.createRateType(any(PdaRateTypeRequestDTO.class), eq(1L), eq("testUser"))).thenReturn(responseDTO);
 
-        mockMvc.perform(post("/api/v1/pda-rate-types")
+        mockMvc.perform(post("/v1/pda-rate-types")
                         .header("X-Group-Poid", "1")
                         .header("X-User-Id", "testUser")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -96,7 +110,7 @@ public class PdaRateTypeControllerTest {
     void testUpdatePdaRateType() throws Exception {
         when(service.updateRateType(eq(1L), any(PdaRateTypeRequestDTO.class), eq(1L), eq("testUser"))).thenReturn(responseDTO);
 
-        mockMvc.perform(put("/api/v1/pda-rate-types/1")
+        mockMvc.perform(put("/v1/pda-rate-types/1")
                         .header("X-Group-Poid", "1")
                         .header("X-User-Id", "testUser")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -114,7 +128,7 @@ public class PdaRateTypeControllerTest {
 
         when(service.getRateTypeList(any(), any(), any(), eq(1L), any())).thenReturn(pageResponse);
 
-        mockMvc.perform(get("/api/v1/pda-rate-types")
+        mockMvc.perform(get("/v1/pda-rate-types")
                         .header("X-Group-Poid", "1")
                         .param("page", "0")
                         .param("size", "10")
@@ -128,7 +142,7 @@ public class PdaRateTypeControllerTest {
     void testGetById() throws Exception {
         when(service.getRateTypeById(1L, 1L)).thenReturn(responseDTO);
 
-        mockMvc.perform(get("/api/v1/pda-rate-types/1")
+        mockMvc.perform(get("/v1/pda-rate-types/1")
                         .header("X-Group-Poid", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -139,7 +153,7 @@ public class PdaRateTypeControllerTest {
     void testSoftDelete() throws Exception {
         doNothing().when(service).deleteRateType(1L, 1L, "testUser", false);
 
-        mockMvc.perform(delete("/api/v1/pda-rate-types/1")
+        mockMvc.perform(delete("/v1/pda-rate-types/1")
                         .header("X-Group-Poid", "1")
                         .header("X-User-Id", "testUser"))
                 .andExpect(status().isOk())

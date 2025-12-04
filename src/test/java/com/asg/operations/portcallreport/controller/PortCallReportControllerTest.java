@@ -4,14 +4,18 @@ import com.asg.operations.portcallreport.dto.PortCallReportDto;
 import com.asg.operations.portcallreport.dto.PortCallReportResponseDto;
 import com.asg.operations.portcallreport.service.PortCallReportService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
 import java.util.List;
@@ -21,37 +25,39 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(PortCallReportController.class)
+@ExtendWith(MockitoExtension.class)
 class PortCallReportControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
+    private MockedStatic<com.asg.common.lib.security.util.UserContext> mockedUserContext;
 
-    @Autowired
     private ObjectMapper objectMapper;
 
-    @MockitoBean
+    @Mock
     private PortCallReportService portCallReportService;
-
-    @Test
-    void getReportList_ShouldReturnPagedReports() throws Exception {
-        PortCallReportResponseDto dto = PortCallReportResponseDto.builder()
-                .portCallReportPoid(1L)
-                .portCallReportId("PCR00001")
-                .portCallReportName("Test Report")
-                .build();
-        Page<PortCallReportResponseDto> page = new PageImpl<>(List.of(dto));
-
-        when(portCallReportService.getReportList(any(), any())).thenReturn(page);
-
-        mockMvc.perform(get("/port-call-reports")
-                        .param("page", "0")
-                        .param("size", "20"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.result.data.content[0].portCallReportId").value("PCR00001"));
-
-        verify(portCallReportService).getReportList(any(), any());
+    
+    @InjectMocks
+    private PortCallReportController controller;
+    
+    @BeforeEach
+    void setUp() {
+        mockedUserContext = mockStatic(com.asg.common.lib.security.util.UserContext.class);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getCompanyPoid).thenReturn(100L);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getGroupPoid).thenReturn(200L);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getUserPoid).thenReturn(1L);
+        
+        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        objectMapper = new ObjectMapper();
     }
+    
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        if (mockedUserContext != null) {
+            mockedUserContext.close();
+        }
+    }
+
+
 
     @Test
     void getReportById_ShouldReturnReport() throws Exception {
@@ -63,7 +69,7 @@ class PortCallReportControllerTest {
 
         when(portCallReportService.getReportById(1L)).thenReturn(dto);
 
-        mockMvc.perform(get("/port-call-reports/1"))
+        mockMvc.perform(get("/v1/port-call-reports/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.data.portCallReportId").value("PCR00001"));
 
@@ -85,9 +91,9 @@ class PortCallReportControllerTest {
                 .active("Y")
                 .build();
 
-        when(portCallReportService.createReport(any(), eq(1L), eq(100L))).thenReturn(created);
+        when(portCallReportService.createReport(any(), eq(1L), eq(200L))).thenReturn(created);
 
-        mockMvc.perform(post("/port-call-reports")
+        mockMvc.perform(post("/v1/port-call-reports")
                         .header("X-User-Poid", "1")
                         .header("X-Group-Poid", "100")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -95,7 +101,7 @@ class PortCallReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.data.portCallReportId").value("PCR00001"));
 
-        verify(portCallReportService).createReport(any(), eq(1L), eq(100L));
+        verify(portCallReportService).createReport(any(), eq(1L), eq(200L));
     }
 
     @Test
@@ -113,9 +119,9 @@ class PortCallReportControllerTest {
                 .active("Y")
                 .build();
 
-        when(portCallReportService.updateReport(eq(1L), any(), eq(1L), eq(100L))).thenReturn(updated);
+        when(portCallReportService.updateReport(eq(1L), any(), eq(1L), eq(200L))).thenReturn(updated);
 
-        mockMvc.perform(put("/port-call-reports/1")
+        mockMvc.perform(put("/v1/port-call-reports/1")
                         .header("X-User-Poid", "1")
                         .header("X-Group-Poid", "100")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -123,14 +129,14 @@ class PortCallReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.data.portCallReportName").value("Updated Report"));
 
-        verify(portCallReportService).updateReport(eq(1L), any(), eq(1L), eq(100L));
+        verify(portCallReportService).updateReport(eq(1L), any(), eq(1L), eq(200L));
     }
 
     @Test
     void deleteReport_ShouldReturnSuccess() throws Exception {
         doNothing().when(portCallReportService).deleteReport(1L);
 
-        mockMvc.perform(delete("/port-call-reports/1"))
+        mockMvc.perform(delete("/v1/port-call-reports/1"))
                 .andExpect(status().isOk());
 
         verify(portCallReportService).deleteReport(1L);
@@ -140,7 +146,7 @@ class PortCallReportControllerTest {
     void getPortActivities_ShouldReturnActivities() throws Exception {
         when(portCallReportService.getPortActivities(1L)).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/port-call-reports/port-activities")
+        mockMvc.perform(get("/v1/port-call-reports/port-activities")
                         .header("X-User-Poid", "1"))
                 .andExpect(status().isOk());
 
@@ -151,7 +157,7 @@ class PortCallReportControllerTest {
     void getVesselTypes_ShouldReturnVesselTypes() throws Exception {
         when(portCallReportService.getVesselTypes()).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/port-call-reports/vessel-types"))
+        mockMvc.perform(get("/v1/port-call-reports/vessel-types"))
                 .andExpect(status().isOk());
 
         verify(portCallReportService).getVesselTypes();

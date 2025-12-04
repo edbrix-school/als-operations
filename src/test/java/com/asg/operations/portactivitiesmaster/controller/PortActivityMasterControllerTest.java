@@ -1,5 +1,6 @@
 package com.asg.operations.portactivitiesmaster.controller;
 
+import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.portactivitiesmaster.dto.PageResponse;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
@@ -7,12 +8,16 @@ import com.asg.operations.portactivitiesmaster.service.PortActivityMasterService
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,16 +27,17 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(PortActivityMasterController.class)
+@ExtendWith(MockitoExtension.class)
 class PortActivityMasterControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @Mock
     private PortActivityMasterService portActivityService;
 
-    @Autowired
+    @InjectMocks
+    private PortActivityMasterController portActivityMasterController;
+
     private ObjectMapper objectMapper;
 
     private PortActivityMasterRequest request;
@@ -40,6 +46,11 @@ class PortActivityMasterControllerTest {
 
     @BeforeEach
     void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(portActivityMasterController)
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .build();
+        objectMapper = new ObjectMapper();
+        
         request = PortActivityMasterRequest.builder()
                 .portActivityTypeName("Test Activity")
                 .portActivityTypeName2("Test Activity 2")
@@ -75,128 +86,142 @@ class PortActivityMasterControllerTest {
 
     @Test
     void getPortActivityList_ShouldReturnSuccess() throws Exception {
-        // Given
-        when(portActivityService.getPortActivityList(any(), any(), any(), eq(1L), any(Pageable.class)))
-                .thenReturn(pageResponse);
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            // Given
+            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
+            when(portActivityService.getPortActivityList(any(), any(), any(), eq(1L), any(Pageable.class)))
+                    .thenReturn(pageResponse);
 
-        // When & Then
-        mockMvc.perform(get("/api/v1/port-activities")
-                        .header("X-Group-Poid", "1")
-                        .param("code", "PA1")
-                        .param("name", "Test")
-                        .param("active", "Y"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Port activity list retrieved successfully"))
-                .andExpect(jsonPath("$.result.data.content[0].portActivityTypeCode").value("PA1"));
+            // When & Then
+            mockMvc.perform(get("/v1/port-activities")
+                            .param("code", "PA1")
+                            .param("name", "Test")
+                            .param("active", "Y"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Port activity list retrieved successfully"))
+                    .andExpect(jsonPath("$.result.data.content[0].portActivityTypeCode").value("PA1"));
 
-        verify(portActivityService).getPortActivityList(eq("PA1"), eq("Test"), eq("Y"), eq(1L), any(Pageable.class));
+            verify(portActivityService).getPortActivityList(eq("PA1"), eq("Test"), eq("Y"), eq(1L), any(Pageable.class));
+        }
     }
 
     @Test
     void getPortActivityById_ShouldReturnSuccess() throws Exception {
-        // Given
-        when(portActivityService.getPortActivityById(1L, 1L)).thenReturn(response);
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            // Given
+            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
+            when(portActivityService.getPortActivityById(1L, 1L)).thenReturn(response);
 
-        // When & Then
-        mockMvc.perform(get("/api/v1/port-activities/1")
-                        .header("X-Group-Poid", "1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Port activity retrieved successfully"))
-                .andExpect(jsonPath("$.result.data.portActivityTypePoid").value(1))
-                .andExpect(jsonPath("$.result.data.portActivityTypeCode").value("PA1"));
+            // When & Then
+            mockMvc.perform(get("/v1/port-activities/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Port activity retrieved successfully"))
+                    .andExpect(jsonPath("$.result.data.portActivityTypePoid").value(1))
+                    .andExpect(jsonPath("$.result.data.portActivityTypeCode").value("PA1"));
 
-        verify(portActivityService).getPortActivityById(1L, 1L);
+            verify(portActivityService).getPortActivityById(1L, 1L);
+        }
     }
 
     @Test
     void createPortActivity_ShouldReturnSuccess() throws Exception {
-        // Given
-        when(portActivityService.createPortActivity(any(PortActivityMasterRequest.class), eq(1L), eq("testUser")))
-                .thenReturn(response);
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            // Given
+            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
+            mockedUserContext.when(UserContext::getUserId).thenReturn("testUser");
+            when(portActivityService.createPortActivity(any(PortActivityMasterRequest.class), eq(1L), eq("testUser")))
+                    .thenReturn(response);
 
-        // When & Then
-        mockMvc.perform(post("/api/v1/port-activities")
-                        .header("X-Group-Poid", "1")
-                        .header("X-User-Id", "testUser")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Port activity created successfully"))
-                .andExpect(jsonPath("$.result.data.portActivityTypeCode").value("PA1"));
+            // When & Then
+            mockMvc.perform(post("/v1/port-activities")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Port activity created successfully"))
+                    .andExpect(jsonPath("$.result.data.portActivityTypeCode").value("PA1"));
 
-        verify(portActivityService).createPortActivity(any(PortActivityMasterRequest.class), eq(1L), eq("testUser"));
+            verify(portActivityService).createPortActivity(any(PortActivityMasterRequest.class), eq(1L), eq("testUser"));
+        }
     }
 
     @Test
     void createPortActivity_ShouldReturnBadRequest_WhenInvalidInput() throws Exception {
-        // Given
-        PortActivityMasterRequest invalidRequest = PortActivityMasterRequest.builder().build();
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            // Given
+            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
+            mockedUserContext.when(UserContext::getUserId).thenReturn("testUser");
+            PortActivityMasterRequest invalidRequest = PortActivityMasterRequest.builder().build();
 
-        // When & Then
-        mockMvc.perform(post("/api/v1/port-activities")
-                        .header("X-Group-Poid", "1")
-                        .header("X-User-Id", "testUser")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequest)))
-                .andExpect(status().isBadRequest());
+            // When & Then
+            mockMvc.perform(post("/v1/port-activities")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(invalidRequest)))
+                    .andExpect(status().isBadRequest());
 
-        verify(portActivityService, never()).createPortActivity(any(), any(), any());
+            verify(portActivityService, never()).createPortActivity(any(), any(), any());
+        }
     }
 
     @Test
     void updatePortActivity_ShouldReturnSuccess() throws Exception {
-        // Given
-        when(portActivityService.updatePortActivity(eq(1L), any(PortActivityMasterRequest.class), eq(1L), eq("testUser")))
-                .thenReturn(response);
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            // Given
+            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
+            mockedUserContext.when(UserContext::getUserId).thenReturn("testUser");
+            when(portActivityService.updatePortActivity(eq(1L), any(PortActivityMasterRequest.class), eq(1L), eq("testUser")))
+                    .thenReturn(response);
 
-        // When & Then
-        mockMvc.perform(put("/api/v1/port-activities/1")
-                        .header("X-Group-Poid", "1")
-                        .header("X-User-Id", "testUser")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Port activity updated successfully"))
-                .andExpect(jsonPath("$.result.data.portActivityTypeCode").value("PA1"));
+            // When & Then
+            mockMvc.perform(put("/v1/port-activities/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Port activity updated successfully"))
+                    .andExpect(jsonPath("$.result.data.portActivityTypeCode").value("PA1"));
 
-        verify(portActivityService).updatePortActivity(eq(1L), any(PortActivityMasterRequest.class), eq(1L), eq("testUser"));
+            verify(portActivityService).updatePortActivity(eq(1L), any(PortActivityMasterRequest.class), eq(1L), eq("testUser"));
+        }
     }
 
     @Test
     void deletePortActivity_SoftDelete_ShouldReturnSuccess() throws Exception {
-        // Given
-        doNothing().when(portActivityService).deletePortActivity(1L, 1L, "testUser", false);
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            // Given
+            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
+            mockedUserContext.when(UserContext::getUserId).thenReturn("testUser");
+            doNothing().when(portActivityService).deletePortActivity(1L, 1L, "testUser", false);
 
-        // When & Then
-        mockMvc.perform(delete("/api/v1/port-activities/1")
-                        .header("X-Group-Poid", "1")
-                        .header("X-User-Id", "testUser")
-                        .param("hardDelete", "false"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Port activity deleted successfully"));
+            // When & Then
+            mockMvc.perform(delete("/v1/port-activities/1")
+                            .param("hardDelete", "false"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Port activity deleted successfully"));
 
-        verify(portActivityService).deletePortActivity(1L, 1L, "testUser", false);
+            verify(portActivityService).deletePortActivity(1L, 1L, "testUser", false);
+        }
     }
 
     @Test
     void deletePortActivity_HardDelete_ShouldReturnSuccess() throws Exception {
-        // Given
-        doNothing().when(portActivityService).deletePortActivity(1L, 1L, "testUser", true);
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            // Given
+            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
+            mockedUserContext.when(UserContext::getUserId).thenReturn("testUser");
+            doNothing().when(portActivityService).deletePortActivity(1L, 1L, "testUser", true);
 
-        // When & Then
-        mockMvc.perform(delete("/api/v1/port-activities/1")
-                        .header("X-Group-Poid", "1")
-                        .header("X-User-Id", "testUser")
-                        .param("hardDelete", "true"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Port activity deleted successfully"));
+            // When & Then
+            mockMvc.perform(delete("/v1/port-activities/1")
+                            .param("hardDelete", "true"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Port activity deleted successfully"));
 
-        verify(portActivityService).deletePortActivity(1L, 1L, "testUser", true);
+            verify(portActivityService).deletePortActivity(1L, 1L, "testUser", true);
+        }
     }
 }

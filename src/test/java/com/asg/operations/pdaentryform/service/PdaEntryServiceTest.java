@@ -51,14 +51,14 @@ class PdaEntryServiceTest {
 
     private Long groupPoid;
     private Long companyPoid;
-    private String userId;
+    private Long userId;
     private Long transactionPoid;
 
     @BeforeEach
     void setUp() {
         groupPoid = 1L;
         companyPoid = 100L;
-        userId = "USER123";
+        userId = 123L;
         transactionPoid = 1000L;
     }
 
@@ -91,7 +91,7 @@ class PdaEntryServiceTest {
         request.setDeleteDetRowIds(new ArrayList<>());
 
         List<PdaEntryChargeDetailResponse> result = pdaEntryService.bulkSaveChargeDetails(
-                transactionPoid, request, groupPoid, companyPoid, userId);
+                transactionPoid, request, groupPoid, companyPoid, String.valueOf(userId));
 
         assertNotNull(result);
     }
@@ -117,7 +117,7 @@ class PdaEntryServiceTest {
         request.setDeleteDetRowIds(new ArrayList<>());
 
         List<PdaEntryVehicleDetailResponse> result = pdaEntryService.bulkSaveVehicleDetails(
-                transactionPoid, request, groupPoid, companyPoid, userId);
+                transactionPoid, request, groupPoid, companyPoid, String.valueOf(userId));
 
         assertNotNull(result);
     }
@@ -147,7 +147,7 @@ class PdaEntryServiceTest {
         request.setChargeDetails(new ArrayList<>());
         request.setDeleteDetRowIds(List.of(100L));
 
-        pdaEntryService.bulkSaveChargeDetails(transactionPoid, request, groupPoid, companyPoid, userId);
+        pdaEntryService.bulkSaveChargeDetails(transactionPoid, request, groupPoid, companyPoid, String.valueOf(userId));
 
         assertNotNull(request);
     }
@@ -208,7 +208,7 @@ class PdaEntryServiceTest {
         when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
                 .thenReturn(Optional.of(entry));
 
-        pdaEntryService.clearChargeDetails(transactionPoid, groupPoid, companyPoid, Long.valueOf(userId));
+        pdaEntryService.clearChargeDetails(transactionPoid, groupPoid, companyPoid, userId);
 
         assertNotNull(entry);
     }
@@ -222,7 +222,7 @@ class PdaEntryServiceTest {
         when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
                 .thenReturn(Optional.of(entry));
 
-        pdaEntryService.clearVehicleDetails(transactionPoid, groupPoid, companyPoid, Long.valueOf(userId));
+        pdaEntryService.clearVehicleDetails(transactionPoid, groupPoid, companyPoid, userId);
 
         assertNotNull(entry);
     }
@@ -237,7 +237,7 @@ class PdaEntryServiceTest {
         when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
                 .thenReturn(Optional.of(entry));
 
-        pdaEntryService.publishVehicleDetailsForImport(transactionPoid, groupPoid, companyPoid, Long.valueOf(userId));
+        pdaEntryService.publishVehicleDetailsForImport(transactionPoid, groupPoid, companyPoid, userId);
 
         assertNotNull(entry);
     }
@@ -299,7 +299,7 @@ class PdaEntryServiceTest {
                 .thenReturn(entry);
 
         List<PdaEntryChargeDetailResponse> result = pdaEntryService.recalculateChargeDetails(
-                transactionPoid, groupPoid, companyPoid, Long.valueOf(userId));
+                transactionPoid, groupPoid, companyPoid, userId);
 
         assertNotNull(result);
     }
@@ -329,7 +329,7 @@ class PdaEntryServiceTest {
                 .thenReturn(entry);
 
         List<PdaEntryChargeDetailResponse> result = pdaEntryService.loadDefaultCharges(
-                transactionPoid, groupPoid, companyPoid, Long.valueOf(userId));
+                transactionPoid, groupPoid, companyPoid, userId);
 
         assertNotNull(result);
     }
