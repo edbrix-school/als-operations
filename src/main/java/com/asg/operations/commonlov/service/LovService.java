@@ -1,0 +1,12 @@
+package com.asg.operations.commonlov.service;
+
+import com.asg.operations.commonlov.dto.LovItem;
+import com.asg.operations.commonlov.dto.LovResponse;
+import org.springframework.stereotype.Service;
+
+@Service
+public interface LovService {
+    LovResponse getLovList(String lovName, Long docKeyPoid, String filterValue, Long groupPoid, Long companyPoid, Long userPoid);
+
+    LovItem getLovItem(Long poid, String lovName, Long groupPoid, Long companyPoid, Long userPoid);
+}
