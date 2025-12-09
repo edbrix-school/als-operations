@@ -125,6 +125,16 @@ public class PrincipalMasterMapper {
         return dto;
     }
 
+    public ChargeDetailResponseDto mapToChargeResponseDTO(ShipPrincipalMasterDtl entity) {
+        return ChargeDetailResponseDto.builder()
+                .principalPoid(entity.getPrincipalPoid())
+                .detRowId(entity.getDetRowId())
+                .chargePoid(entity.getChargePoid())
+                .rate(entity.getRate())
+                .remarks(entity.getRemarks())
+                .build();
+    }
+
     public PaymentItemDTO mapToPaymentDTO(ShipPrincipalMasterPymtDtl entity) {
         PaymentItemDTO dto = new PaymentItemDTO();
         dto.setPrincipalPoid(entity.getPrincipalPoid());
@@ -159,10 +169,10 @@ public class PrincipalMasterMapper {
         entity.setCountryPoid(dto.getCountryPoid());
         entity.setCreditPeriod(dto.getCreditPeriod());
         entity.setRemarks(dto.getRemarks());
-        entity.setActive(dto.getActive());
+        entity.setActive("Y");
         entity.setSeqno(dto.getSeqNo());
         entity.setGroupName(dto.getGroupName());
-        entity.setPrincipalCodeOld(dto.getPrincipalCodeOld());
+        entity.setPrincipalCodeOld(null);
         entity.setCompanyPoid(dto.getCompanyPoid());
         entity.setCurrencyCode(dto.getCurrencyCode());
         entity.setCurrencyRate(dto.getCurrencyRate());

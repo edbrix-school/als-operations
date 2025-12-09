@@ -1,5 +1,6 @@
 package com.asg.operations.shipprincipal.dto;
 
+import com.asg.operations.commonlov.dto.LovItem;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -63,6 +64,10 @@ public class AddressMasterResponse {
     private Long countryId;
 
     private String countryName;
+    
+    private LovItem countryDet;
+    
+    private LovItem addressDet;
 
     @Valid
     private AddressTypeMapDTO addressTypeMap;

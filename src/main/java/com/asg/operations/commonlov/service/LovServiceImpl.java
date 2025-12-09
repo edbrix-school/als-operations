@@ -3,6 +3,7 @@ import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.dto.LovResponse;
 import com.asg.operations.commonlov.repository.LovRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -44,6 +45,26 @@ public class LovServiceImpl implements LovService {
             }
         }
         return dto;
+    }
+
+    @Override
+    public LovItem getLovItemByCode(String code, String lovName, Long groupPoid, Long companyPoid, Long userPoid) {
+        log.info("code : {}, lovName : {}, groupPoid : {}, companyPoid : {}, userId : {}", 
+                code, lovName, groupPoid, companyPoid, userPoid);
+
+        if (StringUtils.isEmpty(code)) {
+            return new LovItem();
+        }
+
+        LovResponse listValue = this.getLovList(lovName, null, "", groupPoid, companyPoid, userPoid);
+
+        if (listValue != null && listValue.getItems() != null) {
+            return listValue.getItems().stream()
+                    .filter(x -> code.equals(x.getCode()))
+                    .findFirst()
+                    .orElse(new LovItem(null, code, null, null, null, null));
+        }
+        return new LovItem(null, code, null, null, null, null);
     }
 
 }

@@ -1,5 +1,6 @@
 package com.asg.operations.shipprincipal.service;
 
+import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.ResourceAlreadyExistsException;
@@ -68,18 +69,20 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
         PrincipalMasterDto dto = mapper.mapToDetailDTO(principal);
 
-        if (principal.getCountryPoid() != null) {
-            dto.setCountryDet(lovService.getLovItem(principal.getCountryPoid(), "COUNTRY",
-                    principal.getGroupPoid(), principal.getCompanyPoid(), null));
-        }
-        if (principal.getGlCodePoid() != null) {
-            dto.setGlCodeDet(lovService.getLovItem(principal.getGlCodePoid(), "GL_CODE",
-                    principal.getGroupPoid(), principal.getCompanyPoid(), null));
-        }
-        if (principal.getCompanyPoid() != null) {
-            dto.setCompanyDet(lovService.getLovItem(principal.getCompanyPoid(), "COMPANY",
-                    principal.getGroupPoid(), principal.getCompanyPoid(), null));
-        }
+
+        dto.setCountryDet(lovService.getLovItem(principal.getCountryPoid(), "COUNTRY",
+                principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
+
+        dto.setGlCodeDet(lovService.getLovItem(principal.getGlCodePoid(), "GL_CODE",
+                principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
+
+        dto.setCompanyDet(lovService.getLovItem(principal.getCompanyPoid(), "COMPANY",
+                principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
+
+
+        dto.setTaxSlabDet(lovService.getLovItemByCode(principal.getTaxSlab(), "TAX_SLAB",
+                principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
+
 
         List<ShipPrincipalMasterDtl> charges = chargeRepository.findByPrincipalPoidOrderByDetRowIdAsc(id);
         dto.setCharges(mapChargesWithLov(charges));
@@ -517,13 +520,20 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
         return details.stream().map(entity -> {
             ShipPrincipalPaRptDetailResponseDto dto = mapper.mapToPaRptDetailResponseDTO(entity);
-            dto.setPortCallReportType(portCallRptTypeMap.get(entity.getPortCallReportType()));
-            dto.setPdfTemplate(pdfTemplateMap.get(entity.getPdfTemplatePoid()));
-            dto.setEmailTemplate(emailTemplateMap.get(entity.getEmailTemplatePoid()));
-            dto.setAssignedToRole(userRolesMap.get(entity.getAssignedToRolePoid()));
-            dto.setEscalationRole1(userRolesMap.get(entity.getEscalationRole1()));
-            dto.setEscalationRole2(userRolesMap.get(entity.getEscalationRole2()));
-            dto.setVesselType(vesselTypeMap.get(entity.getVesselType()));
+            dto.setPortCallReportTypePoid(entity.getPortCallReportType());
+            dto.setPortCallReportTypeDet(portCallRptTypeMap.get(entity.getPortCallReportType()));
+            dto.setPdfTemplatePoid(entity.getPdfTemplatePoid());
+            dto.setPdfTemplateDet(pdfTemplateMap.get(entity.getPdfTemplatePoid()));
+            dto.setEmailTemplatePoid(entity.getEmailTemplatePoid());
+            dto.setEmailTemplateDet(emailTemplateMap.get(entity.getEmailTemplatePoid()));
+            dto.setAssignedToRolePoid(entity.getAssignedToRolePoid());
+            dto.setAssignedToRoleDet(userRolesMap.get(entity.getAssignedToRolePoid()));
+            dto.setVesselTypePoid(entity.getVesselType() != null ? Long.valueOf(entity.getVesselType()) : null);
+            dto.setVesselTypeDet(vesselTypeMap.get(entity.getVesselType()));
+            dto.setEscalationRole1Poid(entity.getEscalationRole1());
+            dto.setEscalationRole1Det(userRolesMap.get(entity.getEscalationRole1()));
+            dto.setEscalationRole2Poid(entity.getEscalationRole2());
+            dto.setEscalationRole2Det(userRolesMap.get(entity.getEscalationRole2()));
             
             return dto;
         }).collect(Collectors.toList());
@@ -553,15 +563,19 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         }
 
         Map<String, LovItem> paymentTypeMap = getLovMapByCode("PAYMENT_TYPE");
+        Map<Long, LovItem> countryMap = getLovMap("COUNTRY");
 
         return payments.stream().map(entity -> {
             PaymentItemResponseDTO dto = mapper.mapToPaymentResponseDTO(entity);
-            dto.setType(paymentTypeMap.get(entity.getType()));
+            dto.setType(entity.getType());
+            dto.setTypeDet(paymentTypeMap.get(entity.getType()));
+            dto.setBeneficiaryCountryDet(countryMap.get(entity.getBeneficiaryCountry()));
+            dto.setIntermediaryCountryDet(countryMap.get(entity.getIntermediaryCountryPoid()));
             return dto;
         }).collect(Collectors.toList());
     }
 
-    private List<ChargeDetailDto> mapChargesWithLov(List<ShipPrincipalMasterDtl> charges) {
+    private List<ChargeDetailResponseDto> mapChargesWithLov(List<ShipPrincipalMasterDtl> charges) {
         if (charges == null || charges.isEmpty()) {
             return new ArrayList<>();
         }
@@ -569,11 +583,10 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         Map<Long, LovItem> chargeMasterMap = getLovMap("CHARGE_MASTER");
 
         return charges.stream().map(entity -> {
-            ChargeDetailDto dto = mapper.mapToChargeDTO(entity);
+            ChargeDetailResponseDto dto = mapper.mapToChargeResponseDTO(entity);
             LovItem chargeItem = chargeMasterMap.get(entity.getChargePoid());
             if (chargeItem != null) {
-                dto.setChargeCode(chargeItem.getCode());
-                dto.setChargeName(chargeItem.getLabel());
+                dto.setChargeDet(chargeItem);
             }
             return dto;
         }).collect(Collectors.toList());
