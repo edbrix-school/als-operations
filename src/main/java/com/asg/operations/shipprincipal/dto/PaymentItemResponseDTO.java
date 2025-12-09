@@ -21,7 +21,10 @@ public class PaymentItemResponseDTO {
     private Long detRowId;
     
     @Schema(description = "Payment type")
-    private LovItem type;
+    private String type;
+    
+    @Schema(description = "Payment type LOV details")
+    private LovItem typeDet;
     
     @Schema(description = "Beneficiary name", example = "ABC Company")
     private String beneficiaryName;
@@ -37,6 +40,9 @@ public class PaymentItemResponseDTO {
     
     @Schema(description = "Beneficiary country POID", example = "1")
     private Long beneficiaryCountry;
+    
+    @Schema(description = "Beneficiary country LOV details")
+    private LovItem beneficiaryCountryDet;
     
     @Schema(description = "SWIFT code", example = "BOFAUS3N")
     private String swiftCode;
@@ -58,6 +64,9 @@ public class PaymentItemResponseDTO {
     
     @Schema(description = "Intermediary country POID", example = "1")
     private Long intermediaryCountryPoid;
+    
+    @Schema(description = "Intermediary country LOV details")
+    private LovItem intermediaryCountryDet;
     
     @Schema(description = "Active status")
     private String active;
