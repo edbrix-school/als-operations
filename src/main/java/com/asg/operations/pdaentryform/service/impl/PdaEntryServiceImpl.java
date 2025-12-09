@@ -1,6 +1,7 @@
 package com.asg.operations.pdaentryform.service.impl;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
@@ -49,6 +50,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     private final PdaEntryDocumentRefGenerator docRefGenerator;
     private final JdbcTemplate jdbcTemplate;
     private final EntityManager entityManager;
+    private final LovService lovService;
 
     @Autowired
     public PdaEntryServiceImpl(
@@ -60,7 +62,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
            // SecurityContextUtil securityContextUtil,
             PdaEntryDocumentRefGenerator docRefGenerator,
             JdbcTemplate jdbcTemplate,
-            EntityManager entityManager
+            EntityManager entityManager,
+            LovService lovService
     ) {
         this.entryHdrRepository = entryHdrRepository;
         this.entryDtlRepository = entryDtlRepository;
@@ -71,6 +74,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         this.docRefGenerator = docRefGenerator;
         this.jdbcTemplate = jdbcTemplate;
         this.entityManager = entityManager;
+        this.lovService = lovService;
     }
 
     @Override
@@ -905,7 +909,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // If there are field validation errors, return them
         if (!errors.isEmpty()) {
-            ValidationResponse response = new ValidationResponse(false, "ERROR", "Validation failed");
+            ValidationResponse response = new ValidationResponse(false, "ERROR", "Validation failed", new ArrayList<>(), new ArrayList<>());
             response.setErrors(errors);
             return response;
         }
@@ -1191,12 +1195,16 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setDeleted(entity.getDeleted());
         response.setTransactionDate(entity.getTransactionDate());
         response.setPrincipalPoid(entity.getPrincipalPoid());
+        response.setPrincipalDet(lovService.getLovItem(entity.getPrincipalPoid() != null ? entity.getPrincipalPoid().longValue() : null, "PRINCIPAL_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setPrincipalName(entity.getPrincipalName());
         response.setPrincipalContact(entity.getPrincipalContact());
         response.setVoyagePoid(entity.getVoyagePoid());
+        response.setVoyageDet(lovService.getLovItem(entity.getVoyagePoid() != null ? entity.getVoyagePoid().longValue() : null, "VESSAL_VOYAGE", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setVoyageNo(entity.getVoyageNo());
         response.setVesselPoid(entity.getVesselPoid());
+        response.setVesselDet(lovService.getLovItem(entity.getVesselPoid() != null ? entity.getVesselPoid().longValue() : null, "VESSEL_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setVesselTypePoid(entity.getVesselTypePoid());
+        response.setVesselTypeDet(lovService.getLovItem(entity.getVesselTypePoid() != null ? entity.getVesselTypePoid().longValue() : null, "VESSEL_TYPE_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setGrt(entity.getGrt());
         response.setNrt(entity.getNrt());
         response.setDwt(entity.getDwt());
@@ -1207,26 +1215,35 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setActualSailDate(entity.getActualSailDate());
         response.setVesselSailDate(entity.getVesselSailDate());
         response.setPortPoid(entity.getPortPoid());
+        response.setPortDet(lovService.getLovItem(entity.getPortPoid() != null ? entity.getPortPoid().longValue() : null, "PDA_PORT_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setPortDescription(entity.getPortDescription());
         response.setLinePoid(entity.getLinePoid());
+        response.setLineDet(lovService.getLovItem(entity.getLinePoid() != null ? entity.getLinePoid().longValue() : null, "LINE_MASTER_ALL", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setComodityPoid(entity.getComodityPoid());
+        response.setComodityDet(lovService.getLovItem(entity.getComodityPoid() != null ? Long.valueOf(entity.getComodityPoid()) : null, "COMODITY", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setOperationType(entity.getOperationType());
+        response.setOperationTypeDet(lovService.getLovItemByCode(entity.getOperationType(), "PDA_OPERATION_TYPES", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setHarbourCallType(entity.getHarbourCallType());
         response.setImportQty(entity.getImportQty());
         response.setExportQty(entity.getExportQty());
         response.setTranshipmentQty(entity.getTranshipmentQty());
         response.setTotalQuantity(entity.getTotalQuantity());
         response.setUnit(entity.getUnit());
+        response.setUnitDet(lovService.getLovItemByCode(entity.getUnit(), "UNIT_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setNumberOfDays(entity.getNumberOfDays());
         response.setCurrencyCode(entity.getCurrencyCode());
+        response.setCurrencyDet(lovService.getLovItemByCode(entity.getCurrencyCode(), "CURRENCY", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setCurrencyRate(entity.getCurrencyRate());
         response.setTotalAmount(entity.getTotalAmount());
         response.setCostCentrePoid(entity.getCostCentrePoid());
         response.setSalesmanPoid(entity.getSalesmanPoid());
+        response.setSalesmanDet(lovService.getLovItem(entity.getSalesmanPoid() != null ? entity.getSalesmanPoid().longValue() : null, "SALESMAN", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setTermsPoid(entity.getTermsPoid());
         response.setAddressPoid(entity.getAddressPoid());
         response.setRefType(entity.getRefType());
+        response.setRefTypeDet(lovService.getLovItemByCode(entity.getRefType(), "PDA_REF_TYPE", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setSubCategory(entity.getSubCategory());
+        response.setSubCategoryDet(lovService.getLovItemByCode(entity.getSubCategory(), "PDA_SUB_CATEGORY", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setStatus(entity.getStatus());
         response.setCargoDetails(entity.getCargoDetails());
         response.setRemarks(entity.getRemarks());
@@ -1234,6 +1251,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setVesselVerifiedDate(entity.getVesselVerifiedDate());
         response.setVesselVerifiedBy(entity.getVesselVerifiedBy());
         response.setVesselHandledBy(entity.getVesselHandledBy());
+        response.setVesselHandledByDet(lovService.getLovItem(entity.getVesselHandledBy() != null ? entity.getVesselHandledBy().longValue() : null, "PDA_USER_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setUrgentApproval(entity.getUrgentApproval());
         response.setPrincipalApproved(entity.getPrincipalApproved());
         response.setPrincipalApprovedDate(entity.getPrincipalApprovedDate());
@@ -1241,12 +1259,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setPrincipalAprvlDays(entity.getPrincipalAprvlDays());
         response.setReminderMinutes(entity.getReminderMinutes());
         response.setPrintPrincipal(entity.getPrintPrincipal());
+        response.setPrintPrincipalDet(lovService.getLovItem(entity.getPrintPrincipal() != null ? entity.getPrintPrincipal().longValue() : null, "PDA_PRINCIPAL_PRINT", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setFdaRef(entity.getFdaRef());
         response.setFdaPoid(entity.getFdaPoid());
         response.setMultipleFda(entity.getMultipleFda());
         response.setNominatedPartyType(entity.getNominatedPartyType());
+        response.setNominatedPartyTypeDet(lovService.getLovItemByCode(entity.getNominatedPartyType(), "PDA_NOMINATED_PARTY_TYPE", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setNominatedPartyPoid(entity.getNominatedPartyPoid());
         response.setBankPoid(entity.getBankPoid());
+        response.setBankDet(lovService.getLovItem(entity.getBankPoid() != null ? entity.getBankPoid().longValue() : null, "BANK_MASTER_COMPANYWISE", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setBusinessRefBy(entity.getBusinessRefBy());
         response.setPmiDocument(entity.getPmiDocument());
         response.setCancelRemark(entity.getCancelRemark());

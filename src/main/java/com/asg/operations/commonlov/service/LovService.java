@@ -9,4 +9,6 @@ public interface LovService {
     LovResponse getLovList(String lovName, Long docKeyPoid, String filterValue, Long groupPoid, Long companyPoid, Long userPoid);
 
     LovItem getLovItem(Long poid, String lovName, Long groupPoid, Long companyPoid, Long userPoid);
+
+    LovItem getLovItemByCode(String code, String lovName, Long groupPoid, Long companyPoid, Long userPoid);
 }

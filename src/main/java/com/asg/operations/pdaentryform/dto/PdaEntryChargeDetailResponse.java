@@ -1,12 +1,21 @@
 package com.asg.operations.pdaentryform.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
  * Response DTO for PDA Entry Charge Detail
  */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PdaEntryChargeDetailResponse {
 
     private Long transactionPoid;
@@ -42,231 +51,5 @@ public class PdaEntryChargeDetailResponse {
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime lastModifiedDate;
-
-    // Getters and Setters
-
-    public Long getTransactionPoid() {
-        return transactionPoid;
-    }
-
-    public void setTransactionPoid(Long transactionPoid) {
-        this.transactionPoid = transactionPoid;
-    }
-
-    public Long getDetRowId() {
-        return detRowId;
-    }
-
-    public void setDetRowId(Long detRowId) {
-        this.detRowId = detRowId;
-    }
-
-    public BigDecimal getChargePoid() {
-        return chargePoid;
-    }
-
-    public void setChargePoid(BigDecimal chargePoid) {
-        this.chargePoid = chargePoid;
-    }
-
-    public BigDecimal getRateTypePoid() {
-        return rateTypePoid;
-    }
-
-    public void setRateTypePoid(BigDecimal rateTypePoid) {
-        this.rateTypePoid = rateTypePoid;
-    }
-
-    public BigDecimal getPrincipalPoid() {
-        return principalPoid;
-    }
-
-    public void setPrincipalPoid(BigDecimal principalPoid) {
-        this.principalPoid = principalPoid;
-    }
-
-    public String getCurrencyCode() {
-        return currencyCode;
-    }
-
-    public void setCurrencyCode(String currencyCode) {
-        this.currencyCode = currencyCode;
-    }
-
-    public BigDecimal getCurrencyRate() {
-        return currencyRate;
-    }
-
-    public void setCurrencyRate(BigDecimal currencyRate) {
-        this.currencyRate = currencyRate;
-    }
-
-    public BigDecimal getQty() {
-        return qty;
-    }
-
-    public void setQty(BigDecimal qty) {
-        this.qty = qty;
-    }
-
-    public BigDecimal getDays() {
-        return days;
-    }
-
-    public void setDays(BigDecimal days) {
-        this.days = days;
-    }
-
-    public BigDecimal getPdaRate() {
-        return pdaRate;
-    }
-
-    public void setPdaRate(BigDecimal pdaRate) {
-        this.pdaRate = pdaRate;
-    }
-
-    public BigDecimal getTaxPoid() {
-        return taxPoid;
-    }
-
-    public void setTaxPoid(BigDecimal taxPoid) {
-        this.taxPoid = taxPoid;
-    }
-
-    public BigDecimal getTaxPercentage() {
-        return taxPercentage;
-    }
-
-    public void setTaxPercentage(BigDecimal taxPercentage) {
-        this.taxPercentage = taxPercentage;
-    }
-
-    public BigDecimal getTaxAmount() {
-        return taxAmount;
-    }
-
-    public void setTaxAmount(BigDecimal taxAmount) {
-        this.taxAmount = taxAmount;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public BigDecimal getFdaAmount() {
-        return fdaAmount;
-    }
-
-    public void setFdaAmount(BigDecimal fdaAmount) {
-        this.fdaAmount = fdaAmount;
-    }
-
-    public String getFdaDocRef() {
-        return fdaDocRef;
-    }
-
-    public void setFdaDocRef(String fdaDocRef) {
-        this.fdaDocRef = fdaDocRef;
-    }
-
-    public BigDecimal getFdaPoid() {
-        return fdaPoid;
-    }
-
-    public void setFdaPoid(BigDecimal fdaPoid) {
-        this.fdaPoid = fdaPoid;
-    }
-
-    public String getFdaCreationType() {
-        return fdaCreationType;
-    }
-
-    public void setFdaCreationType(String fdaCreationType) {
-        this.fdaCreationType = fdaCreationType;
-    }
-
-    public String getDataSource() {
-        return dataSource;
-    }
-
-    public void setDataSource(String dataSource) {
-        this.dataSource = dataSource;
-    }
-
-    public String getDetailFrom() {
-        return detailFrom;
-    }
-
-    public void setDetailFrom(String detailFrom) {
-        this.detailFrom = detailFrom;
-    }
-
-    public String getManual() {
-        return manual;
-    }
-
-    public void setManual(String manual) {
-        this.manual = manual;
-    }
-
-    public Integer getSeqno() {
-        return seqno;
-    }
-
-    public void setSeqno(Integer seqno) {
-        this.seqno = seqno;
-    }
-
-    public String getRemarks() {
-        return remarks;
-    }
-
-    public void setRemarks(String remarks) {
-        this.remarks = remarks;
-    }
-
-    public String getOldChargeCode() {
-        return oldChargeCode;
-    }
-
-    public void setOldChargeCode(String oldChargeCode) {
-        this.oldChargeCode = oldChargeCode;
-    }
-
-    public String getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
-    }
-
-    public LocalDateTime getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(LocalDateTime createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public String getLastModifiedBy() {
-        return lastModifiedBy;
-    }
-
-    public void setLastModifiedBy(String lastModifiedBy) {
-        this.lastModifiedBy = lastModifiedBy;
-    }
-
-    public LocalDateTime getLastModifiedDate() {
-        return lastModifiedDate;
-    }
-
-    public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
-        this.lastModifiedDate = lastModifiedDate;
-    }
 }
 

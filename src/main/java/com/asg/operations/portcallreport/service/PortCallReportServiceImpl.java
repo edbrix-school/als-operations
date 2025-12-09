@@ -32,10 +32,7 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -75,18 +72,21 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 .map(hdr -> {
                     String vesselTypes = hdr.getPortCallApplVesselType();
                     List<LovItem> vesselTypeLovItems = null;
+                    List<String> vesselTypeList = new ArrayList<>();
                     if (vesselTypes != null) {
-                        vesselTypeLovItems = List.of(vesselTypes.split(",")).stream()
+                        vesselTypeList = List.of(vesselTypes.split(","));
+                        vesselTypeLovItems = vesselTypeList.stream()
                                 .map(Long::parseLong)
                                 .map(finalVesselTypeByPoidMap::get)
-                                .filter(item -> item != null)
+                                .filter(Objects::nonNull)
                                 .collect(Collectors.toList());
                     }
                     return PortCallReportResponseDto.builder()
                             .portCallReportPoid(hdr.getPortCallReportPoid())
                             .portCallReportId(hdr.getPortCallReportId())
                             .portCallReportName(hdr.getPortCallReportName())
-                            .portCallApplVesselType(vesselTypeLovItems)
+                            .portCallApplVesselType(vesselTypeList)
+                            .portCallApplVesselTypeDet(vesselTypeLovItems)
                             .active(hdr.getActive())
                             .seqno(hdr.getSeqno())
                             .build();
@@ -114,15 +114,17 @@ public class PortCallReportServiceImpl implements PortCallReportService {
 
         String vesselTypes = hdr.getPortCallApplVesselType();
         List<LovItem> vesselTypeLovItems = null;
+        List<String> vesselTypeList = new ArrayList<>();
         if (vesselTypes != null) {
+            vesselTypeList = List.of(vesselTypes.split(","));
             LovResponse lovResponse = lovService.getLovList("VESSEL_TYPE_MASTER", null, null, null, null, null);
             if (lovResponse != null && lovResponse.getItems() != null) {
                 Map<Long, LovItem> vesselTypeByPoidMap = lovResponse.getItems().stream()
                         .collect(Collectors.toMap(LovItem::getPoid, item -> item));
-                vesselTypeLovItems = List.of(vesselTypes.split(",")).stream()
+                vesselTypeLovItems = vesselTypeList.stream()
                         .map(Long::parseLong)
                         .map(vesselTypeByPoidMap::get)
-                        .filter(item -> item != null)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
             }
         }
@@ -150,7 +152,8 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 .portCallReportPoid(hdr.getPortCallReportPoid())
                 .portCallReportId(hdr.getPortCallReportId())
                 .portCallReportName(hdr.getPortCallReportName())
-                .portCallApplVesselType(vesselTypeLovItems)
+                .portCallApplVesselType(vesselTypeList)
+                .portCallApplVesselTypeDet(vesselTypeLovItems)
                 .active(hdr.getActive())
                 .seqno(hdr.getSeqno())
                 .remarks(hdr.getRemarks())

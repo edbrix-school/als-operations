@@ -2,9 +2,17 @@ package com.asg.operations.pdaentryform.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class BulkSaveChargeDetailsRequest {
 
     @NotNull(message = "Charge details list is mandatory")
@@ -12,22 +20,4 @@ public class BulkSaveChargeDetailsRequest {
     private List<PdaEntryChargeDetailRequest> chargeDetails;
 
     private List<Long> deleteDetRowIds; // IDs to delete
-
-    // Getters and Setters
-
-    public List<PdaEntryChargeDetailRequest> getChargeDetails() {
-        return chargeDetails;
-    }
-
-    public void setChargeDetails(List<PdaEntryChargeDetailRequest> chargeDetails) {
-        this.chargeDetails = chargeDetails;
-    }
-
-    public List<Long> getDeleteDetRowIds() {
-        return deleteDetRowIds;
-    }
-
-    public void setDeleteDetRowIds(List<Long> deleteDetRowIds) {
-        this.deleteDetRowIds = deleteDetRowIds;
-    }
 }

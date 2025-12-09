@@ -48,10 +48,11 @@ public class PrincipalMasterDto {
     private BigDecimal sellingRate;
     private String tinNumber;
     private String taxSlab;
+    private LovItem taxSlabDet;
     private String exemptionReason;
     
     @Schema(description = "List of charges")
-    private List<ChargeDetailDto> charges;
+    private List<ChargeDetailResponseDto> charges;
     
     @Schema(description = "List of payment details")
     private List<PaymentItemResponseDTO> payments;

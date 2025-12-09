@@ -2,11 +2,20 @@ package com.asg.operations.pdaentryform.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
 /**
  * Request DTO for bulk save of acknowledgment details
  */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class BulkSaveAcknowledgmentDetailsRequest {
 
     @NotNull(message = "Acknowledgment details list is mandatory")
@@ -14,23 +23,5 @@ public class BulkSaveAcknowledgmentDetailsRequest {
     private List<PdaEntryAcknowledgmentDetailRequest> acknowledgmentDetails;
 
     private List<Long> deleteDetRowIds; // IDs to delete
-
-    // Getters and Setters
-
-    public List<PdaEntryAcknowledgmentDetailRequest> getAcknowledgmentDetails() {
-        return acknowledgmentDetails;
-    }
-
-    public void setAcknowledgmentDetails(List<PdaEntryAcknowledgmentDetailRequest> acknowledgmentDetails) {
-        this.acknowledgmentDetails = acknowledgmentDetails;
-    }
-
-    public List<Long> getDeleteDetRowIds() {
-        return deleteDetRowIds;
-    }
-
-    public void setDeleteDetRowIds(List<Long> deleteDetRowIds) {
-        this.deleteDetRowIds = deleteDetRowIds;
-    }
 }
 

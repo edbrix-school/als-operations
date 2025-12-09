@@ -16,7 +16,8 @@ public class PortCallReportResponseDto {
     private Long portCallReportPoid;
     private String portCallReportId;
     private String portCallReportName;
-    private List<LovItem> portCallApplVesselType;
+    private List<String> portCallApplVesselType;
+    private List<LovItem> portCallApplVesselTypeDet;
     private String active;
     private Long seqno;
     private String remarks;
