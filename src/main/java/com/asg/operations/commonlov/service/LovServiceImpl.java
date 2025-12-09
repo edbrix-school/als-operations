@@ -1,4 +1,5 @@
 package com.asg.operations.commonlov.service;
+
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.dto.LovResponse;
 import com.asg.operations.commonlov.repository.LovRepository;
@@ -18,7 +19,7 @@ public class LovServiceImpl implements LovService {
 
     @Override
     public LovResponse getLovList(String lovName, Long docKeyPoid, String filterValue, Long groupPoid, Long companyPoid, Long userPoid) {
-        log.info("Fetching LOV list for lovName={} docKeyPoid={} filterValue={} groupPoid={} companyPoid={} userId={}", 
+        log.info("Fetching LOV list for lovName={} docKeyPoid={} filterValue={} groupPoid={} companyPoid={} userId={}",
                 lovName, docKeyPoid, filterValue, groupPoid, companyPoid, userPoid);
         LovResponse response = lovRepository.getLovList(lovName, docKeyPoid, filterValue, groupPoid, companyPoid, userPoid);
         log.info("Fetched LOV list for lovName={} itemCount={}", lovName,
@@ -27,9 +28,13 @@ public class LovServiceImpl implements LovService {
     }
 
     @Override
-    public LovItem getLovItem(Long poid, String lovName, Long groupPoid, Long companyPoid, Long userPoid) {
-        log.info("poid : {}, lovName : {}, groupPoid : {}, companyPoid : {}, userId : {}", 
+    public LovItem getLovItemByPoid(Long poid, String lovName, Long groupPoid, Long companyPoid, Long userPoid) {
+        log.info("poid : {}, lovName : {}, groupPoid : {}, companyPoid : {}, userId : {}",
                 poid, lovName, groupPoid, companyPoid, userPoid);
+
+        if (poid == null || StringUtils.isBlank(lovName)) {
+            return new LovItem();
+        }
 
         LovItem dto = new LovItem();
         LovResponse listValue = this.getLovList(lovName, poid, "", groupPoid, companyPoid, userPoid);
@@ -49,10 +54,10 @@ public class LovServiceImpl implements LovService {
 
     @Override
     public LovItem getLovItemByCode(String code, String lovName, Long groupPoid, Long companyPoid, Long userPoid) {
-        log.info("code : {}, lovName : {}, groupPoid : {}, companyPoid : {}, userId : {}", 
+        log.info("code : {}, lovName : {}, groupPoid : {}, companyPoid : {}, userId : {}",
                 code, lovName, groupPoid, companyPoid, userPoid);
 
-        if (StringUtils.isEmpty(code)) {
+        if (StringUtils.isBlank(code) || StringUtils.isBlank(lovName)) {
             return new LovItem();
         }
 

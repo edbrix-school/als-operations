@@ -1,5 +1,6 @@
 package com.asg.operations.pdaporttariffmaster.dto;
 
+import com.asg.operations.commonlov.dto.LovItem;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,21 +15,26 @@ public class PdaPortTariffChargeDetailResponse {
 
     private Long detRowId;
 
-    private BigDecimal chargePoid;
+    private Long chargePoid;
+    private LovItem chargeDet;
 //    private String chargeCode;
 //    private String chargeName;
 
-    private BigDecimal rateTypePoid;
+    private Long rateTypePoid;
+    private LovItem rateTypeDet;
 //    private String rateTypeCode;
 //    private String rateTypeName;
 
     private String tariffSlab;
+    private LovItem tariffSlabDet;
 
     private BigDecimal fixRate;
 
     private String harborCallType;
+    private LovItem harborCallTypeDet;
 
     private String isEnabled;
+    private LovItem isEnabledDet;
 
     private String remarks;
 

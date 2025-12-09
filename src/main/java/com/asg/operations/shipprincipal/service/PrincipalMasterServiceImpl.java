@@ -70,15 +70,14 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         PrincipalMasterDto dto = mapper.mapToDetailDTO(principal);
 
 
-        dto.setCountryDet(lovService.getLovItem(principal.getCountryPoid(), "COUNTRY",
+        dto.setCountryDet(lovService.getLovItemByPoid(principal.getCountryPoid(), "COUNTRY",
                 principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
 
-        dto.setGlCodeDet(lovService.getLovItem(principal.getGlCodePoid(), "GL_CODE",
+        dto.setGlCodeDet(lovService.getLovItemByPoid(principal.getGlCodePoid(), "GL_CODE",
                 principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
 
-        dto.setCompanyDet(lovService.getLovItem(principal.getCompanyPoid(), "COMPANY",
+        dto.setCompanyDet(lovService.getLovItemByPoid(principal.getCompanyPoid(), "COMPANY",
                 principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
-
 
         dto.setTaxSlabDet(lovService.getLovItemByCode(principal.getTaxSlab(), "TAX_SLAB",
                 principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));

@@ -32,10 +32,10 @@ public class PdaPortTariffHdr {
 
     @Column(name = "GROUP_POID", nullable = false)
     @NotNull
-    private BigDecimal groupPoid;
+    private Long groupPoid;
 
     @Column(name = "COMPANY_POID")
-    private BigDecimal companyPoid;
+    private Long companyPoid;
 
     @Column(name = "DOC_REF", unique = true, length = 25)
     @Size(max = 25)

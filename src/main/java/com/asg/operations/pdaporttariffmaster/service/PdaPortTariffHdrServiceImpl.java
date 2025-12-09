@@ -251,8 +251,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 chargeId.setDetRowId(chargeRequest.getDetRowId());
 
                 chargeDtlRepository.findById(chargeId).ifPresent(existing -> {
-                    existing.setChargePoid(chargeRequest.getChargePoid());
-                    existing.setRateTypePoid(chargeRequest.getRateTypePoid());
+                    existing.setChargePoid(chargeRequest.getChargePoid().longValue());
+                    existing.setRateTypePoid(chargeRequest.getRateTypePoid().longValue());
                     existing.setTariffSlab(chargeRequest.getTariffSlab());
                     existing.setFixRate(chargeRequest.getFixRate());
                     existing.setHarborCallType(chargeRequest.getHarborCallType());
@@ -330,8 +330,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         PdaPortTariffChargeDtl chargeDtl = new PdaPortTariffChargeDtl();
         chargeDtl.setId(chargeId);
         chargeDtl.setTariffHdr(tariffHdr);
-        chargeDtl.setChargePoid(chargeRequest.getChargePoid());
-        chargeDtl.setRateTypePoid(chargeRequest.getRateTypePoid());
+        chargeDtl.setChargePoid(chargeRequest.getChargePoid().longValue());
+        chargeDtl.setRateTypePoid(chargeRequest.getRateTypePoid().longValue());
         chargeDtl.setTariffSlab(chargeRequest.getTariffSlab());
         chargeDtl.setFixRate(chargeRequest.getFixRate());
         chargeDtl.setHarborCallType(chargeRequest.getHarborCallType());
@@ -402,11 +402,11 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
             PdaPortTariffChargeDtl chargeDtl = new PdaPortTariffChargeDtl();
             chargeDtl.setId(chargeId);
             chargeDtl.setTariffHdr(tariffHdr);
-            chargeDtl.setChargePoid(chargeRequest.getChargePoid());
+            chargeDtl.setChargePoid(chargeRequest.getChargePoid().longValue());
 //            chargeDtl(chargeRequest.getChargePoid());
 
 
-            chargeDtl.setRateTypePoid(chargeRequest.getRateTypePoid());
+            chargeDtl.setRateTypePoid(chargeRequest.getRateTypePoid().longValue());
             chargeDtl.setTariffSlab(chargeRequest.getTariffSlab());
             chargeDtl.setFixRate(chargeRequest.getFixRate());
             chargeDtl.setHarborCallType(chargeRequest.getHarborCallType());

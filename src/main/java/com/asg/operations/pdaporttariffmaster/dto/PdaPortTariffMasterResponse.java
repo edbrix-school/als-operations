@@ -1,5 +1,6 @@
 package com.asg.operations.pdaporttariffmaster.dto;
 
+import com.asg.operations.commonlov.dto.LovItem;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,10 +22,17 @@ public class PdaPortTariffMasterResponse {
     private String docRef;
 
     private List<String> ports; // Array of port POIDs
+    private List<LovItem> portsDet;
     private List<String> portNames; // Array of port names (resolved)
 
     private List<String> vesselTypes; // Array of vessel type POIDs
+    private List<LovItem> vesselTypesDet;
     private List<String> vesselTypeNames; // Array of vessel type names (resolved)
+
+    private Long groupPoid;
+    private LovItem groupDet;
+    private Long companyPoid;
+    private LovItem companyDet;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate periodFrom;

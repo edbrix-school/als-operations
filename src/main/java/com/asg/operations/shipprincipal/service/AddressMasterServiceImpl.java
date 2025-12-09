@@ -290,7 +290,7 @@ public class AddressMasterServiceImpl implements AddressMasterService {
                 resp.setCountryId(c.getCountryPoid());
                 resp.setCountryName(c.getCountryName());
             });
-            resp.setCountryDet(lovService.getLovItem(m.getCountryPoid(), "COUNTRY", m.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+            resp.setCountryDet(lovService.getLovItemByPoid(m.getCountryPoid(), "COUNTRY", m.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         }
 
 

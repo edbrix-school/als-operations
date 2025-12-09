@@ -18,7 +18,10 @@ public class ContractCrewResponse {
 
     private Long crewPoid;
     private String crewName;
+    private Long groupPoid;
+    private LovItem groupDet;
     private Long crewNationalityPoid;
+    private LovItem crewNationalityDet;
     private String crewNationalityCode;
     private String crewNationalityName;
     private String crewCdcNumber;

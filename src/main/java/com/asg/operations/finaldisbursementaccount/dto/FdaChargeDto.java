@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.dto;
 
+import com.asg.operations.commonlov.dto.LovItem;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -18,10 +19,12 @@ public class FdaChargeDto {
 
     @NotNull(message = "Charge type is required")
     private Long chargePoid;
+    private LovItem chargeDet;
 
     private String currencyCode;
     private BigDecimal currencyRate;
     private String detailsFrom;
+    private LovItem detailsFromDet;
 
     @PositiveOrZero(message = "Qty must be >= 0")
     private BigDecimal qty;
@@ -33,6 +36,7 @@ public class FdaChargeDto {
     private BigDecimal pdaRate;
 
     private Long rateTypePoid;
+    private LovItem rateTypeDet;
     private String manual;
 
     @PositiveOrZero(message = "Amount must be >= 0")
@@ -57,33 +61,42 @@ public class FdaChargeDto {
 
     @NotNull(message = "Principal is required")
     private Long principalPoid;
+    private LovItem principalDet;
 
     private Long refDetRowId;
     private String refDocId;
     private Long refDocPoid;
+    private LovItem refDocDet;
     private String bookedDocPoid;
+    private LovItem bookedDocDet;
     private String dnDocId;
     private String dnDocPoid;
+    private LovItem dnDocDet;
     private String printRemarks;
     private String dnFrom;
     private String cnDocId;
     private String cnDocPoid;
+    private LovItem cnDocDet;
     private BigDecimal dnAmount;
     private BigDecimal cnAmount;
     private String cnDetRowId;
     private String dnDetRowId;
     private Long taxPoid;
+    private LovItem taxDet;
     private BigDecimal taxPercentage;
     private BigDecimal taxAmount;
     private Long dnTaxPoid;
+    private LovItem dnTaxDet;
     private BigDecimal dnTaxPercentage;
     private BigDecimal dnTaxAmount;
     private BigDecimal dnTotalAmount;
     private Long cnTaxPoid;
+    private LovItem cnTaxDet;
     private BigDecimal cnTaxPercentage;
     private BigDecimal cnTaxAmount;
     private BigDecimal cnTotalAmount;
     private Long pdaPoid;
+    private LovItem pdaDet;
     private Long pdaDetRowId;
     private Long printSeqNo;
     private BigDecimal profitLoss;

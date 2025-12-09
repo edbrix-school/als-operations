@@ -1,5 +1,6 @@
 package com.asg.operations.crew.dto;
 
+import com.asg.operations.commonlov.dto.LovItem;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class ContractCrewDtlResponse {
     private Long crewPoid;
     private Long detRowId;
     private String documentType;
+    private LovItem documentTypeDet;
     private String documentTypeCode;
     private String documentTypeName;
     private String documentNumber;
