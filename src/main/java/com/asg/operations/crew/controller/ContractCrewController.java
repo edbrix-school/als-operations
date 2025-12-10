@@ -1,6 +1,8 @@
 package com.asg.operations.crew.controller;
 
 
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.crew.dto.ContractCrewRequest;
@@ -69,6 +71,7 @@ public class ContractCrewController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping
     public ResponseEntity<?> getCrewList(
             @RequestParam(required = false) String crewName,
@@ -134,6 +137,7 @@ public class ContractCrewController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{crewPoid}")
     public ResponseEntity<?> getCrewById(
             @Parameter(description = "Primary key of the crew master", required = true)
@@ -189,6 +193,7 @@ public class ContractCrewController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     public ResponseEntity<?> createCrew(
             @Parameter(description = "Crew master request object with all required and optional fields", required = true)
@@ -244,6 +249,7 @@ public class ContractCrewController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{crewPoid}")
     public ResponseEntity<?> updateCrew(
             @Parameter(description = "Primary key of the crew master to update", required = true)
@@ -294,6 +300,7 @@ public class ContractCrewController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{crewPoid}")
     public ResponseEntity<?> deleteCrew(
             @Parameter(description = "Primary key of the crew master to delete", required = true)

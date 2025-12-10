@@ -1,5 +1,7 @@
 package com.asg.operations.portactivitiesmaster.service;
 
+import com.asg.common.lib.security.util.UserContext;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.portactivitiesmaster.dto.PageResponse;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 public class PortActivityMasterServiceImpl implements PortActivityMasterService {
 
     private final PortActivityMasterRepository repository;
+    private final LovService lovService;
 
     @Override
     @Transactional(readOnly = true)
@@ -105,6 +108,7 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
         return PortActivityMasterResponse.builder()
                 .portActivityTypePoid(entity.getPortActivityTypePoid())
                 .groupPoid(entity.getGroupPoid())
+                .groupDet(lovService.getLovItemByPoid(entity.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()))
                 .portActivityTypeCode(entity.getPortActivityTypeCode())
                 .portActivityTypeName(entity.getPortActivityTypeName())
                 .portActivityTypeName2(entity.getPortActivityTypeName2())

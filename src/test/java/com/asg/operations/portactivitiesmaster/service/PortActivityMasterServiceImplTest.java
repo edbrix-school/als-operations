@@ -1,5 +1,7 @@
 package com.asg.operations.portactivitiesmaster.service;
 
+import com.asg.operations.commonlov.dto.LovItem;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.portactivitiesmaster.dto.PageResponse;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
@@ -29,6 +31,9 @@ class PortActivityMasterServiceImplTest {
 
     @Mock
     private PortActivityMasterRepository repository;
+
+    @Mock
+    private LovService lovService;
 
     @InjectMocks
     private PortActivityMasterServiceImpl service;
@@ -61,6 +66,10 @@ class PortActivityMasterServiceImplTest {
                 .seqno(1L)
                 .remarks("Test remarks")
                 .build();
+
+        // Mock LovService with lenient stubbing to avoid UnnecessaryStubbingException
+        LovItem mockLovItem = new LovItem(1L, "GRP1", "Test Group", "Test Group", 1L, 1);
+        lenient().when(lovService.getLovItemByPoid(any(), any(), any(), any(), any())).thenReturn(mockLovItem);
     }
 
     @Test

@@ -1,6 +1,8 @@
 package com.asg.operations.finaldisbursementaccount.service;
 
+import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.PageResponse;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.finaldisbursementaccount.dto.*;
@@ -49,6 +51,7 @@ public class FdaServiceImpl implements FdaService {
     private final FdaCustomRepository fdaCustomRepository;
     private final PdaEntryHdrRepository pdaEntryHdrRepository;
     private final ValidationUtils validationUtils;
+    private final LovService lovService;
 //    private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -59,12 +62,17 @@ public class FdaServiceImpl implements FdaService {
                 .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
 
         FdaHeaderDto fdaHeaderDto = HeaderMapper.mapHeaderEntityToDto(entity);
+        setDetailsForHeader(fdaHeaderDto);
 
         List<PdaFdaDtl> dtls = pdaFdaDtlRepository.findByIdTransactionPoid(transactionPoid);
 
         List<FdaChargeDto> charges = dtls.stream()
                 .map(ChargesMapper::mapChargeEntityToDto)
                 .collect(Collectors.toList());
+
+        for (FdaChargeDto charge : charges) {
+            setDetailsForCharge(charge);
+        }
 
         CalculationUtils.computeProfitLossRuntime(charges, fdaHeaderDto);
 
@@ -131,6 +139,10 @@ public class FdaServiceImpl implements FdaService {
                 .map(HeaderMapper::mapHeaderEntityToDto)
                 .collect(Collectors.toList());
 
+        for (FdaHeaderDto fdaHeaderDto : content) {
+            setDetailsForHeader(fdaHeaderDto);
+        }
+
         return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isFirst(), page.isLast(), page.getNumberOfElements());
     }
 
@@ -160,10 +172,16 @@ public class FdaServiceImpl implements FdaService {
         Page<FdaChargeDto> dtoPage = pdaFdaDtlRepository.findByTransactionPoid(transactionPoid, pageable)
                 .map(ChargesMapper::mapChargeEntityToDto);
 
-        CalculationUtils.computeProfitLossRuntime(dtoPage.getContent(), null);
+        List<FdaChargeDto> charges = dtoPage.getContent();
+
+        for (FdaChargeDto chargeDto : charges) {
+            setDetailsForCharge(chargeDto);
+        }
+
+        CalculationUtils.computeProfitLossRuntime(charges, null);
 
         return new PageResponse<>(
-                dtoPage.getContent(),
+                charges,
                 dtoPage.getNumber(),
                 dtoPage.getSize(),
                 dtoPage.getTotalElements(),
@@ -497,5 +515,41 @@ public class FdaServiceImpl implements FdaService {
 //            }
 //        }
 //    }
+
+    private void setDetailsForHeader(FdaHeaderDto fdaHeaderDto) {
+
+        fdaHeaderDto.setGroupDet(lovService.getLovItemByPoid(fdaHeaderDto.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setCompanyDet(lovService.getLovItemByPoid(fdaHeaderDto.getCompanyPoid(), "COMPANY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setPrincipalDet(lovService.getLovItemByPoid(fdaHeaderDto.getPrincipalPoid(), "PRINCIPAL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setVoyageDet(lovService.getLovItemByPoid(fdaHeaderDto.getVoyagePoid(), "VESSAL_VOYAGE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setVesselDet(lovService.getLovItemByPoid(fdaHeaderDto.getVesselPoid(), "VESSEL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setPortDet(lovService.getLovItemByPoid(fdaHeaderDto.getPortPoid(), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setAddressDet(lovService.getLovItemByPoid(fdaHeaderDto.getAddressPoid(), "ADDRESS_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setSalesmanDet(lovService.getLovItemByPoid(fdaHeaderDto.getSalesmanPoid(), "SALESMAN", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setTermsDet(lovService.getLovItemByPoid(fdaHeaderDto.getTermsPoid(), "TERMS_TEMPLATE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setVesselTypeDet(lovService.getLovItemByPoid(Long.valueOf(fdaHeaderDto.getVesselTypePoid()), "VESSEL_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setLineDet(lovService.getLovItemByPoid(fdaHeaderDto.getLinePoid(), "LINE_MASTER_ALL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setPrintBankDet(lovService.getLovItemByPoid(fdaHeaderDto.getPrintBankPoid(), "BANK_MASTER_COMPANYWISE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setVesselHandledByDet(lovService.getLovItemByPoid(fdaHeaderDto.getVesselHandledBy(), "PDA_USER_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setCommodityDet(lovService.getLovItemByCode(fdaHeaderDto.getCommodityPoid(), "COMODITY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setNominatedPartyTypeDet(lovService.getLovItemByCode(fdaHeaderDto.getNominatedPartyType(), "PDA_NOMINATED_PARTY_TYPE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setOperationTypeDet(lovService.getLovItemByCode(fdaHeaderDto.getOperationType(), "PDA_OPERATION_TYPES", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setUnitDet(lovService.getLovItemByCode(fdaHeaderDto.getUnit(), "UNIT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setPdaRefDet(lovService.getLovItemByCode(fdaHeaderDto.getPdaRef(), "PROCESS_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        if (StringUtils.isNotBlank(fdaHeaderDto.getNominatedPartyType()) && "CUSTOMER".equalsIgnoreCase(fdaHeaderDto.getNominatedPartyType())) {
+            fdaHeaderDto.setNominatedPartyDet(lovService.getLovItemByPoid(fdaHeaderDto.getNominatedPartyPoid(), "PDA_NOMINATED_PARTY_CUSTOMER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
+        if (StringUtils.isNotBlank(fdaHeaderDto.getNominatedPartyType()) && "PRINCIPAL".equalsIgnoreCase(fdaHeaderDto.getNominatedPartyType())) {
+            fdaHeaderDto.setNominatedPartyDet(lovService.getLovItemByPoid(fdaHeaderDto.getNominatedPartyPoid(), "PDA_NOMINATED_PARTY_PRINCIPAL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
+    }
+
+    private void setDetailsForCharge(FdaChargeDto charge) {
+        charge.setChargeDet(lovService.getLovItemByPoid(charge.getChargePoid(), "CHARGE_MASTER_FOR_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        charge.setRateTypeDet(lovService.getLovItemByPoid(charge.getRateTypePoid(), "PDA_RATE_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        charge.setPrincipalDet(lovService.getLovItemByPoid(charge.getPrincipalPoid(), "PRINCIPAL_MASTER_FOR_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        charge.setPdaDet(lovService.getLovItemByPoid(charge.getPdaPoid(), "PROCESS_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        charge.setDetailsFromDet(lovService.getLovItemByCode(charge.getDetailsFrom(), "FDA_DETAIL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+    }
 
 }

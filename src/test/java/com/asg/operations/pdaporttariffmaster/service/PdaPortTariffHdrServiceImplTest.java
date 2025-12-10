@@ -282,7 +282,7 @@ class PdaPortTariffHdrServiceImplTest {
     private PdaPortTariffHdr createMockTariff() {
         PdaPortTariffHdr tariff = new PdaPortTariffHdr();
         tariff.setTransactionPoid(1L);
-        tariff.setGroupPoid(BigDecimal.valueOf(100L));
+        tariff.setGroupPoid(100L);
         tariff.setDocRef("DOC001");
         tariff.setDeleted("N");
         return tariff;

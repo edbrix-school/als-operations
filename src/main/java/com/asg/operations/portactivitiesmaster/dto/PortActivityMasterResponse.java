@@ -1,5 +1,6 @@
 package com.asg.operations.portactivitiesmaster.dto;
 
+import com.asg.operations.commonlov.dto.LovItem;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 public class PortActivityMasterResponse {
     private Long portActivityTypePoid;
     private Long groupPoid;
+    private LovItem groupDet;
     private String portActivityTypeCode;
     private String portActivityTypeName;
     private String portActivityTypeName2;

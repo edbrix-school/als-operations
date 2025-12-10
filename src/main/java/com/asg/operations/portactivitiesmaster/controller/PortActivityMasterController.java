@@ -1,5 +1,7 @@
 package com.asg.operations.portactivitiesmaster.controller;
 
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.portactivitiesmaster.dto.PageResponse;
@@ -7,7 +9,9 @@ import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
 import com.asg.operations.portactivitiesmaster.service.PortActivityMasterService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,18 +28,34 @@ public class PortActivityMasterController {
 
     private final PortActivityMasterService portActivityService;
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping
     public ResponseEntity<?> getPortActivityList(
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String active,
-            Pageable pageable
+            @RequestParam(required = false) String active
     ) {
+        Sort sortObj = Sort.by(Sort.Direction.ASC, "portActivityTypeCode");
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                Sort.Direction direction = sortParts[1].equalsIgnoreCase("desc")
+                        ? Sort.Direction.DESC
+                        : Sort.Direction.ASC;
+                sortObj = Sort.by(direction, sortParts[0]);
+            }
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sortObj);
         PageResponse<PortActivityMasterResponse> response = portActivityService.getPortActivityList(
                 code, name, active, UserContext.getGroupPoid(), pageable);
         return ApiResponse.success("Port activity list retrieved successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{portActivityTypePoid}")
     public ResponseEntity<?> getPortActivityById(
             @PathVariable @NotNull @Positive Long portActivityTypePoid
@@ -44,6 +64,7 @@ public class PortActivityMasterController {
         return ApiResponse.success("Port activity retrieved successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     public ResponseEntity<?> createPortActivity(
             @Valid @RequestBody PortActivityMasterRequest request
@@ -52,6 +73,7 @@ public class PortActivityMasterController {
         return ApiResponse.success("Port activity created successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{portActivityTypePoid}")
     public ResponseEntity<?> updatePortActivity(
             @PathVariable @NotNull @Positive Long portActivityTypePoid,
@@ -62,6 +84,7 @@ public class PortActivityMasterController {
         return ApiResponse.success("Port activity updated successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{portActivityTypePoid}")
     public ResponseEntity<?> deletePortActivity(
             @PathVariable @NotNull @Positive Long portActivityTypePoid,

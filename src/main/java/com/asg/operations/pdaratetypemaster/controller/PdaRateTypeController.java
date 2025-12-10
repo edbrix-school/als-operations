@@ -1,5 +1,7 @@
 package com.asg.operations.pdaratetypemaster.controller;
 
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaratetypemaster.dto.*;
@@ -22,6 +24,7 @@ public class PdaRateTypeController {
 
     private final PdaRateTypeService rateTypeService;
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping
     public ResponseEntity<?> getRateTypeList(
             @RequestParam(required = false) String code,
@@ -34,6 +37,7 @@ public class PdaRateTypeController {
         return ApiResponse.success("Rate type list retrieved successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{rateTypePoid}")
     public ResponseEntity<?> getRateTypeById(
             @PathVariable @NotNull @Positive Long rateTypePoid
@@ -42,6 +46,7 @@ public class PdaRateTypeController {
         return ApiResponse.success("Rate type retrieved successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     public ResponseEntity<?> createRateType(
             @Valid @RequestBody PdaRateTypeRequestDTO request
@@ -50,6 +55,7 @@ public class PdaRateTypeController {
         return ApiResponse.success("Rate type created successfully", response);
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{rateTypePoid}")
     public ResponseEntity<?> updateRateType(
             @PathVariable @NotNull @Positive Long rateTypePoid,
@@ -59,8 +65,7 @@ public class PdaRateTypeController {
         return ApiResponse.success("Rate type updated successfully", response);
     }
 
-
-
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{rateTypePoid}")
     public ResponseEntity<?> deleteRateType(
             @PathVariable @NotNull @Positive Long rateTypePoid,
@@ -70,6 +75,7 @@ public class PdaRateTypeController {
         return ApiResponse.success("Rate type deleted successfully");
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/validate-formula")
     public ResponseEntity<?> validateFormula(
             @Valid @RequestBody FormulaValidationRequest request

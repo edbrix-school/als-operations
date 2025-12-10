@@ -1,5 +1,7 @@
 package com.asg.operations.shipprincipal.controller;
 
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.shipprincipal.dto.*;
@@ -28,7 +30,7 @@ import org.springframework.web.bind.annotation.*;
 public class PrincipalController {
     private final PrincipalMasterService principalMasterService;
 
-
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/list")
     @Operation(
             summary = "Get principal list",
@@ -57,7 +59,7 @@ public class PrincipalController {
         return ApiResponse.success("Principal list retrieved successfully", result);
     }
 
-
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{id}")
     @Operation(
             summary = "Get principal details",
@@ -100,6 +102,7 @@ public class PrincipalController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     @Operation(
             summary = "Create principal",
@@ -142,6 +145,7 @@ public class PrincipalController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{id}")
     @Operation(
             summary = "Update principal",
@@ -182,6 +186,7 @@ public class PrincipalController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PatchMapping("/{id}/activate")
     @Operation(
             summary = "Toggle active status",
@@ -221,6 +226,7 @@ public class PrincipalController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete principal",
@@ -260,6 +266,7 @@ public class PrincipalController {
         }
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping("/{id}/create-ledger")
     @Operation(
             summary = "Create GL ledger",

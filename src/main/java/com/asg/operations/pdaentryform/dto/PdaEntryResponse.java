@@ -121,6 +121,7 @@ public class PdaEntryResponse {
     private String nominatedPartyType;
     private LovItem nominatedPartyTypeDet;
     private BigDecimal nominatedPartyPoid;
+    private LovItem nominatedPartyDet;
     private BigDecimal bankPoid;
     private LovItem bankDet;
     private String businessRefBy;

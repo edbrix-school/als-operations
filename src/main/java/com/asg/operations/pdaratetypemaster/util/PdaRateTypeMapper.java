@@ -1,8 +1,11 @@
 package com.asg.operations.pdaratetypemaster.util;
 
+import com.asg.common.lib.security.util.UserContext;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeRequestDTO;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeResponseDTO;
 import com.asg.operations.pdaratetypemaster.entity.PdaRateTypeMaster;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -10,8 +13,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Component
 public class PdaRateTypeMapper {
+
+    private final LovService lovService;
 
 //    private final SecurityContextUtil securityContextUtil;
 //
@@ -41,6 +47,8 @@ public class PdaRateTypeMapper {
         response.setCreatedDate(entity.getCreatedDate());
         response.setModifiedBy(entity.getLastmodifiedBy());
         response.setModifiedDate(entity.getLastmodifiedDate());
+        response.setGroupPoid(entity.getGroupPoid());
+        response.setGroupDet(lovService.getLovItemByPoid(entity.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
 
         return response;
     }
@@ -85,7 +93,7 @@ public class PdaRateTypeMapper {
         entity.setLastmodifiedBy(userId);
         entity.setLastmodifiedDate(LocalDateTime.now());
 
-        entity.setGroupPoid(groupPoid);
+        entity.setGroupPoid(Long.valueOf(String.valueOf(groupPoid)));
 
         return entity;
     }
