@@ -13,6 +13,7 @@ import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
 import com.asg.operations.crew.service.ContractCrewService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -133,7 +134,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         }
 
 
-        return entityMapper.toContractCrewRes(crew);
+        return getCrewById(crew.getCrewPoid());
     }
 
     @Override
@@ -156,6 +157,11 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             //this.saveCrewDetail(companyPoid,"",crew.getCrewPoid(),det);
             String action = det.getActionType();
             log.info("Action: " + action);
+
+            if (StringUtils.isBlank(action)) {
+                log.warn("Detail entry has NULL actionType. Skipping...");
+                continue;
+            }
             switch (action) {
                 case "iscreated" -> this.saveCrewDetail(companyPoid, userId, crew.getCrewPoid(), det);
                 case "isupdated" -> this.updateCrewDetail(companyPoid, userId, crew.getCrewPoid(), det);
@@ -165,7 +171,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         }
 
 
-        return entityMapper.toContractCrewRes(crew);
+        return getCrewById(crew.getCrewPoid());
     }
 
     @Override
@@ -273,10 +279,15 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         // Step 2: Update existing records
         if (request.getDetails() != null) {
             for (ContractCrewDtlRequest detailRequest : request.getDetails()) {
-                String operation = detailRequest.getActionType();
-                if ("isdeleted".equalsIgnoreCase(operation)) {
+                String action = detailRequest.getActionType();
+
+                if (action == null) {
+                    log.warn("Detail entry has NULL actionType. Skipping...");
+                    continue;
+                }
+                if ("isdeleted".equalsIgnoreCase(action)) {
                     this.deleteCrewDetail(companyPoid, crewPoid, detailRequest.getDetRowId());
-                } else if ("isupdated".equalsIgnoreCase(operation) && detailRequest.getDetRowId() != null) {
+                } else if ("isupdated".equalsIgnoreCase(action) && detailRequest.getDetRowId() != null) {
                     // Update existing record
                     ContractCrewDtlId id = new ContractCrewDtlId(
                             crewPoid,
@@ -289,7 +300,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
                         detail = crewDtlRepository.save(detail);
                         savedDetails.add(detail);
                     }
-                } else if ("iscreated".equalsIgnoreCase(operation)) {
+                } else if ("iscreated".equalsIgnoreCase(action)) {
                     // Insert new record
                     ContractCrewDtl newDetail = entityMapper.toContractCrewDtlEntity(userId, detailRequest, crewPoid);
                     // Ensure embedded id has a detRowId. If missing, assign next available.
