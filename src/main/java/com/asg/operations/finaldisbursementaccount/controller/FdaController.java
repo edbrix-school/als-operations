@@ -12,7 +12,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,12 +45,26 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request parameters")
     })
     public ResponseEntity<?> getFdaList(
+            @Parameter(description = "Page number (0-based)") @RequestParam(required = false, defaultValue = "0") int page,
+            @Parameter(description = "Page size") @RequestParam(required = false, defaultValue = "20") int size,
+            @Parameter(description = "Sort field and direction (e.g., 'transactionPoid,desc')") @RequestParam(required = false) String sort,
             @Parameter(description = "Transaction identifier filter") @RequestParam(required = false) Long transactionPoid,
             @Parameter(description = "Vessel name filter") @RequestParam(required = false) String vesselName,
             @Parameter(description = "ETA from date filter (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate etaFrom,
-            @Parameter(description = "ETA to date filter (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate etaTo,
-            @Parameter(description = "Pagination parameters") Pageable pageable
+            @Parameter(description = "ETA to date filter (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate etaTo
     ) {
+        Sort sortObj = Sort.by(Sort.Direction.DESC, "transactionPoid");
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                Sort.Direction direction = sortParts[1].equalsIgnoreCase("desc")
+                        ? Sort.Direction.DESC
+                        : Sort.Direction.ASC;
+                sortObj = Sort.by(direction, sortParts[0]);
+            }
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sortObj);
         PageResponse<FdaHeaderDto> response = fdaService.getFdaList(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), transactionPoid, vesselName, etaFrom, etaTo, pageable);
 
         return ApiResponse.success("FDA list fetched successfully", response);

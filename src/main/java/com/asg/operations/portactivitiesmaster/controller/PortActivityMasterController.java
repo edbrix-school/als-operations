@@ -9,7 +9,9 @@ import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
 import com.asg.operations.portactivitiesmaster.service.PortActivityMasterService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,11 +31,25 @@ public class PortActivityMasterController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping
     public ResponseEntity<?> getPortActivityList(
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String active,
-            Pageable pageable
+            @RequestParam(required = false) String active
     ) {
+        Sort sortObj = Sort.by(Sort.Direction.ASC, "portActivityTypeCode");
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                Sort.Direction direction = sortParts[1].equalsIgnoreCase("desc")
+                        ? Sort.Direction.DESC
+                        : Sort.Direction.ASC;
+                sortObj = Sort.by(direction, sortParts[0]);
+            }
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sortObj);
         PageResponse<PortActivityMasterResponse> response = portActivityService.getPortActivityList(
                 code, name, active, UserContext.getGroupPoid(), pageable);
         return ApiResponse.success("Port activity list retrieved successfully", response);

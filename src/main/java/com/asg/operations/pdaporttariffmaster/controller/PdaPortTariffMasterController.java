@@ -7,7 +7,9 @@ import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.service.PdaPortTariffHdrService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,12 +30,26 @@ public class PdaPortTariffMasterController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping
     public ResponseEntity<?> getTariffList(
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int size,
+            @RequestParam(required = false) String sort,
             @RequestParam(required = false) String portPoid,
             @RequestParam(required = false) LocalDate periodFrom,
             @RequestParam(required = false) LocalDate periodTo,
-            @RequestParam(required = false) String vesselTypePoid,
-            Pageable pageable
+            @RequestParam(required = false) String vesselTypePoid
     ) {
+        Sort sortObj = Sort.by(Sort.Direction.DESC, "transactionPoid");
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                Sort.Direction direction = sortParts[1].equalsIgnoreCase("desc")
+                        ? Sort.Direction.DESC
+                        : Sort.Direction.ASC;
+                sortObj = Sort.by(direction, sortParts[0]);
+            }
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sortObj);
         PageResponse<PdaPortTariffMasterResponse> response = tariffService.getTariffList(
                 portPoid, periodFrom, periodTo, vesselTypePoid, UserContext.getCompanyPoid(), pageable);
         return ApiResponse.success("Tariff list retrieved successfully", response);
