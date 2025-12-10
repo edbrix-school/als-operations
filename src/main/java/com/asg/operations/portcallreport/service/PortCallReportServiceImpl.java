@@ -55,19 +55,14 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         Page<PortCallReportHdr> hdrPage = hdrRepository.findAllNonDeletedWithSearch(search, pageable);
 
         LovResponse vesselTypeLov = lovService.getLovList("VESSEL_TYPE_MASTER", null, null, null, null, null);
-        Map<String, LovItem> vesselTypeMap = new HashMap<>();
+        Map<String, LovItem> vesselTypeMap;
         if (vesselTypeLov != null && vesselTypeLov.getItems() != null) {
             vesselTypeMap = vesselTypeLov.getItems().stream()
                     .collect(Collectors.toMap(LovItem::getCode, item -> item));
+        } else {
+            vesselTypeMap = new HashMap<>();
         }
 
-        Map<Long, LovItem> vesselTypeByPoidMap = new HashMap<>();
-        if (vesselTypeLov != null && vesselTypeLov.getItems() != null) {
-            vesselTypeByPoidMap = vesselTypeLov.getItems().stream()
-                    .collect(Collectors.toMap(LovItem::getPoid, item -> item));
-        }
-
-        Map<Long, LovItem> finalVesselTypeByPoidMap = vesselTypeByPoidMap;
         List<PortCallReportResponseDto> reports = hdrPage.getContent().stream()
                 .map(hdr -> {
                     String vesselTypes = hdr.getPortCallApplVesselType();
@@ -76,8 +71,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                     if (vesselTypes != null) {
                         vesselTypeList = List.of(vesselTypes.split(","));
                         vesselTypeLovItems = vesselTypeList.stream()
-                                .map(Long::parseLong)
-                                .map(finalVesselTypeByPoidMap::get)
+                                .map(vesselTypeMap::get)
                                 .filter(Objects::nonNull)
                                 .collect(Collectors.toList());
                     }
@@ -119,10 +113,9 @@ public class PortCallReportServiceImpl implements PortCallReportService {
             vesselTypeList = List.of(vesselTypes.split(","));
             LovResponse lovResponse = lovService.getLovList("VESSEL_TYPE_MASTER", null, null, null, null, null);
             if (lovResponse != null && lovResponse.getItems() != null) {
-                Map<Long, LovItem> vesselTypeByPoidMap = lovResponse.getItems().stream()
-                        .collect(Collectors.toMap(LovItem::getPoid, item -> item));
+                Map<String, LovItem> vesselTypeByPoidMap = lovResponse.getItems().stream()
+                        .collect(Collectors.toMap(LovItem::getCode, item -> item));
                 vesselTypeLovItems = vesselTypeList.stream()
-                        .map(Long::parseLong)
                         .map(vesselTypeByPoidMap::get)
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
