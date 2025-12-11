@@ -19,7 +19,7 @@ public interface PortActivityMasterRepository extends JpaRepository<PortActivity
             "AND (:active IS NULL OR p.active = :active)")
     Page<PortActivityMaster> findByGroupPoidAndFilters(@Param("groupPoid") Long groupPoid, @Param("code") String code, @Param("name") String name, @Param("active") String active, Pageable pageable);
 
-    Optional<PortActivityMaster> findByPortActivityTypePoidAndGroupPoidAndDeleted(Long portActivityTypePoid, Long groupPoid, String deleted);
+    Optional<PortActivityMaster> findByPortActivityTypePoidAndGroupPoid(Long portActivityTypePoid, Long groupPoid);
 
     @Query(value = """
             SELECT MAX(TO_NUMBER(SUBSTR(PORT_ACTIVITY_TYPE_CODE, LENGTH(:prefix) + 1)))

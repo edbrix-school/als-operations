@@ -129,16 +129,17 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         crew = crewRepository.save(crew);
 
         log.info("Crew created successfully with id: " + crew.getCrewPoid());
-        for (ContractCrewDtlRequest det : request.getDetails()) {
-            this.saveCrewDetail(companyPoid, userId, crew.getCrewPoid(), det);
+        if (request.getDetails() != null && !request.getDetails().isEmpty()) {
+            for (ContractCrewDtlRequest det : request.getDetails()) {
+                this.saveCrewDetail(companyPoid, userId, crew.getCrewPoid(), det);
+            }
         }
-
 
         return getCrewById(crew.getCrewPoid());
     }
 
     @Override
-    public ContractCrewResponse updateCrew(Long companyPoid, String userId,Long crewPoid, ContractCrewRequest request) {
+    public ContractCrewResponse updateCrew(Long companyPoid, String userId, Long crewPoid, ContractCrewRequest request) {
         // Validate request
         validateCrewRequest(request);
 
@@ -153,21 +154,19 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         // Save updated entity
         crew = crewRepository.save(crew);
 
-        for (ContractCrewDtlRequest det : request.getDetails()) {
-            //this.saveCrewDetail(companyPoid,"",crew.getCrewPoid(),det);
-            String action = det.getActionType();
-            log.info("Action: " + action);
+        if (request.getDetails() != null && !request.getDetails().isEmpty()) {
+            for (ContractCrewDtlRequest det : request.getDetails()) {
+                //this.saveCrewDetail(companyPoid,"",crew.getCrewPoid(),det);
+                String action = StringUtils.isNotBlank(det.getActionType()) ? det.getActionType().toLowerCase() : "";
+                log.info("Action: " + action);
 
-            if (StringUtils.isBlank(action)) {
-                log.warn("Detail entry has NULL actionType. Skipping...");
-                continue;
-            }
-            switch (action) {
-                case "iscreated" -> this.saveCrewDetail(companyPoid, userId, crew.getCrewPoid(), det);
-                case "isupdated" -> this.updateCrewDetail(companyPoid, userId, crew.getCrewPoid(), det);
-                case "isdeleted" -> this.deleteCrewDetail(companyPoid, crew.getCrewPoid(), det.getDetRowId());
-            }
+                switch (action) {
+                    case "iscreated" -> this.saveCrewDetail(companyPoid, userId, crew.getCrewPoid(), det);
+                    case "isupdated" -> this.updateCrewDetail(companyPoid, userId, crew.getCrewPoid(), det);
+                    case "isdeleted" -> this.deleteCrewDetail(companyPoid, crew.getCrewPoid(), det.getDetRowId());
+                }
 
+            }
         }
 
 
@@ -281,7 +280,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             for (ContractCrewDtlRequest detailRequest : request.getDetails()) {
                 String action = detailRequest.getActionType();
 
-                if (action == null) {
+                if (StringUtils.isBlank(action)) {
                     log.warn("Detail entry has NULL actionType. Skipping...");
                     continue;
                 }

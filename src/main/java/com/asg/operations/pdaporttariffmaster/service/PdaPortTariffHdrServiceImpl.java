@@ -242,6 +242,10 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private void updateChargeDetails(PdaPortTariffHdr tariffHdr, List<PdaPortTariffChargeDetailRequest> chargeDetails, String currentUser) {
         for (PdaPortTariffChargeDetailRequest chargeRequest : chargeDetails) {
             ActionType action = chargeRequest.getActionType();
+            
+            if (action == null) {
+                continue;
+            }
 
             if (action == ActionType.isCreated) {
                 createChargeDetail(tariffHdr, chargeRequest, currentUser);
@@ -280,6 +284,10 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private void updateSlabDetails(Long transactionPoid, Long chargeDetRowId, List<PdaPortTariffSlabDetailRequest> slabDetails, String currentUser) {
         for (PdaPortTariffSlabDetailRequest slabRequest : slabDetails) {
             ActionType action = slabRequest.getActionType();
+            
+            if (action == null) {
+                continue;
+            }
 
             if (action == ActionType.isCreated) {
                 createSlabDetail(transactionPoid, chargeDetRowId, slabRequest, currentUser);

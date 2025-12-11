@@ -119,7 +119,7 @@ public class FdaServiceImpl implements FdaService {
         HeaderMapper.mapUpdateHeaderDtoToEntity(dto, entity, userId);
         pdaFdaHdrRepository.save(entity);
 
-        if (dto.getCharges() != null) {
+        if (dto.getCharges() != null && !dto.getCharges().isEmpty()) {
             saveCharges(transactionPoid, dto.getCharges(), userId, groupPoid, companyPoid);
         }
 
@@ -324,7 +324,7 @@ public class FdaServiceImpl implements FdaService {
         }
 
         PdaFdaHdr hdr = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(transactionPoid, groupPoid, companyPoid)
-                .orElseThrow(() -> new RuntimeException("FDA not found: " + transactionPoid));
+                .orElseThrow(() -> new ResourceNotFoundException("FDA", "Transaction Poid", transactionPoid));
 
         hdr.setOpsCorrectionRemarks(correctionRemarks);
         hdr.setOpsReturnedDate(LocalDate.now());
@@ -474,7 +474,7 @@ public class FdaServiceImpl implements FdaService {
 //                    .getResourceAsStream("reports/" + reportFileName);
 //
 //            if (reportStream == null) {
-//                throw new RuntimeException("Report template not found: reports/" + reportFileName);
+//                throw new ResourceNotFoundException("Report template", "Report File Name", "reports/" + reportFileName);
 //            }
 //
 //            JasperReport jasperReport;

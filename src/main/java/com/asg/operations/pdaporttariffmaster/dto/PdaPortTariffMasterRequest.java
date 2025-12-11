@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -30,8 +31,10 @@ public class PdaPortTariffMasterRequest {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate periodTo;
 
+    @Size(max = 500, message = "Remarks cannot exceed 500 characters")
     private String remarks;
 
+    @Size(max = 25, message = "Document reference cannot exceed 25 characters")
     private String docRef;
 
     @Valid

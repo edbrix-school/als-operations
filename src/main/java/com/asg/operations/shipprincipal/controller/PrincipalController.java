@@ -89,17 +89,9 @@ public class PrincipalController {
     public ResponseEntity<?> getPrincipal(
             @Parameter(description = "Principal ID") @PathVariable Long id) {
         log.info("Getting principal with id: {}", id);
-        try {
-            PrincipalMasterDto principal = principalMasterService.getPrincipal(id);
-            log.info("Successfully retrieved principal with id: {}", id);
-            return ApiResponse.success("Principal retrieved successfully", principal);
-        } catch (RuntimeException e) {
-            log.error("Principal not found with id: {}", id, e);
-            return ApiResponse.notFound(e.getMessage());
-        } catch (Exception e) {
-            log.error("Error retrieving principal with id: {}", id, e);
-            return ApiResponse.internalServerError("Error retrieving principal: " + e.getMessage());
-        }
+        PrincipalMasterDto principal = principalMasterService.getPrincipal(id);
+        log.info("Successfully retrieved principal with id: {}", id);
+        return ApiResponse.success("Principal retrieved successfully", principal);
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
@@ -132,17 +124,9 @@ public class PrincipalController {
     public ResponseEntity<?> createPrincipal(
             @Parameter(description = "Principal creation data") @Valid @RequestBody PrincipalCreateDTO dto) {
         log.info("Creating principal with code: {}, groupId: {}, userPoid: {}", dto.getPrincipalCode(), UserContext.getGroupPoid(), UserContext.getUserPoid());
-        try {
-            PrincipalMasterDto result = principalMasterService.createPrincipal(dto, UserContext.getGroupPoid(), UserContext.getUserPoid());
-            log.info("Successfully created principal with id: {}", result.getPrincipalPoid());
-            return ApiResponse.success("Principal created successfully", result);
-        } catch (RuntimeException e) {
-            log.error("Bad request while creating principal: {}", dto.getPrincipalCode(), e);
-            return ApiResponse.badRequest(e.getMessage());
-        } catch (Exception e) {
-            log.error("Error creating principal: {}", dto.getPrincipalCode(), e);
-            return ApiResponse.internalServerError("Error creating principal: " + e.getMessage());
-        }
+        PrincipalMasterDto result = principalMasterService.createPrincipal(dto, UserContext.getGroupPoid(), UserContext.getUserPoid());
+        log.info("Successfully created principal with id: {}", result.getPrincipalPoid());
+        return ApiResponse.success("Principal created successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -173,17 +157,9 @@ public class PrincipalController {
             @Parameter(description = "Principal ID") @PathVariable Long id,
             @Parameter(description = "Principal update data") @Valid @RequestBody PrincipalUpdateDTO dto) {
         log.info("Updating principal with id: {}, groupId: {}, userPoid: {}", id, UserContext.getGroupPoid(), UserContext.getUserPoid());
-        try {
-            PrincipalMasterDto result = principalMasterService.updatePrincipal(id, dto, UserContext.getGroupPoid(), UserContext.getUserPoid());
-            log.info("Successfully updated principal with id: {}", id);
-            return ApiResponse.success("Principal updated successfully", result);
-        } catch (RuntimeException e) {
-            log.error("Principal not found with id: {}", id, e);
-            return ApiResponse.notFound(e.getMessage());
-        } catch (Exception e) {
-            log.error("Error updating principal with id: {}", id, e);
-            return ApiResponse.internalServerError("Error updating principal: " + e.getMessage());
-        }
+        PrincipalMasterDto result = principalMasterService.updatePrincipal(id, dto, UserContext.getGroupPoid(), UserContext.getUserPoid());
+        log.info("Successfully updated principal with id: {}", id);
+        return ApiResponse.success("Principal updated successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -213,17 +189,9 @@ public class PrincipalController {
     public ResponseEntity<?> toggleActive(
             @Parameter(description = "Principal ID") @PathVariable Long id) {
         log.info("Toggling active status for principal with id: {}", id);
-        try {
-            principalMasterService.toggleActive(id);
-            log.info("Successfully toggled active status for principal with id: {}", id);
-            return ApiResponse.success("Principal status toggled successfully");
-        } catch (RuntimeException e) {
-            log.error("Principal not found with id: {}", id, e);
-            return ApiResponse.notFound(e.getMessage());
-        } catch (Exception e) {
-            log.error("Error toggling principal status with id: {}", id, e);
-            return ApiResponse.internalServerError("Error toggling principal status: " + e.getMessage());
-        }
+        principalMasterService.toggleActive(id);
+        log.info("Successfully toggled active status for principal with id: {}", id);
+        return ApiResponse.success("Principal status toggled successfully");
     }
 
     @AllowedAction(UserRolesRightsEnum.DELETE)
@@ -253,17 +221,9 @@ public class PrincipalController {
     public ResponseEntity<?> deletePrincipal(
             @Parameter(description = "Principal ID") @PathVariable Long id) {
         log.info("Deleting principal with id: {}", id);
-        try {
-            principalMasterService.deletePrincipal(id);
-            log.info("Successfully deleted principal with id: {}", id);
-            return ApiResponse.success("Principal deleted successfully");
-        } catch (RuntimeException e) {
-            log.error("Principal not found with id: {}", id, e);
-            return ApiResponse.notFound(e.getMessage());
-        } catch (Exception e) {
-            log.error("Error deleting principal with id: {}", id, e);
-            return ApiResponse.internalServerError("Error deleting principal: " + e.getMessage());
-        }
+        principalMasterService.deletePrincipal(id);
+        log.info("Successfully deleted principal with id: {}", id);
+        return ApiResponse.success("Principal deleted successfully");
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
@@ -276,16 +236,8 @@ public class PrincipalController {
     public ResponseEntity<?> createLedger(
             @Parameter(description = "Principal ID") @PathVariable Long id) {
         log.info("Creating ledger for principal with id: {}, userName: {}", id, UserContext.getUserPoid());
-        try {
-            CreateLedgerResponseDto response = principalMasterService.createLedger(id, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-            return ApiResponse.success("Ledger created successfully", response);
-        } catch (RuntimeException e) {
-            log.error("Error creating ledger for principal: {}", id, e);
-            return ApiResponse.badRequest(e.getMessage());
-        } catch (Exception e) {
-            log.error("Error creating ledger for principal: {}", id, e);
-            return ApiResponse.internalServerError("Error creating ledger: " + e.getMessage());
-        }
+        CreateLedgerResponseDto response = principalMasterService.createLedger(id, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return ApiResponse.success("Ledger created successfully", response);
     }
 
 }

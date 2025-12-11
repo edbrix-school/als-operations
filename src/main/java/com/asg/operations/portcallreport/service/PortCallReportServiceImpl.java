@@ -3,6 +3,9 @@ package com.asg.operations.portcallreport.service;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.dto.LovResponse;
 import com.asg.operations.commonlov.service.LovService;
+import com.asg.operations.exceptions.CustomException;
+import com.asg.operations.exceptions.ResourceAlreadyExistsException;
+import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
 import com.asg.operations.portcallreport.dto.PortActivityResponseDto;
 import com.asg.operations.portcallreport.dto.PortCallReportDetailDto;
@@ -102,7 +105,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         log.info("Fetching port call report by id: {}", id);
 
         PortCallReportHdr hdr = hdrRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Port call report not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Port call report", "Port Call Report Poid", id));
 
         List<PortCallReportDtl> details = dtlRepository.findByPortCallReportPoid(id);
 
@@ -160,11 +163,11 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         log.info("Creating port call report: {}", dto.getPortCallReportName());
 
         if (groupPoid == null) {
-            throw new RuntimeException("Group POID is required");
+            throw new CustomException("Group POID is required", 400);
         }
 
         if (hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(dto.getPortCallReportName(), null)) {
-            throw new RuntimeException("Port call report name already exists");
+            throw new ResourceAlreadyExistsException("Port call report name", dto.getPortCallReportName());
         }
 
         if (dto.getPortCallApplVesselType() != null && !dto.getPortCallApplVesselType().isEmpty()) {
@@ -173,7 +176,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                     .toList();
             for (String vesselTypePoid : dto.getPortCallApplVesselType()) {
                 if (!validVesselTypePoids.contains(Long.parseLong(vesselTypePoid))) {
-                    throw new RuntimeException("Invalid vessel type POID: " + vesselTypePoid);
+                    throw new CustomException("Invalid vessel type POID: " + vesselTypePoid, 400);
                 }
             }
         }
@@ -181,10 +184,10 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             for (PortCallReportDetailDto detail : dto.getDetails()) {
                 if (detail.getPortActivityTypePoid() == null) {
-                    throw new RuntimeException("Port activity type is required");
+                    throw new CustomException("Port activity type is required", 400);
                 }
                 if (!portActivityMasterRepository.existsById(detail.getPortActivityTypePoid())) {
-                    throw new RuntimeException("Invalid activity type ID: " + detail.getPortActivityTypePoid());
+                    throw new CustomException("Invalid activity type ID: " + detail.getPortActivityTypePoid(), 400);
                 }
             }
         }
@@ -192,7 +195,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         String reportId = generateReportId();
 
         User user = userRepository.findByUserPoid(userPoid)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "User Poid", userPoid));
 
         PortCallReportHdr hdr = PortCallReportHdr.builder()
                 .portCallReportId(reportId)
@@ -232,11 +235,11 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         log.info("Updating port call report id: {}", id);
 
         if (groupPoid == null) {
-            throw new RuntimeException("Group POID is required");
+            throw new CustomException("Group POID is required", 400);
         }
 
         if (hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(dto.getPortCallReportName(), id)) {
-            throw new RuntimeException("Port call report name already exists");
+            throw new ResourceAlreadyExistsException("Port call report name", dto.getPortCallReportName());
         }
 
         if (dto.getPortCallApplVesselType() != null && !dto.getPortCallApplVesselType().isEmpty()) {
@@ -245,7 +248,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                     .toList();
             for (String vesselTypePoid : dto.getPortCallApplVesselType()) {
                 if (!validVesselTypePoids.contains(Long.parseLong(vesselTypePoid))) {
-                    throw new RuntimeException("Invalid vessel type POID: " + vesselTypePoid);
+                    throw new CustomException("Invalid vessel type POID: " + vesselTypePoid, 400);
                 }
             }
         }
@@ -253,19 +256,19 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             for (PortCallReportDetailDto detail : dto.getDetails()) {
                 if (detail.getPortActivityTypePoid() == null) {
-                    throw new RuntimeException("Port activity type is required");
+                    throw new CustomException("Port activity type is required", 400);
                 }
                 if (!portActivityMasterRepository.existsById(detail.getPortActivityTypePoid())) {
-                    throw new RuntimeException("Invalid activity type ID: " + detail.getPortActivityTypePoid());
+                    throw new CustomException("Invalid activity type ID: " + detail.getPortActivityTypePoid(), 400);
                 }
             }
         }
 
         User user = userRepository.findByUserPoid(userPoid)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "User Poid", userPoid));
 
         PortCallReportHdr hdr = hdrRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Port call report not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Port call report", "Port Call Report Poid", id));
 
         hdr.setGroupPoid(groupPoid);
         hdr.setPortCallReportName(dto.getPortCallReportName());
@@ -280,6 +283,10 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             for (PortCallReportDetailDto detailDto : dto.getDetails()) {
                 ActionType action = detailDto.getActionType();
+
+                if (action == null) {
+                    continue;
+                }
 
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = dtlRepository.findMaxDetRowIdByPortCallReportPoid(id) + 1;
@@ -314,7 +321,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         log.info("Deleting port call report id: {}", id);
 
         PortCallReportHdr hdr = hdrRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Port call report not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Port call report"));
 
         hdr.setActive("N");
         hdr.setDeleted("Y");
