@@ -9,12 +9,12 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @SpringBootApplication
 @ComponentScan(basePackages = {"com.asg"})
 @EnableJpaRepositories(basePackages = {
-        "com.asg.operations",
-        "com.asg.common.lib.repository"
+		"com.asg.operations",
+		"com.asg.common.lib.repository"
 })
 @EntityScan(basePackages = {
-        "com.asg.operations",
-        "com.asg.common.lib.entity"
+		"com.asg.operations",
+		"com.asg.common.lib.entity"
 })
 public class OperationsApplication {
 
