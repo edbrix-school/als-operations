@@ -1,25 +1,12 @@
 package com.asg.operations.crew.service;
 
 import com.asg.operations.crew.dto.*;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 
 /**
  * Service interface for Contract Crew Master operations
  */
 public interface ContractCrewService {
-
-    /**
-     * Get paginated list of crew masters with filters
-     */
-    PageResponse<ContractCrewResponse> getCrewList(
-            String crewName,
-            Long nationalityPoid,
-            String company,
-            String active,
-            Pageable pageable,
-            Long companyPoid
-    );
-
     /**
      * Get crew master by ID
      */
@@ -33,12 +20,12 @@ public interface ContractCrewService {
     /**
      * Update existing crew master
      */
-    ContractCrewResponse updateCrew(Long companyPoid, String userId,Long crewPoid, ContractCrewRequest request);
+    ContractCrewResponse updateCrew(Long companyPoid, String userId, Long crewPoid, ContractCrewRequest request);
 
     /**
      * Delete crew master (soft or hard delete)
      */
-   void deleteCrew(Long companyPoid,Long crewPoid);
+    void deleteCrew(Long companyPoid, Long crewPoid);
 
     /**
      * Get crew details list
@@ -48,11 +35,16 @@ public interface ContractCrewService {
     /**
      * Bulk save crew details
      */
-    CrewDetailsResponse saveCrewDetails(Long companyPoid, String userId,Long crewPoid, BulkSaveDetailsRequest request);
+    CrewDetailsResponse saveCrewDetails(Long companyPoid, String userId, Long crewPoid, BulkSaveDetailsRequest request);
 
     /**
      * Delete single crew detail record
      */
-    void deleteCrewDetail(Long companyPoid,Long crewPoid, Long detRowId);
+    void deleteCrewDetail(Long companyPoid, Long crewPoid, Long detRowId);
+
+    /**
+     * Get all crew with filters
+     */
+    Page<ContractCrewResponse> getAllCrewWithFilters(Long groupPoid, Long companyPoid, GetAllCrewFilterRequest filterRequest, int page, int size, String sort);
 }
 

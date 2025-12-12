@@ -2,13 +2,12 @@ package com.asg.operations.shipprincipal.service;
 
 import com.asg.operations.shipprincipal.dto.*;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
 public interface PrincipalMasterService {
 
-    Page<PrincipalMasterListDto> getPrincipalList(String search, Pageable pageable);
+    Page<PrincipalMasterDto> getAllPrincipalsWithFilters(Long groupPoid, GetAllPrincipalFilterRequest filterRequest, int page, int size, String sort);
 
     PrincipalMasterDto getPrincipal(Long id);
 

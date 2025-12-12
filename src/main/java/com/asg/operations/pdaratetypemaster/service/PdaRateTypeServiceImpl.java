@@ -1,17 +1,23 @@
 package com.asg.operations.pdaratetypemaster.service;
 
+import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.Util.FormulaValidator;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaratetypemaster.dto.*;
 import com.asg.operations.pdaratetypemaster.util.PdaRateTypeMapper;
 import com.asg.operations.pdaratetypemaster.repository.PdaRateTypeRepository;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.pdaratetypemaster.entity.PdaRateTypeMaster;
+import jakarta.persistence.EntityManager;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -27,44 +33,166 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     private final PdaRateTypeRepository repository;
     private final PdaRateTypeMapper mapper;
     private final FormulaValidator formulaValidator;
+    private final EntityManager entityManager;
+    private final LovService lovService;
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<PdaRateTypeResponseDTO> getRateTypeList(
-            String code,
-            String name,
-            String active,
+    public Page<PdaRateTypeResponseDTO> getAllRateTypesWithFilters(
             Long groupPoid,
-            Pageable pageable
-    ) {
-        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
+            GetAllRateTypeFilterRequest filterRequest,
+            int page, int size, String sort) {
 
-        String normalizedCode = code != null ? code.toUpperCase() : null;
-        String normalizedName = name != null ? name.toUpperCase() : null;
-        String activeFilter = active != null ? active : "Y";
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT r.RATE_TYPE_POID, r.RATE_TYPE_CODE, r.RATE_TYPE_NAME, ");
+        sqlBuilder.append("r.RATE_TYPE_FORMULA, r.DEF_DAYS, r.ACTIVE, r.DELETED, ");
+        sqlBuilder.append("r.SEQNO, r.CREATED_BY, r.CREATED_DATE, r.LASTMODIFIED_BY, r.LASTMODIFIED_DATE ");
+        sqlBuilder.append("FROM PDA_RATE_TYPE_MASTER r ");
+        sqlBuilder.append("WHERE r.GROUP_POID = :groupPoid ");
 
-        Page<PdaRateTypeMaster> rateTypePage = repository.searchRateTypes(
-                normalizedCode,
-                normalizedName,
-                activeFilter,
-                groupPoidBD,
-                pageable
-        );
+        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND (r.DELETED IS NULL OR r.DELETED != 'Y') ");
+        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND r.DELETED = 'Y' ");
+        }
 
-        List<PdaRateTypeResponseDTO> content = rateTypePage.getContent().stream()
-                .map(mapper::toResponse)
+        List<String> filterConditions = new java.util.ArrayList<>();
+        List<GetAllRateTypeFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
+        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
+            for (GetAllRateTypeFilterRequest.FilterItem filter : filterRequest.getFilters()) {
+                if (StringUtils.hasText(filter.getSearchField()) && StringUtils.hasText(filter.getSearchValue())) {
+                    validFilters.add(filter);
+                    String columnName = mapRateTypeSearchFieldToColumn(filter.getSearchField());
+                    int paramIndex = validFilters.size() - 1;
+                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
+                }
+            }
+        }
+
+        if (!filterConditions.isEmpty()) {
+            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
+            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
+        }
+
+        String orderBy = "ORDER BY r.RATE_TYPE_CODE ASC";
+        if (StringUtils.hasText(sort)) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                String sortField = mapRateTypeSortFieldToColumn(sortParts[0].trim());
+                String sortDirection = sortParts[1].trim().toUpperCase();
+                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
+                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
+                }
+            }
+        }
+        sqlBuilder.append(orderBy);
+
+        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
+        jakarta.persistence.Query query = entityManager.createNativeQuery(sqlBuilder.toString());
+        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
+
+        query.setParameter("groupPoid", groupPoid);
+        countQuery.setParameter("groupPoid", groupPoid);
+
+        if (!validFilters.isEmpty()) {
+            for (int i = 0; i < validFilters.size(); i++) {
+                GetAllRateTypeFilterRequest.FilterItem filter = validFilters.get(i);
+                String paramValue = "%" + filter.getSearchValue() + "%";
+                query.setParameter("filterValue" + i, paramValue);
+                countQuery.setParameter("filterValue" + i, paramValue);
+            }
+        }
+
+        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
+        int offset = page * size;
+        query.setFirstResult(offset);
+        query.setMaxResults(size);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        List<PdaRateTypeResponseDTO> dtos = results.stream()
+                .map(this::mapToRateTypeResponseDto)
                 .collect(Collectors.toList());
 
-        return new PageResponse<>(
-                content,
-                rateTypePage.getNumber(),
-                rateTypePage.getSize(),
-                rateTypePage.getTotalElements(),
-                rateTypePage.getTotalPages(),
-                rateTypePage.isFirst(),
-                rateTypePage.isLast(),
-                rateTypePage.getNumberOfElements()
-        );
+        for (PdaRateTypeResponseDTO dto : dtos) {
+            dto.setGroupDet(lovService.getLovItemByPoid(dto.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        return new PageImpl<>(dtos, pageable, totalCount);
+    }
+
+    private String mapRateTypeSearchFieldToColumn(String searchField) {
+        if (searchField == null) return null;
+        String normalizedField = searchField.toUpperCase().replace("_", "");
+        switch (normalizedField) {
+            case "RATETYPECODE":
+                return "r.RATE_TYPE_CODE";
+            case "RATETYPENAME":
+                return "r.RATE_TYPE_NAME";
+            case "RATETYPEFORMULA":
+                return "r.RATE_TYPE_FORMULA";
+            case "ACTIVE":
+                return "r.ACTIVE";
+            case "DELETED":
+                return "r.DELETED";
+            default:
+                return "r." + searchField.toUpperCase().replace(" ", "_");
+        }
+    }
+
+    private String mapRateTypeSortFieldToColumn(String sortField) {
+        if (sortField == null) return "r.RATE_TYPE_CODE";
+        String normalizedField = sortField.toUpperCase().replace("_", "");
+        switch (normalizedField) {
+            case "RATETYPEPOID":
+                return "r.RATE_TYPE_POID";
+            case "RATETYPECODE":
+                return "r.RATE_TYPE_CODE";
+            case "RATETYPENAME":
+                return "r.RATE_TYPE_NAME";
+            case "RATETYPEFORMULA":
+                return "r.RATE_TYPE_FORMULA";
+            case "DEFDAYS":
+                return "r.DEF_DAYS";
+            case "ACTIVE":
+                return "r.ACTIVE";
+            case "DELETED":
+                return "r.DELETED";
+            case "SEQNO":
+                return "r.SEQNO";
+            case "CREATEDBY":
+                return "r.CREATED_BY";
+            case "CREATEDDATE":
+                return "r.CREATED_DATE";
+            case "LASTMODIFIEDBY":
+                return "r.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE":
+                return "r.LASTMODIFIED_DATE";
+            default:
+                return "r." + sortField.toUpperCase().replace(" ", "_");
+        }
+    }
+
+    private PdaRateTypeResponseDTO mapToRateTypeResponseDto(Object[] row) {
+        PdaRateTypeResponseDTO dto = new PdaRateTypeResponseDTO();
+        dto.setRateTypeId(row[0] != null ? ((Number) row[0]).longValue() : null);
+        dto.setRateTypeCode(convertToString(row[1]));
+        dto.setRateTypeName(convertToString(row[2]));
+        dto.setRateTypeFormula(convertToString(row[3]));
+        dto.setDefDays(row[4] != null ? (BigDecimal) row[4] : null);
+        dto.setActive(convertToString(row[5]));
+        // Skip deleted field as it's not in DTO
+        dto.setSeqNo(row[7] != null ? new BigInteger(row[7].toString()) : null);
+        dto.setCreatedBy(convertToString(row[8]));
+        dto.setCreatedDate(row[9] != null ? ((java.sql.Timestamp) row[9]).toLocalDateTime() : null);
+        dto.setModifiedBy(convertToString(row[10]));
+        dto.setModifiedDate(row[11] != null ? ((java.sql.Timestamp) row[11]).toLocalDateTime() : null);
+        return dto;
+    }
+
+    private String convertToString(Object value) {
+        return value != null ? value.toString() : null;
     }
 
     @Override

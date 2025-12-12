@@ -1,22 +1,28 @@
 package com.asg.operations.portactivitiesmaster.service;
 
-import com.asg.operations.portactivitiesmaster.dto.PageResponse;
+import com.asg.operations.commonlov.dto.LovItem;
+import com.asg.operations.commonlov.service.LovService;
+import com.asg.operations.exceptions.ResourceNotFoundException;
+import com.asg.operations.portactivitiesmaster.dto.GetAllPortActivityFilterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
 import com.asg.operations.portactivitiesmaster.entity.PortActivityMaster;
 import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,16 +36,36 @@ class PortActivityMasterServiceImplTest {
     @Mock
     private PortActivityMasterRepository repository;
 
+    @Mock
+    private LovService lovService;
+
+    @Mock
+    private EntityManager entityManager;
+
+    @Mock
+    private Query query;
+
+    @Mock
+    private Query countQuery;
+
+    private MockedStatic<com.asg.common.lib.security.util.UserContext> mockedUserContext;
+
     @InjectMocks
     private PortActivityMasterServiceImpl service;
 
     private PortActivityMaster entity;
     private PortActivityMasterRequest request;
+    private GetAllPortActivityFilterRequest filterRequest;
     private Long groupPoid = 1L;
     private String userId = "testUser";
 
     @BeforeEach
     void setUp() {
+        mockedUserContext = mockStatic(com.asg.common.lib.security.util.UserContext.class);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getGroupPoid).thenReturn(100L);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getCompanyPoid).thenReturn(200L);
+        mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getUserPoid).thenReturn(1L);
+
         entity = PortActivityMaster.builder()
                 .portActivityTypePoid(1L)
                 .groupPoid(groupPoid)
@@ -61,37 +87,57 @@ class PortActivityMasterServiceImplTest {
                 .seqno(1L)
                 .remarks("Test remarks")
                 .build();
+
+        filterRequest = new GetAllPortActivityFilterRequest();
+        filterRequest.setIsDeleted("N");
+        filterRequest.setOperator("AND");
+        filterRequest.setFilters(Collections.emptyList());
+
+        LovItem mockLovItem = new LovItem(1L, "GRP1", "Test Group", "Test Group", 1L, 1);
+        lenient().when(lovService.getLovItemByPoid(any(), any(), any(), any(), any())).thenReturn(mockLovItem);
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        if (mockedUserContext != null) {
+            mockedUserContext.close();
+        }
     }
 
     @Test
-    void getPortActivityList_ShouldReturnPageResponse() {
-        // Given
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<PortActivityMaster> page = new PageImpl<>(List.of(entity));
-        when(repository.findByGroupPoidAndFilters(eq(groupPoid), any(), any(), any(), eq(pageable)))
-                .thenReturn(page);
+    void getAllPortActivitiesWithFilters_ShouldReturnPageResponse() {
+        Object[] mockRow = {
+            1L, 1L, "PA1", "Test Activity", "Test Activity 2", "Y", 1L,
+            "testUser", Timestamp.valueOf(LocalDateTime.now()), "testUser",
+            Timestamp.valueOf(LocalDateTime.now()), "N", "Test remarks"
+        };
 
-        // When
-        PageResponse<PortActivityMasterResponse> result = service.getPortActivityList(
-                "PA1", "Test", "Y", groupPoid, pageable);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(query).thenReturn(countQuery);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.setFirstResult(anyInt())).thenReturn(query);
+        when(query.setMaxResults(anyInt())).thenReturn(query);
+        when(countQuery.setParameter(anyString(), any())).thenReturn(countQuery);
+        List<Object[]> mockResultList = new java.util.ArrayList<>();
+        mockResultList.add(mockRow);
+        when(query.getResultList()).thenReturn(mockResultList);
+        when(countQuery.getSingleResult()).thenReturn(1L);
 
-        // Then
+        Page<PortActivityMasterResponse> result = service.getAllPortActivitiesWithFilters(
+                groupPoid, filterRequest, 0, 20, null);
+
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertEquals("PA1", result.getContent().get(0).getPortActivityTypeCode());
-        verify(repository).findByGroupPoidAndFilters(groupPoid, "PA1", "Test", "Y", pageable);
+        verify(entityManager, times(2)).createNativeQuery(anyString());
     }
 
     @Test
     void getPortActivityById_ShouldReturnResponse_WhenExists() {
-        // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        // When
         PortActivityMasterResponse result = service.getPortActivityById(1L, groupPoid);
 
-        // Then
         assertNotNull(result);
         assertEquals(1L, result.getPortActivityTypePoid());
         assertEquals("PA1", result.getPortActivityTypeCode());
@@ -99,24 +145,19 @@ class PortActivityMasterServiceImplTest {
 
     @Test
     void getPortActivityById_ShouldThrowException_WhenNotFound() {
-        // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.empty());
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> service.getPortActivityById(1L, groupPoid));
+        assertThrows(ResourceNotFoundException.class, () -> service.getPortActivityById(1L, groupPoid));
     }
 
     @Test
     void createPortActivity_ShouldReturnResponse() {
-        // Given
         when(repository.findMaxCodeSequence("PA", groupPoid)).thenReturn(0);
         when(repository.save(any(PortActivityMaster.class))).thenReturn(entity);
 
-        // When
         PortActivityMasterResponse result = service.createPortActivity(request, groupPoid, userId);
 
-        // Then
         assertNotNull(result);
         assertEquals("PA1", result.getPortActivityTypeCode());
         verify(repository).save(any(PortActivityMaster.class));
@@ -124,40 +165,32 @@ class PortActivityMasterServiceImplTest {
 
     @Test
     void updatePortActivity_ShouldReturnUpdatedResponse() {
-        // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
         when(repository.save(any(PortActivityMaster.class))).thenReturn(entity);
 
-        // When
         PortActivityMasterResponse result = service.updatePortActivity(1L, request, groupPoid, userId);
 
-        // Then
         assertNotNull(result);
         verify(repository).save(entity);
     }
 
     @Test
     void updatePortActivity_ShouldThrowException_WhenNotFound() {
-        // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.empty());
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> 
+        assertThrows(ResourceNotFoundException.class, () ->
                 service.updatePortActivity(1L, request, groupPoid, userId));
     }
 
     @Test
     void deletePortActivity_SoftDelete_ShouldMarkAsDeleted() {
-        // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        // When
         service.deletePortActivity(1L, groupPoid, userId, false);
 
-        // Then
         assertEquals("Y", entity.getDeleted());
         assertEquals("N", entity.getActive());
         verify(repository).save(entity);
@@ -166,26 +199,21 @@ class PortActivityMasterServiceImplTest {
 
     @Test
     void deletePortActivity_HardDelete_ShouldDeleteEntity() {
-        // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        // When
         service.deletePortActivity(1L, groupPoid, userId, true);
 
-        // Then
         verify(repository).delete(entity);
         verify(repository, never()).save(any());
     }
 
     @Test
     void deletePortActivity_ShouldThrowException_WhenNotFound() {
-        // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.empty());
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> 
+        assertThrows(ResourceNotFoundException.class, () ->
                 service.deletePortActivity(1L, groupPoid, userId, false));
     }
 }

@@ -1,5 +1,7 @@
 package com.asg.operations.shipprincipal.service;
 
+import com.asg.common.lib.security.util.UserContext;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.shipprincipal.dto.AddressDetailsDTO;
 import com.asg.operations.shipprincipal.dto.AddressMasterResponse;
 import com.asg.operations.shipprincipal.dto.AddressTypeMapDTO;
@@ -23,6 +25,7 @@ public class AddressMasterServiceImpl implements AddressMasterService {
     private final CountryRepository countryRepo;
     private final AddressMasterRepository masterRepo;
     private final AddressDetailsRepository detailsRepo;
+    private final LovService lovService;
 
     /**
      * Get single Address Master with all department details (tabs).
@@ -287,6 +290,7 @@ public class AddressMasterServiceImpl implements AddressMasterService {
                 resp.setCountryId(c.getCountryPoid());
                 resp.setCountryName(c.getCountryName());
             });
+            resp.setCountryDet(lovService.getLovItemByPoid(m.getCountryPoid(), "COUNTRY", m.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         }
 
 

@@ -1,6 +1,8 @@
 package com.asg.operations.finaldisbursementaccount.service;
 
 import com.asg.operations.common.PageResponse;
+import com.asg.operations.commonlov.dto.LovItem;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.finaldisbursementaccount.dto.FdaHeaderDto;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -45,8 +48,24 @@ class FdaServiceImplTest {
     @Mock
     private FdaCustomRepository fdaCustomRepository;
 
+    @Mock
+    private LovService lovService;
+
     @InjectMocks
     private FdaServiceImpl fdaService;
+
+    @BeforeEach
+    void setUp() {
+        // Mock LovService with lenient stubbing to avoid UnnecessaryStubbingException
+        LovItem mockLovItem = new LovItem();
+        mockLovItem.setPoid(1L);
+        mockLovItem.setCode("TEST");
+        mockLovItem.setDescription("Test Item");
+        mockLovItem.setLabel("Test Item");
+        mockLovItem.setValue(1L);
+        mockLovItem.setSeqNo(1);
+        lenient().when(lovService.getLovItemByPoid(any(), any(), any(), any(), any())).thenReturn(mockLovItem);
+    }
 
     @Test
     void getFdaHeader_ShouldReturnFdaHeaderDto() {
@@ -280,6 +299,15 @@ class FdaServiceImplTest {
         entity.setPrincipalPoid(1L);
         entity.setSalesmanPoid(1L);
         entity.setPortPoid(1L);
+        entity.setVoyagePoid(1L);
+        entity.setVesselPoid(1L);
+        entity.setCommodityPoid("1");
+        entity.setAddressPoid(1L);
+        entity.setTermsPoid(1L);
+        entity.setVesselTypePoid("1");
+        entity.setLinePoid(1L);
+        entity.setPrintBankPoid(1L);
+        entity.setVesselHandledBy(1L);
         entity.setGrt(BigDecimal.valueOf(1000));
         entity.setStatus("O");
         entity.setDeleted("N");

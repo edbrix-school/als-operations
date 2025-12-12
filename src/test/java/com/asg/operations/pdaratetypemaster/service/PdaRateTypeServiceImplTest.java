@@ -55,7 +55,7 @@ public class PdaRateTypeServiceImplTest {
 
         entity = PdaRateTypeMaster.builder()
                 .rateTypePoid(1L)
-                .groupPoid(BigDecimal.ONE)
+                .groupPoid(1L)
                 .rateTypeCode("GRT")
                 .rateTypeName("Gross Tonnage Rate")
                 .rateTypeFormula("GRT * 0.5")

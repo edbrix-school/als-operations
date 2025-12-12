@@ -1,12 +1,10 @@
 package com.asg.operations.crew.controller;
 
-
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
-import com.asg.operations.crew.dto.ContractCrewRequest;
-import com.asg.operations.crew.dto.ContractCrewResponse;
-import com.asg.operations.crew.dto.ErrorResponse;
-import com.asg.operations.crew.dto.PageResponse;
+import com.asg.operations.crew.dto.*;
 import com.asg.operations.crew.service.ContractCrewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,11 +14,13 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * REST Controller for Contract Crew Master operations
@@ -37,65 +37,43 @@ public class ContractCrewController {
         this.crewService = crewService;
     }
 
-    /**
-     * GET /api/v1/contract-crew-masters
-     * Get paginated list of crew masters with filters
-     */
-    @Operation(
-            summary = "Get crew master list",
-            description = "Retrieves a paginated list of crew masters with optional filtering and sorting. " +
-                    "Supports filtering by crew code, crew name, nationality, company, and active status. " +
-                    "Results are paginated and can be sorted by any field. " +
-                    "Only records accessible to the user's company are returned (multi-tenant filtering).",
-            responses = {
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "200",
-                            description = "Successfully retrieved crew master list",
-                            content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = PageResponse.class)
-                            )
-                    ),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "401",
-                            description = "Unauthorized - Authentication required",
-                            content = @Content(mediaType = "application/json")
-                    ),
-                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                            responseCode = "500",
-                            description = "Internal server error",
-                            content = @Content(mediaType = "application/json")
-                    )
-            },
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @GetMapping
+    @Operation(summary = "Get all Crew", description = "Returns paginated list of Crew with optional filters. Supports pagination with page and size parameters.", responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Crew list fetched successfully", content = @Content(schema = @Schema(implementation = Page.class)))
+    })
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @PostMapping("/search")
     public ResponseEntity<?> getCrewList(
-            @RequestParam(required = false) String crewName,
-            @RequestParam(required = false) Long nationality,
-            @RequestParam(required = false) String company,
-            @RequestParam(required = false) String active,
+            @RequestBody(required = false) GetAllCrewFilterRequest filterRequest,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "crewName,asc") String sort
-    ) {
-        // Parse sort parameter (format: "field,direction")
-        Sort sortObj = parseSort(sort);
+            @RequestParam(required = false) String sort) {
 
-        // Create pageable
-        Pageable pageable = PageRequest.of(page, size, sortObj);
+        // If filterRequest is null, create a default one
+        if (filterRequest == null) {
+            filterRequest = new GetAllCrewFilterRequest();
+            filterRequest.setIsDeleted("N");
+            filterRequest.setOperator("AND");
+            filterRequest.setFilters(new java.util.ArrayList<>());
+        }
 
-        // Call service
-        PageResponse<ContractCrewResponse> response = crewService.getCrewList(
-                crewName,
-                nationality,
-                company,
-                active,
-                pageable,
-                UserContext.getCompanyPoid()
-        );
+        org.springframework.data.domain.Page<ContractCrewResponse> crewPage = crewService
+                .getAllCrewWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
 
-        return ApiResponse.success("Crew list retrieved successfully", response);
+        // Create displayFields
+        Map<String, String> displayFields = new HashMap<>();
+        displayFields.put("CREW_NAME", "text");
+
+        // Create paginated response with new structure
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", crewPage.getContent());
+        response.put("pageNumber", crewPage.getNumber());
+        response.put("displayFields", displayFields);
+        response.put("pageSize", crewPage.getSize());
+        response.put("totalElements", crewPage.getTotalElements());
+        response.put("totalPages", crewPage.getTotalPages());
+        response.put("last", crewPage.isLast());
+
+        return ApiResponse.success("Crew list fetched successfully", response);
     }
 
     /**
@@ -134,6 +112,7 @@ public class ContractCrewController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{crewPoid}")
     public ResponseEntity<?> getCrewById(
             @Parameter(description = "Primary key of the crew master", required = true)
@@ -189,6 +168,7 @@ public class ContractCrewController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     public ResponseEntity<?> createCrew(
             @Parameter(description = "Crew master request object with all required and optional fields", required = true)
@@ -244,6 +224,7 @@ public class ContractCrewController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{crewPoid}")
     public ResponseEntity<?> updateCrew(
             @Parameter(description = "Primary key of the crew master to update", required = true)
@@ -294,6 +275,7 @@ public class ContractCrewController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{crewPoid}")
     public ResponseEntity<?> deleteCrew(
             @Parameter(description = "Primary key of the crew master to delete", required = true)

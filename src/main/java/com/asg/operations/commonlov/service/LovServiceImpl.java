@@ -1,8 +1,10 @@
 package com.asg.operations.commonlov.service;
+
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.dto.LovResponse;
 import com.asg.operations.commonlov.repository.LovRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +19,7 @@ public class LovServiceImpl implements LovService {
 
     @Override
     public LovResponse getLovList(String lovName, Long docKeyPoid, String filterValue, Long groupPoid, Long companyPoid, Long userPoid) {
-        log.info("Fetching LOV list for lovName={} docKeyPoid={} filterValue={} groupPoid={} companyPoid={} userId={}", 
+        log.info("Fetching LOV list for lovName={} docKeyPoid={} filterValue={} groupPoid={} companyPoid={} userId={}",
                 lovName, docKeyPoid, filterValue, groupPoid, companyPoid, userPoid);
         LovResponse response = lovRepository.getLovList(lovName, docKeyPoid, filterValue, groupPoid, companyPoid, userPoid);
         log.info("Fetched LOV list for lovName={} itemCount={}", lovName,
@@ -26,9 +28,13 @@ public class LovServiceImpl implements LovService {
     }
 
     @Override
-    public LovItem getLovItem(Long poid, String lovName, Long groupPoid, Long companyPoid, Long userPoid) {
-        log.info("poid : {}, lovName : {}, groupPoid : {}, companyPoid : {}, userId : {}", 
+    public LovItem getLovItemByPoid(Long poid, String lovName, Long groupPoid, Long companyPoid, Long userPoid) {
+        log.info("poid : {}, lovName : {}, groupPoid : {}, companyPoid : {}, userId : {}",
                 poid, lovName, groupPoid, companyPoid, userPoid);
+
+        if (poid == null || StringUtils.isBlank(lovName)) {
+            return new LovItem();
+        }
 
         LovItem dto = new LovItem();
         LovResponse listValue = this.getLovList(lovName, poid, "", groupPoid, companyPoid, userPoid);
@@ -44,6 +50,26 @@ public class LovServiceImpl implements LovService {
             }
         }
         return dto;
+    }
+
+    @Override
+    public LovItem getLovItemByCode(String code, String lovName, Long groupPoid, Long companyPoid, Long userPoid) {
+        log.info("code : {}, lovName : {}, groupPoid : {}, companyPoid : {}, userId : {}",
+                code, lovName, groupPoid, companyPoid, userPoid);
+
+        if (StringUtils.isBlank(code) || StringUtils.isBlank(lovName)) {
+            return new LovItem();
+        }
+
+        LovResponse listValue = this.getLovList(lovName, null, "", groupPoid, companyPoid, userPoid);
+
+        if (listValue != null && listValue.getItems() != null) {
+            return listValue.getItems().stream()
+                    .filter(x -> code.equals(x.getCode()))
+                    .findFirst()
+                    .orElse(new LovItem(null, code, null, null, null, null));
+        }
+        return new LovItem(null, code, null, null, null, null);
     }
 
 }

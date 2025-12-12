@@ -1,6 +1,7 @@
 package com.asg.operations.pdaentryform.service.impl;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
@@ -11,7 +12,9 @@ import jakarta.persistence.EntityManager;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
 import com.asg.operations.pdaentryform.util.PdaEntryDocumentRefGenerator;
 import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
+import lombok.RequiredArgsConstructor;
 import oracle.jdbc.internal.OracleTypes;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +39,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PdaEntryServiceImpl implements PdaEntryService {
 
     private static final Logger logger = LoggerFactory.getLogger(PdaEntryServiceImpl.class);
@@ -49,79 +53,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     private final PdaEntryDocumentRefGenerator docRefGenerator;
     private final JdbcTemplate jdbcTemplate;
     private final EntityManager entityManager;
-
-    @Autowired
-    public PdaEntryServiceImpl(
-            PdaEntryHdrRepository entryHdrRepository,
-            PdaEntryDtlRepository entryDtlRepository,
-            PdaEntryVehicleDtlRepository vehicleDtlRepository,
-            PdaEntryTdrDetailRepository tdrDetailRepository,
-            PdaEntryAcknowledgmentDtlRepository acknowledgmentDtlRepository,
-           // SecurityContextUtil securityContextUtil,
-            PdaEntryDocumentRefGenerator docRefGenerator,
-            JdbcTemplate jdbcTemplate,
-            EntityManager entityManager
-    ) {
-        this.entryHdrRepository = entryHdrRepository;
-        this.entryDtlRepository = entryDtlRepository;
-        this.vehicleDtlRepository = vehicleDtlRepository;
-        this.tdrDetailRepository = tdrDetailRepository;
-        this.acknowledgmentDtlRepository = acknowledgmentDtlRepository;
-       // this.securityContextUtil = securityContextUtil;
-        this.docRefGenerator = docRefGenerator;
-        this.jdbcTemplate = jdbcTemplate;
-        this.entityManager = entityManager;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public PageResponse<PdaEntryResponse> getPdaEntryList(
-            String docRef,
-            String transactionRef,
-            BigDecimal principalPoid,
-            String status,
-            String refType,
-            BigDecimal vesselPoid,
-            BigDecimal portPoid,
-            LocalDate transactionDateFrom,
-            LocalDate transactionDateTo,
-            String deleted,
-            Pageable pageable,
-            Long groupPoid,
-            Long companyPoid
-    ) {
-
-        Page<PdaEntryHdr> entryPage = entryHdrRepository.searchPdaEntries(
-                groupPoid,
-                companyPoid,
-                deleted,
-                docRef,
-                transactionRef,
-                principalPoid,
-                status,
-                refType,
-                vesselPoid,
-                portPoid,
-                transactionDateFrom,
-                transactionDateTo,
-                pageable
-        );
-
-        List<PdaEntryResponse> responses = entryPage.getContent().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-
-        return new PageResponse<PdaEntryResponse>(
-                responses,
-                entryPage.getNumber(),
-                entryPage.getSize(),
-                entryPage.getTotalElements(),
-                entryPage.getTotalPages(),
-                entryPage.isFirst(),
-                entryPage.isLast(),
-                entryPage.getNumberOfElements()
-        );
-    }
+    private final LovService lovService;
 
     @Override
     @Transactional(readOnly = true)
@@ -905,7 +837,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // If there are field validation errors, return them
         if (!errors.isEmpty()) {
-            ValidationResponse response = new ValidationResponse(false, "ERROR", "Validation failed");
+            ValidationResponse response = new ValidationResponse(false, "ERROR", "Validation failed", new ArrayList<>(), new ArrayList<>());
             response.setErrors(errors);
             return response;
         }
@@ -1191,12 +1123,16 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setDeleted(entity.getDeleted());
         response.setTransactionDate(entity.getTransactionDate());
         response.setPrincipalPoid(entity.getPrincipalPoid());
+        response.setPrincipalDet(lovService.getLovItemByPoid(entity.getPrincipalPoid() != null ? entity.getPrincipalPoid().longValue() : null, "PRINCIPAL_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setPrincipalName(entity.getPrincipalName());
         response.setPrincipalContact(entity.getPrincipalContact());
         response.setVoyagePoid(entity.getVoyagePoid());
+        response.setVoyageDet(lovService.getLovItemByPoid(entity.getVoyagePoid() != null ? entity.getVoyagePoid().longValue() : null, "VESSAL_VOYAGE", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setVoyageNo(entity.getVoyageNo());
         response.setVesselPoid(entity.getVesselPoid());
+        response.setVesselDet(lovService.getLovItemByPoid(entity.getVesselPoid() != null ? entity.getVesselPoid().longValue() : null, "VESSEL_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setVesselTypePoid(entity.getVesselTypePoid());
+        response.setVesselTypeDet(lovService.getLovItemByPoid(entity.getVesselTypePoid() != null ? entity.getVesselTypePoid().longValue() : null, "VESSEL_TYPE_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setGrt(entity.getGrt());
         response.setNrt(entity.getNrt());
         response.setDwt(entity.getDwt());
@@ -1207,26 +1143,35 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setActualSailDate(entity.getActualSailDate());
         response.setVesselSailDate(entity.getVesselSailDate());
         response.setPortPoid(entity.getPortPoid());
+        response.setPortDet(lovService.getLovItemByPoid(entity.getPortPoid() != null ? entity.getPortPoid().longValue() : null, "PDA_PORT_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setPortDescription(entity.getPortDescription());
         response.setLinePoid(entity.getLinePoid());
+        response.setLineDet(lovService.getLovItemByPoid(entity.getLinePoid() != null ? entity.getLinePoid().longValue() : null, "LINE_MASTER_ALL", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setComodityPoid(entity.getComodityPoid());
+        response.setComodityDet(lovService.getLovItemByPoid(entity.getComodityPoid() != null ? Long.valueOf(entity.getComodityPoid()) : null, "COMODITY", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setOperationType(entity.getOperationType());
+        response.setOperationTypeDet(lovService.getLovItemByCode(entity.getOperationType(), "PDA_OPERATION_TYPES", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setHarbourCallType(entity.getHarbourCallType());
         response.setImportQty(entity.getImportQty());
         response.setExportQty(entity.getExportQty());
         response.setTranshipmentQty(entity.getTranshipmentQty());
         response.setTotalQuantity(entity.getTotalQuantity());
         response.setUnit(entity.getUnit());
+        response.setUnitDet(lovService.getLovItemByCode(entity.getUnit(), "UNIT_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setNumberOfDays(entity.getNumberOfDays());
         response.setCurrencyCode(entity.getCurrencyCode());
+        response.setCurrencyDet(lovService.getLovItemByCode(entity.getCurrencyCode(), "CURRENCY", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setCurrencyRate(entity.getCurrencyRate());
         response.setTotalAmount(entity.getTotalAmount());
         response.setCostCentrePoid(entity.getCostCentrePoid());
         response.setSalesmanPoid(entity.getSalesmanPoid());
+        response.setSalesmanDet(lovService.getLovItemByPoid(entity.getSalesmanPoid() != null ? entity.getSalesmanPoid().longValue() : null, "SALESMAN", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setTermsPoid(entity.getTermsPoid());
         response.setAddressPoid(entity.getAddressPoid());
         response.setRefType(entity.getRefType());
+        response.setRefTypeDet(lovService.getLovItemByCode(entity.getRefType(), "PDA_REF_TYPE", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setSubCategory(entity.getSubCategory());
+        response.setSubCategoryDet(lovService.getLovItemByCode(entity.getSubCategory(), "PDA_SUB_CATEGORY", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setStatus(entity.getStatus());
         response.setCargoDetails(entity.getCargoDetails());
         response.setRemarks(entity.getRemarks());
@@ -1234,6 +1179,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setVesselVerifiedDate(entity.getVesselVerifiedDate());
         response.setVesselVerifiedBy(entity.getVesselVerifiedBy());
         response.setVesselHandledBy(entity.getVesselHandledBy());
+        response.setVesselHandledByDet(lovService.getLovItemByPoid(entity.getVesselHandledBy() != null ? entity.getVesselHandledBy().longValue() : null, "PDA_USER_MASTER", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setUrgentApproval(entity.getUrgentApproval());
         response.setPrincipalApproved(entity.getPrincipalApproved());
         response.setPrincipalApprovedDate(entity.getPrincipalApprovedDate());
@@ -1241,12 +1187,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setPrincipalAprvlDays(entity.getPrincipalAprvlDays());
         response.setReminderMinutes(entity.getReminderMinutes());
         response.setPrintPrincipal(entity.getPrintPrincipal());
+        response.setPrintPrincipalDet(lovService.getLovItemByPoid(entity.getPrintPrincipal() != null ? entity.getPrintPrincipal().longValue() : null, "PDA_PRINCIPAL_PRINT", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setFdaRef(entity.getFdaRef());
         response.setFdaPoid(entity.getFdaPoid());
         response.setMultipleFda(entity.getMultipleFda());
         response.setNominatedPartyType(entity.getNominatedPartyType());
+        response.setNominatedPartyTypeDet(lovService.getLovItemByCode(entity.getNominatedPartyType(), "PDA_NOMINATED_PARTY_TYPE", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setNominatedPartyPoid(entity.getNominatedPartyPoid());
         response.setBankPoid(entity.getBankPoid());
+        response.setBankDet(lovService.getLovItemByPoid(entity.getBankPoid() != null ? entity.getBankPoid().longValue() : null, "BANK_MASTER_COMPANYWISE", entity.getGroupPoid(), entity.getCompanyPoid(), null));
         response.setBusinessRefBy(entity.getBusinessRefBy());
         response.setPmiDocument(entity.getPmiDocument());
         response.setCancelRemark(entity.getCancelRemark());
@@ -1271,6 +1220,13 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setVehicleDetails(getVehicleDetails(entity.getTransactionPoid(), entity.getGroupPoid(), entity.getCompanyPoid()));
         response.setTdrDetails(getTdrDetails(entity.getTransactionPoid(), entity.getGroupPoid(), entity.getCompanyPoid()));
         response.setAcknowledgmentDetails(getAcknowledgmentDetails(entity.getTransactionPoid(), Long.valueOf(entity.getGroupPoid().toString()), entity.getCompanyPoid()));
+
+        if (StringUtils.isNotBlank(response.getNominatedPartyType()) && "CUSTOMER".equalsIgnoreCase(response.getNominatedPartyType())) {
+            response.setNominatedPartyDet(lovService.getLovItemByPoid(Long.valueOf(String.valueOf(response.getNominatedPartyPoid())), "PDA_NOMINATED_PARTY_CUSTOMER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
+        if (StringUtils.isNotBlank(response.getNominatedPartyType()) && "PRINCIPAL".equalsIgnoreCase(response.getNominatedPartyType())) {
+            response.setNominatedPartyDet(lovService.getLovItemByPoid(Long.valueOf(String.valueOf(response.getNominatedPartyPoid())), "PDA_NOMINATED_PARTY_PRINCIPAL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
         return response;
     }
 
@@ -1611,7 +1567,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> result = jdbcCall.execute(params);
             List<TaxInfo> taxInfoList = (List<TaxInfo>) result.get("OUTDATA");
-            
+
             if (!taxInfoList.isEmpty()) {
                 TaxInfo taxInfo = taxInfoList.get(0);
                 logger.info("[SP-7] PROC_GET_CHARGE_TAX_PER_V3 - Tax %: {}", taxInfo.getTaxPercentage());
@@ -2351,7 +2307,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> result = jdbcCall.execute(inParams);
             String spResult = (String) result.get("P_RESULT");
-            
+
             logger.info("[SP-6] PROC_PDA_ENTRY_CANCEL - END - Result: {}", spResult);
         } catch (Exception e) {
             logger.error("[SP-6] PROC_PDA_ENTRY_CANCEL - ERROR: {}", e.getMessage(), e);
@@ -2361,20 +2317,20 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public void callGetPdaRefWhereClause(BigDecimal loginPoid) {
         try {
             logger.info("[SP-7] PROC_GL_PDA_REF_WHERE_CLAUSE - START - loginPoid: {}", loginPoid);
-            
+
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_GL_PDA_REF_WHERE_CLAUSE")
                     .declareParameters(
                             new SqlParameter("P_LOGIN_POID", Types.NUMERIC),
                             new SqlOutParameter("P_STATUS", Types.VARCHAR)
                     );
-            
+
             Map<String, Object> inParams = new HashMap<>();
             inParams.put("P_LOGIN_POID", loginPoid);
-            
+
             Map<String, Object> result = jdbcCall.execute(inParams);
             String status = (String) result.get("P_STATUS");
-            
+
             logger.info("[SP-7] PROC_GL_PDA_REF_WHERE_CLAUSE - END - Status: {}", status);
         } catch (Exception e) {
             logger.error("[SP-7] PROC_GL_PDA_REF_WHERE_CLAUSE - ERROR: {}", e.getMessage(), e);
@@ -2540,6 +2496,582 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             logger.error("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - Error: {}", e.getMessage());
             return null;
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<PdaEntryResponse> getAllPdaWithFilters(
+            Long groupPoid, Long companyPoid,
+            GetAllPdaFilterRequest filterRequest,
+            int page, int size, String sort) {
+
+        // Build dynamic SQL query
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT p.TRANSACTION_POID, p.TRANSACTION_DATE, p.GROUP_POID, p.COMPANY_POID, ");
+        sqlBuilder.append("p.DOC_REF, p.TRANSACTION_REF, p.PRINCIPAL_POID, p.PRINCIPAL_NAME, p.PRINCIPAL_CONTACT, ");
+        sqlBuilder.append("p.VOYAGE_POID, p.VOYAGE_NO, p.VESSEL_POID, p.VESSEL_TYPE_POID, p.GRT, p.NRT, p.DWT, ");
+        sqlBuilder.append("p.IMO_NUMBER, p.ARRIVAL_DATE, p.SAIL_DATE, p.ACTUAL_ARRIVAL_DATE, p.ACTUAL_SAIL_DATE, ");
+        sqlBuilder.append("p.VESSEL_SAIL_DATE, p.PORT_POID, p.PORT_DESCRIPTION, p.LINE_POID, p.COMODITY_POID, ");
+        sqlBuilder.append("p.OPERATION_TYPE, p.HARBOUR_CALL_TYPE, p.IMPORT_QTY, p.EXPORT_QTY, p.TRANSHIPMENT_QTY, ");
+        sqlBuilder.append("p.TOTAL_QUANTITY, p.UNIT, p.NUMBER_OF_DAYS, p.CURRENCY_CODE, p.CURRENCY_RATE, ");
+        sqlBuilder.append("p.TOTAL_AMOUNT, p.COST_CENTRE_POID, p.SALESMAN_POID, p.TERMS_POID, p.ADDRESS_POID, ");
+        sqlBuilder.append("p.REF_TYPE, p.SUB_CATEGORY, p.STATUS, p.CARGO_DETAILS, p.REMARKS, ");
+        sqlBuilder.append("p.VESSEL_VERIFIED, p.VESSEL_VERIFIED_DATE, p.VESSEL_VERIFIED_BY, p.VESSEL_HANDLED_BY, ");
+        sqlBuilder.append("p.URGENT_APPROVAL, p.PRINCIPAL_APPROVED, p.PRINCIPAL_APPROVED_DATE, p.PRINCIPAL_APPROVED_BY, ");
+        sqlBuilder.append("p.PRINCIPAL_APRVL_DAYS, p.REMINDER_MINUTES, p.PRINT_PRINCIPAL, p.FDA_REF, p.FDA_POID, ");
+        sqlBuilder.append("p.MULTIPLE_FDA, p.NOMINATED_PARTY_TYPE, p.NOMINATED_PARTY_POID, p.BANK_POID, ");
+        sqlBuilder.append("p.BUSINESS_REF_BY, p.PMI_DOCUMENT, p.CANCEL_REMARK, p.OLD_PORT_CODE, p.OLD_VESSEL_CODE, ");
+        sqlBuilder.append("p.OLD_PRINCIPAL_CODE, p.OLD_VOYAGE_JOB, p.MENAS_DUES, p.DOCUMENT_SUBMITTED_DATE, ");
+        sqlBuilder.append("p.DOCUMENT_SUBMITTED_BY, p.DOCUMENT_SUBMITTED_STATUS, p.DOCUMENT_RECEIVED_DATE, ");
+        sqlBuilder.append("p.DOCUMENT_RECEIVED_FROM, p.DOCUMENT_RECEIVED_STATUS, p.SUBMISSION_ACCEPTED_DATE, ");
+        sqlBuilder.append("p.SUBMISSION_ACCEPTED_BY, p.VERIFICATION_ACCEPTED_DATE, p.VERIFICATION_ACCEPTED_BY, ");
+        sqlBuilder.append("p.ACCTS_CORRECTION_REMARKS, p.ACCTS_RETURNED_DATE, p.DELETED, p.CREATED_BY, ");
+        sqlBuilder.append("p.CREATED_DATE, p.LASTMODIFIED_BY, p.LASTMODIFIED_DATE ");
+        sqlBuilder.append("FROM PDA_ENTRY_HDR p ");
+        sqlBuilder.append("WHERE p.GROUP_POID = :groupPoid AND p.COMPANY_POID = :companyPoid ");
+
+        // Apply isDeleted filter
+        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND (p.DELETED IS NULL OR p.DELETED != 'Y') ");
+        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND p.DELETED = 'Y' ");
+        }
+
+        // Apply date range filters
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
+            sqlBuilder.append("AND TRUNC(p.TRANSACTION_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
+        }
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
+            sqlBuilder.append("AND TRUNC(p.TRANSACTION_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
+        }
+
+        // Build filter conditions
+        List<String> filterConditions = new java.util.ArrayList<>();
+        List<GetAllPdaFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
+        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
+            for (GetAllPdaFilterRequest.FilterItem filter : filterRequest.getFilters()) {
+                if (org.springframework.util.StringUtils.hasText(filter.getSearchField()) && org.springframework.util.StringUtils.hasText(filter.getSearchValue())) {
+                    validFilters.add(filter);
+                    String columnName = mapPdaSearchFieldToColumn(filter.getSearchField());
+                    int paramIndex = validFilters.size() - 1;
+                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
+                }
+            }
+        }
+
+        // Add filter conditions with operator
+        if (!filterConditions.isEmpty()) {
+            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
+            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
+        }
+
+        // Apply sorting
+        String orderBy = "ORDER BY p.TRANSACTION_DATE DESC";
+        if (org.springframework.util.StringUtils.hasText(sort)) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                String sortField = mapPdaSortFieldToColumn(sortParts[0].trim());
+                String sortDirection = sortParts[1].trim().toUpperCase();
+                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
+                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
+                }
+            }
+        }
+        sqlBuilder.append(orderBy);
+
+        // Create count query
+        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
+
+        // Create query
+        jakarta.persistence.Query query = entityManager.createNativeQuery(sqlBuilder.toString());
+        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
+
+        // Set parameters
+        query.setParameter("groupPoid", groupPoid);
+        query.setParameter("companyPoid", companyPoid);
+        countQuery.setParameter("groupPoid", groupPoid);
+        countQuery.setParameter("companyPoid", companyPoid);
+
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
+            query.setParameter("fromDate", filterRequest.getFrom());
+            countQuery.setParameter("fromDate", filterRequest.getFrom());
+        }
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
+            query.setParameter("toDate", filterRequest.getTo());
+            countQuery.setParameter("toDate", filterRequest.getTo());
+        }
+
+        // Set filter parameters
+        if (!validFilters.isEmpty()) {
+            for (int i = 0; i < validFilters.size(); i++) {
+                GetAllPdaFilterRequest.FilterItem filter = validFilters.get(i);
+                String paramValue = "%" + filter.getSearchValue() + "%";
+                query.setParameter("filterValue" + i, paramValue);
+                countQuery.setParameter("filterValue" + i, paramValue);
+            }
+        }
+
+        // Get total count
+        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
+
+        // Apply pagination
+        int offset = page * size;
+        query.setFirstResult(offset);
+        query.setMaxResults(size);
+
+        // Execute query and map results
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        List<PdaEntryResponse> dtos = results.stream()
+                .map(this::mapToPdaResponseDto)
+                .collect(Collectors.toList());
+
+        for (PdaEntryResponse dto : dtos) {
+            setLovDetails(dto);
+        }
+
+        // Create page
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return new org.springframework.data.domain.PageImpl<>(dtos, pageable, totalCount);
+    }
+
+    private void setLovDetails(PdaEntryResponse response) {
+        response.setPrincipalDet(lovService.getLovItemByPoid(response.getPrincipalPoid() != null ? response.getPrincipalPoid().longValue() : null, "PRINCIPAL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setVoyageDet(lovService.getLovItemByPoid(response.getVoyagePoid() != null ? response.getVoyagePoid().longValue() : null, "VESSAL_VOYAGE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setVesselDet(lovService.getLovItemByPoid(response.getVesselPoid() != null ? response.getVesselPoid().longValue() : null, "VESSEL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setVesselTypeDet(lovService.getLovItemByPoid(response.getVesselTypePoid() != null ? response.getVesselTypePoid().longValue() : null, "VESSEL_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setPortDet(lovService.getLovItemByPoid(response.getPortPoid() != null ? response.getPortPoid().longValue() : null, "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setLineDet(lovService.getLovItemByPoid(response.getLinePoid() != null ? response.getLinePoid().longValue() : null, "LINE_MASTER_ALL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setComodityDet(lovService.getLovItemByPoid(response.getComodityPoid() != null ? Long.valueOf(response.getComodityPoid()) : null, "COMODITY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setOperationTypeDet(lovService.getLovItemByCode(response.getOperationType(), "PDA_OPERATION_TYPES", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setUnitDet(lovService.getLovItemByCode(response.getUnit(), "UNIT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setCurrencyDet(lovService.getLovItemByCode(response.getCurrencyCode(), "CURRENCY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setSalesmanDet(lovService.getLovItemByPoid(response.getSalesmanPoid() != null ? response.getSalesmanPoid().longValue() : null, "SALESMAN", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setRefTypeDet(lovService.getLovItemByCode(response.getRefType(), "PDA_REF_TYPE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setSubCategoryDet(lovService.getLovItemByCode(response.getSubCategory(), "PDA_SUB_CATEGORY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setVesselHandledByDet(lovService.getLovItemByPoid(response.getVesselHandledBy() != null ? response.getVesselHandledBy().longValue() : null, "PDA_USER_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setPrintPrincipalDet(lovService.getLovItemByPoid(response.getPrintPrincipal() != null ? response.getPrintPrincipal().longValue() : null, "PDA_PRINCIPAL_PRINT", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setNominatedPartyTypeDet(lovService.getLovItemByCode(response.getNominatedPartyType(), "PDA_NOMINATED_PARTY_TYPE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setBankDet(lovService.getLovItemByPoid(response.getBankPoid() != null ? response.getBankPoid().longValue() : null, "BANK_MASTER_COMPANYWISE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        if (StringUtils.isNotBlank(response.getNominatedPartyType()) && "CUSTOMER".equalsIgnoreCase(response.getNominatedPartyType())) {
+            response.setNominatedPartyDet(lovService.getLovItemByPoid(Long.valueOf(String.valueOf(response.getNominatedPartyPoid())), "PDA_NOMINATED_PARTY_CUSTOMER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
+        if (StringUtils.isNotBlank(response.getNominatedPartyType()) && "PRINCIPAL".equalsIgnoreCase(response.getNominatedPartyType())) {
+            response.setNominatedPartyDet(lovService.getLovItemByPoid(Long.valueOf(String.valueOf(response.getNominatedPartyPoid())), "PDA_NOMINATED_PARTY_PRINCIPAL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
+    }
+
+    private String mapPdaSearchFieldToColumn(String searchField) {
+        if (searchField == null) {
+            return null;
+        }
+        String normalizedField = searchField.toUpperCase().replace("_", "");
+
+        switch (normalizedField) {
+            case "DOCREF":
+                return "p.DOC_REF";
+            case "TRANSACTIONREF":
+                return "p.TRANSACTION_REF";
+            case "STATUS":
+                return "p.STATUS";
+            case "REFTYPE":
+                return "p.REF_TYPE";
+            case "SUBCATEGORY":
+                return "p.SUB_CATEGORY";
+            case "PRINCIPALPOID":
+                return "p.PRINCIPAL_POID";
+            case "PRINCIPALNAME":
+                return "p.PRINCIPAL_NAME";
+            case "PRINCIPALCONTACT":
+                return "p.PRINCIPAL_CONTACT";
+            case "VESSELPOID":
+                return "p.VESSEL_POID";
+            case "VESSELTYPEPOID":
+                return "p.VESSEL_TYPE_POID";
+            case "IMONUMBER":
+                return "p.IMO_NUMBER";
+            case "PORTPOID":
+                return "p.PORT_POID";
+            case "PORTDESCRIPTION":
+                return "p.PORT_DESCRIPTION";
+            case "LINEPOID":
+                return "p.LINE_POID";
+            case "VOYAGENO":
+                return "p.VOYAGE_NO";
+            case "VOYAGEPOID":
+                return "p.VOYAGE_POID";
+            case "COMODITYPOID":
+                return "p.COMODITY_POID";
+            case "OPERATIONTYPE":
+                return "p.OPERATION_TYPE";
+            case "HARBOURCALLTYPE":
+                return "p.HARBOUR_CALL_TYPE";
+            case "UNIT":
+                return "p.UNIT";
+            case "CURRENCYCODE":
+                return "p.CURRENCY_CODE";
+            case "COSTCENTREPOID":
+                return "p.COST_CENTRE_POID";
+            case "SALESMANPOID":
+                return "p.SALESMAN_POID";
+            case "TERMSPOID":
+                return "p.TERMS_POID";
+            case "ADDRESSPOID":
+                return "p.ADDRESS_POID";
+            case "CARGODETAILS":
+                return "p.CARGO_DETAILS";
+            case "REMARKS":
+                return "p.REMARKS";
+            case "VESSELVERIFIED":
+                return "p.VESSEL_VERIFIED";
+            case "VESSELVERIFIEDBY":
+                return "p.VESSEL_VERIFIED_BY";
+            case "VESSELHANDLEDBY":
+                return "p.VESSEL_HANDLED_BY";
+            case "URGENTAPPROVAL":
+                return "p.URGENT_APPROVAL";
+            case "PRINCIPALAPPROVED":
+                return "p.PRINCIPAL_APPROVED";
+            case "PRINCIPALAPPROVEDBY":
+                return "p.PRINCIPAL_APPROVED_BY";
+            case "PRINTPRINCIPAL":
+                return "p.PRINT_PRINCIPAL";
+            case "FDAREF":
+                return "p.FDA_REF";
+            case "FDAPOID":
+                return "p.FDA_POID";
+            case "MULTIPLEFDA":
+                return "p.MULTIPLE_FDA";
+            case "NOMINATEDPARTYTYPE":
+                return "p.NOMINATED_PARTY_TYPE";
+            case "NOMINATEDPARTYPOID":
+                return "p.NOMINATED_PARTY_POID";
+            case "BANKPOID":
+                return "p.BANK_POID";
+            case "BUSINESSREFBY":
+                return "p.BUSINESS_REF_BY";
+            case "PMIDOCUMENT":
+                return "p.PMI_DOCUMENT";
+            case "CANCELREMARK":
+                return "p.CANCEL_REMARK";
+            case "OLDPORTCODE":
+                return "p.OLD_PORT_CODE";
+            case "OLDVESSELCODE":
+                return "p.OLD_VESSEL_CODE";
+            case "OLDPRINCIPALCODE":
+                return "p.OLD_PRINCIPAL_CODE";
+            case "OLDVOYAGEJOB":
+                return "p.OLD_VOYAGE_JOB";
+            case "MENASDUES":
+                return "p.MENAS_DUES";
+            case "DOCUMENTSUBMITTEDBY":
+                return "p.DOCUMENT_SUBMITTED_BY";
+            case "DOCUMENTSUBMITTEDSTATUS":
+                return "p.DOCUMENT_SUBMITTED_STATUS";
+            case "DOCUMENTRECEIVEDFROM":
+                return "p.DOCUMENT_RECEIVED_FROM";
+            case "DOCUMENTRECEIVEDSTATUS":
+                return "p.DOCUMENT_RECEIVED_STATUS";
+            case "SUBMISSIONACCEPTEDBY":
+                return "p.SUBMISSION_ACCEPTED_BY";
+            case "VERIFICATIONACCEPTEDBY":
+                return "p.VERIFICATION_ACCEPTED_BY";
+            case "ACCTSCORRECTIONREMARKS":
+                return "p.ACCTS_CORRECTION_REMARKS";
+            case "CREATEDBY":
+                return "p.CREATED_BY";
+            case "LASTMODIFIEDBY":
+                return "p.LASTMODIFIED_BY";
+            case "DELETED":
+                return "p.DELETED";
+            default:
+                String columnName = searchField.toUpperCase().replace(" ", "_");
+                return "p." + columnName;
+        }
+    }
+
+    private String mapPdaSortFieldToColumn(String sortField) {
+        if (sortField == null) {
+            return "p.TRANSACTION_DATE";
+        }
+        String normalizedField = sortField.toUpperCase().replace("_", "");
+
+        switch (normalizedField) {
+            case "TRANSACTIONPOID":
+                return "p.TRANSACTION_POID";
+            case "TRANSACTIONDATE":
+                return "p.TRANSACTION_DATE";
+            case "GROUPPOID":
+                return "p.GROUP_POID";
+            case "COMPANYPOID":
+                return "p.COMPANY_POID";
+            case "DOCREF":
+                return "p.DOC_REF";
+            case "TRANSACTIONREF":
+                return "p.TRANSACTION_REF";
+            case "PRINCIPALPOID":
+                return "p.PRINCIPAL_POID";
+            case "PRINCIPALNAME":
+                return "p.PRINCIPAL_NAME";
+            case "PRINCIPALCONTACT":
+                return "p.PRINCIPAL_CONTACT";
+            case "VOYAGEPOID":
+                return "p.VOYAGE_POID";
+            case "VOYAGENO":
+                return "p.VOYAGE_NO";
+            case "VESSELPOID":
+                return "p.VESSEL_POID";
+            case "VESSELTYPEPOID":
+                return "p.VESSEL_TYPE_POID";
+            case "GRT":
+                return "p.GRT";
+            case "NRT":
+                return "p.NRT";
+            case "DWT":
+                return "p.DWT";
+            case "IMONUMBER":
+                return "p.IMO_NUMBER";
+            case "ARRIVALDATE":
+                return "p.ARRIVAL_DATE";
+            case "SAILDATE":
+                return "p.SAIL_DATE";
+            case "ACTUALARRIVALDATE":
+                return "p.ACTUAL_ARRIVAL_DATE";
+            case "ACTUALSAILDATE":
+                return "p.ACTUAL_SAIL_DATE";
+            case "VESSELSAILDATE":
+                return "p.VESSEL_SAIL_DATE";
+            case "PORTPOID":
+                return "p.PORT_POID";
+            case "PORTDESCRIPTION":
+                return "p.PORT_DESCRIPTION";
+            case "LINEPOID":
+                return "p.LINE_POID";
+            case "COMODITYPOID":
+                return "p.COMODITY_POID";
+            case "OPERATIONTYPE":
+                return "p.OPERATION_TYPE";
+            case "HARBOURCALLTYPE":
+                return "p.HARBOUR_CALL_TYPE";
+            case "IMPORTQTY":
+                return "p.IMPORT_QTY";
+            case "EXPORTQTY":
+                return "p.EXPORT_QTY";
+            case "TRANSHIPMENTQTY":
+                return "p.TRANSHIPMENT_QTY";
+            case "TOTALQUANTITY":
+                return "p.TOTAL_QUANTITY";
+            case "UNIT":
+                return "p.UNIT";
+            case "NUMBEROFDAYS":
+                return "p.NUMBER_OF_DAYS";
+            case "CURRENCYCODE":
+                return "p.CURRENCY_CODE";
+            case "CURRENCYRATE":
+                return "p.CURRENCY_RATE";
+            case "TOTALAMOUNT":
+                return "p.TOTAL_AMOUNT";
+            case "COSTCENTREPOID":
+                return "p.COST_CENTRE_POID";
+            case "SALESMANPOID":
+                return "p.SALESMAN_POID";
+            case "TERMSPOID":
+                return "p.TERMS_POID";
+            case "ADDRESSPOID":
+                return "p.ADDRESS_POID";
+            case "REFTYPE":
+                return "p.REF_TYPE";
+            case "SUBCATEGORY":
+                return "p.SUB_CATEGORY";
+            case "STATUS":
+                return "p.STATUS";
+            case "CARGODETAILS":
+                return "p.CARGO_DETAILS";
+            case "REMARKS":
+                return "p.REMARKS";
+            case "VESSELVERIFIED":
+                return "p.VESSEL_VERIFIED";
+            case "VESSELVERIFIEDDATE":
+                return "p.VESSEL_VERIFIED_DATE";
+            case "VESSELVERIFIEDBY":
+                return "p.VESSEL_VERIFIED_BY";
+            case "VESSELHANDLEDBY":
+                return "p.VESSEL_HANDLED_BY";
+            case "URGENTAPPROVAL":
+                return "p.URGENT_APPROVAL";
+            case "PRINCIPALAPPROVED":
+                return "p.PRINCIPAL_APPROVED";
+            case "PRINCIPALAPPROVEDDATE":
+                return "p.PRINCIPAL_APPROVED_DATE";
+            case "PRINCIPALAPPROVEDBY":
+                return "p.PRINCIPAL_APPROVED_BY";
+            case "PRINCIPALAPRVLDAYS":
+                return "p.PRINCIPAL_APRVL_DAYS";
+            case "REMINDERMINUTES":
+                return "p.REMINDER_MINUTES";
+            case "PRINTPRINCIPAL":
+                return "p.PRINT_PRINCIPAL";
+            case "FDAREF":
+                return "p.FDA_REF";
+            case "FDAPOID":
+                return "p.FDA_POID";
+            case "MULTIPLEFDA":
+                return "p.MULTIPLE_FDA";
+            case "NOMINATEDPARTYTYPE":
+                return "p.NOMINATED_PARTY_TYPE";
+            case "NOMINATEDPARTYPOID":
+                return "p.NOMINATED_PARTY_POID";
+            case "BANKPOID":
+                return "p.BANK_POID";
+            case "BUSINESSREFBY":
+                return "p.BUSINESS_REF_BY";
+            case "PMIDOCUMENT":
+                return "p.PMI_DOCUMENT";
+            case "CANCELREMARK":
+                return "p.CANCEL_REMARK";
+            case "OLDPORTCODE":
+                return "p.OLD_PORT_CODE";
+            case "OLDVESSELCODE":
+                return "p.OLD_VESSEL_CODE";
+            case "OLDPRINCIPALCODE":
+                return "p.OLD_PRINCIPAL_CODE";
+            case "OLDVOYAGEJOB":
+                return "p.OLD_VOYAGE_JOB";
+            case "MENASDUES":
+                return "p.MENAS_DUES";
+            case "DOCUMENTSUBMITTEDDATE":
+                return "p.DOCUMENT_SUBMITTED_DATE";
+            case "DOCUMENTSUBMITTEDBY":
+                return "p.DOCUMENT_SUBMITTED_BY";
+            case "DOCUMENTSUBMITTEDSTATUS":
+                return "p.DOCUMENT_SUBMITTED_STATUS";
+            case "DOCUMENTRECEIVEDDATE":
+                return "p.DOCUMENT_RECEIVED_DATE";
+            case "DOCUMENTRECEIVEDFROM":
+                return "p.DOCUMENT_RECEIVED_FROM";
+            case "DOCUMENTRECEIVEDSTATUS":
+                return "p.DOCUMENT_RECEIVED_STATUS";
+            case "SUBMISSIONACCEPTEDDATE":
+                return "p.SUBMISSION_ACCEPTED_DATE";
+            case "SUBMISSIONACCEPTEDBY":
+                return "p.SUBMISSION_ACCEPTED_BY";
+            case "VERIFICATIONACCEPTEDDATE":
+                return "p.VERIFICATION_ACCEPTED_DATE";
+            case "VERIFICATIONACCEPTEDBY":
+                return "p.VERIFICATION_ACCEPTED_BY";
+            case "ACCTSCORRECTIONREMARKS":
+                return "p.ACCTS_CORRECTION_REMARKS";
+            case "ACCTSRETURNEDDATE":
+                return "p.ACCTS_RETURNED_DATE";
+            case "DELETED":
+                return "p.DELETED";
+            case "CREATEDBY":
+                return "p.CREATED_BY";
+            case "CREATEDDATE":
+                return "p.CREATED_DATE";
+            case "LASTMODIFIEDBY":
+                return "p.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE":
+                return "p.LASTMODIFIED_DATE";
+            default:
+                String columnName = sortField.toUpperCase().replace(" ", "_");
+                return "p." + columnName;
+        }
+    }
+
+    private String convertToString(Object value) {
+        return value != null ? value.toString() : null;
+    }
+
+    private PdaEntryResponse mapToPdaResponseDto(Object[] row) {
+        PdaEntryResponse dto = new PdaEntryResponse();
+
+        dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
+        dto.setTransactionDate(row[1] != null ? ((java.sql.Timestamp) row[1]).toLocalDateTime().toLocalDate() : null);
+        // Skip GROUP_POID and COMPANY_POID as they're not in DTO
+        dto.setDocRef(convertToString(row[4]));
+        dto.setTransactionRef(convertToString(row[5]));
+        dto.setPrincipalPoid(row[6] != null ? (java.math.BigDecimal) row[6] : null);
+        dto.setPrincipalName(convertToString(row[7]));
+        dto.setPrincipalContact(convertToString(row[8]));
+        dto.setVoyagePoid(row[9] != null ? (java.math.BigDecimal) row[9] : null);
+        dto.setVoyageNo(convertToString(row[10]));
+        dto.setVesselPoid(row[11] != null ? (java.math.BigDecimal) row[11] : null);
+        dto.setVesselTypePoid(row[12] != null ? (java.math.BigDecimal) row[12] : null);
+        dto.setGrt(row[13] != null ? (java.math.BigDecimal) row[13] : null);
+        dto.setNrt(row[14] != null ? (java.math.BigDecimal) row[14] : null);
+        dto.setDwt(row[15] != null ? (java.math.BigDecimal) row[15] : null);
+        dto.setImoNumber(convertToString(row[16]));
+        dto.setArrivalDate(row[17] != null ? ((java.sql.Timestamp) row[17]).toLocalDateTime().toLocalDate() : null);
+        dto.setSailDate(row[18] != null ? ((java.sql.Timestamp) row[18]).toLocalDateTime().toLocalDate() : null);
+        dto.setActualArrivalDate(row[19] != null ? ((java.sql.Timestamp) row[19]).toLocalDateTime().toLocalDate() : null);
+        dto.setActualSailDate(row[20] != null ? ((java.sql.Timestamp) row[20]).toLocalDateTime().toLocalDate() : null);
+        dto.setVesselSailDate(row[21] != null ? ((java.sql.Timestamp) row[21]).toLocalDateTime().toLocalDate() : null);
+        dto.setPortPoid(row[22] != null ? (java.math.BigDecimal) row[22] : null);
+        dto.setPortDescription(convertToString(row[23]));
+        dto.setLinePoid(row[24] != null ? (java.math.BigDecimal) row[24] : null);
+        dto.setComodityPoid(convertToString(row[25]));
+        dto.setOperationType(convertToString(row[26]));
+        dto.setHarbourCallType(convertToString(row[27]));
+        dto.setImportQty(row[28] != null ? (java.math.BigDecimal) row[28] : null);
+        dto.setExportQty(row[29] != null ? (java.math.BigDecimal) row[29] : null);
+        dto.setTranshipmentQty(row[30] != null ? (java.math.BigDecimal) row[30] : null);
+        dto.setTotalQuantity(row[31] != null ? (java.math.BigDecimal) row[31] : null);
+        dto.setUnit(convertToString(row[32]));
+        dto.setNumberOfDays(row[33] != null ? (java.math.BigDecimal) row[33] : null);
+        dto.setCurrencyCode(convertToString(row[34]));
+        dto.setCurrencyRate(row[35] != null ? (java.math.BigDecimal) row[35] : null);
+        dto.setTotalAmount(row[36] != null ? (java.math.BigDecimal) row[36] : null);
+        dto.setCostCentrePoid(row[37] != null ? (java.math.BigDecimal) row[37] : null);
+        dto.setSalesmanPoid(row[38] != null ? (java.math.BigDecimal) row[38] : null);
+        dto.setTermsPoid(row[39] != null ? (java.math.BigDecimal) row[39] : null);
+        dto.setAddressPoid(row[40] != null ? (java.math.BigDecimal) row[40] : null);
+        dto.setRefType(convertToString(row[41]));
+        dto.setSubCategory(convertToString(row[42]));
+        dto.setStatus(convertToString(row[43]));
+        dto.setCargoDetails(convertToString(row[44]));
+        dto.setRemarks(convertToString(row[45]));
+        dto.setVesselVerified(convertToString(row[46]));
+        dto.setVesselVerifiedDate(row[47] != null ? ((java.sql.Timestamp) row[47]).toLocalDateTime().toLocalDate() : null);
+        dto.setVesselVerifiedBy(convertToString(row[48]));
+        dto.setVesselHandledBy(row[49] != null ? (java.math.BigDecimal) row[49] : null);
+        dto.setUrgentApproval(convertToString(row[50]));
+        dto.setPrincipalApproved(convertToString(row[51]));
+        dto.setPrincipalApprovedDate(row[52] != null ? ((java.sql.Timestamp) row[52]).toLocalDateTime().toLocalDate() : null);
+        dto.setPrincipalApprovedBy(convertToString(row[53]));
+        dto.setPrincipalAprvlDays(row[54] != null ? (java.math.BigDecimal) row[54] : null);
+        dto.setReminderMinutes(row[55] != null ? (java.math.BigDecimal) row[55] : null);
+        dto.setPrintPrincipal(row[56] != null ? (java.math.BigDecimal) row[56] : null);
+        dto.setFdaRef(convertToString(row[57]));
+        dto.setFdaPoid(row[58] != null ? (java.math.BigDecimal) row[58] : null);
+        dto.setMultipleFda(convertToString(row[59]));
+        dto.setNominatedPartyType(convertToString(row[60]));
+        dto.setNominatedPartyPoid(row[61] != null ? (java.math.BigDecimal) row[61] : null);
+        dto.setBankPoid(row[62] != null ? (java.math.BigDecimal) row[62] : null);
+        dto.setBusinessRefBy(convertToString(row[63]));
+        dto.setPmiDocument(convertToString(row[64]));
+        dto.setCancelRemark(convertToString(row[65]));
+        // Skip old codes (row[66-69]) as they're not in DTO
+        dto.setMenasDues(convertToString(row[70]));
+        dto.setDocumentSubmittedDate(row[71] != null ? ((java.sql.Timestamp) row[71]).toLocalDateTime().toLocalDate() : null);
+        dto.setDocumentSubmittedBy(convertToString(row[72]));
+        dto.setDocumentSubmittedStatus(convertToString(row[73]));
+        dto.setDocumentReceivedDate(row[74] != null ? ((java.sql.Timestamp) row[74]).toLocalDateTime().toLocalDate() : null);
+        dto.setDocumentReceivedFrom(convertToString(row[75]));
+        dto.setDocumentReceivedStatus(convertToString(row[76]));
+        dto.setSubmissionAcceptedDate(row[77] != null ? ((java.sql.Timestamp) row[77]).toLocalDateTime().toLocalDate() : null);
+        dto.setSubmissionAcceptedBy(convertToString(row[78]));
+        dto.setVerificationAcceptedDate(row[79] != null ? ((java.sql.Timestamp) row[79]).toLocalDateTime().toLocalDate() : null);
+        dto.setVerificationAcceptedBy(convertToString(row[80]));
+        dto.setAcctsCorrectionRemarks(convertToString(row[81]));
+        dto.setAcctsReturnedDate(row[82] != null ? ((java.sql.Timestamp) row[82]).toLocalDateTime().toLocalDate() : null);
+        dto.setDeleted(convertToString(row[83]));
+        dto.setCreatedBy(convertToString(row[84]));
+        dto.setCreatedDate(row[85] != null ? ((java.sql.Timestamp) row[85]).toLocalDateTime() : null);
+        dto.setLastModifiedBy(convertToString(row[86]));
+        dto.setLastModifiedDate(row[87] != null ? ((java.sql.Timestamp) row[87]).toLocalDateTime() : null);
+
+        return dto;
     }
 
     // Inner class for tax information

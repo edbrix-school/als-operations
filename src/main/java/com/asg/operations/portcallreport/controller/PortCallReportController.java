@@ -1,7 +1,10 @@
 package com.asg.operations.portcallreport.controller;
 
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
+import com.asg.operations.portcallreport.dto.GetAllPortCallReportFilterRequest;
 import com.asg.operations.portcallreport.dto.PortActivityResponseDto;
 import com.asg.operations.portcallreport.dto.PortCallReportDto;
 import com.asg.operations.portcallreport.dto.PortCallReportResponseDto;
@@ -13,10 +16,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,42 +38,53 @@ public class PortCallReportController {
     /**
      * Retrieves paginated list of port call reports.
      *
-     * @param page page number (0-based)
-     * @param size page size
-     * @param sort sort field and direction
+     * @param page   page number (0-based)
+     * @param size   page size
+     * @param sort   sort field and direction
      * @param search search term for filtering
      * @return paginated list of port call reports
      */
-    @GetMapping
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @PostMapping("/search")
     @Operation(
             summary = "Get port call report list",
             description = "Retrieve paginated list of port call reports with optional search and sorting",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> getReportList(
-            @Parameter(description = "Page number (0-based)") @RequestParam(required = false, defaultValue = "0") int page,
-            @Parameter(description = "Page size") @RequestParam(required = false, defaultValue = "20") int size,
-            @Parameter(description = "Sort field and direction (e.g., 'portCallReportId,asc')") @RequestParam(required = false) String sort,
-            @Parameter(description = "Search term for filtering") @RequestParam(required = false) String search) {
-        try {
-            Sort sortObj = Sort.by(Sort.Direction.ASC, "portCallReportId");
-            if (sort != null && !sort.isEmpty()) {
-                String[] sortParts = sort.split(",");
-                if (sortParts.length == 2) {
-                    Sort.Direction direction = sortParts[1].equalsIgnoreCase("desc")
-                            ? Sort.Direction.DESC
-                            : Sort.Direction.ASC;
-                    sortObj = Sort.by(direction, sortParts[0]);
-                }
-            }
-            
-            Pageable pageable = PageRequest.of(page, size, sortObj);
-            Page<PortCallReportResponseDto> reports = portCallReportService.getReportList(search, pageable);
-            return ApiResponse.success("Reports retrieved successfully", reports);
-        } catch (Exception e) {
-            log.error("Error fetching report list", e);
-            return ApiResponse.internalServerError("Error fetching reports: " + e.getMessage());
+            @RequestBody(required = false) GetAllPortCallReportFilterRequest filterRequest,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        if (filterRequest == null) {
+            filterRequest = new GetAllPortCallReportFilterRequest();
+            filterRequest.setIsDeleted("N");
+            filterRequest.setOperator("AND");
+            filterRequest.setFilters(new java.util.ArrayList<>());
         }
+
+        org.springframework.data.domain.Page<PortCallReportResponseDto> reportPage = portCallReportService
+                .getAllPortCallReportsWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
+
+        java.util.Map<String, String> displayFields = new java.util.HashMap<>();
+        displayFields.put("PORT_CALL_REPORT_ID", "text");
+        displayFields.put("VESSEL_NAME", "text");
+        displayFields.put("VOYAGE_NO", "text");
+        displayFields.put("PORT_NAME", "text");
+        displayFields.put("ARRIVAL_DATE", "date");
+        displayFields.put("DEPARTURE_DATE", "date");
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("content", reportPage.getContent());
+        response.put("pageNumber", reportPage.getNumber());
+        response.put("displayFields", displayFields);
+        response.put("pageSize", reportPage.getSize());
+        response.put("totalElements", reportPage.getTotalElements());
+        response.put("totalPages", reportPage.getTotalPages());
+        response.put("last", reportPage.isLast());
+
+        return ApiResponse.success("Reports retrieved successfully", response);
     }
 
     /**
@@ -83,6 +93,7 @@ public class PortCallReportController {
      * @param id report ID
      * @return port call report details
      */
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{id}")
     @Operation(
             summary = "Get port call report by ID",
@@ -90,16 +101,12 @@ public class PortCallReportController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> getReportById(@Parameter(description = "Report ID") @PathVariable Long id) {
-        try {
-            PortCallReportResponseDto report = portCallReportService.getReportById(id);
-            if (report == null) {
-                return ApiResponse.notFound("Report not found");
-            }
-            return ApiResponse.success("Report retrieved successfully", report);
-        } catch (Exception e) {
-            log.error("Error fetching report by id: {}", id, e);
-            return ApiResponse.internalServerError("Error fetching report: " + e.getMessage());
+
+        PortCallReportResponseDto report = portCallReportService.getReportById(id);
+        if (report == null) {
+            return ApiResponse.notFound("Report not found");
         }
+        return ApiResponse.success("Report retrieved successfully", report);
     }
 
     /**
@@ -108,6 +115,7 @@ public class PortCallReportController {
      * @param dto port call report data
      * @return created port call report
      */
+    @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     @Operation(
             summary = "Create port call report",
@@ -116,22 +124,18 @@ public class PortCallReportController {
     )
     public ResponseEntity<?> createReport(
             @Valid @RequestBody PortCallReportDto dto) {
-        try {
-            PortCallReportResponseDto created = portCallReportService.createReport(dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
-            return ApiResponse.success("Report created successfully", created);
-        } catch (Exception e) {
-            log.error("Error creating report", e);
-            return ApiResponse.internalServerError("Error creating report: " + e.getMessage());
-        }
+        PortCallReportResponseDto created = portCallReportService.createReport(dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
+        return ApiResponse.success("Report created successfully", created);
     }
 
     /**
      * Updates an existing port call report.
      *
-     * @param id report ID
+     * @param id  report ID
      * @param dto port call report data
      * @return updated port call report
      */
+    @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{id}")
     @Operation(
             summary = "Update port call report",
@@ -141,13 +145,8 @@ public class PortCallReportController {
     public ResponseEntity<?> updateReport(
             @Parameter(description = "Report ID") @PathVariable Long id,
             @Valid @RequestBody PortCallReportDto dto) {
-        try {
-            PortCallReportResponseDto updated = portCallReportService.updateReport(id, dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
-            return ApiResponse.success("Report updated successfully", updated);
-        } catch (Exception e) {
-            log.error("Error updating report id: {}", id, e);
-            return ApiResponse.internalServerError("Error updating report: " + e.getMessage());
-        }
+        PortCallReportResponseDto updated = portCallReportService.updateReport(id, dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
+        return ApiResponse.success("Report updated successfully", updated);
     }
 
     /**
@@ -156,6 +155,7 @@ public class PortCallReportController {
      * @param id report ID
      * @return success response
      */
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete port call report",
@@ -163,13 +163,8 @@ public class PortCallReportController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> deleteReport(@Parameter(description = "Report ID") @PathVariable Long id) {
-        try {
-            portCallReportService.deleteReport(id);
-            return ApiResponse.success("Report deleted successfully");
-        } catch (Exception e) {
-            log.error("Error deleting report id: {}", id, e);
-            return ApiResponse.internalServerError("Error deleting report: " + e.getMessage());
-        }
+        portCallReportService.deleteReport(id);
+        return ApiResponse.success("Report deleted successfully");
     }
 
     /**
@@ -177,6 +172,7 @@ public class PortCallReportController {
      *
      * @return list of port activities
      */
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/port-activities")
     @Operation(
             summary = "Get port activities",
@@ -184,13 +180,8 @@ public class PortCallReportController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> getPortActivities() {
-        try {
-            List<PortActivityResponseDto> activities = portCallReportService.getPortActivities(UserContext.getUserPoid());
-            return ApiResponse.success("Activities retrieved successfully", activities);
-        } catch (Exception e) {
-            log.error("Error fetching port activities", e);
-            return ApiResponse.internalServerError("Error fetching activities: " + e.getMessage());
-        }
+        List<PortActivityResponseDto> activities = portCallReportService.getPortActivities(UserContext.getUserPoid());
+        return ApiResponse.success("Activities retrieved successfully", activities);
     }
 
     /**
@@ -198,6 +189,7 @@ public class PortCallReportController {
      *
      * @return list of vessel types
      */
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/vessel-types")
     @Operation(
             summary = "Get vessel types",
@@ -205,12 +197,7 @@ public class PortCallReportController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> getVesselTypes() {
-        try {
-            List<Map<String, Object>> vesselTypes = portCallReportService.getVesselTypes();
-            return ApiResponse.success("Vessel types retrieved successfully", vesselTypes);
-        } catch (Exception e) {
-            log.error("Error fetching vessel types", e);
-            return ApiResponse.internalServerError("Error fetching vessel types: " + e.getMessage());
-        }
+        List<Map<String, Object>> vesselTypes = portCallReportService.getVesselTypes();
+        return ApiResponse.success("Vessel types retrieved successfully", vesselTypes);
     }
 }

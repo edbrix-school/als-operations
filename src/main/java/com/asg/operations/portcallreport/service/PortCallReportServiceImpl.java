@@ -3,12 +3,12 @@ package com.asg.operations.portcallreport.service;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.dto.LovResponse;
 import com.asg.operations.commonlov.service.LovService;
+import com.asg.operations.exceptions.CustomException;
+import com.asg.operations.exceptions.ResourceAlreadyExistsException;
+import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
 import com.asg.operations.portcallreport.dto.PortActivityResponseDto;
-import com.asg.operations.portcallreport.dto.PortCallReportDetailDto;
-import com.asg.operations.portcallreport.dto.PortCallReportDetailResponseDto;
-import com.asg.operations.portcallreport.dto.PortCallReportDto;
-import com.asg.operations.portcallreport.dto.PortCallReportResponseDto;
+import com.asg.operations.portcallreport.dto.*;
 import com.asg.operations.portcallreport.entity.PortCallReportDtl;
 import com.asg.operations.portcallreport.entity.PortCallReportDtlId;
 import com.asg.operations.portcallreport.entity.PortCallReportHdr;
@@ -19,23 +19,23 @@ import com.asg.operations.user.entity.User;
 import com.asg.operations.user.repository.UserRepository;
 import com.asg.operations.vesseltype.entity.VesselType;
 import com.asg.operations.vesseltype.repository.VesselTypeRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,50 +50,189 @@ public class PortCallReportServiceImpl implements PortCallReportService {
     private final VesselTypeRepository vesselTypeRepository;
     private final PortActivityMasterRepository portActivityMasterRepository;
     private final LovService lovService;
+    private final EntityManager entityManager;
 
     @Override
-    public Page<PortCallReportResponseDto> getReportList(String search, Pageable pageable) {
-        log.info("Fetching port call report list with search: {}", search);
+    @Transactional(readOnly = true)
+    public Page<PortCallReportResponseDto> getAllPortCallReportsWithFilters(
+            Long groupPoid,
+            GetAllPortCallReportFilterRequest filterRequest,
+            int page, int size, String sort) {
 
-        Page<PortCallReportHdr> hdrPage = hdrRepository.findAllNonDeletedWithSearch(search, pageable);
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT h.PORT_CALL_REPORT_POID, h.PORT_CALL_REPORT_ID, h.PORT_CALL_REPORT_NAME, ");
+        sqlBuilder.append("h.PORT_CALL_APPL_VESSEL_TYPE, h.ACTIVE, h.SEQNO, h.REMARKS, ");
+        sqlBuilder.append("h.CREATED_BY, h.CREATED_DATE, h.LASTMODIFIED_BY, h.LASTMODIFIED_DATE, h.DELETED ");
+        sqlBuilder.append("FROM OPS_PORT_CALL_REPORT_HDR h ");
+        sqlBuilder.append("WHERE h.GROUP_POID = :groupPoid ");
 
-        LovResponse vesselTypeLov = lovService.getLovList("VESSEL_TYPE_MASTER", null, null, null, null, null);
-        Map<String, LovItem> vesselTypeMap = new HashMap<>();
-        if (vesselTypeLov != null && vesselTypeLov.getItems() != null) {
-            vesselTypeMap = vesselTypeLov.getItems().stream()
-                    .collect(Collectors.toMap(LovItem::getCode, item -> item));
+        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND (h.DELETED IS NULL OR h.DELETED != 'Y') ");
+        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND h.DELETED = 'Y' ");
         }
 
-        Map<Long, LovItem> vesselTypeByPoidMap = new HashMap<>();
-        if (vesselTypeLov != null && vesselTypeLov.getItems() != null) {
-            vesselTypeByPoidMap = vesselTypeLov.getItems().stream()
-                    .collect(Collectors.toMap(LovItem::getPoid, item -> item));
+        List<String> filterConditions = new java.util.ArrayList<>();
+        List<GetAllPortCallReportFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
+        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
+            for (GetAllPortCallReportFilterRequest.FilterItem filter : filterRequest.getFilters()) {
+                if (StringUtils.hasText(filter.getSearchField()) && StringUtils.hasText(filter.getSearchValue())) {
+                    validFilters.add(filter);
+                    String columnName = mapPortCallReportSearchFieldToColumn(filter.getSearchField());
+                    int paramIndex = validFilters.size() - 1;
+                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
+                }
+            }
         }
 
-        Map<Long, LovItem> finalVesselTypeByPoidMap = vesselTypeByPoidMap;
-        List<PortCallReportResponseDto> reports = hdrPage.getContent().stream()
-                .map(hdr -> {
-                    String vesselTypes = hdr.getPortCallApplVesselType();
-                    List<LovItem> vesselTypeLovItems = null;
-                    if (vesselTypes != null) {
-                        vesselTypeLovItems = List.of(vesselTypes.split(",")).stream()
-                                .map(Long::parseLong)
-                                .map(finalVesselTypeByPoidMap::get)
-                                .filter(item -> item != null)
-                                .collect(Collectors.toList());
-                    }
-                    return PortCallReportResponseDto.builder()
-                            .portCallReportPoid(hdr.getPortCallReportPoid())
-                            .portCallReportId(hdr.getPortCallReportId())
-                            .portCallReportName(hdr.getPortCallReportName())
-                            .portCallApplVesselType(vesselTypeLovItems)
-                            .active(hdr.getActive())
-                            .seqno(hdr.getSeqno())
-                            .build();
-                })
+        if (!filterConditions.isEmpty()) {
+            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
+            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
+        }
+
+        String orderBy = "ORDER BY h.PORT_CALL_REPORT_ID ASC";
+        if (StringUtils.hasText(sort)) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                String sortField = mapPortCallReportSortFieldToColumn(sortParts[0].trim());
+                String sortDirection = sortParts[1].trim().toUpperCase();
+                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
+                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
+                }
+            }
+        }
+        sqlBuilder.append(orderBy);
+
+        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
+        jakarta.persistence.Query query = entityManager.createNativeQuery(sqlBuilder.toString());
+        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
+
+        query.setParameter("groupPoid", groupPoid);
+        countQuery.setParameter("groupPoid", groupPoid);
+
+        if (!validFilters.isEmpty()) {
+            for (int i = 0; i < validFilters.size(); i++) {
+                GetAllPortCallReportFilterRequest.FilterItem filter = validFilters.get(i);
+                String paramValue = "%" + filter.getSearchValue() + "%";
+                query.setParameter("filterValue" + i, paramValue);
+                countQuery.setParameter("filterValue" + i, paramValue);
+            }
+        }
+
+        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
+        int offset = page * size;
+        query.setFirstResult(offset);
+        query.setMaxResults(size);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        List<PortCallReportResponseDto> dtos = results.stream()
+                .map(this::mapToPortCallReportResponseDto)
                 .collect(Collectors.toList());
 
-        return new PageImpl<>(reports, pageable, hdrPage.getTotalElements());
+        for (PortCallReportResponseDto dto : dtos) {
+            List<LovItem> vesselTypeLovItems = null;
+            if (dto.getPortCallApplVesselType() != null) {
+                List<String> vesselTypeList = dto.getPortCallApplVesselType();
+                LovResponse lovResponse = lovService.getLovList("VESSEL_TYPE_MASTER", null, null, null, null, null);
+                if (lovResponse != null && lovResponse.getItems() != null) {
+                    Map<String, LovItem> vesselTypeByPoidMap = lovResponse.getItems().stream()
+                            .collect(Collectors.toMap(LovItem::getCode, item -> item));
+                    vesselTypeLovItems = vesselTypeList.stream()
+                            .map(vesselTypeByPoidMap::get)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+                }
+            }
+            dto.setPortCallApplVesselTypeDet(vesselTypeLovItems);
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        return new PageImpl<>(dtos, pageable, totalCount);
+    }
+
+    private String mapPortCallReportSearchFieldToColumn(String searchField) {
+        if (searchField == null) return null;
+        String normalizedField = searchField.toUpperCase().replace("_", "");
+        switch (normalizedField) {
+            case "PORTCALLREPORTPOID":
+                return "h.PORT_CALL_REPORT_POID";
+            case "PORTCALLREPORTID":
+                return "h.PORT_CALL_REPORT_ID";
+            case "PORTCALLREPORTNAME":
+                return "h.PORT_CALL_REPORT_NAME";
+            case "PORTCALLAPPLVESSELTYPE":
+                return "h.PORT_CALL_APPL_VESSEL_TYPE";
+            case "ACTIVE":
+                return "h.ACTIVE";
+            case "SEQNO":
+                return "h.SEQNO";
+            case "REMARKS":
+                return "h.REMARKS";
+            case "CREATEDBY":
+                return "h.CREATED_BY";
+            case "LASTMODIFIEDBY":
+                return "h.LASTMODIFIED_BY";
+            case "DELETED":
+                return "h.DELETED";
+            default:
+                return "h." + searchField.toUpperCase().replace(" ", "_");
+        }
+    }
+
+    private String mapPortCallReportSortFieldToColumn(String sortField) {
+        if (sortField == null) return "h.PORT_CALL_REPORT_ID";
+        String normalizedField = sortField.toUpperCase().replace("_", "");
+        switch (normalizedField) {
+            case "PORTCALLREPORTPOID":
+                return "h.PORT_CALL_REPORT_POID";
+            case "PORTCALLREPORTID":
+                return "h.PORT_CALL_REPORT_ID";
+            case "PORTCALLREPORTNAME":
+                return "h.PORT_CALL_REPORT_NAME";
+            case "PORTCALLAPPLVESSELTYPE":
+                return "h.PORT_CALL_APPL_VESSEL_TYPE";
+            case "ACTIVE":
+                return "h.ACTIVE";
+            case "SEQNO":
+                return "h.SEQNO";
+            case "REMARKS":
+                return "h.REMARKS";
+            case "CREATEDBY":
+                return "h.CREATED_BY";
+            case "CREATEDDATE":
+                return "h.CREATED_DATE";
+            case "LASTMODIFIEDBY":
+                return "h.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE":
+                return "h.LASTMODIFIED_DATE";
+            case "DELETED":
+                return "h.DELETED";
+            default:
+                return "h." + sortField.toUpperCase().replace(" ", "_");
+        }
+    }
+
+    private PortCallReportResponseDto mapToPortCallReportResponseDto(Object[] row) {
+        String vesselTypes = convertToString(row[3]);
+        List<String> vesselTypeList = new ArrayList<>();
+        if (vesselTypes != null && !vesselTypes.trim().isEmpty()) {
+            vesselTypeList = List.of(vesselTypes.split(","));
+        }
+
+        return PortCallReportResponseDto.builder()
+                .portCallReportPoid(row[0] != null ? ((Number) row[0]).longValue() : null)
+                .portCallReportId(convertToString(row[1]))
+                .portCallReportName(convertToString(row[2]))
+                .portCallApplVesselType(vesselTypeList)
+                .active(convertToString(row[4]))
+                .seqno(row[5] != null ? ((Number) row[5]).longValue() : null)
+                .remarks(convertToString(row[6]))
+                .build();
+    }
+
+    private String convertToString(Object value) {
+        return value != null ? value.toString() : null;
     }
 
     private String generateReportId() {
@@ -108,21 +247,22 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         log.info("Fetching port call report by id: {}", id);
 
         PortCallReportHdr hdr = hdrRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Port call report not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Port call report", "Port Call Report Poid", id));
 
         List<PortCallReportDtl> details = dtlRepository.findByPortCallReportPoid(id);
 
         String vesselTypes = hdr.getPortCallApplVesselType();
         List<LovItem> vesselTypeLovItems = null;
+        List<String> vesselTypeList = new ArrayList<>();
         if (vesselTypes != null) {
+            vesselTypeList = List.of(vesselTypes.split(","));
             LovResponse lovResponse = lovService.getLovList("VESSEL_TYPE_MASTER", null, null, null, null, null);
             if (lovResponse != null && lovResponse.getItems() != null) {
-                Map<Long, LovItem> vesselTypeByPoidMap = lovResponse.getItems().stream()
-                        .collect(Collectors.toMap(LovItem::getPoid, item -> item));
-                vesselTypeLovItems = List.of(vesselTypes.split(",")).stream()
-                        .map(Long::parseLong)
+                Map<String, LovItem> vesselTypeByPoidMap = lovResponse.getItems().stream()
+                        .collect(Collectors.toMap(LovItem::getCode, item -> item));
+                vesselTypeLovItems = vesselTypeList.stream()
                         .map(vesselTypeByPoidMap::get)
-                        .filter(item -> item != null)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
             }
         }
@@ -150,7 +290,8 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 .portCallReportPoid(hdr.getPortCallReportPoid())
                 .portCallReportId(hdr.getPortCallReportId())
                 .portCallReportName(hdr.getPortCallReportName())
-                .portCallApplVesselType(vesselTypeLovItems)
+                .portCallApplVesselType(vesselTypeList)
+                .portCallApplVesselTypeDet(vesselTypeLovItems)
                 .active(hdr.getActive())
                 .seqno(hdr.getSeqno())
                 .remarks(hdr.getRemarks())
@@ -164,11 +305,11 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         log.info("Creating port call report: {}", dto.getPortCallReportName());
 
         if (groupPoid == null) {
-            throw new RuntimeException("Group POID is required");
+            throw new CustomException("Group POID is required", 400);
         }
 
         if (hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(dto.getPortCallReportName(), null)) {
-            throw new RuntimeException("Port call report name already exists");
+            throw new ResourceAlreadyExistsException("Port call report name", dto.getPortCallReportName());
         }
 
         if (dto.getPortCallApplVesselType() != null && !dto.getPortCallApplVesselType().isEmpty()) {
@@ -177,7 +318,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                     .toList();
             for (String vesselTypePoid : dto.getPortCallApplVesselType()) {
                 if (!validVesselTypePoids.contains(Long.parseLong(vesselTypePoid))) {
-                    throw new RuntimeException("Invalid vessel type POID: " + vesselTypePoid);
+                    throw new CustomException("Invalid vessel type POID: " + vesselTypePoid, 400);
                 }
             }
         }
@@ -185,10 +326,10 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             for (PortCallReportDetailDto detail : dto.getDetails()) {
                 if (detail.getPortActivityTypePoid() == null) {
-                    throw new RuntimeException("Port activity type is required");
+                    throw new CustomException("Port activity type is required", 400);
                 }
                 if (!portActivityMasterRepository.existsById(detail.getPortActivityTypePoid())) {
-                    throw new RuntimeException("Invalid activity type ID: " + detail.getPortActivityTypePoid());
+                    throw new CustomException("Invalid activity type ID: " + detail.getPortActivityTypePoid(), 400);
                 }
             }
         }
@@ -196,7 +337,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         String reportId = generateReportId();
 
         User user = userRepository.findByUserPoid(userPoid)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "User Poid", userPoid));
 
         PortCallReportHdr hdr = PortCallReportHdr.builder()
                 .portCallReportId(reportId)
@@ -236,11 +377,11 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         log.info("Updating port call report id: {}", id);
 
         if (groupPoid == null) {
-            throw new RuntimeException("Group POID is required");
+            throw new CustomException("Group POID is required", 400);
         }
 
         if (hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(dto.getPortCallReportName(), id)) {
-            throw new RuntimeException("Port call report name already exists");
+            throw new ResourceAlreadyExistsException("Port call report name", dto.getPortCallReportName());
         }
 
         if (dto.getPortCallApplVesselType() != null && !dto.getPortCallApplVesselType().isEmpty()) {
@@ -249,7 +390,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                     .toList();
             for (String vesselTypePoid : dto.getPortCallApplVesselType()) {
                 if (!validVesselTypePoids.contains(Long.parseLong(vesselTypePoid))) {
-                    throw new RuntimeException("Invalid vessel type POID: " + vesselTypePoid);
+                    throw new CustomException("Invalid vessel type POID: " + vesselTypePoid, 400);
                 }
             }
         }
@@ -257,19 +398,19 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             for (PortCallReportDetailDto detail : dto.getDetails()) {
                 if (detail.getPortActivityTypePoid() == null) {
-                    throw new RuntimeException("Port activity type is required");
+                    throw new CustomException("Port activity type is required", 400);
                 }
                 if (!portActivityMasterRepository.existsById(detail.getPortActivityTypePoid())) {
-                    throw new RuntimeException("Invalid activity type ID: " + detail.getPortActivityTypePoid());
+                    throw new CustomException("Invalid activity type ID: " + detail.getPortActivityTypePoid(), 400);
                 }
             }
         }
 
         User user = userRepository.findByUserPoid(userPoid)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "User Poid", userPoid));
 
         PortCallReportHdr hdr = hdrRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Port call report not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Port call report", "Port Call Report Poid", id));
 
         hdr.setGroupPoid(groupPoid);
         hdr.setPortCallReportName(dto.getPortCallReportName());
@@ -284,6 +425,10 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (dto.getDetails() != null && !dto.getDetails().isEmpty()) {
             for (PortCallReportDetailDto detailDto : dto.getDetails()) {
                 ActionType action = detailDto.getActionType();
+
+                if (action == null) {
+                    continue;
+                }
 
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = dtlRepository.findMaxDetRowIdByPortCallReportPoid(id) + 1;
@@ -318,7 +463,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         log.info("Deleting port call report id: {}", id);
 
         PortCallReportHdr hdr = hdrRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Port call report not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Port call report"));
 
         hdr.setActive("N");
         hdr.setDeleted("Y");

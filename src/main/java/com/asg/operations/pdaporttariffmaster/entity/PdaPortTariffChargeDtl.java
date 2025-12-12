@@ -22,10 +22,10 @@ public class PdaPortTariffChargeDtl {
     private PdaPortTariffChargeDtlId id;
 
     @Column(name = "CHARGE_POID")
-    private BigDecimal chargePoid;
+    private Long chargePoid;
 
     @Column(name = "RATE_TYPE_POID")
-    private BigDecimal rateTypePoid;
+    private Long rateTypePoid;
 
     @Column(name = "TARIFF_SLAB", length = 20)
     @Size(max = 20)

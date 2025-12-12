@@ -1,17 +1,10 @@
 package com.asg.operations.pdaratetypemaster.service;
 
 import com.asg.operations.pdaratetypemaster.dto.*;
-import org.springframework.data.domain.Pageable;
 
 public interface PdaRateTypeService {
 
-    PageResponse<PdaRateTypeResponseDTO> getRateTypeList(
-            String code,
-            String name,
-            String active,
-            Long groupPoid,
-            Pageable pageable
-    );
+    org.springframework.data.domain.Page<PdaRateTypeResponseDTO> getAllRateTypesWithFilters(Long groupPoid, GetAllRateTypeFilterRequest filterRequest, int page, int size, String sort);
 
     PdaRateTypeResponseDTO getRateTypeById(Long rateTypePoid, Long groupPoid);
 

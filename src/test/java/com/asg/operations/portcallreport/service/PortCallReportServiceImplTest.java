@@ -1,11 +1,14 @@
 package com.asg.operations.portcallreport.service;
 
+import com.asg.operations.commonlov.dto.LovItem;
+import com.asg.operations.commonlov.dto.LovResponse;
 import com.asg.operations.commonlov.service.LovService;
-//import com.alsharif.operations.portactivity.repository.PortActivityMasterRepository;
+import com.asg.operations.exceptions.CustomException;
+import com.asg.operations.exceptions.ResourceAlreadyExistsException;
+import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
-import com.asg.operations.portcallreport.dto.PortCallReportDetailDto;
-import com.asg.operations.portcallreport.dto.PortCallReportDto;
-import com.asg.operations.portcallreport.dto.PortCallReportResponseDto;
+import com.asg.operations.portcallreport.dto.*;
+import com.asg.operations.portcallreport.entity.PortCallReportDtl;
 import com.asg.operations.portcallreport.entity.PortCallReportHdr;
 import com.asg.operations.portcallreport.repository.PortCallReportDtlRepository;
 import com.asg.operations.portcallreport.repository.PortCallReportHdrRepository;
@@ -13,16 +16,20 @@ import com.asg.operations.user.entity.User;
 import com.asg.operations.user.repository.UserRepository;
 import com.asg.operations.vesseltype.entity.VesselType;
 import com.asg.operations.vesseltype.repository.VesselTypeRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,38 +61,86 @@ class PortCallReportServiceImplTest {
     @Mock
     private LovService lovService;
 
+    @Mock
+    private EntityManager entityManager;
+
+    @Mock
+    private Query query;
+
+    @Mock
+    private Query countQuery;
+
     @InjectMocks
     private PortCallReportServiceImpl service;
 
-    @Test
-    void getReportList_ShouldReturnPagedReports() {
-        PortCallReportHdr hdr = PortCallReportHdr.builder()
+    private PortCallReportHdr entity;
+    private PortCallReportDto request;
+    private GetAllPortCallReportFilterRequest filterRequest;
+    private Long groupPoid = 1L;
+    private Long userPoid = 1L;
+
+    @BeforeEach
+    void setUp() {
+        entity = PortCallReportHdr.builder()
                 .portCallReportPoid(1L)
                 .portCallReportId("PCR00001")
                 .portCallReportName("Test Report")
+                .portCallApplVesselType("1,2")
+                .active("Y")
+                .seqno(1L)
+                .remarks("Test remarks")
                 .build();
-        Page<PortCallReportHdr> page = new PageImpl<>(List.of(hdr));
 
-        when(hdrRepository.findAllNonDeletedWithSearch(any(), any(Pageable.class))).thenReturn(page);
+        request = PortCallReportDto.builder()
+                .portCallReportName("Test Report")
+                .portCallApplVesselType(List.of("1", "2"))
+                .active("Y")
+                .seqno(1L)
+                .remarks("Test remarks")
+                .build();
 
-        Page<PortCallReportResponseDto> result = service.getReportList("test", Pageable.unpaged());
+        filterRequest = new GetAllPortCallReportFilterRequest();
+        filterRequest.setIsDeleted("N");
+        filterRequest.setOperator("AND");
+        filterRequest.setFilters(Collections.emptyList());
+
+        LovResponse mockLovResponse = new LovResponse();
+        mockLovResponse.setItems(List.of(new LovItem(1L, "VT1", "Vessel Type 1", "Vessel Type 1", 1L, 1)));
+        lenient().when(lovService.getLovList(any(), any(), any(), any(), any(), any())).thenReturn(mockLovResponse);
+    }
+
+    @Test
+    void getAllPortCallReportsWithFilters_ShouldReturnPageResponse() {
+        Object[] mockRow = {
+            1L, "PCR00001", "Test Report", "1,2", "Y", 1L, "Test remarks",
+            "testUser", Timestamp.valueOf(LocalDateTime.now()), "testUser",
+            Timestamp.valueOf(LocalDateTime.now()), "N"
+        };
+
+        when(entityManager.createNativeQuery(anyString())).thenReturn(query).thenReturn(countQuery);
+        when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(query.setFirstResult(anyInt())).thenReturn(query);
+        when(query.setMaxResults(anyInt())).thenReturn(query);
+        when(countQuery.setParameter(anyString(), any())).thenReturn(countQuery);
+        
+        List<Object[]> mockResultList = new java.util.ArrayList<>();
+        mockResultList.add(mockRow);
+        when(query.getResultList()).thenReturn(mockResultList);
+        when(countQuery.getSingleResult()).thenReturn(1L);
+
+        Page<PortCallReportResponseDto> result = service.getAllPortCallReportsWithFilters(
+                groupPoid, filterRequest, 0, 20, null);
 
         assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
+        assertEquals(1, result.getContent().size());
         assertEquals("PCR00001", result.getContent().get(0).getPortCallReportId());
-        verify(hdrRepository).findAllNonDeletedWithSearch(any(), any(Pageable.class));
+        verify(entityManager, times(2)).createNativeQuery(anyString());
     }
 
     @Test
     void getReportById_ShouldReturnReport() {
-        PortCallReportHdr hdr = PortCallReportHdr.builder()
-                .portCallReportPoid(1L)
-                .portCallReportId("PCR00001")
-                .portCallReportName("Test Report")
-                .build();
-
-        when(hdrRepository.findById(1L)).thenReturn(Optional.of(hdr));
-        when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(List.of());
+        when(hdrRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(Collections.emptyList());
 
         PortCallReportResponseDto result = service.getReportById(1L);
 
@@ -98,32 +153,25 @@ class PortCallReportServiceImplTest {
     void getReportById_ShouldThrowException_WhenNotFound() {
         when(hdrRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> service.getReportById(1L));
+        assertThrows(ResourceNotFoundException.class, () -> service.getReportById(1L));
         verify(hdrRepository).findById(1L);
     }
 
     @Test
     void createReport_ShouldCreateReport() {
-        PortCallReportDto dto = PortCallReportDto.builder()
-                .portCallReportName("New Report")
-                .active("Y")
-                .build();
-
         User user = User.builder().userPoid(1L).userId("testuser").build();
-        PortCallReportHdr savedHdr = PortCallReportHdr.builder()
-                .portCallReportPoid(1L)
-                .portCallReportId("PCR00001")
-                .portCallReportName("New Report")
-                .build();
+        VesselType vesselType1 = VesselType.builder().vesselTypePoid(1L).vesselTypeCode("VT1").build();
+        VesselType vesselType2 = VesselType.builder().vesselTypePoid(2L).vesselTypeCode("VT2").build();
 
         when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
+        when(vesselTypeRepository.findAllActive()).thenReturn(List.of(vesselType1, vesselType2));
         when(jdbcTemplate.queryForObject(anyString(), eq(Long.class))).thenReturn(0L);
         when(userRepository.findByUserPoid(1L)).thenReturn(Optional.of(user));
-        when(hdrRepository.save(any())).thenReturn(savedHdr);
-        when(hdrRepository.findById(1L)).thenReturn(Optional.of(savedHdr));
-        when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(List.of());
+        when(hdrRepository.save(any())).thenReturn(entity);
+        when(hdrRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(Collections.emptyList());
 
-        PortCallReportResponseDto result = service.createReport(dto, 1L, 100L);
+        PortCallReportResponseDto result = service.createReport(request, userPoid, groupPoid);
 
         assertNotNull(result);
         assertEquals("PCR00001", result.getPortCallReportId());
@@ -132,27 +180,23 @@ class PortCallReportServiceImplTest {
 
     @Test
     void createReport_ShouldThrowException_WhenDuplicateName() {
-        PortCallReportDto dto = PortCallReportDto.builder()
-                .portCallReportName("Duplicate Report")
-                .build();
-
         when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L, 1L));
+        assertThrows(ResourceAlreadyExistsException.class, () -> service.createReport(request, userPoid, groupPoid));
         verify(hdrRepository, never()).save(any());
     }
 
     @Test
     void createReport_ShouldThrowException_WhenInvalidVesselType() {
-        PortCallReportDto dto = PortCallReportDto.builder()
+        PortCallReportDto invalidRequest = PortCallReportDto.builder()
                 .portCallReportName("New Report")
-                .portCallApplVesselType(List.of("INVALID"))
+                .portCallApplVesselType(List.of("999"))
                 .build();
 
         when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
-        when(vesselTypeRepository.findAllActive()).thenReturn(List.of());
+        when(vesselTypeRepository.findAllActive()).thenReturn(Collections.emptyList());
 
-        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L, 1L));
+        assertThrows(CustomException.class, () -> service.createReport(invalidRequest, userPoid, groupPoid));
         verify(hdrRepository, never()).save(any());
     }
 
@@ -163,14 +207,14 @@ class PortCallReportServiceImplTest {
                 .portActivityTypePoid(null)
                 .build();
 
-        PortCallReportDto dto = PortCallReportDto.builder()
+        PortCallReportDto invalidRequest = PortCallReportDto.builder()
                 .portCallReportName("New Report")
                 .details(List.of(detailDto))
                 .build();
 
         when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
 
-        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L, 1L));
+        assertThrows(CustomException.class, () -> service.createReport(invalidRequest, userPoid, groupPoid));
         verify(hdrRepository, never()).save(any());
     }
 
@@ -181,7 +225,7 @@ class PortCallReportServiceImplTest {
                 .portActivityTypePoid(999L)
                 .build();
 
-        PortCallReportDto dto = PortCallReportDto.builder()
+        PortCallReportDto invalidRequest = PortCallReportDto.builder()
                 .portCallReportName("New Report")
                 .details(List.of(detailDto))
                 .build();
@@ -189,31 +233,24 @@ class PortCallReportServiceImplTest {
         when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
         when(portActivityMasterRepository.existsById(999L)).thenReturn(false);
 
-        assertThrows(RuntimeException.class, () -> service.createReport(dto, 1L, 1L));
+        assertThrows(CustomException.class, () -> service.createReport(invalidRequest, userPoid, groupPoid));
         verify(hdrRepository, never()).save(any());
     }
 
     @Test
     void updateReport_ShouldUpdateReport() {
-        PortCallReportDto dto = PortCallReportDto.builder()
-                .portCallReportName("Updated Report")
-                .active("Y")
-                .build();
-
         User user = User.builder().userPoid(1L).userId("testuser").build();
-        PortCallReportHdr existingHdr = PortCallReportHdr.builder()
-                .portCallReportPoid(1L)
-                .portCallReportId("PCR00001")
-                .portCallReportName("Old Report")
-                .build();
+        VesselType vesselType1 = VesselType.builder().vesselTypePoid(1L).vesselTypeCode("VT1").build();
+        VesselType vesselType2 = VesselType.builder().vesselTypePoid(2L).vesselTypeCode("VT2").build();
 
         when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), eq(1L))).thenReturn(false);
+        when(vesselTypeRepository.findAllActive()).thenReturn(List.of(vesselType1, vesselType2));
         when(userRepository.findByUserPoid(1L)).thenReturn(Optional.of(user));
-        when(hdrRepository.findById(1L)).thenReturn(Optional.of(existingHdr));
-        when(hdrRepository.save(any())).thenReturn(existingHdr);
-        when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(List.of());
+        when(hdrRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(hdrRepository.save(any())).thenReturn(entity);
+        when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(Collections.emptyList());
 
-        PortCallReportResponseDto result = service.updateReport(1L, dto, 1L, 100L);
+        PortCallReportResponseDto result = service.updateReport(1L, request, userPoid, groupPoid);
 
         assertNotNull(result);
         verify(hdrRepository).save(any());
@@ -221,32 +258,12 @@ class PortCallReportServiceImplTest {
 
     @Test
     void deleteReport_ShouldMarkAsDeleted() {
-        PortCallReportHdr hdr = PortCallReportHdr.builder()
-                .portCallReportPoid(1L)
-                .portCallReportId("PCR00001")
-                .build();
-
-        when(hdrRepository.findById(1L)).thenReturn(Optional.of(hdr));
+        when(hdrRepository.findById(1L)).thenReturn(Optional.of(entity));
 
         service.deleteReport(1L);
 
-        verify(hdrRepository).save(argThat(h -> "Y".equals(h.getDeleted()) && "N".equals(h.getActive())));
-    }
-
-    @Test
-    void getVesselTypes_ShouldReturnVesselTypes() {
-        VesselType vesselType = VesselType.builder()
-                .vesselTypeCode("TANKER")
-                .vesselTypeName("Tanker")
-                .build();
-
-        when(vesselTypeRepository.findAllActive()).thenReturn(List.of(vesselType));
-
-        var result = service.getVesselTypes();
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("TANKER", result.get(0).get("value"));
-        verify(vesselTypeRepository).findAllActive();
+        assertEquals("Y", entity.getDeleted());
+        assertEquals("N", entity.getActive());
+        verify(hdrRepository).save(entity);
     }
 }

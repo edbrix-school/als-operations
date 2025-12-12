@@ -1,20 +1,9 @@
 package com.asg.operations.pdaporttariffmaster.service;
 
 import com.asg.operations.pdaporttariffmaster.dto.*;
-import org.springframework.data.domain.Pageable;
-
-import java.time.LocalDate;
+import org.springframework.data.domain.Page;
 
 public interface PdaPortTariffHdrService {
-
-    PageResponse<PdaPortTariffMasterResponse> getTariffList(
-            String portPoid,
-            LocalDate periodFrom,
-            LocalDate periodTo,
-            String vesselTypePoid,
-            Long groupPoid,
-            Pageable pageable
-    );
 
     PdaPortTariffMasterResponse getTariffById(Long transactionPoid, Long groupPoid);
 
@@ -29,4 +18,6 @@ public interface PdaPortTariffHdrService {
     ChargeDetailsResponse getChargeDetails(Long transactionPoid, Long groupPoid, boolean includeSlabs);
 
     ChargeDetailsResponse bulkSaveChargeDetails(Long transactionPoid, ChargeDetailsRequest request, Long groupPoid, String userId);
+
+    Page<PdaPortTariffMasterResponse> getAllTariffsWithFilters(Long groupPoid, Long companyPoid, GetAllTariffFilterRequest filterRequest, int page, int size, String sort);
 }

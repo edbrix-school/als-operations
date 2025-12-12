@@ -1,6 +1,7 @@
 package com.asg.operations.crew.util;
 
 
+import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ContractCrewDtlRequest;
 import com.asg.operations.crew.dto.ContractCrewDtlResponse;
@@ -25,45 +26,6 @@ public class EntityMapper {
 
     private final LovService lovService;
 
-    /**
-     * Map ContractCrew entity to ContractCrewResponse DTO with context parameters
-     */
-    public ContractCrewResponse toContractCrewResponse(ContractCrew entity, Long groupPoid, Long companyPoid, Long userPoid) {
-        if (entity == null) {
-            return null;
-        }
-
-        ContractCrewResponse response = new ContractCrewResponse();
-        response.setCrewPoid(entity.getCrewPoid());
-        //response.setCrewCode(entity.getCrewCode());
-        response.setCrewName(entity.getCrewName());
-        response.setCrewNationalityPoid(entity.getCrewNationPoid());
-
-        response.setCrewCdcNumber(entity.getCrewCdcNumber());
-        response.setCrewCompany(entity.getCrewCompany());
-        response.setCrewDesignation(entity.getCrewDesignation());
-        response.setCrewPassportNumber(entity.getCrewPassportNumber());
-        response.setCrewPassportIssueDate(entity.getCrewPassportIssueDate());
-        response.setCrewPassportExpiryDate(entity.getCrewPassportExpiryDate());
-        response.setCrewPassportIssuePlace(entity.getCrewPassportIssuePlace());
-        response.setRemarks(entity.getRemarks());
-        response.setActive(entity.getActive());
-        response.setCreatedBy(entity.getCreatedBy());
-        response.setCreatedDate(entity.getCreatedDate());
-        response.setLastModifiedBy(entity.getLastModifiedBy());
-        response.setLastModifiedDate(entity.getLastModifiedDate());
-        response.setCompanyPoid(entity.getCompanyPoid());
-        if (entity.getCompanyPoid() != null) {
-
-            Long effectiveGroupPoid = groupPoid != null ? groupPoid : entity.getGroupPoid();
-            Long effectiveCompanyPoid = companyPoid != null ? companyPoid : entity.getCompanyPoid();
-            response.setCompanyDet(lovService.getLovItem(entity.getCompanyPoid(), "COMPANY",
-                    effectiveGroupPoid, effectiveCompanyPoid, userPoid));
-        }
-
-
-        return response;
-    }
 
     public ContractCrewResponse toContractCrewRes(ContractCrew entity) {
         if (entity == null) {
@@ -72,9 +34,13 @@ public class EntityMapper {
 
         ContractCrewResponse response = new ContractCrewResponse();
         response.setCrewPoid(entity.getCrewPoid());
-        //response.setCrewCode(entity.getCrewCode());
+        response.setGroupPoid(entity.getGroupPoid());
+        response.setGroupDet(lovService.getLovItemByPoid(entity.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        response.setCompanyPoid(entity.getCompanyPoid());
+        response.setCompanyDet(lovService.getLovItemByPoid(entity.getCompanyPoid(), "COMPANY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         response.setCrewName(entity.getCrewName());
         response.setCrewNationalityPoid(entity.getCrewNationPoid());
+        response.setCrewNationalityDet(lovService.getLovItemByPoid(entity.getCrewNationPoid(), "NATIONALITY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         response.setCrewCdcNumber(entity.getCrewCdcNumber());
         response.setCrewCompany(entity.getCrewCompany());
         response.setCrewDesignation(entity.getCrewDesignation());
@@ -105,7 +71,7 @@ public class EntityMapper {
     /**
      * Map ContractCrewRequest DTO to ContractCrew entity (for create)
      */
-    public ContractCrew toContractCrewEntity(Long companyPoid, Long groupPoid,String userId,ContractCrewRequest request) {
+    public ContractCrew toContractCrewEntity(Long companyPoid, Long groupPoid, String userId, ContractCrewRequest request) {
         if (request == null) {
             return null;
         }
@@ -178,6 +144,7 @@ public class EntityMapper {
         response.setCrewPoid(entity.getId().getCrewPoid());
         response.setDetRowId(entity.getId().getDetRowId());
         response.setDocumentType(entity.getDocumentType());
+        response.setDocumentTypeDet(lovService.getLovItemByCode(entity.getDocumentType(), "CREW_VISA_TYPE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         response.setDocumentTypeCode(documentTypeCode);
         response.setDocumentTypeName(documentTypeName);
         response.setDocumentNumber(entity.getDocumentNumber());
@@ -198,7 +165,7 @@ public class EntityMapper {
     /**
      * Map ContractCrewDtlRequest DTO to ContractCrewDtl entity (for create)
      */
-    public ContractCrewDtl toContractCrewDtlEntity(String userId,ContractCrewDtlRequest request, Long crewPoid) {
+    public ContractCrewDtl toContractCrewDtlEntity(String userId, ContractCrewDtlRequest request, Long crewPoid) {
         if (request == null) {
             return null;
         }
@@ -248,7 +215,7 @@ public class EntityMapper {
         entity.setRemarks(request.getRemarks());
 
         // Update audit fields
-       // entity.setModifiedBy(securityContextUtil.getCurrentUserId());
+        // entity.setModifiedBy(securityContextUtil.getCurrentUserId());
 
     }
 

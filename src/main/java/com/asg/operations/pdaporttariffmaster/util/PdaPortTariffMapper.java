@@ -1,5 +1,8 @@
 package com.asg.operations.pdaporttariffmaster.util;
 
+import com.asg.common.lib.security.util.UserContext;
+import com.asg.operations.commonlov.dto.LovItem;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffChargeDtl;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffHdr;
@@ -23,6 +26,7 @@ public class PdaPortTariffMapper {
 
     private final ShipPortMasterRepository shipPortMasterRepository;
     private final ShipVesselTypeMasterRepository shipVesselTypeMasterRepository;
+    private final LovService lovService;
 
     // Convert comma-separated string to list
     public List<String> stringToList(String str) {
@@ -58,8 +62,10 @@ public class PdaPortTariffMapper {
                     .map(p -> BigDecimal.valueOf(Long.parseLong(p)))
                     .toList();
 
-            List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(portPoidBDList, entity.getGroupPoid());
+            List<LovItem> portDetList = portPoidBDList.stream().map(p -> lovService.getLovItemByPoid(p.longValue(), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid())).toList();
+            response.setPortsDet(portDetList);
 
+            List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(portPoidBDList, BigDecimal.valueOf(entity.getGroupPoid()));
             response.setPortNames(portNames);
         }
 
@@ -70,12 +76,17 @@ public class PdaPortTariffMapper {
                     .map(v -> BigDecimal.valueOf(Long.parseLong(v)))
                     .toList();
 
-            List<String> vesselNames = shipVesselTypeMasterRepository.findVesselTypeNamesByVesselTypePoidInAndGroupPoid(vesselPoidBDList, entity.getGroupPoid());
+            List<LovItem> vesselTypesDetList = vesselPoidBDList.stream().map(p -> lovService.getLovItemByPoid(p.longValue(), "VESSEL_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid())).toList();
+            response.setVesselTypesDet(vesselTypesDetList);
 
+            List<String> vesselNames = shipVesselTypeMasterRepository.findVesselTypeNamesByVesselTypePoidInAndGroupPoid(vesselPoidBDList, BigDecimal.valueOf(entity.getGroupPoid()));
             response.setVesselTypeNames(vesselNames);
         }
 
-
+        response.setGroupPoid(entity.getGroupPoid());
+        response.setGroupDet(lovService.getLovItemByPoid(entity.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        response.setCompanyPoid(entity.getCompanyPoid());
+        response.setCompanyDet(lovService.getLovItemByPoid(entity.getCompanyPoid(), "COMPANY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         response.setPeriodFrom(entity.getPeriodFrom());
         response.setPeriodTo(entity.getPeriodTo());
         response.setRemarks(entity.getRemarks());
@@ -97,6 +108,37 @@ public class PdaPortTariffMapper {
         return response;
     }
 
+    public void setLovDetails(PdaPortTariffMasterResponse response) {
+
+        if (response.getPorts() != null && !response.getPorts().isEmpty()) {
+
+            List<BigDecimal> portPoidBDList = response.getPorts().stream()
+                    .map(p -> BigDecimal.valueOf(Long.parseLong(p)))
+                    .toList();
+
+            List<LovItem> portDetList = portPoidBDList.stream().map(p -> lovService.getLovItemByPoid(p.longValue(), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid())).toList();
+            response.setPortsDet(portDetList);
+
+            List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(portPoidBDList, BigDecimal.valueOf(response.getGroupPoid()));
+            response.setPortNames(portNames);
+        }
+
+        if (response.getVesselTypes() != null && !response.getVesselTypes().isEmpty()) {
+
+            List<BigDecimal> vesselPoidBDList = response.getVesselTypes().stream()
+                    .map(v -> BigDecimal.valueOf(Long.parseLong(v)))
+                    .toList();
+
+            List<LovItem> vesselTypesDetList = vesselPoidBDList.stream().map(p -> lovService.getLovItemByPoid(p.longValue(), "VESSEL_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid())).toList();
+            response.setVesselTypesDet(vesselTypesDetList);
+
+            List<String> vesselNames = shipVesselTypeMasterRepository.findVesselTypeNamesByVesselTypePoidInAndGroupPoid(vesselPoidBDList, BigDecimal.valueOf(response.getGroupPoid()));
+            response.setVesselTypeNames(vesselNames);
+        }
+        response.setGroupDet(lovService.getLovItemByPoid(response.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        response.setCompanyDet(lovService.getLovItemByPoid(response.getCompanyPoid(), "COMPANY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+    }
+
     // Entity to Response (Charge Detail)
     public PdaPortTariffChargeDetailResponse toChargeDetailResponse(PdaPortTariffChargeDtl entity) {
         PdaPortTariffChargeDetailResponse response = new PdaPortTariffChargeDetailResponse();
@@ -113,6 +155,11 @@ public class PdaPortTariffMapper {
         response.setCreatedDate(entity.getCreatedDate());
         response.setLastModifiedBy(entity.getLastModifiedBy());
         response.setLastModifiedDate(entity.getLastModifiedDate());
+        response.setChargeDet(lovService.getLovItemByPoid(entity.getChargePoid(), "CHARGE_MASTER_FOR_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        response.setRateTypeDet(lovService.getLovItemByPoid(entity.getRateTypePoid(), "PDA_RATE_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        response.setTariffSlabDet(lovService.getLovItemByCode(entity.getTariffSlab(), "PDA_TARIFF_TYPES", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        response.setHarborCallTypeDet(lovService.getLovItemByCode(entity.getHarborCallType(), "HARBOR_CALL_TYPE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        response.setIsEnabledDet(lovService.getLovItemByCode(entity.getIsEnabled(), "YES_NO", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
 
         // Map slab details if loaded
         if (entity.getSlabDetails() != null && !entity.getSlabDetails().isEmpty()) {
@@ -152,8 +199,8 @@ public class PdaPortTariffMapper {
     // Request to Entity (Header - for create)
     public PdaPortTariffHdr toEntity(PdaPortTariffMasterRequest request, BigDecimal groupPoid, BigDecimal companyPoid, String docRef, String currentUser) {
         PdaPortTariffHdr entity = new PdaPortTariffHdr();
-        entity.setGroupPoid(groupPoid);
-        entity.setCompanyPoid(companyPoid);
+        entity.setGroupPoid(groupPoid.longValue());
+        entity.setCompanyPoid(companyPoid.longValue());
         entity.setDocRef(docRef);
         entity.setPorts(listToString(request.getPorts()));
         entity.setVesselTypes(listToString(request.getVesselTypes()));
@@ -232,8 +279,10 @@ public class PdaPortTariffMapper {
                     .map(p -> BigDecimal.valueOf(Long.parseLong(p)))
                     .toList();
 
-            List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(portPoidBDList, entity.getGroupPoid());
+            List<LovItem> portDetList = portPoidBDList.stream().map(p -> lovService.getLovItemByPoid(p.longValue(), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid())).toList();
+            response.setPortsDet(portDetList);
 
+            List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(portPoidBDList, BigDecimal.valueOf(entity.getGroupPoid()));
             response.setPortNames(portNames);
         }
 
@@ -244,11 +293,17 @@ public class PdaPortTariffMapper {
                     .map(v -> BigDecimal.valueOf(Long.parseLong(v)))
                     .toList();
 
-            List<String> vesselNames = shipVesselTypeMasterRepository.findVesselTypeNamesByVesselTypePoidInAndGroupPoid(vesselPoidBDList, entity.getGroupPoid());
+            List<LovItem> vesselTypesDetList = vesselPoidBDList.stream().map(p -> lovService.getLovItemByPoid(p.longValue(), "VESSEL_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid())).toList();
+            response.setVesselTypesDet(vesselTypesDetList);
 
+            List<String> vesselNames = shipVesselTypeMasterRepository.findVesselTypeNamesByVesselTypePoidInAndGroupPoid(vesselPoidBDList, BigDecimal.valueOf(entity.getGroupPoid()));
             response.setVesselTypeNames(vesselNames);
         }
 
+        response.setGroupPoid(entity.getGroupPoid());
+        response.setGroupDet(lovService.getLovItemByPoid(entity.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        response.setCompanyPoid(entity.getCompanyPoid());
+        response.setCompanyDet(lovService.getLovItemByPoid(entity.getCompanyPoid(), "COMPANY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         response.setPeriodFrom(entity.getPeriodFrom());
         response.setPeriodTo(entity.getPeriodTo());
         response.setRemarks(entity.getRemarks());
