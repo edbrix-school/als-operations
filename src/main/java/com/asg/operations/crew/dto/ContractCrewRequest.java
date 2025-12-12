@@ -1,6 +1,7 @@
 package com.asg.operations.crew.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -56,8 +57,7 @@ public class ContractCrewRequest {
     @Size(max = 1)
     private String active;
 
-
+    @Valid
     private List<ContractCrewDtlRequest> details;
-
 }
 

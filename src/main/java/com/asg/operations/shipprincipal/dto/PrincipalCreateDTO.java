@@ -1,6 +1,7 @@
 package com.asg.operations.shipprincipal.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -20,7 +21,7 @@ import java.util.List;
 @Schema(description = "Principal creation request")
 public class PrincipalCreateDTO {
     private String principalCode;
-    
+
     @NotBlank(message = "Principal Name is mandatory")
     @Size(max = 100, message = "Principal name cannot exceed 100 characters")
     @Schema(description = "Principal name", required = true)
@@ -58,15 +59,19 @@ public class PrincipalCreateDTO {
     private Long addressPoid;
     private String addressName;
 
+    @Valid
     @Schema(description = "Address information")
     private AddressTypeMapDTO addressTypeMap;
-    
+
+    @Valid
     @Schema(description = "List of charges")
     private List<ChargeDetailDto> charges;
-    
+
+    @Valid
     @Schema(description = "List of payment details")
     private List<PaymentItemDTO> payments;
-    
+
+    @Valid
     @Schema(description = "List of port activity report details")
     private List<ShipPrincipalPaRptDetailDto> portActivityReportDetails;
 }
