@@ -280,6 +280,10 @@ public class FdaServiceImpl implements FdaService {
                 .map(this::mapToFdaResponseDto)
                 .collect(Collectors.toList());
 
+        for (FdaHeaderDto fdaHeaderDto : dtos) {
+            setDetailsForHeader(fdaHeaderDto);
+        }
+
         // Create page
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);

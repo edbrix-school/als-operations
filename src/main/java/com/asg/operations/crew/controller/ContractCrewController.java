@@ -62,10 +62,6 @@ public class ContractCrewController {
         // Create displayFields
         Map<String, String> displayFields = new HashMap<>();
         displayFields.put("CREW_NAME", "text");
-        displayFields.put("NATIONALITY", "text");
-        displayFields.put("COMPANY", "text");
-        displayFields.put("ACTIVE", "text");
-        displayFields.put("CREW_POID", "text");
 
         // Create paginated response with new structure
         Map<String, Object> response = new HashMap<>();

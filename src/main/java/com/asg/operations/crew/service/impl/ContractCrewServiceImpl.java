@@ -1,5 +1,7 @@
 package com.asg.operations.crew.service.impl;
 
+import com.asg.common.lib.security.util.UserContext;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.*;
 import com.asg.operations.crew.entity.ContractCrew;
 import com.asg.operations.crew.entity.ContractCrewDtl;
@@ -14,6 +16,7 @@ import com.asg.operations.exceptions.ValidationException;
 import com.asg.operations.crew.service.ContractCrewService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +38,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ContractCrewServiceImpl implements ContractCrewService {
 
     private final ContractCrewRepository crewRepository;
@@ -42,21 +46,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
     private final EntityMapper entityMapper;
     private final CrewCodeGenerator codeGenerator;
     private final EntityManager entityManager;
-
-    @Autowired
-    public ContractCrewServiceImpl(
-            ContractCrewRepository crewRepository,
-            ContractCrewDtlRepository crewDtlRepository,
-            EntityMapper entityMapper,
-            CrewCodeGenerator codeGenerator,
-            EntityManager entityManager
-    ) {
-        this.crewRepository = crewRepository;
-        this.crewDtlRepository = crewDtlRepository;
-        this.entityMapper = entityMapper;
-        this.codeGenerator = codeGenerator;
-        this.entityManager = entityManager;
-    }
+    private final LovService lovService;
 
     @Override
     @Transactional(readOnly = true)
@@ -167,10 +157,18 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         List<ContractCrewResponse> dtos = results.stream()
                 .map(this::mapToCrewResponseDto)
                 .collect(Collectors.toList());
-
+        setLovDetails(dtos);
         // Create page
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
+    }
+
+    private void setLovDetails(List<ContractCrewResponse> dtos) {
+        for (ContractCrewResponse dto : dtos) {
+            dto.setGroupDet(lovService.getLovItemByPoid(dto.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+            dto.setCompanyDet(lovService.getLovItemByPoid(dto.getCompanyPoid(), "COMPANY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+            dto.setCrewNationalityDet(lovService.getLovItemByPoid(dto.getCrewNationalityPoid(), "NATIONALITY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
     }
 
     private String mapCrewSearchFieldToColumn(String searchField) {

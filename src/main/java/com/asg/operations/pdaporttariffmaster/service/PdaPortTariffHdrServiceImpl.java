@@ -1,5 +1,8 @@
 package com.asg.operations.pdaporttariffmaster.service;
 
+import com.asg.common.lib.security.util.UserContext;
+import com.asg.operations.commonlov.dto.LovItem;
+import com.asg.operations.pdaentryform.dto.PdaEntryResponse;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffChargeDtl;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffHdr;
@@ -158,6 +161,9 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 .map(this::mapToTariffResponseDto)
                 .collect(Collectors.toList());
 
+        for (PdaPortTariffMasterResponse dto : dtos) {
+            mapper.setLovDetails(dto);
+        }
         // Create page
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
@@ -198,7 +204,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
             return "t.TRANSACTION_DATE";
         }
         String normalizedField = sortField.toUpperCase().replace("_", "");
-        
+
         switch (normalizedField) {
             case "TRANSACTIONPOID":
                 return "t.TRANSACTION_POID";

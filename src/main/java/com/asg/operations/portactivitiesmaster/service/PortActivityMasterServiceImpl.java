@@ -108,6 +108,10 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
                 .map(this::mapToPortActivityResponseDto)
                 .collect(Collectors.toList());
 
+        for (PortActivityMasterResponse dto : dtos) {
+            dto.setGroupDet(lovService.getLovItemByPoid(dto.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
+
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
     }
@@ -147,20 +151,34 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
         if (sortField == null) return "p.PORT_ACTIVITY_TYPE_CODE";
         String normalizedField = sortField.toUpperCase().replace("_", "");
         switch (normalizedField) {
-            case "PORTACTIVITYTYPEPOID": return "p.PORT_ACTIVITY_TYPE_POID";
-            case "GROUPPOID": return "p.GROUP_POID";
-            case "PORTACTIVITYTYPECODE": return "p.PORT_ACTIVITY_TYPE_CODE";
-            case "PORTACTIVITYTYPENAME": return "p.PORT_ACTIVITY_TYPE_NAME";
-            case "PORTACTIVITYTYPENAME2": return "p.PORT_ACTIVITY_TYPE_NAME2";
-            case "ACTIVE": return "p.ACTIVE";
-            case "SEQNO": return "p.SEQNO";
-            case "CREATEDBY": return "p.CREATED_BY";
-            case "CREATEDDATE": return "p.CREATED_DATE";
-            case "LASTMODIFIEDBY": return "p.LASTMODIFIED_BY";
-            case "LASTMODIFIEDDATE": return "p.LASTMODIFIED_DATE";
-            case "DELETED": return "p.DELETED";
-            case "REMARKS": return "p.REMARKS";
-            default: return "p." + sortField.toUpperCase().replace(" ", "_");
+            case "PORTACTIVITYTYPEPOID":
+                return "p.PORT_ACTIVITY_TYPE_POID";
+            case "GROUPPOID":
+                return "p.GROUP_POID";
+            case "PORTACTIVITYTYPECODE":
+                return "p.PORT_ACTIVITY_TYPE_CODE";
+            case "PORTACTIVITYTYPENAME":
+                return "p.PORT_ACTIVITY_TYPE_NAME";
+            case "PORTACTIVITYTYPENAME2":
+                return "p.PORT_ACTIVITY_TYPE_NAME2";
+            case "ACTIVE":
+                return "p.ACTIVE";
+            case "SEQNO":
+                return "p.SEQNO";
+            case "CREATEDBY":
+                return "p.CREATED_BY";
+            case "CREATEDDATE":
+                return "p.CREATED_DATE";
+            case "LASTMODIFIEDBY":
+                return "p.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE":
+                return "p.LASTMODIFIED_DATE";
+            case "DELETED":
+                return "p.DELETED";
+            case "REMARKS":
+                return "p.REMARKS";
+            default:
+                return "p." + sortField.toUpperCase().replace(" ", "_");
         }
     }
 

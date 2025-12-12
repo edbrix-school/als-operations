@@ -54,11 +54,9 @@ public class PdaPortTariffMasterController {
 
         // Create displayFields
         Map<String, String> displayFields = new HashMap<>();
-        displayFields.put("TRANSACTION_DATE", "date");
-        displayFields.put("DOC_REF", "text");
+        displayFields.put("PERIOD_FROM", "date");
+        displayFields.put("PERIOD_TO", "date");
         displayFields.put("PORTS", "text");
-        displayFields.put("VESSEL_TYPES", "text");
-        displayFields.put("TRANSACTION_POID", "text");
 
         // Create paginated response with new structure
         Map<String, Object> response = new HashMap<>();

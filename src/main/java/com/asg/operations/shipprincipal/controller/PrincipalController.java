@@ -52,7 +52,6 @@ public class PrincipalController {
         java.util.Map<String, String> displayFields = new java.util.HashMap<>();
         displayFields.put("PRINCIPAL_CODE", "text");
         displayFields.put("PRINCIPAL_NAME", "text");
-        displayFields.put("ACTIVE", "text");
 
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("content", principalPage.getContent());

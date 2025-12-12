@@ -44,8 +44,6 @@ public class PdaRateTypeController {
         java.util.Map<String, String> displayFields = new java.util.HashMap<>();
         displayFields.put("RATE_TYPE_CODE", "text");
         displayFields.put("RATE_TYPE_NAME", "text");
-        displayFields.put("ACTIVE", "text");
-        displayFields.put("RATE_TYPE_POID", "text");
 
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("content", rateTypePage.getContent());
