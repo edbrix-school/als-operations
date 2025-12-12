@@ -243,7 +243,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
         dto.setDocRef(convertToString(row[1]));
         dto.setTransactionDate(row[2] != null ? ((Timestamp) row[2]).toLocalDateTime().toLocalDate() : null);
-        dto.setPorts(convertToStringList(row[3]));
+        dto.setPort(convertToString(row[3]));
         dto.setVesselTypes(convertToStringList(row[4]));
         dto.setPeriodFrom(row[5] != null ? ((Timestamp) row[5]).toLocalDateTime().toLocalDate() : null);
         dto.setPeriodTo(row[6] != null ? ((Timestamp) row[6]).toLocalDateTime().toLocalDate() : null);
@@ -311,12 +311,12 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
 
         String docRef = docRefGenerator.generateDocRef(groupPoidBD);
 
-        String portsStr = mapper.listToString(request.getPorts());
+        String portsStr = request.getPort();
         String vesselTypesStr = mapper.listToString(request.getVesselTypes());
 
         if (tariffHdrRepository.existsOverlappingPeriod(
                 groupPoidBD, null, request.getPeriodFrom(), request.getPeriodTo(), portsStr, vesselTypesStr)) {
-            throw new ValidationException("A tariff with overlapping period already exists for the selected ports and vessel types.");
+            throw new ValidationException("A tariff with overlapping period already exists for the selected port and vessel types.");
         }
 
         PdaPortTariffHdr tariffHdr = mapper.toEntity(request, groupPoidBD, companyPoidBD, docRef, userId);
@@ -339,12 +339,12 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                         transactionPoid, groupPoidBD, "N")
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
-        String portsStr = mapper.listToString(request.getPorts());
+        String portsStr = request.getPort();
         String vesselTypesStr = mapper.listToString(request.getVesselTypes());
 
         if (tariffHdrRepository.existsOverlappingPeriod(
                 groupPoidBD, transactionPoid, request.getPeriodFrom(), request.getPeriodTo(), portsStr, vesselTypesStr)) {
-            throw new ValidationException("A tariff with overlapping period already exists for the selected ports and vessel types.");
+            throw new ValidationException("A tariff with overlapping period already exists for the selected port and vessel types.");
         }
 
         mapper.updateEntityFromRequest(existingTariff, request, userId);
@@ -659,13 +659,11 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     private void validateCreateRequest(PdaPortTariffMasterRequest request, Long groupPoid) {
-        if (request.getPorts() == null || request.getPorts().isEmpty()) {
-            throw new ValidationException("Ports cannot be empty");
+        if (request.getPort() == null || request.getPort().trim().isEmpty()) {
+            throw new ValidationException("Port cannot be empty");
         }
-        for (String portPoid : request.getPorts()) {
-            if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(portPoid)), BigDecimal.valueOf(groupPoid))) {
-                throw new ResourceNotFoundException("Port", "Port Poid", portPoid);
-            }
+        if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(request.getPort())), BigDecimal.valueOf(groupPoid))) {
+            throw new ResourceNotFoundException("Port", "Port Poid", request.getPort());
         }
         for (String vesselPoid : request.getVesselTypes()) {
             if (!shipVesselTypeMasterRepository.existsByVesselTypePoidAndGroupPoid(BigDecimal.valueOf(Long.parseLong(vesselPoid)), BigDecimal.valueOf(groupPoid))) {
@@ -675,13 +673,11 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     private void validateUpdateRequest(PdaPortTariffMasterRequest request, Long groupPoid) {
-        if (request.getPorts() == null || request.getPorts().isEmpty()) {
-            throw new ValidationException("Ports cannot be empty");
+        if (request.getPort() == null || request.getPort().trim().isEmpty()) {
+            throw new ValidationException("Port cannot be empty");
         }
-        for (String portPoid : request.getPorts()) {
-            if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(portPoid)), BigDecimal.valueOf(groupPoid))) {
-                throw new ResourceNotFoundException("Port", "Port Poid", portPoid);
-            }
+        if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(request.getPort())), BigDecimal.valueOf(groupPoid))) {
+            throw new ResourceNotFoundException("Port", "Port Poid", request.getPort());
         }
         for (String vesselPoid : request.getVesselTypes()) {
             if (!shipVesselTypeMasterRepository.existsByVesselTypePoidAndGroupPoid(BigDecimal.valueOf(Long.parseLong(vesselPoid)), BigDecimal.valueOf(groupPoid))) {

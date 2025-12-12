@@ -198,7 +198,7 @@ class PdaPortTariffMasterControllerTest {
         PdaPortTariffMasterRequest request = new PdaPortTariffMasterRequest();
         request.setDocRef("DOC001");
         request.setRemarks("Test tariff");
-        request.setPorts(List.of("1", "2"));
+        request.setPort("1");
         request.setVesselTypes(List.of("1", "2"));
         request.setPeriodFrom(LocalDate.of(2024, 1, 1));
         request.setPeriodTo(LocalDate.of(2024, 12, 31));
