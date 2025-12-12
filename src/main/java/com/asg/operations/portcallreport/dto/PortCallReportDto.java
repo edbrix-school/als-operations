@@ -1,5 +1,6 @@
 package com.asg.operations.portcallreport.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
@@ -31,5 +32,6 @@ public class PortCallReportDto {
     private Long seqno;
     @Size(max = 1000, message = "Remarks cannot exceed 1000 characters")
     private String remarks;
+    @Valid
     private List<PortCallReportDetailDto> details;
 }
