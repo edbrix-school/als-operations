@@ -3,6 +3,7 @@ package com.asg.operations.shipprincipal.service;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ValidationError;
+import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceAlreadyExistsException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
@@ -64,7 +65,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         ShipPrincipalMaster principal = principalRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Principal not found with id: {}", id);
-                    return new RuntimeException("Principal not found");
+                    return new ResourceNotFoundException("Principal", "Principal Poid", id);
                 });
 
         PrincipalMasterDto dto = mapper.mapToDetailDTO(principal);
@@ -110,13 +111,13 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             throw new ResourceAlreadyExistsException("Principal Name already exists", "DUPLICATE_PRINCIPAL_NAME");
         }
 
-        User user = userRepository.findByUserPoid(userPoid).orElseThrow(() -> new ResourceNotFoundException("User was not found by poid ", "user poid", userPoid));
+        User user = userRepository.findByUserPoid(userPoid).orElseThrow(() -> new ResourceNotFoundException("User", "user poid", userPoid));
 
         log.debug("Creating principal with code: {}", dto.getPrincipalCode());
         Long addressPoid = null;
         if (dto.getAddressPoid() == null) {
             if (StringUtils.isBlank(dto.getAddressName())) {
-                throw new RuntimeException("Address Name is required for creating new address");
+                throw new CustomException("Address Name is required for creating new address", 400);
             }
             boolean addressExists = addressMasterRepository.existsByAddressNameIgnoreCaseAndGroupPoid(dto.getAddressName(), groupPoid);
             if (addressExists) {
@@ -156,7 +157,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
         Long principalId = principal.getPrincipalPoid();
 
-        if (dto.getCharges() != null) {
+        if (dto.getCharges() != null && !dto.getCharges().isEmpty()) {
             Long nextDetRowId = chargeRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
             for (ChargeDetailDto charge : dto.getCharges()) {
                 ShipPrincipalMasterDtl entity = new ShipPrincipalMasterDtl();
@@ -170,7 +171,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             }
         }
 
-        if (dto.getPayments() != null) {
+        if (dto.getPayments() != null && !dto.getPayments().isEmpty()) {
             Long nextDetRowId = paymentRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
             for (PaymentItemDTO payment : dto.getPayments()) {
                 ShipPrincipalMasterPymtDtl entity = new ShipPrincipalMasterPymtDtl();
@@ -182,12 +183,12 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             }
         }
 
-        if (dto.getPortActivityReportDetails() != null) {
+        if (dto.getPortActivityReportDetails() != null && !dto.getPortActivityReportDetails().isEmpty()) {
             log.debug("Processing {} port activity report details", dto.getPortActivityReportDetails().size());
             List<Long> validVesselTypePoids = vesselTypeRepository.findAllActive().stream()
                     .map(VesselType::getVesselTypePoid)
                     .toList();
-            
+
             Long nextDetRowId = paRptDtlRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
             int index = 0;
             for (ShipPrincipalPaRptDetailDto paRptDetail : dto.getPortActivityReportDetails()) {
@@ -196,7 +197,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     throw new ValidationException("Invalid vessel type", List.of(new ValidationError(index, "vesselType", "Invalid vessel type POID: " + paRptDetail.getVesselType())));
                 }
                 index++;
-                
+
                 ShipPrincipalPaRptDtl entity = new ShipPrincipalPaRptDtl();
                 entity.setPrincipalPoid(principalId);
                 entity.setDetRowId(nextDetRowId++);
@@ -234,16 +235,16 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         ShipPrincipalMaster principal = principalRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Principal not found with id: {}", id);
-                    return new RuntimeException("Principal not found");
+                    return new ResourceNotFoundException("Principal", "Principal Poid", id);
                 });
 
         mapper.mapUpdateDTOToEntity(dto, principal, groupPoid);
 
-        User user = userRepository.findByUserPoid(userPoid).orElseThrow(() -> new ResourceNotFoundException("User was not found by poid ", "user poid", userPoid));
+        User user = userRepository.findByUserPoid(userPoid).orElseThrow(() -> new ResourceNotFoundException("User", "user poid", userPoid));
         Long addressPoid = null;
         if (dto.getAddressPoid() == null) {
             if (StringUtils.isBlank(dto.getAddressName())) {
-                throw new RuntimeException("Address Name is required for creating new address");
+                throw new CustomException("Address Name is required for creating new address", 400);
             }
             boolean addressExists = addressMasterRepository.existsByAddressNameIgnoreCaseAndGroupPoid(dto.getAddressName(), groupPoid);
             if (addressExists) {
@@ -281,6 +282,10 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         if (dto.getCharges() != null) {
             for (ChargeDetailDto charge : dto.getCharges()) {
                 ActionType action = charge.getActionType();
+
+                if (action == null) {
+                    continue;
+                }
 
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = chargeRepository.findMaxDetRowIdByPrincipalPoid(id) + 1;
@@ -337,7 +342,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             List<Long> validVesselTypePoids = vesselTypeRepository.findAllActive().stream()
                     .map(VesselType::getVesselTypePoid)
                     .toList();
-            
+
             int index = 0;
             for (ShipPrincipalPaRptDetailDto paRptDetail : dto.getPortActivityReportDetails()) {
                 if (paRptDetail.getVesselType() != null && !validVesselTypePoids.contains(Long.parseLong(paRptDetail.getVesselType()))) {
@@ -345,8 +350,12 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     throw new ValidationException("Invalid vessel type", List.of(new ValidationError(index, "vesselType", "Invalid vessel type POID: " + paRptDetail.getVesselType())));
                 }
                 index++;
-                
+
                 ActionType action = paRptDetail.getActionType();
+
+                if (action == null) {
+                    continue;
+                }
 
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = paRptDtlRepository.findMaxDetRowIdByPrincipalPoid(id) + 1;
@@ -407,7 +416,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         ShipPrincipalMaster principal = principalRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Principal not found with id: {}", id);
-                    return new RuntimeException("Principal not found");
+                    return new ResourceNotFoundException("Principal", "Principal Poid", id);
                 });
         String newStatus = "Y".equals(principal.getActive()) ? "N" : "Y";
         principal.setActive(newStatus);
@@ -422,7 +431,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         log.info("Soft deleting principal with id: {}", id);
 
         ShipPrincipalMaster principal = principalRepository.findByIdAndNotDeleted(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Principal not found with id", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Principal", "id", id));
         principal.setActive("N");
         principal.setLastModifiedDate(LocalDateTime.now());
         principalRepository.save(principal);
@@ -438,9 +447,9 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                                                 Long userPoid) {
         // Get principal
         ShipPrincipalMaster principal = principalRepository.findByIdAndNotDeleted(principalPoid)
-                .orElseThrow(() -> new ResourceNotFoundException("Principal not found", "principalPoid", principalPoid));
+                .orElseThrow(() -> new ResourceNotFoundException("Principal", "principalPoid", principalPoid));
 
-        User user = userRepository.findByUserPoid(userPoid).orElseThrow(() -> new ResourceNotFoundException("User was not found by poid ", "user poid", userPoid));
+        User user = userRepository.findByUserPoid(userPoid).orElseThrow(() -> new ResourceNotFoundException("User", "user poid", userPoid));
 
         // Check if GL ledger already exists
         if (principal.getGlCodePoid() != null) {
@@ -533,7 +542,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             dto.setEscalationRole1Det(userRolesMap.get(entity.getEscalationRole1()));
             dto.setEscalationRole2Poid(entity.getEscalationRole2());
             dto.setEscalationRole2Det(userRolesMap.get(entity.getEscalationRole2()));
-            
+
             return dto;
         }).collect(Collectors.toList());
     }

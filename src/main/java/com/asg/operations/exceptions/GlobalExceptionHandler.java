@@ -3,7 +3,6 @@ package com.asg.operations.exceptions;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.crew.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.xml.bind.ValidationException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +33,13 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(ex.getMessage(), ex.getCode());
     }
 
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<?> handleValidationException(ValidationException ex) {
+    @ExceptionHandler(jakarta.xml.bind.ValidationException.class)
+    public ResponseEntity<?> handleValidationException(jakarta.xml.bind.ValidationException ex) {
+        return ApiResponse.badRequest(ex.getMessage());
+    }
+
+    @ExceptionHandler(jakarta.validation.ValidationException.class)
+    public ResponseEntity<?> handleValidationException(jakarta.validation.ValidationException ex) {
         return ApiResponse.badRequest(ex.getMessage());
     }
 
@@ -58,7 +62,6 @@ public class GlobalExceptionHandler {
         }
         return ApiResponse.badRequest(ex.getMessage());
     }
-
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {

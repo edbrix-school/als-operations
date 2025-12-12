@@ -1,5 +1,10 @@
 package com.asg.operations.exceptions;
 
+import lombok.Getter;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@Getter
 public class ResourceAlreadyExistsException extends RuntimeException{
 
     private final String fieldName;
@@ -9,13 +14,5 @@ public class ResourceAlreadyExistsException extends RuntimeException{
         super(String.format("%s already exists with value: %s", fieldName, fieldValue));
         this.fieldName = fieldName;
         this.fieldValue = fieldValue;
-    }
-
-    public String getFieldName() {
-        return fieldName;
-    }
-
-    public String getFieldValue() {
-        return fieldValue;
     }
 }

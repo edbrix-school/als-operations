@@ -2,6 +2,7 @@ package com.asg.operations.portactivitiesmaster.service;
 
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.commonlov.service.LovService;
+import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.portactivitiesmaster.dto.PageResponse;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
@@ -44,8 +45,8 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
     @Override
     @Transactional(readOnly = true)
     public PortActivityMasterResponse getPortActivityById(Long portActivityTypePoid, Long groupPoid) {
-        PortActivityMaster entity = repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(portActivityTypePoid, groupPoid, "N")
-                .orElseThrow(() -> new RuntimeException("Port activity not found"));
+        PortActivityMaster entity = repository.findByPortActivityTypePoidAndGroupPoid(portActivityTypePoid, groupPoid)
+                .orElseThrow(() -> new ResourceNotFoundException("Port activity not found"));
 
         return mapToResponse(entity);
     }
@@ -73,8 +74,8 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
 
     @Override
     public PortActivityMasterResponse updatePortActivity(Long portActivityTypePoid, PortActivityMasterRequest request, Long groupPoid, String userId) {
-        PortActivityMaster entity = repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(portActivityTypePoid, groupPoid, "N")
-                .orElseThrow(() -> new RuntimeException("Port activity not found"));
+        PortActivityMaster entity = repository.findByPortActivityTypePoidAndGroupPoid(portActivityTypePoid, groupPoid)
+                .orElseThrow(() -> new ResourceNotFoundException("Port activity not found"));
 
         entity.setPortActivityTypeName(request.getPortActivityTypeName());
         entity.setPortActivityTypeName2(request.getPortActivityTypeName2());
@@ -90,8 +91,8 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
 
     @Override
     public void deletePortActivity(Long portActivityTypePoid, Long groupPoid, String userId, boolean hardDelete) {
-        PortActivityMaster entity = repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(portActivityTypePoid, groupPoid, "N")
-                .orElseThrow(() -> new RuntimeException("Port activity not found"));
+        PortActivityMaster entity = repository.findByPortActivityTypePoidAndGroupPoid(portActivityTypePoid, groupPoid)
+                .orElseThrow(() -> new ResourceNotFoundException("Port activity not found"));
 
         if (hardDelete) {
             repository.delete(entity);

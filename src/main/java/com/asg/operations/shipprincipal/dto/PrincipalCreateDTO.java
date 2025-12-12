@@ -22,22 +22,26 @@ public class PrincipalCreateDTO {
     private String principalCode;
     
     @NotBlank(message = "Principal Name is mandatory")
+    @Size(max = 100, message = "Principal name cannot exceed 100 characters")
     @Schema(description = "Principal name", required = true)
     private String principalName;
-    
+    @Size(max = 100, message = "Principal name2 cannot exceed 100 characters")
     private String principalName2;
+    @Size(max = 100, message = "Tin number cannot exceed 100 characters")
     private String tinNumber;
+    @Size(max = 100, message = "Tax Slab cannot exceed 100 characters")
     private String taxSlab;
+    @Size(max = 300, message = "Exemption Reason cannot exceed 300 characters")
     private String exemptionReason;
     private Long glCodePoid;
-    
     @NotNull(message = "Company is required")
     @Schema(description = "Company POID", required = true)
     private Long companyPoid;
-    
+    @Size(max = 20, message = "Group name cannot exceed 20 characters")
     private String groupName;
     private Long creditPeriod;
     private Long agreedPeriod;
+    @Size(max = 20, message = "Currency code cannot exceed 20 characters")
     private String currencyCode;
     private BigDecimal currencyRate;
     private BigDecimal buyingRate;
@@ -45,9 +49,10 @@ public class PrincipalCreateDTO {
     @Size(max = 200, message = "Remarks cannot exceed 200 characters")
     private String remarks;
     private Integer seqNo;
-
     @Pattern(regexp = "Y|N", message = "Active must be 'Y' or 'N'")
+    @Size(max = 1, message = "Active cannot exceed 1 character")
     private String active;
+    @Size(max = 20, message = "Principal code old cannot exceed 20 characters")
     private String principalCodeOld;
     private Long countryPoid;
     private Long addressPoid;

@@ -2,6 +2,7 @@ package com.asg.operations.portactivitiesmaster.service;
 
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.service.LovService;
+import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.portactivitiesmaster.dto.PageResponse;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
@@ -94,7 +95,7 @@ class PortActivityMasterServiceImplTest {
     @Test
     void getPortActivityById_ShouldReturnResponse_WhenExists() {
         // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
         // When
@@ -109,11 +110,11 @@ class PortActivityMasterServiceImplTest {
     @Test
     void getPortActivityById_ShouldThrowException_WhenNotFound() {
         // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(RuntimeException.class, () -> service.getPortActivityById(1L, groupPoid));
+        assertThrows(ResourceNotFoundException.class, () -> service.getPortActivityById(1L, groupPoid));
     }
 
     @Test
@@ -134,7 +135,7 @@ class PortActivityMasterServiceImplTest {
     @Test
     void updatePortActivity_ShouldReturnUpdatedResponse() {
         // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
         when(repository.save(any(PortActivityMaster.class))).thenReturn(entity);
 
@@ -149,18 +150,18 @@ class PortActivityMasterServiceImplTest {
     @Test
     void updatePortActivity_ShouldThrowException_WhenNotFound() {
         // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(RuntimeException.class, () -> 
+        assertThrows(ResourceNotFoundException.class, () -> 
                 service.updatePortActivity(1L, request, groupPoid, userId));
     }
 
     @Test
     void deletePortActivity_SoftDelete_ShouldMarkAsDeleted() {
         // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
         // When
@@ -176,7 +177,7 @@ class PortActivityMasterServiceImplTest {
     @Test
     void deletePortActivity_HardDelete_ShouldDeleteEntity() {
         // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
         // When
@@ -190,11 +191,11 @@ class PortActivityMasterServiceImplTest {
     @Test
     void deletePortActivity_ShouldThrowException_WhenNotFound() {
         // Given
-        when(repository.findByPortActivityTypePoidAndGroupPoidAndDeleted(1L, groupPoid, "N"))
+        when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(RuntimeException.class, () -> 
+        assertThrows(ResourceNotFoundException.class, () -> 
                 service.deletePortActivity(1L, groupPoid, userId, false));
     }
 }
