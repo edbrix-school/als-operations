@@ -6,6 +6,7 @@ import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.portactivitiesmaster.dto.GetAllPortActivityFilterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
+import com.asg.operations.portactivitiesmaster.dto.PortActivityListResponse;
 import com.asg.operations.portactivitiesmaster.entity.PortActivityMaster;
 import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
 import jakarta.persistence.EntityManager;
@@ -122,7 +123,7 @@ class PortActivityMasterServiceImplTest {
         when(query.getResultList()).thenReturn(mockResultList);
         when(countQuery.getSingleResult()).thenReturn(1L);
 
-        Page<PortActivityMasterResponse> result = service.getAllPortActivitiesWithFilters(
+        Page<PortActivityListResponse> result = service.getAllPortActivitiesWithFilters(
                 groupPoid, filterRequest, 0, 20, null);
 
         assertNotNull(result);

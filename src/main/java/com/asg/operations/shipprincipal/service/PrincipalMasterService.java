@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 @Service
 public interface PrincipalMasterService {
 
-    Page<PrincipalMasterDto> getAllPrincipalsWithFilters(Long groupPoid, GetAllPrincipalFilterRequest filterRequest, int page, int size, String sort);
+    Page<PrincipalListResponse> getAllPrincipalsWithFilters(Long groupPoid, GetAllPrincipalFilterRequest filterRequest, int page, int size, String sort);
 
     PrincipalMasterDto getPrincipal(Long id);
 

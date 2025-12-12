@@ -5,7 +5,7 @@ import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.portactivitiesmaster.dto.GetAllPortActivityFilterRequest;
-import com.asg.operations.portactivitiesmaster.dto.PageResponse;
+import com.asg.operations.portactivitiesmaster.dto.PortActivityListResponse;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
 import com.asg.operations.portactivitiesmaster.service.PortActivityMasterService;
@@ -44,7 +44,7 @@ public class PortActivityMasterController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<PortActivityMasterResponse> portActivityPage = portActivityService
+        org.springframework.data.domain.Page<PortActivityListResponse> portActivityPage = portActivityService
                 .getAllPortActivitiesWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
 
         java.util.Map<String, String> displayFields = new java.util.HashMap<>();

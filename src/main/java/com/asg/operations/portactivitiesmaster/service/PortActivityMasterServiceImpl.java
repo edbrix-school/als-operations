@@ -31,7 +31,7 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PortActivityMasterResponse> getAllPortActivitiesWithFilters(
+    public Page<PortActivityListResponse> getAllPortActivitiesWithFilters(
             Long groupPoid,
             GetAllPortActivityFilterRequest filterRequest,
             int page, int size, String sort) {
@@ -104,13 +104,9 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
 
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
-        List<PortActivityMasterResponse> dtos = results.stream()
-                .map(this::mapToPortActivityResponseDto)
+        List<PortActivityListResponse> dtos = results.stream()
+                .map(this::mapToPortActivityListResponseDto)
                 .collect(Collectors.toList());
-
-        for (PortActivityMasterResponse dto : dtos) {
-            dto.setGroupDet(lovService.getLovItemByPoid(dto.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-        }
 
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
@@ -182,22 +178,22 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
         }
     }
 
-    private PortActivityMasterResponse mapToPortActivityResponseDto(Object[] row) {
-        return PortActivityMasterResponse.builder()
-                .portActivityTypePoid(row[0] != null ? ((Number) row[0]).longValue() : null)
-                .groupPoid(row[1] != null ? ((Number) row[1]).longValue() : null)
-                .portActivityTypeCode(convertToString(row[2]))
-                .portActivityTypeName(convertToString(row[3]))
-                .portActivityTypeName2(convertToString(row[4]))
-                .active(convertToString(row[5]))
-                .seqno(row[6] != null ? ((Number) row[6]).longValue() : null)
-                .createdBy(convertToString(row[7]))
-                .createdDate(row[8] != null ? ((java.sql.Timestamp) row[8]).toLocalDateTime() : null)
-                .lastModifiedBy(convertToString(row[9]))
-                .lastModifiedDate(row[10] != null ? ((java.sql.Timestamp) row[10]).toLocalDateTime() : null)
-                .deleted(convertToString(row[11]))
-                .remarks(convertToString(row[12]))
-                .build();
+    private PortActivityListResponse mapToPortActivityListResponseDto(Object[] row) {
+        PortActivityListResponse dto = new PortActivityListResponse();
+        dto.setPortActivityTypePoid(row[0] != null ? ((Number) row[0]).longValue() : null);
+        dto.setGroupPoid(row[1] != null ? ((Number) row[1]).longValue() : null);
+        dto.setPortActivityTypeCode(convertToString(row[2]));
+        dto.setPortActivityTypeName(convertToString(row[3]));
+        dto.setPortActivityTypeName2(convertToString(row[4]));
+        dto.setActive(convertToString(row[5]));
+        dto.setSeqno(row[6] != null ? ((Number) row[6]).longValue() : null);
+        dto.setCreatedBy(convertToString(row[7]));
+        dto.setCreatedDate(row[8] != null ? ((java.sql.Timestamp) row[8]).toLocalDateTime() : null);
+        dto.setLastModifiedBy(convertToString(row[9]));
+        dto.setLastModifiedDate(row[10] != null ? ((java.sql.Timestamp) row[10]).toLocalDateTime() : null);
+        dto.setDeleted(convertToString(row[11]));
+        dto.setRemarks(convertToString(row[12]));
+        return dto;
     }
 
     private String convertToString(Object value) {

@@ -10,8 +10,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GetAllCrewFilterRequest {
-    private String from;
-    private String to;
     private String operator; // "AND" or "OR"
     private String isDeleted; // "Y" or "N"
     private List<FilterItem> filters;

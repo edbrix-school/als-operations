@@ -46,7 +46,7 @@ public class PrincipalController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<PrincipalMasterDto> principalPage = principalMasterService
+        org.springframework.data.domain.Page<PrincipalListResponse> principalPage = principalMasterService
                 .getAllPrincipalsWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
 
         java.util.Map<String, String> displayFields = new java.util.HashMap<>();

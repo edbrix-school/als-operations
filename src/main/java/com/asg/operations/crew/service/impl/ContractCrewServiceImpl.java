@@ -50,7 +50,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ContractCrewResponse> getAllCrewWithFilters(Long groupPoid, Long companyPoid, GetAllCrewFilterRequest filterRequest, int page, int size, String sort) {
+    public Page<ContractCrewListResponse> getAllCrewWithFilters(Long groupPoid, Long companyPoid, GetAllCrewFilterRequest filterRequest, int page, int size, String sort) {
 
         // Build dynamic SQL query
         StringBuilder sqlBuilder = new StringBuilder();
@@ -67,14 +67,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             sqlBuilder.append("AND c.ACTIVE = 'Y' ");
         } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
             sqlBuilder.append("AND c.ACTIVE = 'N' ");
-        }
-
-        // Apply date range filters
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
-            sqlBuilder.append("AND TRUNC(c.CREATED_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
-        }
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
-            sqlBuilder.append("AND TRUNC(c.CREATED_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
         }
 
         // Build filter conditions with sequential parameter indexing
@@ -124,14 +116,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         countQuery.setParameter("groupPoid", groupPoid);
         countQuery.setParameter("companyPoid", companyPoid);
 
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
-            query.setParameter("fromDate", filterRequest.getFrom());
-            countQuery.setParameter("fromDate", filterRequest.getFrom());
-        }
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
-            query.setParameter("toDate", filterRequest.getTo());
-            countQuery.setParameter("toDate", filterRequest.getTo());
-        }
 
         // Set filter parameters using sequential indexing
         if (!validFilters.isEmpty()) {
@@ -154,10 +138,9 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         // Execute query and map results
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
-        List<ContractCrewResponse> dtos = results.stream()
-                .map(this::mapToCrewResponseDto)
+        List<ContractCrewListResponse> dtos = results.stream()
+                .map(this::mapToCrewListResponseDto)
                 .collect(Collectors.toList());
-        setLovDetails(dtos);
         // Create page
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
@@ -221,6 +204,31 @@ public class ContractCrewServiceImpl implements ContractCrewService {
                 String columnName = searchField.toUpperCase().replace(" ", "_");
                 return "c." + columnName;
         }
+    }
+
+    private ContractCrewListResponse mapToCrewListResponseDto(Object[] row) {
+        ContractCrewListResponse dto = new ContractCrewListResponse();
+
+        dto.setCrewPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
+        dto.setCrewName(convertToString(row[1]));
+        dto.setCrewNationalityPoid(row[2] != null ? ((Number) row[2]).longValue() : null);
+        dto.setCrewCdcNumber(convertToString(row[3]));
+        dto.setCrewCompany(convertToString(row[4]));
+        dto.setCrewDesignation(convertToString(row[5]));
+        dto.setCrewPassportNumber(convertToString(row[6]));
+        dto.setCrewPassportIssueDate(row[7] != null ? ((Timestamp) row[7]).toLocalDateTime().toLocalDate() : null);
+        dto.setCrewPassportExpiryDate(row[8] != null ? ((Timestamp) row[8]).toLocalDateTime().toLocalDate() : null);
+        dto.setCrewPassportIssuePlace(convertToString(row[9]));
+        dto.setRemarks(convertToString(row[10]));
+        dto.setGroupPoid(row[11] != null ? ((Number) row[11]).longValue() : null);
+        dto.setCompanyPoid(row[12] != null ? ((Number) row[12]).longValue() : null);
+        dto.setActive(convertToString(row[13]));
+        dto.setCreatedBy(convertToString(row[16]));
+        dto.setCreatedDate(row[17] != null ? ((Timestamp) row[17]).toLocalDateTime() : null);
+        dto.setLastModifiedBy(convertToString(row[18]));
+        dto.setLastModifiedDate(row[19] != null ? ((Timestamp) row[19]).toLocalDateTime() : null);
+
+        return dto;
     }
 
     private ContractCrewResponse mapToCrewResponseDto(Object[] row) {

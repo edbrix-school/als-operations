@@ -51,6 +51,6 @@ public interface FdaService {
 
 //    Resource generateFdaReport(Long transactionPoid, String reportType, Long companyId, Long userId, Long groupId);
 
-    Page<FdaHeaderDto> getAllFdaWithFilters(Long groupPoid, Long companyPoid, GetAllFdaFilterRequest filterRequest, int page, int size, String sort);
+    Page<FdaListResponse> getAllFdaWithFilters(Long groupPoid, Long companyPoid, GetAllFdaFilterRequest filterRequest, int page, int size, String sort);
 
 }

@@ -4,6 +4,7 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.portactivitiesmaster.dto.GetAllPortActivityFilterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
+import com.asg.operations.portactivitiesmaster.dto.PortActivityListResponse;
 import com.asg.operations.portactivitiesmaster.service.PortActivityMasterService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,7 +91,7 @@ class PortActivityMasterControllerTest {
         filterRequest.setOperator("AND");
         filterRequest.setFilters(Collections.emptyList());
 
-        Page<PortActivityMasterResponse> page = new PageImpl<>(List.of(response));
+        Page<PortActivityListResponse> page = new PageImpl<>(List.of(createListResponse()));
         when(portActivityService.getAllPortActivitiesWithFilters(eq(1L), any(GetAllPortActivityFilterRequest.class), eq(0), eq(20), any()))
                 .thenReturn(page);
 
@@ -172,5 +173,14 @@ class PortActivityMasterControllerTest {
                 .andExpect(jsonPath("$.message").value("Port activity deleted successfully"));
 
         verify(portActivityService).deletePortActivity(1L, 1L, "testUser", true);
+    }
+
+    private PortActivityListResponse createListResponse() {
+        PortActivityListResponse listResponse = new PortActivityListResponse();
+        listResponse.setPortActivityTypePoid(1L);
+        listResponse.setPortActivityTypeCode("PA1");
+        listResponse.setPortActivityTypeName("Test Activity");
+        listResponse.setActive("Y");
+        return listResponse;
     }
 }

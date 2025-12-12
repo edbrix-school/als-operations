@@ -66,7 +66,7 @@ class PdaPortTariffMasterControllerTest {
         filterRequest.setOperator("AND");
         filterRequest.setFilters(Collections.emptyList());
 
-        Page<PdaPortTariffMasterResponse> page = new PageImpl<>(List.of(createMockResponse()));
+        Page<PdaPortTariffListResponse> page = new PageImpl<>(List.of(createMockListResponse()));
         when(tariffService.getAllTariffsWithFilters(eq(200L), eq(100L), any(GetAllTariffFilterRequest.class), eq(0), eq(20), any()))
                 .thenReturn(page);
 
@@ -198,7 +198,7 @@ class PdaPortTariffMasterControllerTest {
         PdaPortTariffMasterRequest request = new PdaPortTariffMasterRequest();
         request.setDocRef("DOC001");
         request.setRemarks("Test tariff");
-        request.setPorts(List.of("1", "2"));
+        request.setPort("1");
         request.setVesselTypes(List.of("1", "2"));
         request.setPeriodFrom(LocalDate.of(2024, 1, 1));
         request.setPeriodTo(LocalDate.of(2024, 12, 31));
@@ -207,6 +207,13 @@ class PdaPortTariffMasterControllerTest {
 
     private PdaPortTariffMasterResponse createMockResponse() {
         PdaPortTariffMasterResponse response = new PdaPortTariffMasterResponse();
+        response.setTransactionPoid(1L);
+        response.setDocRef("DOC001");
+        return response;
+    }
+
+    private PdaPortTariffListResponse createMockListResponse() {
+        PdaPortTariffListResponse response = new PdaPortTariffListResponse();
         response.setTransactionPoid(1L);
         response.setDocRef("DOC001");
         return response;

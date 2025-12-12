@@ -2,6 +2,7 @@ package com.asg.operations.crew.controller;
 
 import com.asg.operations.crew.dto.ContractCrewRequest;
 import com.asg.operations.crew.dto.ContractCrewResponse;
+import com.asg.operations.crew.dto.ContractCrewListResponse;
 import com.asg.operations.crew.dto.GetAllCrewFilterRequest;
 import com.asg.operations.crew.service.ContractCrewService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,7 +50,7 @@ class ContractCrewControllerTest {
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getCompanyPoid).thenReturn(100L);
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getGroupPoid).thenReturn(200L);
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getUserId).thenReturn("tester");
-        
+
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
         objectMapper = new ObjectMapper();
     }
@@ -64,7 +65,7 @@ class ContractCrewControllerTest {
     @Test
     @DisplayName("POST /v1/contract-crew-masters/search returns paged list")
     void getCrewList_ok() throws Exception {
-        Page<ContractCrewResponse> page = new PageImpl<>(List.of(new ContractCrewResponse()), 
+        Page<ContractCrewListResponse> page = new PageImpl<>(List.of(new ContractCrewListResponse()),
                 org.springframework.data.domain.PageRequest.of(0, 20), 1);
         when(crewService.getAllCrewWithFilters(anyLong(), anyLong(), any(GetAllCrewFilterRequest.class), anyInt(), anyInt(), anyString()))
                 .thenReturn(page);
