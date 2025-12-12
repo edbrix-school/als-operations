@@ -12,6 +12,7 @@ import jakarta.persistence.EntityManager;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
 import com.asg.operations.pdaentryform.util.PdaEntryDocumentRefGenerator;
 import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
+import lombok.RequiredArgsConstructor;
 import oracle.jdbc.internal.OracleTypes;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PdaEntryServiceImpl implements PdaEntryService {
 
     private static final Logger logger = LoggerFactory.getLogger(PdaEntryServiceImpl.class);
@@ -52,31 +54,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     private final JdbcTemplate jdbcTemplate;
     private final EntityManager entityManager;
     private final LovService lovService;
-
-    @Autowired
-    public PdaEntryServiceImpl(
-            PdaEntryHdrRepository entryHdrRepository,
-            PdaEntryDtlRepository entryDtlRepository,
-            PdaEntryVehicleDtlRepository vehicleDtlRepository,
-            PdaEntryTdrDetailRepository tdrDetailRepository,
-            PdaEntryAcknowledgmentDtlRepository acknowledgmentDtlRepository,
-            // SecurityContextUtil securityContextUtil,
-            PdaEntryDocumentRefGenerator docRefGenerator,
-            JdbcTemplate jdbcTemplate,
-            EntityManager entityManager,
-            LovService lovService
-    ) {
-        this.entryHdrRepository = entryHdrRepository;
-        this.entryDtlRepository = entryDtlRepository;
-        this.vehicleDtlRepository = vehicleDtlRepository;
-        this.tdrDetailRepository = tdrDetailRepository;
-        this.acknowledgmentDtlRepository = acknowledgmentDtlRepository;
-        // this.securityContextUtil = securityContextUtil;
-        this.docRefGenerator = docRefGenerator;
-        this.jdbcTemplate = jdbcTemplate;
-        this.entityManager = entityManager;
-        this.lovService = lovService;
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -2649,9 +2626,39 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 .map(this::mapToPdaResponseDto)
                 .collect(Collectors.toList());
 
+        for (PdaEntryResponse dto : dtos) {
+            setLovDetails(dto);
+        }
+
         // Create page
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
         return new org.springframework.data.domain.PageImpl<>(dtos, pageable, totalCount);
+    }
+
+    private void setLovDetails(PdaEntryResponse response) {
+        response.setPrincipalDet(lovService.getLovItemByPoid(response.getPrincipalPoid() != null ? response.getPrincipalPoid().longValue() : null, "PRINCIPAL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setVoyageDet(lovService.getLovItemByPoid(response.getVoyagePoid() != null ? response.getVoyagePoid().longValue() : null, "VESSAL_VOYAGE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setVesselDet(lovService.getLovItemByPoid(response.getVesselPoid() != null ? response.getVesselPoid().longValue() : null, "VESSEL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setVesselTypeDet(lovService.getLovItemByPoid(response.getVesselTypePoid() != null ? response.getVesselTypePoid().longValue() : null, "VESSEL_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setPortDet(lovService.getLovItemByPoid(response.getPortPoid() != null ? response.getPortPoid().longValue() : null, "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setLineDet(lovService.getLovItemByPoid(response.getLinePoid() != null ? response.getLinePoid().longValue() : null, "LINE_MASTER_ALL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setComodityDet(lovService.getLovItemByPoid(response.getComodityPoid() != null ? Long.valueOf(response.getComodityPoid()) : null, "COMODITY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setOperationTypeDet(lovService.getLovItemByCode(response.getOperationType(), "PDA_OPERATION_TYPES", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setUnitDet(lovService.getLovItemByCode(response.getUnit(), "UNIT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setCurrencyDet(lovService.getLovItemByCode(response.getCurrencyCode(), "CURRENCY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setSalesmanDet(lovService.getLovItemByPoid(response.getSalesmanPoid() != null ? response.getSalesmanPoid().longValue() : null, "SALESMAN", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setRefTypeDet(lovService.getLovItemByCode(response.getRefType(), "PDA_REF_TYPE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setSubCategoryDet(lovService.getLovItemByCode(response.getSubCategory(), "PDA_SUB_CATEGORY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setVesselHandledByDet(lovService.getLovItemByPoid(response.getVesselHandledBy() != null ? response.getVesselHandledBy().longValue() : null, "PDA_USER_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setPrintPrincipalDet(lovService.getLovItemByPoid(response.getPrintPrincipal() != null ? response.getPrintPrincipal().longValue() : null, "PDA_PRINCIPAL_PRINT", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setNominatedPartyTypeDet(lovService.getLovItemByCode(response.getNominatedPartyType(), "PDA_NOMINATED_PARTY_TYPE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        response.setBankDet(lovService.getLovItemByPoid(response.getBankPoid() != null ? response.getBankPoid().longValue() : null, "BANK_MASTER_COMPANYWISE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null));
+        if (StringUtils.isNotBlank(response.getNominatedPartyType()) && "CUSTOMER".equalsIgnoreCase(response.getNominatedPartyType())) {
+            response.setNominatedPartyDet(lovService.getLovItemByPoid(Long.valueOf(String.valueOf(response.getNominatedPartyPoid())), "PDA_NOMINATED_PARTY_CUSTOMER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
+        if (StringUtils.isNotBlank(response.getNominatedPartyType()) && "PRINCIPAL".equalsIgnoreCase(response.getNominatedPartyType())) {
+            response.setNominatedPartyDet(lovService.getLovItemByPoid(Long.valueOf(String.valueOf(response.getNominatedPartyPoid())), "PDA_NOMINATED_PARTY_PRINCIPAL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
     }
 
     private String mapPdaSearchFieldToColumn(String searchField) {
@@ -2659,7 +2666,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             return null;
         }
         String normalizedField = searchField.toUpperCase().replace("_", "");
-        
+
         switch (normalizedField) {
             case "DOCREF":
                 return "p.DOC_REF";
@@ -2788,7 +2795,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             return "p.TRANSACTION_DATE";
         }
         String normalizedField = sortField.toUpperCase().replace("_", "");
-        
+
         switch (normalizedField) {
             case "TRANSACTIONPOID":
                 return "p.TRANSACTION_POID";
@@ -2978,7 +2985,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private PdaEntryResponse mapToPdaResponseDto(Object[] row) {
         PdaEntryResponse dto = new PdaEntryResponse();
-        
+
         dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
         dto.setTransactionDate(row[1] != null ? ((java.sql.Timestamp) row[1]).toLocalDateTime().toLocalDate() : null);
         // Skip GROUP_POID and COMPANY_POID as they're not in DTO
@@ -3063,7 +3070,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         dto.setCreatedDate(row[85] != null ? ((java.sql.Timestamp) row[85]).toLocalDateTime() : null);
         dto.setLastModifiedBy(convertToString(row[86]));
         dto.setLastModifiedDate(row[87] != null ? ((java.sql.Timestamp) row[87]).toLocalDateTime() : null);
-        
+
         return dto;
     }
 

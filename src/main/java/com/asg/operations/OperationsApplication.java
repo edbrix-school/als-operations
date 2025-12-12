@@ -8,8 +8,14 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
 @ComponentScan(basePackages = {"com.asg"})
-@EnableJpaRepositories(basePackages = "com.asg")
-@EntityScan(basePackages = "com.asg")
+@EnableJpaRepositories(basePackages = {
+        "com.asg.operations",
+        "com.asg.common.lib.repository"
+})
+@EntityScan(basePackages = {
+        "com.asg.operations",
+        "com.asg.common.lib.entity"
+})
 public class OperationsApplication {
 
     public static void main(String[] args) {

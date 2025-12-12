@@ -165,6 +165,13 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 .map(this::mapToPrincipalMasterDto)
                 .collect(Collectors.toList());
 
+        for (PrincipalMasterDto dto : dtos) {
+            dto.setCountryDet(lovService.getLovItemByPoid(dto.getCountryPoid(), "COUNTRY", dto.getGroupPoid(), dto.getCompanyPoid(), UserContext.getUserPoid()));
+            dto.setGlCodeDet(lovService.getLovItemByPoid(dto.getGlCodePoid(), "GL_CODE", dto.getGroupPoid(), dto.getCompanyPoid(), UserContext.getUserPoid()));
+            dto.setCompanyDet(lovService.getLovItemByPoid(dto.getCompanyPoid(), "COMPANY", dto.getGroupPoid(), dto.getCompanyPoid(), UserContext.getUserPoid()));
+            dto.setTaxSlabDet(lovService.getLovItemByCode(dto.getTaxSlab(), "TAX_SLAB", dto.getGroupPoid(), dto.getCompanyPoid(), UserContext.getUserPoid()));
+        }
+
         // Create page
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
@@ -174,36 +181,65 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         if (searchField == null) return null;
         String normalizedField = searchField.toUpperCase().replace("_", "");
         switch (normalizedField) {
-            case "PRINCIPALPOID": return "p.PRINCIPAL_POID";
-            case "PRINCIPALCODE": return "p.PRINCIPAL_CODE";
-            case "PRINCIPALNAME": return "p.PRINCIPAL_NAME";
-            case "PRINCIPALNAME2": return "p.PRINCIPAL_NAME2";
-            case "GROUPPOID": return "p.GROUP_POID";
-            case "COMPANYPOID": return "p.COMPANY_POID";
-            case "GROUPNAME": return "p.GROUP_NAME";
-            case "COUNTRYPOID": return "p.COUNTRY_POID";
-            case "ADDRESSPOID": return "p.ADDRESS_POID";
-            case "CREDITPERIOD": return "p.CREDIT_PERIOD";
-            case "AGREEDPERIOD": return "p.AGREED_PERIOD";
-            case "CURRENCYCODE": return "p.CURRENCY_CODE";
-            case "CURRENCYRATE": return "p.CURRENCY_RATE";
-            case "BUYINGRATE": return "p.BUYING_RATE";
-            case "SELLINGRATE": return "p.SELLING_RATE";
-            case "GLCODEPOID": return "p.GL_CODE_POID";
-            case "GLACCTNO": return "p.GL_ACCTNO";
-            case "TINNUMBER": return "p.TIN_NUMBER";
-            case "TAXSLAB": return "p.TAX_SLAB";
-            case "EXEMPTIONREASON": return "p.EXEMPTION_REASON";
-            case "REMARKS": return "p.REMARKS";
-            case "SEQNO": return "p.SEQNO";
-            case "ACTIVE": return "p.ACTIVE";
-            case "PRINCIPALCODEOLD": return "p.PRINCIPAL_CODE_OLD";
-            case "DELETED": return "p.DELETED";
-            case "CREATEDBY": return "p.CREATED_BY";
-            case "CREATEDDATE": return "p.CREATED_DATE";
-            case "LASTMODIFIEDBY": return "p.LASTMODIFIED_BY";
-            case "LASTMODIFIEDDATE": return "p.LASTMODIFIED_DATE";
-            default: 
+            case "PRINCIPALPOID":
+                return "p.PRINCIPAL_POID";
+            case "PRINCIPALCODE":
+                return "p.PRINCIPAL_CODE";
+            case "PRINCIPALNAME":
+                return "p.PRINCIPAL_NAME";
+            case "PRINCIPALNAME2":
+                return "p.PRINCIPAL_NAME2";
+            case "GROUPPOID":
+                return "p.GROUP_POID";
+            case "COMPANYPOID":
+                return "p.COMPANY_POID";
+            case "GROUPNAME":
+                return "p.GROUP_NAME";
+            case "COUNTRYPOID":
+                return "p.COUNTRY_POID";
+            case "ADDRESSPOID":
+                return "p.ADDRESS_POID";
+            case "CREDITPERIOD":
+                return "p.CREDIT_PERIOD";
+            case "AGREEDPERIOD":
+                return "p.AGREED_PERIOD";
+            case "CURRENCYCODE":
+                return "p.CURRENCY_CODE";
+            case "CURRENCYRATE":
+                return "p.CURRENCY_RATE";
+            case "BUYINGRATE":
+                return "p.BUYING_RATE";
+            case "SELLINGRATE":
+                return "p.SELLING_RATE";
+            case "GLCODEPOID":
+                return "p.GL_CODE_POID";
+            case "GLACCTNO":
+                return "p.GL_ACCTNO";
+            case "TINNUMBER":
+                return "p.TIN_NUMBER";
+            case "TAXSLAB":
+                return "p.TAX_SLAB";
+            case "EXEMPTIONREASON":
+                return "p.EXEMPTION_REASON";
+            case "REMARKS":
+                return "p.REMARKS";
+            case "SEQNO":
+                return "p.SEQNO";
+            case "ACTIVE":
+                return "p.ACTIVE";
+            case "PRINCIPALCODEOLD":
+                return "p.PRINCIPAL_CODE_OLD";
+            case "DELETED":
+                return "p.DELETED";
+            case "CREATEDBY":
+                return "p.CREATED_BY";
+            case "CREATEDDATE":
+                return "p.CREATED_DATE";
+            case "LASTMODIFIEDBY":
+                return "p.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE":
+                return "p.LASTMODIFIED_DATE";
+            default:
                 log.warn("Unknown search field: {}, defaulting to PRINCIPAL_NAME", searchField);
                 return "p.PRINCIPAL_NAME";
         }
@@ -213,36 +249,65 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         if (sortField == null) return "p.CREATED_DATE";
         String normalizedField = sortField.toUpperCase().replace("_", "");
         switch (normalizedField) {
-            case "PRINCIPALPOID": return "p.PRINCIPAL_POID";
-            case "PRINCIPALCODE": return "p.PRINCIPAL_CODE";
-            case "PRINCIPALNAME": return "p.PRINCIPAL_NAME";
-            case "PRINCIPALNAME2": return "p.PRINCIPAL_NAME2";
-            case "GROUPPOID": return "p.GROUP_POID";
-            case "COMPANYPOID": return "p.COMPANY_POID";
-            case "GROUPNAME": return "p.GROUP_NAME";
-            case "COUNTRYPOID": return "p.COUNTRY_POID";
-            case "ADDRESSPOID": return "p.ADDRESS_POID";
-            case "CREDITPERIOD": return "p.CREDIT_PERIOD";
-            case "AGREEDPERIOD": return "p.AGREED_PERIOD";
-            case "CURRENCYCODE": return "p.CURRENCY_CODE";
-            case "CURRENCYRATE": return "p.CURRENCY_RATE";
-            case "BUYINGRATE": return "p.BUYING_RATE";
-            case "SELLINGRATE": return "p.SELLING_RATE";
-            case "GLCODEPOID": return "p.GL_CODE_POID";
-            case "GLACCTNO": return "p.GL_ACCTNO";
-            case "TINNUMBER": return "p.TIN_NUMBER";
-            case "TAXSLAB": return "p.TAX_SLAB";
-            case "EXEMPTIONREASON": return "p.EXEMPTION_REASON";
-            case "REMARKS": return "p.REMARKS";
-            case "SEQNO": return "p.SEQNO";
-            case "ACTIVE": return "p.ACTIVE";
-            case "PRINCIPALCODEOLD": return "p.PRINCIPAL_CODE_OLD";
-            case "DELETED": return "p.DELETED";
-            case "CREATEDBY": return "p.CREATED_BY";
-            case "CREATEDDATE": return "p.CREATED_DATE";
-            case "LASTMODIFIEDBY": return "p.LASTMODIFIED_BY";
-            case "LASTMODIFIEDDATE": return "p.LASTMODIFIED_DATE";
-            default: 
+            case "PRINCIPALPOID":
+                return "p.PRINCIPAL_POID";
+            case "PRINCIPALCODE":
+                return "p.PRINCIPAL_CODE";
+            case "PRINCIPALNAME":
+                return "p.PRINCIPAL_NAME";
+            case "PRINCIPALNAME2":
+                return "p.PRINCIPAL_NAME2";
+            case "GROUPPOID":
+                return "p.GROUP_POID";
+            case "COMPANYPOID":
+                return "p.COMPANY_POID";
+            case "GROUPNAME":
+                return "p.GROUP_NAME";
+            case "COUNTRYPOID":
+                return "p.COUNTRY_POID";
+            case "ADDRESSPOID":
+                return "p.ADDRESS_POID";
+            case "CREDITPERIOD":
+                return "p.CREDIT_PERIOD";
+            case "AGREEDPERIOD":
+                return "p.AGREED_PERIOD";
+            case "CURRENCYCODE":
+                return "p.CURRENCY_CODE";
+            case "CURRENCYRATE":
+                return "p.CURRENCY_RATE";
+            case "BUYINGRATE":
+                return "p.BUYING_RATE";
+            case "SELLINGRATE":
+                return "p.SELLING_RATE";
+            case "GLCODEPOID":
+                return "p.GL_CODE_POID";
+            case "GLACCTNO":
+                return "p.GL_ACCTNO";
+            case "TINNUMBER":
+                return "p.TIN_NUMBER";
+            case "TAXSLAB":
+                return "p.TAX_SLAB";
+            case "EXEMPTIONREASON":
+                return "p.EXEMPTION_REASON";
+            case "REMARKS":
+                return "p.REMARKS";
+            case "SEQNO":
+                return "p.SEQNO";
+            case "ACTIVE":
+                return "p.ACTIVE";
+            case "PRINCIPALCODEOLD":
+                return "p.PRINCIPAL_CODE_OLD";
+            case "DELETED":
+                return "p.DELETED";
+            case "CREATEDBY":
+                return "p.CREATED_BY";
+            case "CREATEDDATE":
+                return "p.CREATED_DATE";
+            case "LASTMODIFIEDBY":
+                return "p.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE":
+                return "p.LASTMODIFIED_DATE";
+            default:
                 log.warn("Unknown sort field: {}, defaulting to CREATED_DATE", sortField);
                 return "p.CREATED_DATE";
         }

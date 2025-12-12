@@ -50,8 +50,7 @@ public class PortActivityMasterController {
         java.util.Map<String, String> displayFields = new java.util.HashMap<>();
         displayFields.put("PORT_ACTIVITY_TYPE_CODE", "text");
         displayFields.put("PORT_ACTIVITY_TYPE_NAME", "text");
-        displayFields.put("ACTIVE", "text");
-        displayFields.put("PORT_ACTIVITY_TYPE_POID", "text");
+        displayFields.put("PORT_ACTIVITY_TYPE_NAME2", "text");
 
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("content", portActivityPage.getContent());

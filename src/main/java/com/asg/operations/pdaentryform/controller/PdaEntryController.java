@@ -91,13 +91,12 @@ public class PdaEntryController {
 
         // Create displayFields
         Map<String, String> displayFields = new HashMap<>();
-        displayFields.put("DOC_REF", "text");
         displayFields.put("TRANSACTION_DATE", "date");
-        displayFields.put("STATUS", "text");
-        displayFields.put("REF_TYPE", "text");
+        displayFields.put("DOC_REF", "text");
+        displayFields.put("FDA_REF", "text");
         displayFields.put("PRINCIPAL_POID", "text");
         displayFields.put("VESSEL_POID", "text");
-        displayFields.put("PORT_POID", "text");
+        displayFields.put("VOYAGE_POID", "text");
 
         // Create paginated response with new structure
         Map<String, Object> response = new HashMap<>();

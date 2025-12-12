@@ -130,6 +130,23 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 .map(this::mapToPortCallReportResponseDto)
                 .collect(Collectors.toList());
 
+        for (PortCallReportResponseDto dto : dtos) {
+            List<LovItem> vesselTypeLovItems = null;
+            if (dto.getPortCallApplVesselType() != null) {
+                List<String> vesselTypeList = dto.getPortCallApplVesselType();
+                LovResponse lovResponse = lovService.getLovList("VESSEL_TYPE_MASTER", null, null, null, null, null);
+                if (lovResponse != null && lovResponse.getItems() != null) {
+                    Map<String, LovItem> vesselTypeByPoidMap = lovResponse.getItems().stream()
+                            .collect(Collectors.toMap(LovItem::getCode, item -> item));
+                    vesselTypeLovItems = vesselTypeList.stream()
+                            .map(vesselTypeByPoidMap::get)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+                }
+            }
+            dto.setPortCallApplVesselTypeDet(vesselTypeLovItems);
+        }
+
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
     }
@@ -138,17 +155,28 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (searchField == null) return null;
         String normalizedField = searchField.toUpperCase().replace("_", "");
         switch (normalizedField) {
-            case "PORTCALLREPORTPOID": return "h.PORT_CALL_REPORT_POID";
-            case "PORTCALLREPORTID": return "h.PORT_CALL_REPORT_ID";
-            case "PORTCALLREPORTNAME": return "h.PORT_CALL_REPORT_NAME";
-            case "PORTCALLAPPLVESSELTYPE": return "h.PORT_CALL_APPL_VESSEL_TYPE";
-            case "ACTIVE": return "h.ACTIVE";
-            case "SEQNO": return "h.SEQNO";
-            case "REMARKS": return "h.REMARKS";
-            case "CREATEDBY": return "h.CREATED_BY";
-            case "LASTMODIFIEDBY": return "h.LASTMODIFIED_BY";
-            case "DELETED": return "h.DELETED";
-            default: return "h." + searchField.toUpperCase().replace(" ", "_");
+            case "PORTCALLREPORTPOID":
+                return "h.PORT_CALL_REPORT_POID";
+            case "PORTCALLREPORTID":
+                return "h.PORT_CALL_REPORT_ID";
+            case "PORTCALLREPORTNAME":
+                return "h.PORT_CALL_REPORT_NAME";
+            case "PORTCALLAPPLVESSELTYPE":
+                return "h.PORT_CALL_APPL_VESSEL_TYPE";
+            case "ACTIVE":
+                return "h.ACTIVE";
+            case "SEQNO":
+                return "h.SEQNO";
+            case "REMARKS":
+                return "h.REMARKS";
+            case "CREATEDBY":
+                return "h.CREATED_BY";
+            case "LASTMODIFIEDBY":
+                return "h.LASTMODIFIED_BY";
+            case "DELETED":
+                return "h.DELETED";
+            default:
+                return "h." + searchField.toUpperCase().replace(" ", "_");
         }
     }
 
@@ -156,19 +184,32 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (sortField == null) return "h.PORT_CALL_REPORT_ID";
         String normalizedField = sortField.toUpperCase().replace("_", "");
         switch (normalizedField) {
-            case "PORTCALLREPORTPOID": return "h.PORT_CALL_REPORT_POID";
-            case "PORTCALLREPORTID": return "h.PORT_CALL_REPORT_ID";
-            case "PORTCALLREPORTNAME": return "h.PORT_CALL_REPORT_NAME";
-            case "PORTCALLAPPLVESSELTYPE": return "h.PORT_CALL_APPL_VESSEL_TYPE";
-            case "ACTIVE": return "h.ACTIVE";
-            case "SEQNO": return "h.SEQNO";
-            case "REMARKS": return "h.REMARKS";
-            case "CREATEDBY": return "h.CREATED_BY";
-            case "CREATEDDATE": return "h.CREATED_DATE";
-            case "LASTMODIFIEDBY": return "h.LASTMODIFIED_BY";
-            case "LASTMODIFIEDDATE": return "h.LASTMODIFIED_DATE";
-            case "DELETED": return "h.DELETED";
-            default: return "h." + sortField.toUpperCase().replace(" ", "_");
+            case "PORTCALLREPORTPOID":
+                return "h.PORT_CALL_REPORT_POID";
+            case "PORTCALLREPORTID":
+                return "h.PORT_CALL_REPORT_ID";
+            case "PORTCALLREPORTNAME":
+                return "h.PORT_CALL_REPORT_NAME";
+            case "PORTCALLAPPLVESSELTYPE":
+                return "h.PORT_CALL_APPL_VESSEL_TYPE";
+            case "ACTIVE":
+                return "h.ACTIVE";
+            case "SEQNO":
+                return "h.SEQNO";
+            case "REMARKS":
+                return "h.REMARKS";
+            case "CREATEDBY":
+                return "h.CREATED_BY";
+            case "CREATEDDATE":
+                return "h.CREATED_DATE";
+            case "LASTMODIFIEDBY":
+                return "h.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE":
+                return "h.LASTMODIFIED_DATE";
+            case "DELETED":
+                return "h.DELETED";
+            default:
+                return "h." + sortField.toUpperCase().replace(" ", "_");
         }
     }
 
@@ -178,7 +219,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (vesselTypes != null && !vesselTypes.trim().isEmpty()) {
             vesselTypeList = List.of(vesselTypes.split(","));
         }
-        
+
         return PortCallReportResponseDto.builder()
                 .portCallReportPoid(row[0] != null ? ((Number) row[0]).longValue() : null)
                 .portCallReportId(convertToString(row[1]))

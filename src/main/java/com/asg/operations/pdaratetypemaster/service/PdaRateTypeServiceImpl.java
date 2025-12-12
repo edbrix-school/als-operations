@@ -1,6 +1,8 @@
 package com.asg.operations.pdaratetypemaster.service;
 
+import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.Util.FormulaValidator;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaratetypemaster.dto.*;
 import com.asg.operations.pdaratetypemaster.util.PdaRateTypeMapper;
 import com.asg.operations.pdaratetypemaster.repository.PdaRateTypeRepository;
@@ -32,6 +34,7 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     private final PdaRateTypeMapper mapper;
     private final FormulaValidator formulaValidator;
     private final EntityManager entityManager;
+    private final LovService lovService;
 
     @Override
     @Transactional(readOnly = true)
@@ -111,6 +114,10 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
                 .map(this::mapToRateTypeResponseDto)
                 .collect(Collectors.toList());
 
+        for (PdaRateTypeResponseDTO dto : dtos) {
+            dto.setGroupDet(lovService.getLovItemByPoid(dto.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        }
+
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
     }
@@ -119,12 +126,18 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         if (searchField == null) return null;
         String normalizedField = searchField.toUpperCase().replace("_", "");
         switch (normalizedField) {
-            case "RATETYPECODE": return "r.RATE_TYPE_CODE";
-            case "RATETYPENAME": return "r.RATE_TYPE_NAME";
-            case "RATETYPEFORMULA": return "r.RATE_TYPE_FORMULA";
-            case "ACTIVE": return "r.ACTIVE";
-            case "DELETED": return "r.DELETED";
-            default: return "r." + searchField.toUpperCase().replace(" ", "_");
+            case "RATETYPECODE":
+                return "r.RATE_TYPE_CODE";
+            case "RATETYPENAME":
+                return "r.RATE_TYPE_NAME";
+            case "RATETYPEFORMULA":
+                return "r.RATE_TYPE_FORMULA";
+            case "ACTIVE":
+                return "r.ACTIVE";
+            case "DELETED":
+                return "r.DELETED";
+            default:
+                return "r." + searchField.toUpperCase().replace(" ", "_");
         }
     }
 
@@ -132,19 +145,32 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         if (sortField == null) return "r.RATE_TYPE_CODE";
         String normalizedField = sortField.toUpperCase().replace("_", "");
         switch (normalizedField) {
-            case "RATETYPEPOID": return "r.RATE_TYPE_POID";
-            case "RATETYPECODE": return "r.RATE_TYPE_CODE";
-            case "RATETYPENAME": return "r.RATE_TYPE_NAME";
-            case "RATETYPEFORMULA": return "r.RATE_TYPE_FORMULA";
-            case "DEFDAYS": return "r.DEF_DAYS";
-            case "ACTIVE": return "r.ACTIVE";
-            case "DELETED": return "r.DELETED";
-            case "SEQNO": return "r.SEQNO";
-            case "CREATEDBY": return "r.CREATED_BY";
-            case "CREATEDDATE": return "r.CREATED_DATE";
-            case "LASTMODIFIEDBY": return "r.LASTMODIFIED_BY";
-            case "LASTMODIFIEDDATE": return "r.LASTMODIFIED_DATE";
-            default: return "r." + sortField.toUpperCase().replace(" ", "_");
+            case "RATETYPEPOID":
+                return "r.RATE_TYPE_POID";
+            case "RATETYPECODE":
+                return "r.RATE_TYPE_CODE";
+            case "RATETYPENAME":
+                return "r.RATE_TYPE_NAME";
+            case "RATETYPEFORMULA":
+                return "r.RATE_TYPE_FORMULA";
+            case "DEFDAYS":
+                return "r.DEF_DAYS";
+            case "ACTIVE":
+                return "r.ACTIVE";
+            case "DELETED":
+                return "r.DELETED";
+            case "SEQNO":
+                return "r.SEQNO";
+            case "CREATEDBY":
+                return "r.CREATED_BY";
+            case "CREATEDDATE":
+                return "r.CREATED_DATE";
+            case "LASTMODIFIEDBY":
+                return "r.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE":
+                return "r.LASTMODIFIED_DATE";
+            default:
+                return "r." + sortField.toUpperCase().replace(" ", "_");
         }
     }
 
