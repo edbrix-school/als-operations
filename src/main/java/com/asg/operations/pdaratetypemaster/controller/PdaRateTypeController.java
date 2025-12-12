@@ -7,7 +7,6 @@ import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaratetypemaster.dto.*;
 import com.asg.operations.pdaratetypemaster.service.PdaRateTypeService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,15 +24,38 @@ public class PdaRateTypeController {
     private final PdaRateTypeService rateTypeService;
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping
+    @PostMapping("/search")
     public ResponseEntity<?> getRateTypeList(
-            @RequestParam(required = false) String code,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String active,
-            Pageable pageable
+            @RequestBody(required = false) GetAllRateTypeFilterRequest filterRequest,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
     ) {
-        PageResponse<PdaRateTypeResponseDTO> response = rateTypeService.getRateTypeList(
-                code, name, active, UserContext.getGroupPoid(), pageable);
+        if (filterRequest == null) {
+            filterRequest = new GetAllRateTypeFilterRequest();
+            filterRequest.setIsDeleted("N");
+            filterRequest.setOperator("AND");
+            filterRequest.setFilters(new java.util.ArrayList<>());
+        }
+
+        org.springframework.data.domain.Page<PdaRateTypeResponseDTO> rateTypePage = rateTypeService
+                .getAllRateTypesWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
+
+        java.util.Map<String, String> displayFields = new java.util.HashMap<>();
+        displayFields.put("RATE_TYPE_CODE", "text");
+        displayFields.put("RATE_TYPE_NAME", "text");
+        displayFields.put("ACTIVE", "text");
+        displayFields.put("RATE_TYPE_POID", "text");
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("content", rateTypePage.getContent());
+        response.put("pageNumber", rateTypePage.getNumber());
+        response.put("displayFields", displayFields);
+        response.put("pageSize", rateTypePage.getSize());
+        response.put("totalElements", rateTypePage.getTotalElements());
+        response.put("totalPages", rateTypePage.getTotalPages());
+        response.put("last", rateTypePage.isLast());
+
         return ApiResponse.success("Rate type list retrieved successfully", response);
     }
 

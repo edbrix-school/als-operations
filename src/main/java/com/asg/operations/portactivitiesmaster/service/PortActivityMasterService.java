@@ -1,13 +1,12 @@
 package com.asg.operations.portactivitiesmaster.service;
 
-import com.asg.operations.portactivitiesmaster.dto.PageResponse;
+import com.asg.operations.portactivitiesmaster.dto.GetAllPortActivityFilterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
-import org.springframework.data.domain.Pageable;
 
 public interface PortActivityMasterService {
 
-    PageResponse<PortActivityMasterResponse> getPortActivityList(String code, String name, String active, Long groupPoid, Pageable pageable);
+    org.springframework.data.domain.Page<PortActivityMasterResponse> getAllPortActivitiesWithFilters(Long groupPoid, GetAllPortActivityFilterRequest filterRequest, int page, int size, String sort);
 
     PortActivityMasterResponse getPortActivityById(Long portActivityTypePoid, Long groupPoid);
 

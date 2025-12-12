@@ -14,25 +14,6 @@ import java.util.List;
 public interface PdaEntryService {
 
     /**
-     * Get paginated list of PDA entries with filters
-     */
-    PageResponse<PdaEntryResponse> getPdaEntryList(
-            String docRef,
-            String transactionRef,
-            BigDecimal principalPoid,
-            String status,
-            String refType,
-            BigDecimal vesselPoid,
-            BigDecimal portPoid,
-            LocalDate transactionDateFrom,
-            LocalDate transactionDateTo,
-            String deleted,
-            Pageable pageable,
-            Long groupPoid,
-            Long companyPoid
-    );
-
-    /**
      * Get single PDA entry by transaction POID with all related details
      */
     PdaEntryResponse getPdaEntryById(Long transactionPoid, Long groupPoid, Long companyPoid);
@@ -158,8 +139,9 @@ public interface PdaEntryService {
     void clearAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
-     * Save acknowledgment details
+     * Get all PDA entries with filters
      */
+    org.springframework.data.domain.Page<PdaEntryResponse> getAllPdaWithFilters(Long groupPoid, Long companyPoid, GetAllPdaFilterRequest filterRequest, int page, int size, String sort);
 
 }
 

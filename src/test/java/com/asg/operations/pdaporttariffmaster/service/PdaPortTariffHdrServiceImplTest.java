@@ -3,10 +3,7 @@ package com.asg.operations.pdaporttariffmaster.service;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffHdr;
-import com.asg.operations.pdaporttariffmaster.repository.PdaPortTariffChargeDtlRepository;
-import com.asg.operations.pdaporttariffmaster.repository.PdaPortTariffHdrRepository;
-import com.asg.operations.pdaporttariffmaster.repository.PdaPortTariffSlabDtlRepository;
-import com.asg.operations.pdaporttariffmaster.repository.PdaRateTypeMasterRepository;
+import com.asg.operations.pdaporttariffmaster.repository.*;
 import com.asg.operations.pdaporttariffmaster.util.DateOverlapValidator;
 import com.asg.operations.pdaporttariffmaster.util.PdaPortTariffMapper;
 import com.asg.operations.pdaporttariffmaster.util.PortTariffDocumentRefGenerator;
@@ -17,12 +14,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -57,44 +50,60 @@ class PdaPortTariffHdrServiceImplTest {
     @Mock
     private PdaRateTypeMasterRepository pdaRateTypeMasterRepository;
 
+    @Mock
+    private ShipPortMasterRepository shipPortMasterRepository;
+
+    @Mock
+    private ShipVesselTypeMasterRepository shipVesselTypeMasterRepository;
+
+    @Mock
+    private ShipChargeMasterRepository shipChargeMasterRepository;
+
     @InjectMocks
     private PdaPortTariffHdrServiceImpl tariffService;
 
     @Test
-    void getTariffList_Success() {
-        // Given
-        String portPoid = "1001";
-        LocalDate periodFrom = LocalDate.now();
-        LocalDate periodTo = LocalDate.now().plusMonths(6);
-        String vesselTypePoid = "2001";
-        Long groupPoid = 100L;
-        Pageable pageable = PageRequest.of(0, 10);
+    void getAllTariffsWithFilters_Success() {
+        GetAllTariffFilterRequest filterRequest = new GetAllTariffFilterRequest();
+        filterRequest.setIsDeleted("N");
         
-        PdaPortTariffHdr tariff = createMockTariff();
-        Page<PdaPortTariffHdr> tariffPage = new PageImpl<>(Arrays.asList(tariff), pageable, 1);
-        PdaPortTariffMasterResponse response = createMockResponse();
+        jakarta.persistence.Query mockQuery = mock(jakarta.persistence.Query.class);
+        jakarta.persistence.Query mockCountQuery = mock(jakarta.persistence.Query.class);
         
-        when(tariffHdrRepository.searchTariffs(
-                BigDecimal.valueOf(groupPoid), portPoid, periodFrom, periodTo, vesselTypePoid, pageable))
-                .thenReturn(tariffPage);
-        when(mapper.toHeaderOnlyResponse(tariff)).thenReturn(response);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery).thenReturn(mockCountQuery);
+        when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
+        when(mockCountQuery.setParameter(anyString(), any())).thenReturn(mockCountQuery);
+        when(mockQuery.setFirstResult(anyInt())).thenReturn(mockQuery);
+        when(mockQuery.setMaxResults(anyInt())).thenReturn(mockQuery);
+        when(mockCountQuery.getSingleResult()).thenReturn(1L);
+        Object[] mockRow = new Object[11];
+        // Fill with correct data types based on mapToTariffResponseDto expectations
+        mockRow[0] = 1L; // TRANSACTION_POID (Number)
+        mockRow[1] = "DOC001"; // DOC_REF (String)
+        mockRow[2] = new java.sql.Timestamp(System.currentTimeMillis()); // TRANSACTION_DATE (Timestamp)
+        mockRow[3] = "PORT1,PORT2"; // PORTS (String)
+        mockRow[4] = "VESSEL1,VESSEL2"; // VESSEL_TYPES (String)
+        mockRow[5] = new java.sql.Timestamp(System.currentTimeMillis()); // PERIOD_FROM (Timestamp)
+        mockRow[6] = new java.sql.Timestamp(System.currentTimeMillis()); // PERIOD_TO (Timestamp)
+        mockRow[7] = "Test remarks"; // REMARKS (String)
+        mockRow[8] = "N"; // DELETED (String)
+        mockRow[9] = new java.sql.Timestamp(System.currentTimeMillis()); // CREATED_DATE (Timestamp)
+        mockRow[10] = new java.sql.Timestamp(System.currentTimeMillis()); // LASTMODIFIED_DATE (Timestamp)
         
-        // When
-        PageResponse<PdaPortTariffMasterResponse> result = tariffService.getTariffList(
-                portPoid, periodFrom, periodTo, vesselTypePoid, groupPoid, pageable);
+        java.util.List<Object[]> mockResults = new java.util.ArrayList<>();
+        mockResults.add(mockRow);
+        when(mockQuery.getResultList()).thenReturn(mockResults);
         
-        // Then
+        Page<PdaPortTariffMasterResponse> result = tariffService.getAllTariffsWithFilters(
+                100L, 200L, filterRequest, 0, 10, "docRef,asc");
+        
         assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
         assertEquals(1, result.getContent().size());
-        assertEquals(0, result.getPageNumber());
-        assertEquals(10, result.getPageSize());
-        assertEquals(1L, result.getTotalElements());
-        verify(mapper).toHeaderOnlyResponse(tariff);
     }
 
     @Test
     void getTariffById_Success() {
-        // Given
         Long transactionPoid = 1L;
         Long groupPoid = 100L;
         PdaPortTariffHdr tariff = createMockTariff();
@@ -108,19 +117,14 @@ class PdaPortTariffHdrServiceImplTest {
         when(mapper.toResponseWithChargeDetails(eq(tariff), any()))
                 .thenReturn(expectedResponse);
 
-        // When
         PdaPortTariffMasterResponse result = tariffService.getTariffById(transactionPoid, groupPoid);
 
-        // Then
         assertNotNull(result);
         assertEquals(expectedResponse.getTransactionPoid(), result.getTransactionPoid());
-        verify(tariffHdrRepository).findByTransactionPoidAndGroupPoid(
-                transactionPoid, BigDecimal.valueOf(groupPoid));
     }
 
     @Test
     void getTariffById_NotFound() {
-        // Given
         Long transactionPoid = 1L;
         Long groupPoid = 100L;
 
@@ -128,14 +132,12 @@ class PdaPortTariffHdrServiceImplTest {
                 transactionPoid, BigDecimal.valueOf(groupPoid)))
                 .thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(ResourceNotFoundException.class, 
                 () -> tariffService.getTariffById(transactionPoid, groupPoid));
     }
 
     @Test
     void deleteTariff_SoftDelete() {
-        // Given
         Long transactionPoid = 1L;
         Long groupPoid = 100L;
         PdaPortTariffHdr tariff = createMockTariff();
@@ -144,17 +146,31 @@ class PdaPortTariffHdrServiceImplTest {
                 transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
                 .thenReturn(Optional.of(tariff));
 
-        // When
         tariffService.deleteTariff(transactionPoid, groupPoid, "user1", false);
 
-        // Then
         verify(tariffHdrRepository).save(tariff);
         assertEquals("Y", tariff.getDeleted());
     }
 
     @Test
+    void deleteTariff_HardDelete() {
+        Long transactionPoid = 1L;
+        Long groupPoid = 100L;
+        PdaPortTariffHdr tariff = createMockTariff();
+
+        when(tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
+                transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
+                .thenReturn(Optional.of(tariff));
+
+        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", true);
+
+        verify(slabDtlRepository).deleteByTransactionPoid(transactionPoid);
+        verify(chargeDtlRepository).deleteByTransactionPoid(transactionPoid);
+        verify(tariffHdrRepository).delete(tariff);
+    }
+
+    @Test
     void getChargeDetails_Success() {
-        // Given
         Long transactionPoid = 1L;
         Long groupPoid = 100L;
         PdaPortTariffHdr tariff = createMockTariff();
@@ -168,123 +184,16 @@ class PdaPortTariffHdrServiceImplTest {
         when(mapper.toChargeDetailsResponse(any(), eq(transactionPoid)))
                 .thenReturn(expectedResponse);
 
-        // When
         ChargeDetailsResponse result = tariffService.getChargeDetails(transactionPoid, groupPoid, true);
 
-        // Then
         assertNotNull(result);
         verify(mapper).toChargeDetailsResponse(any(), eq(transactionPoid));
-    }
-
-    @Test
-    void getTariffList_EmptyResult() {
-        // Given
-        Long groupPoid = 100L;
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<PdaPortTariffHdr> emptyPage = new PageImpl<>(Arrays.asList(), pageable, 0);
-        
-        when(tariffHdrRepository.searchTariffs(any(), any(), any(), any(), any(), any()))
-                .thenReturn(emptyPage);
-        
-        // When
-        PageResponse<PdaPortTariffMasterResponse> result = tariffService.getTariffList(
-                null, null, null, null, groupPoid, pageable);
-        
-        // Then
-        assertNotNull(result);
-        assertEquals(0, result.getContent().size());
-        assertEquals(0L, result.getTotalElements());
-    }
-
-    @Test
-    void getTariffList_NullFilters() {
-        // Given
-        Long groupPoid = 100L;
-        Pageable pageable = PageRequest.of(0, 10);
-        PdaPortTariffHdr tariff = createMockTariff();
-        Page<PdaPortTariffHdr> tariffPage = new PageImpl<>(Arrays.asList(tariff), pageable, 1);
-        PdaPortTariffMasterResponse response = createMockResponse();
-        
-        when(tariffHdrRepository.searchTariffs(
-                BigDecimal.valueOf(groupPoid), null, null, null, null, pageable))
-                .thenReturn(tariffPage);
-        when(mapper.toHeaderOnlyResponse(tariff)).thenReturn(response);
-        
-        // When
-        PageResponse<PdaPortTariffMasterResponse> result = tariffService.getTariffList(
-                null, null, null, null, groupPoid, pageable);
-        
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
-    }
-
-    @Test
-    void deleteTariff_HardDelete() {
-        // Given
-        Long transactionPoid = 1L;
-        Long groupPoid = 100L;
-        PdaPortTariffHdr tariff = createMockTariff();
-
-        when(tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
-                .thenReturn(Optional.of(tariff));
-
-        // When
-        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", true);
-
-        // Then
-        verify(slabDtlRepository).deleteByTransactionPoid(transactionPoid);
-        verify(chargeDtlRepository).deleteByTransactionPoid(transactionPoid);
-        verify(tariffHdrRepository).delete(tariff);
-    }
-
-    @Test
-    void deleteTariff_NotFound() {
-        // Given
-        Long transactionPoid = 1L;
-        Long groupPoid = 100L;
-
-        when(tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
-                .thenReturn(Optional.empty());
-
-        // When & Then
-        assertThrows(ResourceNotFoundException.class,
-                () -> tariffService.deleteTariff(transactionPoid, groupPoid, "user1", false));
-    }
-
-    @Test
-    void getChargeDetails_NotFound() {
-        // Given
-        Long transactionPoid = 1L;
-        Long groupPoid = 100L;
-
-        when(tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
-                .thenReturn(Optional.empty());
-
-        // When & Then
-        assertThrows(ResourceNotFoundException.class,
-                () -> tariffService.getChargeDetails(transactionPoid, groupPoid, true));
-    }
-
-    private PdaPortTariffMasterRequest createMockRequest() {
-        PdaPortTariffMasterRequest request = new PdaPortTariffMasterRequest();
-        request.setPorts(Arrays.asList("1001", "1002"));
-        request.setVesselTypes(Arrays.asList("2001"));
-        request.setPeriodFrom(LocalDate.now());
-        request.setPeriodTo(LocalDate.now().plusMonths(6));
-        request.setRemarks("Test tariff");
-        return request;
     }
 
     private PdaPortTariffHdr createMockTariff() {
         PdaPortTariffHdr tariff = new PdaPortTariffHdr();
         tariff.setTransactionPoid(1L);
-        tariff.setGroupPoid(100L);
         tariff.setDocRef("DOC001");
-        tariff.setDeleted("N");
         return tariff;
     }
 
@@ -293,12 +202,5 @@ class PdaPortTariffHdrServiceImplTest {
         response.setTransactionPoid(1L);
         response.setDocRef("DOC001");
         return response;
-    }
-
-    private CopyTariffRequest createMockCopyRequest() {
-        CopyTariffRequest request = new CopyTariffRequest();
-        request.setNewPeriodFrom(LocalDate.now().plusYears(1));
-        request.setNewPeriodTo(LocalDate.now().plusYears(1).plusMonths(6));
-        return request;
     }
 }

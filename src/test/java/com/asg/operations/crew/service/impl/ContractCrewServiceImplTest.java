@@ -1,9 +1,6 @@
 package com.asg.operations.crew.service.impl;
 
-import com.asg.operations.crew.dto.ContractCrewDtlResponse;
-import com.asg.operations.crew.dto.ContractCrewResponse;
-import com.asg.operations.crew.dto.CrewDetailsResponse;
-import com.asg.operations.crew.dto.PageResponse;
+import com.asg.operations.crew.dto.*;
 import com.asg.operations.crew.entity.ContractCrew;
 import com.asg.operations.crew.entity.ContractCrewDtl;
 import com.asg.operations.crew.entity.ContractCrewDtlId;
@@ -12,6 +9,8 @@ import com.asg.operations.crew.repository.ContractCrewRepository;
 import com.asg.operations.crew.util.CrewCodeGenerator;
 import com.asg.operations.crew.util.EntityMapper;
 import com.asg.operations.exceptions.ResourceNotFoundException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +44,9 @@ class ContractCrewServiceImplTest {
     @Mock
     private CrewCodeGenerator codeGenerator;
 
+    @Mock
+    private EntityManager entityManager;
+
     @InjectMocks
     private ContractCrewServiceImpl service;
 
@@ -70,14 +72,47 @@ class ContractCrewServiceImplTest {
     }
 
     @Test
-    @DisplayName("getCrewList maps page content")
-    void getCrewList_ok() {
-        ContractCrew crew = new ContractCrew();
-        Page<ContractCrew> page = new PageImpl<>(List.of(crew), PageRequest.of(0, 20), 1);
-        when(crewRepository.searchCrews(any(), any(), any(), any(), anyLong(), any())).thenReturn(page);
-        when(entityMapper.toContractCrewRes(crew)).thenReturn(new ContractCrewResponse());
+    @DisplayName("getAllCrewWithFilters returns page content")
+    void getAllCrewWithFilters_ok() {
+        GetAllCrewFilterRequest filterRequest = new GetAllCrewFilterRequest();
+        filterRequest.setIsDeleted("N");
+        
+        Query mockQuery = org.mockito.Mockito.mock(Query.class);
+        Query mockCountQuery = org.mockito.Mockito.mock(Query.class);
+        
+        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery).thenReturn(mockCountQuery);
+        when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
+        when(mockCountQuery.setParameter(anyString(), any())).thenReturn(mockCountQuery);
+        when(mockQuery.setFirstResult(anyInt())).thenReturn(mockQuery);
+        when(mockQuery.setMaxResults(anyInt())).thenReturn(mockQuery);
+        when(mockCountQuery.getSingleResult()).thenReturn(1L);
+        Object[] mockRow = new Object[20];
+        // Fill with correct data types based on mapToCrewResponseDto expectations
+        mockRow[0] = 1L; // CREW_POID (Number)
+        mockRow[1] = "John Doe"; // CREW_NAME (String)
+        mockRow[2] = 2L; // CREW_NATION_POID (Number)
+        mockRow[3] = "CDC123"; // CREW_CDC_NUMBER (String)
+        mockRow[4] = "Company"; // CREW_COMPANY (String)
+        mockRow[5] = "Seaman"; // CREW_DESIGNATION (String)
+        mockRow[6] = "P123456"; // CREW_PASSPORT_NUMBER (String)
+        mockRow[7] = new java.sql.Timestamp(System.currentTimeMillis()); // CREW_PASSPORT_ISS_DATE (Timestamp)
+        mockRow[8] = new java.sql.Timestamp(System.currentTimeMillis()); // CREW_PASSPORT_EXP_DATE (Timestamp)
+        mockRow[9] = "Place"; // CREW_PASSPORT_ISS_PLACE (String)
+        mockRow[10] = "Remarks"; // REMARKS (String)
+        mockRow[11] = 100L; // GROUP_POID (Number)
+        mockRow[12] = 200L; // COMPANY_POID (Number)
+        mockRow[13] = "Y"; // ACTIVE (String)
+        mockRow[14] = 1L; // SEQNO (Number)
+        mockRow[15] = "N"; // DELETED (String)
+        mockRow[16] = "user1"; // CREATED_BY (String)
+        mockRow[17] = new java.sql.Timestamp(System.currentTimeMillis()); // CREATED_DATE (Timestamp)
+        mockRow[18] = "user1"; // LASTMODIFIED_BY (String)
+        mockRow[19] = new java.sql.Timestamp(System.currentTimeMillis()); // LASTMODIFIED_DATE (Timestamp)
+        java.util.List<Object[]> mockResults = new java.util.ArrayList<>();
+        mockResults.add(mockRow);
+        when(mockQuery.getResultList()).thenReturn(mockResults);
 
-        PageResponse<ContractCrewResponse> res = service.getCrewList(null, null, null, null, PageRequest.of(0, 20), 1L);
+        Page<ContractCrewResponse> res = service.getAllCrewWithFilters(1L, 1L, filterRequest, 0, 20, "crewName,asc");
 
         assertEquals(1, res.getTotalElements());
         assertEquals(1, res.getContent().size());
@@ -102,6 +137,7 @@ class ContractCrewServiceImplTest {
     @DisplayName("deleteCrewDetail throws when crew not found")
     void deleteCrewDetail_crewNotFound() {
         when(crewRepository.findByCrewPoidAndCompanyPoid(2L, 1L)).thenReturn(Optional.empty());
+        
         assertThrows(ResourceNotFoundException.class, () -> service.deleteCrewDetail(1L, 2L, 3L));
     }
 

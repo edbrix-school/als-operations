@@ -3,19 +3,22 @@ package com.asg.operations.portactivitiesmaster.service;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.exceptions.ResourceNotFoundException;
-import com.asg.operations.portactivitiesmaster.dto.PageResponse;
-import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
-import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
+import com.asg.operations.portactivitiesmaster.dto.*;
 import com.asg.operations.portactivitiesmaster.entity.PortActivityMaster;
 import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,22 +27,163 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
 
     private final PortActivityMasterRepository repository;
     private final LovService lovService;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<PortActivityMasterResponse> getPortActivityList(String code, String name, String active, Long groupPoid, Pageable pageable) {
+    public Page<PortActivityMasterResponse> getAllPortActivitiesWithFilters(
+            Long groupPoid,
+            GetAllPortActivityFilterRequest filterRequest,
+            int page, int size, String sort) {
 
-        Page<PortActivityMaster> page = repository.findByGroupPoidAndFilters(groupPoid, code, name, active, pageable);
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT p.PORT_ACTIVITY_TYPE_POID, p.GROUP_POID, p.PORT_ACTIVITY_TYPE_CODE, ");
+        sqlBuilder.append("p.PORT_ACTIVITY_TYPE_NAME, p.PORT_ACTIVITY_TYPE_NAME2, p.ACTIVE, ");
+        sqlBuilder.append("p.SEQNO, p.CREATED_BY, p.CREATED_DATE, p.LASTMODIFIED_BY, ");
+        sqlBuilder.append("p.LASTMODIFIED_DATE, p.DELETED, p.REMARKS ");
+        sqlBuilder.append("FROM OPS_PORT_ACTIVITY_MASTER p ");
+        sqlBuilder.append("WHERE p.GROUP_POID = :groupPoid ");
 
-        return PageResponse.<PortActivityMasterResponse>builder()
-                .content(page.getContent().stream().map(this::mapToResponse).toList())
-                .page(page.getNumber())
-                .size(page.getSize())
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .first(page.isFirst())
-                .last(page.isLast())
+        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND (p.DELETED IS NULL OR p.DELETED != 'Y') ");
+        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND p.DELETED = 'Y' ");
+        }
+
+        List<String> filterConditions = new java.util.ArrayList<>();
+        List<GetAllPortActivityFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
+        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
+            for (GetAllPortActivityFilterRequest.FilterItem filter : filterRequest.getFilters()) {
+                if (org.springframework.util.StringUtils.hasText(filter.getSearchField()) && org.springframework.util.StringUtils.hasText(filter.getSearchValue())) {
+                    validFilters.add(filter);
+                    String columnName = mapPortActivitySearchFieldToColumn(filter.getSearchField());
+                    int paramIndex = validFilters.size() - 1;
+                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
+                }
+            }
+        }
+
+        if (!filterConditions.isEmpty()) {
+            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
+            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
+        }
+
+        String orderBy = "ORDER BY p.PORT_ACTIVITY_TYPE_CODE ASC";
+        if (org.springframework.util.StringUtils.hasText(sort)) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                String sortField = mapPortActivitySortFieldToColumn(sortParts[0].trim());
+                String sortDirection = sortParts[1].trim().toUpperCase();
+                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
+                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
+                }
+            }
+        }
+        sqlBuilder.append(orderBy);
+
+        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
+        jakarta.persistence.Query query = entityManager.createNativeQuery(sqlBuilder.toString());
+        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
+
+        query.setParameter("groupPoid", groupPoid);
+        countQuery.setParameter("groupPoid", groupPoid);
+
+        if (!validFilters.isEmpty()) {
+            for (int i = 0; i < validFilters.size(); i++) {
+                GetAllPortActivityFilterRequest.FilterItem filter = validFilters.get(i);
+                String paramValue = "%" + filter.getSearchValue() + "%";
+                query.setParameter("filterValue" + i, paramValue);
+                countQuery.setParameter("filterValue" + i, paramValue);
+            }
+        }
+
+        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
+        int offset = page * size;
+        query.setFirstResult(offset);
+        query.setMaxResults(size);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        List<PortActivityMasterResponse> dtos = results.stream()
+                .map(this::mapToPortActivityResponseDto)
+                .collect(Collectors.toList());
+
+        Pageable pageable = PageRequest.of(page, size);
+        return new PageImpl<>(dtos, pageable, totalCount);
+    }
+
+    private String mapPortActivitySearchFieldToColumn(String searchField) {
+        if (searchField == null) return null;
+        String normalizedField = searchField.toUpperCase().replace("_", "");
+        switch (normalizedField) {
+            case "PORTACTIVITYTYPEPOID":
+                return "p.PORT_ACTIVITY_TYPE_POID";
+            case "GROUPPOID":
+                return "p.GROUP_POID";
+            case "PORTACTIVITYTYPECODE":
+                return "p.PORT_ACTIVITY_TYPE_CODE";
+            case "PORTACTIVITYTYPENAME":
+                return "p.PORT_ACTIVITY_TYPE_NAME";
+            case "PORTACTIVITYTYPENAME2":
+                return "p.PORT_ACTIVITY_TYPE_NAME2";
+            case "ACTIVE":
+                return "p.ACTIVE";
+            case "SEQNO":
+                return "p.SEQNO";
+            case "CREATEDBY":
+                return "p.CREATED_BY";
+            case "LASTMODIFIEDBY":
+                return "p.LASTMODIFIED_BY";
+            case "DELETED":
+                return "p.DELETED";
+            case "REMARKS":
+                return "p.REMARKS";
+            default:
+                return "p." + searchField.toUpperCase().replace(" ", "_");
+        }
+    }
+
+    private String mapPortActivitySortFieldToColumn(String sortField) {
+        if (sortField == null) return "p.PORT_ACTIVITY_TYPE_CODE";
+        String normalizedField = sortField.toUpperCase().replace("_", "");
+        switch (normalizedField) {
+            case "PORTACTIVITYTYPEPOID": return "p.PORT_ACTIVITY_TYPE_POID";
+            case "GROUPPOID": return "p.GROUP_POID";
+            case "PORTACTIVITYTYPECODE": return "p.PORT_ACTIVITY_TYPE_CODE";
+            case "PORTACTIVITYTYPENAME": return "p.PORT_ACTIVITY_TYPE_NAME";
+            case "PORTACTIVITYTYPENAME2": return "p.PORT_ACTIVITY_TYPE_NAME2";
+            case "ACTIVE": return "p.ACTIVE";
+            case "SEQNO": return "p.SEQNO";
+            case "CREATEDBY": return "p.CREATED_BY";
+            case "CREATEDDATE": return "p.CREATED_DATE";
+            case "LASTMODIFIEDBY": return "p.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE": return "p.LASTMODIFIED_DATE";
+            case "DELETED": return "p.DELETED";
+            case "REMARKS": return "p.REMARKS";
+            default: return "p." + sortField.toUpperCase().replace(" ", "_");
+        }
+    }
+
+    private PortActivityMasterResponse mapToPortActivityResponseDto(Object[] row) {
+        return PortActivityMasterResponse.builder()
+                .portActivityTypePoid(row[0] != null ? ((Number) row[0]).longValue() : null)
+                .groupPoid(row[1] != null ? ((Number) row[1]).longValue() : null)
+                .portActivityTypeCode(convertToString(row[2]))
+                .portActivityTypeName(convertToString(row[3]))
+                .portActivityTypeName2(convertToString(row[4]))
+                .active(convertToString(row[5]))
+                .seqno(row[6] != null ? ((Number) row[6]).longValue() : null)
+                .createdBy(convertToString(row[7]))
+                .createdDate(row[8] != null ? ((java.sql.Timestamp) row[8]).toLocalDateTime() : null)
+                .lastModifiedBy(convertToString(row[9]))
+                .lastModifiedDate(row[10] != null ? ((java.sql.Timestamp) row[10]).toLocalDateTime() : null)
+                .deleted(convertToString(row[11]))
+                .remarks(convertToString(row[12]))
                 .build();
+    }
+
+    private String convertToString(Object value) {
+        return value != null ? value.toString() : null;
     }
 
     @Override
