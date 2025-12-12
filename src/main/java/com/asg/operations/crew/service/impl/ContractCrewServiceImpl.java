@@ -12,15 +12,20 @@ import com.asg.operations.crew.util.ValidationUtil;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
 import com.asg.operations.crew.service.ContractCrewService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,59 +41,281 @@ public class ContractCrewServiceImpl implements ContractCrewService {
     private final ContractCrewDtlRepository crewDtlRepository;
     private final EntityMapper entityMapper;
     private final CrewCodeGenerator codeGenerator;
+    private final EntityManager entityManager;
 
     @Autowired
     public ContractCrewServiceImpl(
             ContractCrewRepository crewRepository,
             ContractCrewDtlRepository crewDtlRepository,
             EntityMapper entityMapper,
-            CrewCodeGenerator codeGenerator
+            CrewCodeGenerator codeGenerator,
+            EntityManager entityManager
     ) {
         this.crewRepository = crewRepository;
         this.crewDtlRepository = crewDtlRepository;
         this.entityMapper = entityMapper;
         this.codeGenerator = codeGenerator;
+        this.entityManager = entityManager;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ContractCrewResponse> getCrewList(
-            String crewName,
-            Long nationalityPoid,
-            String company,
-            String active,
-            Pageable pageable,
-            Long companyPoid
-    ) {
-        // Normalize search strings (uppercase for case-insensitive search)
-        //String normalizedCrewCode = crewCode != null ? crewCode.toUpperCase() : null;
-        String normalizedCrewName = crewName != null ? crewName.toUpperCase() : null;
-        String normalizedCompany = company != null ? company.toUpperCase() : null;
+    public Page<ContractCrewResponse> getAllCrewWithFilters(Long groupPoid, Long companyPoid, GetAllCrewFilterRequest filterRequest, int page, int size, String sort) {
 
-        BigDecimal nationalityBigDecimal = nationalityPoid != null ? BigDecimal.valueOf(nationalityPoid) : null;
+        // Build dynamic SQL query
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT c.CREW_POID, c.CREW_NAME, c.CREW_NATION_POID, c.CREW_CDC_NUMBER, ");
+        sqlBuilder.append("c.CREW_COMPANY, c.CREW_DESIGNATION, c.CREW_PASSPORT_NUMBER, ");
+        sqlBuilder.append("c.CREW_PASSPORT_ISS_DATE, c.CREW_PASSPORT_EXP_DATE, c.CREW_PASSPORT_ISS_PLACE, ");
+        sqlBuilder.append("c.REMARKS, c.GROUP_POID, c.COMPANY_POID, c.ACTIVE, c.SEQNO, c.DELETED, ");
+        sqlBuilder.append("c.CREATED_BY, c.CREATED_DATE, c.LASTMODIFIED_BY, c.LASTMODIFIED_DATE ");
+        sqlBuilder.append("FROM CONTRACT_CREW_MASTER c ");
+        sqlBuilder.append("WHERE c.GROUP_POID = :groupPoid AND c.COMPANY_POID = :companyPoid ");
 
+        // Apply isDeleted filter (using ACTIVE field)
+        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND c.ACTIVE = 'Y' ");
+        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND c.ACTIVE = 'N' ");
+        }
 
-        // Execute search query
-        Page<ContractCrew> crewPage = crewRepository.searchCrews(
-                normalizedCrewName,
-                nationalityBigDecimal,
-                normalizedCompany,
-                active,
-                companyPoid,
-                pageable
-        );
+        // Apply date range filters
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
+            sqlBuilder.append("AND TRUNC(c.CREATED_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
+        }
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
+            sqlBuilder.append("AND TRUNC(c.CREATED_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
+        }
 
-        // Map entities to responses with nationality lookup
-        List<ContractCrewResponse> responses = crewPage.getContent().stream()
-                .map(entityMapper::toContractCrewRes)
+        // Build filter conditions with sequential parameter indexing
+        List<String> filterConditions = new java.util.ArrayList<>();
+        List<GetAllCrewFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
+        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
+            for (GetAllCrewFilterRequest.FilterItem filter : filterRequest.getFilters()) {
+                if (org.springframework.util.StringUtils.hasText(filter.getSearchField()) && org.springframework.util.StringUtils.hasText(filter.getSearchValue())) {
+                    validFilters.add(filter);
+                    String columnName = mapCrewSearchFieldToColumn(filter.getSearchField());
+                    int paramIndex = validFilters.size() - 1;
+                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
+                }
+            }
+        }
+
+        // Add filter conditions with operator
+        if (!filterConditions.isEmpty()) {
+            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
+            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
+        }
+
+        // Apply sorting
+        String orderBy = "ORDER BY c.CREATED_DATE DESC";
+        if (org.springframework.util.StringUtils.hasText(sort)) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                String sortField = mapSortFieldToColumn(sortParts[0].trim());
+                String sortDirection = sortParts[1].trim().toUpperCase();
+                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
+                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
+                }
+            }
+        }
+        sqlBuilder.append(orderBy);
+
+        // Create count query
+        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
+
+        // Create query
+        Query query = entityManager.createNativeQuery(sqlBuilder.toString());
+        Query countQuery = entityManager.createNativeQuery(countSql);
+
+        // Set parameters
+        query.setParameter("groupPoid", groupPoid);
+        query.setParameter("companyPoid", companyPoid);
+        countQuery.setParameter("groupPoid", groupPoid);
+        countQuery.setParameter("companyPoid", companyPoid);
+
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
+            query.setParameter("fromDate", filterRequest.getFrom());
+            countQuery.setParameter("fromDate", filterRequest.getFrom());
+        }
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
+            query.setParameter("toDate", filterRequest.getTo());
+            countQuery.setParameter("toDate", filterRequest.getTo());
+        }
+
+        // Set filter parameters using sequential indexing
+        if (!validFilters.isEmpty()) {
+            for (int i = 0; i < validFilters.size(); i++) {
+                GetAllCrewFilterRequest.FilterItem filter = validFilters.get(i);
+                String paramValue = "%" + filter.getSearchValue() + "%";
+                query.setParameter("filterValue" + i, paramValue);
+                countQuery.setParameter("filterValue" + i, paramValue);
+            }
+        }
+
+        // Get total count
+        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
+
+        // Apply pagination
+        int offset = page * size;
+        query.setFirstResult(offset);
+        query.setMaxResults(size);
+
+        // Execute query and map results
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        List<ContractCrewResponse> dtos = results.stream()
+                .map(this::mapToCrewResponseDto)
                 .collect(Collectors.toList());
 
-        return new PageResponse<>(
-                responses,
-                crewPage.getNumber(),
-                crewPage.getSize(),
-                crewPage.getTotalElements()
-        );
+        // Create page
+        Pageable pageable = PageRequest.of(page, size);
+        return new PageImpl<>(dtos, pageable, totalCount);
+    }
+
+    private String mapCrewSearchFieldToColumn(String searchField) {
+        if (searchField == null) {
+            return null;
+        }
+        // Normalize the field name by removing underscores and converting to uppercase
+        String normalizedField = searchField.toUpperCase().replace("_", "");
+
+        switch (normalizedField) {
+            case "CREWNAME":
+            case "NAME":
+                return "c.CREW_NAME";
+            case "NATIONALITY":
+            case "CREWNATIONPOID":
+            case "NATIONALITYPOID":
+                return "c.CREW_NATION_POID";
+            case "CDCNUMBER":
+            case "CREW_CDC_NUMBER":
+            case "CDC":
+                return "c.CREW_CDC_NUMBER";
+            case "COMPANY":
+            case "CREWCOMPANY":
+                return "c.CREW_COMPANY";
+            case "DESIGNATION":
+            case "CREWDESIGNATION":
+                return "c.CREW_DESIGNATION";
+            case "CREWPASSPORTNUMBER":
+            case "PASSPORTNUMBER":
+            case "PASSPORT":
+                return "c.CREW_PASSPORT_NUMBER";
+            case "CREWPASSPORTISSDATE":
+            case "PASSPORTISSUEPLACE":
+            case "ISSUEPLACE":
+                return "c.CREW_PASSPORT_ISS_PLACE";
+            case "REMARKS":
+                return "c.REMARKS";
+            case "ACTIVE":
+            case "STATUS":
+                return "c.ACTIVE";
+            case "DELETED":
+                return "c.DELETED";
+            case "CREATEDBY":
+                return "c.CREATED_BY";
+            case "LASTMODIFIEDBY":
+            case "MODIFIEDBY":
+                return "c.LASTMODIFIED_BY";
+            default:
+                // Fallback: assume it's a direct column name from c table
+                String columnName = searchField.toUpperCase().replace(" ", "_");
+                return "c." + columnName;
+        }
+    }
+
+    private ContractCrewResponse mapToCrewResponseDto(Object[] row) {
+        ContractCrewResponse dto = new ContractCrewResponse();
+
+        dto.setCrewPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
+        dto.setCrewName(convertToString(row[1]));
+        dto.setCrewNationalityPoid(row[2] != null ? ((Number) row[2]).longValue() : null);
+        dto.setCrewCdcNumber(convertToString(row[3]));
+        dto.setCrewCompany(convertToString(row[4]));
+        dto.setCrewDesignation(convertToString(row[5]));
+        dto.setCrewPassportNumber(convertToString(row[6]));
+        dto.setCrewPassportIssueDate(row[7] != null ? ((Timestamp) row[7]).toLocalDateTime().toLocalDate() : null);
+        dto.setCrewPassportExpiryDate(row[8] != null ? ((Timestamp) row[8]).toLocalDateTime().toLocalDate() : null);
+        dto.setCrewPassportIssuePlace(convertToString(row[9]));
+        dto.setRemarks(convertToString(row[10]));
+        dto.setGroupPoid(row[11] != null ? ((Number) row[11]).longValue() : null);
+        dto.setCompanyPoid(row[12] != null ? ((Number) row[12]).longValue() : null);
+        dto.setActive(convertToString(row[13]));
+        dto.setCreatedBy(convertToString(row[16]));
+        dto.setCreatedDate(row[17] != null ? ((Timestamp) row[17]).toLocalDateTime() : null);
+        dto.setLastModifiedBy(convertToString(row[18]));
+        dto.setLastModifiedDate(row[19] != null ? ((Timestamp) row[19]).toLocalDateTime() : null);
+
+        return dto;
+    }
+
+    private String convertToString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof String) {
+            return (String) value;
+        }
+        if (value instanceof Character) {
+            return String.valueOf((Character) value);
+        }
+        return value.toString();
+    }
+
+    private String mapSortFieldToColumn(String sortField) {
+        if (sortField == null) {
+            return "c.CREATED_DATE";
+        }
+        String normalizedField = sortField.toUpperCase().replace("_", "");
+
+        switch (normalizedField) {
+            case "CREWPOID":
+                return "c.CREW_POID";
+            case "CREWNAME":
+            case "NAME":
+                return "c.CREW_NAME";
+            case "NATIONALITY":
+            case "CREWNATIONPOID":
+                return "c.CREW_NATION_POID";
+            case "CDCNUMBER":
+            case "CDC":
+                return "c.CREW_CDC_NUMBER";
+            case "COMPANY":
+            case "CREWCOMPANY":
+                return "c.CREW_COMPANY";
+            case "DESIGNATION":
+            case "CREWDESIGNATION":
+                return "c.CREW_DESIGNATION";
+            case "PASSPORTNUMBER":
+            case "CREWPASSPORTNUMBER":
+                return "c.CREW_PASSPORT_NUMBER";
+            case "PASSPORTISSUEDATE":
+            case "CREWPASSPORTISSDATE":
+                return "c.CREW_PASSPORT_ISS_DATE";
+            case "PASSPORTEXPIRYDATE":
+            case "CREWPASSPORTEXPDATE":
+                return "c.CREW_PASSPORT_EXP_DATE";
+            case "PASSPORTISSUEPLACE":
+            case "CREWPASSPORTISSPLACE":
+                return "c.CREW_PASSPORT_ISS_PLACE";
+            case "REMARKS":
+                return "c.REMARKS";
+            case "ACTIVE":
+            case "STATUS":
+                return "c.ACTIVE";
+            case "CREATEDDATE":
+                return "c.CREATED_DATE";
+            case "LASTMODIFIEDDATE":
+                return "c.LASTMODIFIED_DATE";
+            case "CREATEDBY":
+                return "c.CREATED_BY";
+            case "LASTMODIFIEDBY":
+                return "c.LASTMODIFIED_BY";
+            default:
+                String columnName = sortField.toUpperCase().replace(" ", "_");
+                return "c." + columnName;
+        }
     }
 
     @Override

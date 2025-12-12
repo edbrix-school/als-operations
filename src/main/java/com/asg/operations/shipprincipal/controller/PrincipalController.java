@@ -15,10 +15,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,32 +27,43 @@ public class PrincipalController {
     private final PrincipalMasterService principalMasterService;
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/list")
+    @PostMapping("/search")
     @Operation(
             summary = "Get principal list",
             description = "Retrieve paginated list of principals with optional search and sorting",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> getPrincipalList(
-            @Parameter(description = "Page number (0-based)") @RequestParam(required = false, defaultValue = "0") int page,
-            @Parameter(description = "Page size") @RequestParam(required = false, defaultValue = "20") int size,
-            @Parameter(description = "Sort field and direction (e.g., 'principalCode,asc')") @RequestParam(required = false) String sort,
-            @Parameter(description = "Search term for filtering") @RequestParam(required = false) String search) {
-
-        Sort sortObj = Sort.by(Sort.Direction.ASC, "principalCode");
-        if (sort != null && !sort.isEmpty()) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                Sort.Direction direction = sortParts[1].equalsIgnoreCase("desc")
-                        ? Sort.Direction.DESC
-                        : Sort.Direction.ASC;
-                sortObj = Sort.by(direction, sortParts[0]);
-            }
+            @RequestBody(required = false) GetAllPrincipalFilterRequest filterRequest,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        if (filterRequest == null) {
+            filterRequest = new GetAllPrincipalFilterRequest();
+            filterRequest.setIsDeleted("N");
+            filterRequest.setOperator("AND");
+            filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        Pageable pageable = PageRequest.of(page, size, sortObj);
-        Page<PrincipalMasterListDto> result = principalMasterService.getPrincipalList(search, pageable);
-        return ApiResponse.success("Principal list retrieved successfully", result);
+        org.springframework.data.domain.Page<PrincipalMasterDto> principalPage = principalMasterService
+                .getAllPrincipalsWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
+
+        java.util.Map<String, String> displayFields = new java.util.HashMap<>();
+        displayFields.put("PRINCIPAL_CODE", "text");
+        displayFields.put("PRINCIPAL_NAME", "text");
+        displayFields.put("ACTIVE", "text");
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("content", principalPage.getContent());
+        response.put("pageNumber", principalPage.getNumber());
+        response.put("displayFields", displayFields);
+        response.put("pageSize", principalPage.getSize());
+        response.put("totalElements", principalPage.getTotalElements());
+        response.put("totalPages", principalPage.getTotalPages());
+        response.put("last", principalPage.isLast());
+
+        return ApiResponse.success("Principals retrieved successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)

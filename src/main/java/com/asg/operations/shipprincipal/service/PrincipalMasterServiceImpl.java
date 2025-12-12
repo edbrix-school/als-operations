@@ -23,7 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,16 +49,252 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
     private final PrincipalMasterMapper mapper;
     private final LovService lovService;
     private final VesselTypeRepository vesselTypeRepository;
+    private final EntityManager entityManager;
 
 
     @Override
-    @Transactional
-    public Page<PrincipalMasterListDto> getPrincipalList(String search, Pageable pageable) {
-        Page<ShipPrincipalMaster> page = principalRepository.findAllNonDeletedWithSearch(search, pageable);
-        List<PrincipalMasterListDto> dtoList = page.getContent().stream()
-                .map(mapper::toListDto)
+    @Transactional(readOnly = true)
+    public Page<PrincipalMasterDto> getAllPrincipalsWithFilters(
+            Long groupPoid,
+            GetAllPrincipalFilterRequest filterRequest,
+            int page, int size, String sort) {
+
+        // Build dynamic SQL query
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT p.PRINCIPAL_POID, p.PRINCIPAL_CODE, p.PRINCIPAL_NAME, p.PRINCIPAL_NAME2, ");
+        sqlBuilder.append("p.GROUP_POID, p.COMPANY_POID, p.GROUP_NAME, p.COUNTRY_POID, p.ADDRESS_POID, ");
+        sqlBuilder.append("p.CREDIT_PERIOD, p.AGREED_PERIOD, p.CURRENCY_CODE, p.CURRENCY_RATE, ");
+        sqlBuilder.append("p.BUYING_RATE, p.SELLING_RATE, p.GL_CODE_POID, p.GL_ACCTNO, p.TIN_NUMBER, ");
+        sqlBuilder.append("p.TAX_SLAB, p.EXEMPTION_REASON, p.REMARKS, p.SEQNO, p.ACTIVE, ");
+        sqlBuilder.append("p.PRINCIPAL_CODE_OLD, p.DELETED, p.CREATED_BY, p.CREATED_DATE, ");
+        sqlBuilder.append("p.LASTMODIFIED_BY, p.LASTMODIFIED_DATE ");
+        sqlBuilder.append("FROM SHIP_PRINCIPAL_MASTER p ");
+        sqlBuilder.append("WHERE p.GROUP_POID = :groupPoid ");
+
+        // Apply isDeleted filter (using ACTIVE field)
+        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND p.ACTIVE = 'Y' ");
+        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND p.ACTIVE = 'N' ");
+        }
+
+        // Apply date range filters
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
+            sqlBuilder.append("AND TRUNC(p.CREATED_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
+        }
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
+            sqlBuilder.append("AND TRUNC(p.CREATED_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
+        }
+
+        // Build filter conditions with sequential parameter indexing
+        List<String> filterConditions = new java.util.ArrayList<>();
+        List<GetAllPrincipalFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
+        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
+            for (GetAllPrincipalFilterRequest.FilterItem filter : filterRequest.getFilters()) {
+                if (org.springframework.util.StringUtils.hasText(filter.getSearchField()) && org.springframework.util.StringUtils.hasText(filter.getSearchValue())) {
+                    validFilters.add(filter);
+                    String columnName = mapPrincipalSearchFieldToColumn(filter.getSearchField());
+                    int paramIndex = validFilters.size() - 1;
+                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
+                }
+            }
+        }
+
+        // Add filter conditions with operator
+        if (!filterConditions.isEmpty()) {
+            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
+            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
+        }
+
+        // Apply sorting
+        String orderBy = "ORDER BY p.CREATED_DATE DESC";
+        if (org.springframework.util.StringUtils.hasText(sort)) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                String sortField = mapPrincipalSortFieldToColumn(sortParts[0].trim());
+                String sortDirection = sortParts[1].trim().toUpperCase();
+                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
+                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
+                }
+            }
+        }
+        sqlBuilder.append(orderBy);
+
+        // Create count query
+        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
+
+        // Create query
+        jakarta.persistence.Query query = entityManager.createNativeQuery(sqlBuilder.toString());
+        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
+
+        // Set parameters
+        query.setParameter("groupPoid", groupPoid);
+        countQuery.setParameter("groupPoid", groupPoid);
+
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
+            query.setParameter("fromDate", filterRequest.getFrom());
+            countQuery.setParameter("fromDate", filterRequest.getFrom());
+        }
+        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
+            query.setParameter("toDate", filterRequest.getTo());
+            countQuery.setParameter("toDate", filterRequest.getTo());
+        }
+
+        // Set filter parameters using sequential indexing
+        if (!validFilters.isEmpty()) {
+            for (int i = 0; i < validFilters.size(); i++) {
+                GetAllPrincipalFilterRequest.FilterItem filter = validFilters.get(i);
+                String paramValue = "%" + filter.getSearchValue() + "%";
+                query.setParameter("filterValue" + i, paramValue);
+                countQuery.setParameter("filterValue" + i, paramValue);
+            }
+        }
+
+        // Get total count
+        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
+
+        // Apply pagination
+        int offset = page * size;
+        query.setFirstResult(offset);
+        query.setMaxResults(size);
+
+        // Execute query and map results
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        List<PrincipalMasterDto> dtos = results.stream()
+                .map(this::mapToPrincipalMasterDto)
                 .collect(Collectors.toList());
-        return new PageImpl<>(dtoList, pageable, page.getTotalElements());
+
+        // Create page
+        Pageable pageable = PageRequest.of(page, size);
+        return new PageImpl<>(dtos, pageable, totalCount);
+    }
+
+    private String mapPrincipalSearchFieldToColumn(String searchField) {
+        if (searchField == null) return null;
+        String normalizedField = searchField.toUpperCase().replace("_", "");
+        switch (normalizedField) {
+            case "PRINCIPALPOID": return "p.PRINCIPAL_POID";
+            case "PRINCIPALCODE": return "p.PRINCIPAL_CODE";
+            case "PRINCIPALNAME": return "p.PRINCIPAL_NAME";
+            case "PRINCIPALNAME2": return "p.PRINCIPAL_NAME2";
+            case "GROUPPOID": return "p.GROUP_POID";
+            case "COMPANYPOID": return "p.COMPANY_POID";
+            case "GROUPNAME": return "p.GROUP_NAME";
+            case "COUNTRYPOID": return "p.COUNTRY_POID";
+            case "ADDRESSPOID": return "p.ADDRESS_POID";
+            case "CREDITPERIOD": return "p.CREDIT_PERIOD";
+            case "AGREEDPERIOD": return "p.AGREED_PERIOD";
+            case "CURRENCYCODE": return "p.CURRENCY_CODE";
+            case "CURRENCYRATE": return "p.CURRENCY_RATE";
+            case "BUYINGRATE": return "p.BUYING_RATE";
+            case "SELLINGRATE": return "p.SELLING_RATE";
+            case "GLCODEPOID": return "p.GL_CODE_POID";
+            case "GLACCTNO": return "p.GL_ACCTNO";
+            case "TINNUMBER": return "p.TIN_NUMBER";
+            case "TAXSLAB": return "p.TAX_SLAB";
+            case "EXEMPTIONREASON": return "p.EXEMPTION_REASON";
+            case "REMARKS": return "p.REMARKS";
+            case "SEQNO": return "p.SEQNO";
+            case "ACTIVE": return "p.ACTIVE";
+            case "PRINCIPALCODEOLD": return "p.PRINCIPAL_CODE_OLD";
+            case "DELETED": return "p.DELETED";
+            case "CREATEDBY": return "p.CREATED_BY";
+            case "CREATEDDATE": return "p.CREATED_DATE";
+            case "LASTMODIFIEDBY": return "p.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE": return "p.LASTMODIFIED_DATE";
+            default: 
+                log.warn("Unknown search field: {}, defaulting to PRINCIPAL_NAME", searchField);
+                return "p.PRINCIPAL_NAME";
+        }
+    }
+
+    private String mapPrincipalSortFieldToColumn(String sortField) {
+        if (sortField == null) return "p.CREATED_DATE";
+        String normalizedField = sortField.toUpperCase().replace("_", "");
+        switch (normalizedField) {
+            case "PRINCIPALPOID": return "p.PRINCIPAL_POID";
+            case "PRINCIPALCODE": return "p.PRINCIPAL_CODE";
+            case "PRINCIPALNAME": return "p.PRINCIPAL_NAME";
+            case "PRINCIPALNAME2": return "p.PRINCIPAL_NAME2";
+            case "GROUPPOID": return "p.GROUP_POID";
+            case "COMPANYPOID": return "p.COMPANY_POID";
+            case "GROUPNAME": return "p.GROUP_NAME";
+            case "COUNTRYPOID": return "p.COUNTRY_POID";
+            case "ADDRESSPOID": return "p.ADDRESS_POID";
+            case "CREDITPERIOD": return "p.CREDIT_PERIOD";
+            case "AGREEDPERIOD": return "p.AGREED_PERIOD";
+            case "CURRENCYCODE": return "p.CURRENCY_CODE";
+            case "CURRENCYRATE": return "p.CURRENCY_RATE";
+            case "BUYINGRATE": return "p.BUYING_RATE";
+            case "SELLINGRATE": return "p.SELLING_RATE";
+            case "GLCODEPOID": return "p.GL_CODE_POID";
+            case "GLACCTNO": return "p.GL_ACCTNO";
+            case "TINNUMBER": return "p.TIN_NUMBER";
+            case "TAXSLAB": return "p.TAX_SLAB";
+            case "EXEMPTIONREASON": return "p.EXEMPTION_REASON";
+            case "REMARKS": return "p.REMARKS";
+            case "SEQNO": return "p.SEQNO";
+            case "ACTIVE": return "p.ACTIVE";
+            case "PRINCIPALCODEOLD": return "p.PRINCIPAL_CODE_OLD";
+            case "DELETED": return "p.DELETED";
+            case "CREATEDBY": return "p.CREATED_BY";
+            case "CREATEDDATE": return "p.CREATED_DATE";
+            case "LASTMODIFIEDBY": return "p.LASTMODIFIED_BY";
+            case "LASTMODIFIEDDATE": return "p.LASTMODIFIED_DATE";
+            default: 
+                log.warn("Unknown sort field: {}, defaulting to CREATED_DATE", sortField);
+                return "p.CREATED_DATE";
+        }
+    }
+
+    private PrincipalMasterDto mapToPrincipalMasterDto(Object[] row) {
+        return PrincipalMasterDto.builder()
+                .principalPoid(row[0] != null ? ((Number) row[0]).longValue() : null)
+                .principalCode(convertToString(row[1]))
+                .principalName(convertToString(row[2]))
+                .principalName2(convertToString(row[3]))
+                .groupPoid(row[4] != null ? ((Number) row[4]).longValue() : null)
+                .companyPoid(row[5] != null ? ((Number) row[5]).longValue() : null)
+                .groupName(convertToString(row[6]))
+                .countryPoid(row[7] != null ? ((Number) row[7]).longValue() : null)
+                .addressPoid(row[8] != null ? ((Number) row[8]).longValue() : null)
+                .creditPeriod(row[9] != null ? ((Number) row[9]).longValue() : null)
+                .agreedPeriod(row[10] != null ? ((Number) row[10]).longValue() : null)
+                .currencyCode(convertToString(row[11]))
+                .currencyRate(row[12] != null ? new java.math.BigDecimal(row[12].toString()) : null)
+                .buyingRate(row[13] != null ? new java.math.BigDecimal(row[13].toString()) : null)
+                .sellingRate(row[14] != null ? new java.math.BigDecimal(row[14].toString()) : null)
+                .glCodePoid(row[15] != null ? ((Number) row[15]).longValue() : null)
+                .glAcctNo(convertToString(row[16]))
+                .tinNumber(convertToString(row[17]))
+                .taxSlab(convertToString(row[18]))
+                .exemptionReason(convertToString(row[19]))
+                .remarks(convertToString(row[20]))
+                .seqNo(row[21] != null ? ((Number) row[21]).intValue() : null)
+                .active(convertToString(row[22]))
+                .principalCodeOld(convertToString(row[23]))
+                .deleted(convertToString(row[24]))
+                .createdBy(convertToString(row[25]))
+                .createdDate(row[26] != null ? convertToLocalDateTime(row[26]) : null)
+                .lastModifiedBy(convertToString(row[27]))
+                .lastModifiedDate(row[28] != null ? convertToLocalDateTime(row[28]) : null)
+                .build();
+    }
+
+    private String convertToString(Object value) {
+        return value != null ? value.toString() : null;
+    }
+
+    private LocalDateTime convertToLocalDateTime(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.sql.Timestamp) {
+            return ((java.sql.Timestamp) value).toLocalDateTime();
+        }
+        if (value instanceof java.util.Date) {
+            return new java.sql.Timestamp(((java.util.Date) value).getTime()).toLocalDateTime();
+        }
+        return null;
     }
 
     @Override

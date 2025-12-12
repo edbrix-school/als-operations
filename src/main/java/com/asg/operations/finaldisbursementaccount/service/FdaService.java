@@ -3,6 +3,7 @@ package com.asg.operations.finaldisbursementaccount.service;
 import com.asg.operations.common.PageResponse;
 //import org.springframework.core.io.Resource;
 import com.asg.operations.finaldisbursementaccount.dto.*;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
@@ -49,5 +50,7 @@ public interface FdaService {
     List<PdaLogResponse> getPdaLogs(Long transactionPoid, Long groupPoid, Long companyPoid);
 
 //    Resource generateFdaReport(Long transactionPoid, String reportType, Long companyId, Long userId, Long groupId);
+
+    Page<FdaHeaderDto> getAllFdaWithFilters(Long groupPoid, Long companyPoid, GetAllFdaFilterRequest filterRequest, int page, int size, String sort);
 
 }

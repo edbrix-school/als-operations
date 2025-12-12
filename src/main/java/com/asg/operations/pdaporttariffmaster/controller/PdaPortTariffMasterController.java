@@ -7,17 +7,20 @@ import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.service.PdaPortTariffHdrService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import java.time.LocalDate;
+import org.springframework.data.domain.Page;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,32 +30,47 @@ public class PdaPortTariffMasterController {
 
     private final PdaPortTariffHdrService tariffService;
 
+    @Operation(summary = "Get all Tariffs", description = "Returns paginated list of Tariffs with optional filters. Supports pagination with page and size parameters.", responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tariff list fetched successfully", content = @Content(schema = @Schema(implementation = Page.class)))
+    })
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping
+    @PostMapping("/search")
     public ResponseEntity<?> getTariffList(
-            @RequestParam(required = false, defaultValue = "0") int page,
-            @RequestParam(required = false, defaultValue = "20") int size,
-            @RequestParam(required = false) String sort,
-            @RequestParam(required = false) String portPoid,
-            @RequestParam(required = false) LocalDate periodFrom,
-            @RequestParam(required = false) LocalDate periodTo,
-            @RequestParam(required = false) String vesselTypePoid
-    ) {
-        Sort sortObj = Sort.by(Sort.Direction.DESC, "transactionPoid");
-        if (sort != null && !sort.isEmpty()) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                Sort.Direction direction = sortParts[1].equalsIgnoreCase("desc")
-                        ? Sort.Direction.DESC
-                        : Sort.Direction.ASC;
-                sortObj = Sort.by(direction, sortParts[0]);
-            }
+            @RequestBody(required = false) GetAllTariffFilterRequest filterRequest,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort) {
+
+        // If filterRequest is null, create a default one
+        if (filterRequest == null) {
+            filterRequest = new GetAllTariffFilterRequest();
+            filterRequest.setIsDeleted("N");
+            filterRequest.setOperator("AND");
+            filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        Pageable pageable = PageRequest.of(page, size, sortObj);
-        PageResponse<PdaPortTariffMasterResponse> response = tariffService.getTariffList(
-                portPoid, periodFrom, periodTo, vesselTypePoid, UserContext.getCompanyPoid(), pageable);
-        return ApiResponse.success("Tariff list retrieved successfully", response);
+        org.springframework.data.domain.Page<PdaPortTariffMasterResponse> tariffPage = tariffService
+                .getAllTariffsWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
+
+        // Create displayFields
+        Map<String, String> displayFields = new HashMap<>();
+        displayFields.put("TRANSACTION_DATE", "date");
+        displayFields.put("DOC_REF", "text");
+        displayFields.put("PORTS", "text");
+        displayFields.put("VESSEL_TYPES", "text");
+        displayFields.put("TRANSACTION_POID", "text");
+
+        // Create paginated response with new structure
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", tariffPage.getContent());
+        response.put("pageNumber", tariffPage.getNumber());
+        response.put("displayFields", displayFields);
+        response.put("pageSize", tariffPage.getSize());
+        response.put("totalElements", tariffPage.getTotalElements());
+        response.put("totalPages", tariffPage.getTotalPages());
+        response.put("last", tariffPage.isLast());
+
+        return ApiResponse.success("Tariff list fetched successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)

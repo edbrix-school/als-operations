@@ -2,7 +2,7 @@ package com.asg.operations.crew.controller;
 
 import com.asg.operations.crew.dto.ContractCrewRequest;
 import com.asg.operations.crew.dto.ContractCrewResponse;
-import com.asg.operations.crew.dto.PageResponse;
+import com.asg.operations.crew.dto.GetAllCrewFilterRequest;
 import com.asg.operations.crew.service.ContractCrewService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.then;
@@ -60,16 +62,21 @@ class ContractCrewControllerTest {
     }
 
     @Test
-    @DisplayName("GET /v1/contract-crew-masters returns paged list")
+    @DisplayName("POST /v1/contract-crew-masters/search returns paged list")
     void getCrewList_ok() throws Exception {
-        PageResponse<ContractCrewResponse> page = new PageResponse<>(List.of(new ContractCrewResponse()), 0, 20, 1);
-        when(crewService.getCrewList(any(), any(), any(), any(), any(), anyLong())).thenReturn(page);
+        Page<ContractCrewResponse> page = new PageImpl<>(List.of(new ContractCrewResponse()), 
+                org.springframework.data.domain.PageRequest.of(0, 20), 1);
+        when(crewService.getAllCrewWithFilters(anyLong(), anyLong(), any(GetAllCrewFilterRequest.class), anyInt(), anyInt(), anyString()))
+                .thenReturn(page);
 
-        mockMvc.perform(get("/v1/contract-crew-masters")
-                        .header("companyPoid", 100L)
+        String filterJson = "{\"isDeleted\":\"N\",\"operator\":\"AND\",\"filters\":[]}";
+
+        mockMvc.perform(post("/v1/contract-crew-masters/search")
                         .param("page", "0")
                         .param("size", "20")
-                        .param("sort", "crewName,asc"))
+                        .param("sort", "crewName,asc")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(filterJson))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.data.totalElements").value(1));
     }
@@ -115,9 +122,6 @@ class ContractCrewControllerTest {
                 "}";
 
         mockMvc.perform(post("/v1/contract-crew-masters")
-                        .header("companyPoid", companyPoid)
-                        .header("groupPoid", groupPoid)
-                        .header("userId", userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
                 .andExpect(status().isOk())
@@ -152,8 +156,6 @@ class ContractCrewControllerTest {
                 "}";
 
         mockMvc.perform(put("/v1/contract-crew-masters/{crewPoid}", crewPoid)
-                        .header("companyPoid", companyPoid)
-                        .header("userId", userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
                 .andExpect(status().isOk())
@@ -170,8 +172,7 @@ class ContractCrewControllerTest {
         long companyPoid = 100L;
         long crewPoid = 10L;
 
-        mockMvc.perform(delete("/v1/contract-crew-masters/{crewPoid}", crewPoid)
-                        .header("companyPoid", companyPoid))
+        mockMvc.perform(delete("/v1/contract-crew-masters/{crewPoid}", crewPoid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Crew master deleted successfully"));
 

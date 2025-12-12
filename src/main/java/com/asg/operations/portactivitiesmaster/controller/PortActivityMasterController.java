@@ -4,6 +4,7 @@ import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.common.ApiResponse;
+import com.asg.operations.portactivitiesmaster.dto.GetAllPortActivityFilterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PageResponse;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
@@ -29,29 +30,38 @@ public class PortActivityMasterController {
     private final PortActivityMasterService portActivityService;
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping
+    @PostMapping("/search")
     public ResponseEntity<?> getPortActivityList(
-            @RequestParam(required = false, defaultValue = "0") int page,
-            @RequestParam(required = false, defaultValue = "20") int size,
-            @RequestParam(required = false) String sort,
-            @RequestParam(required = false) String code,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String active
+            @RequestBody(required = false) GetAllPortActivityFilterRequest filterRequest,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
     ) {
-        Sort sortObj = Sort.by(Sort.Direction.ASC, "portActivityTypeCode");
-        if (sort != null && !sort.isEmpty()) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                Sort.Direction direction = sortParts[1].equalsIgnoreCase("desc")
-                        ? Sort.Direction.DESC
-                        : Sort.Direction.ASC;
-                sortObj = Sort.by(direction, sortParts[0]);
-            }
+        if (filterRequest == null) {
+            filterRequest = new GetAllPortActivityFilterRequest();
+            filterRequest.setIsDeleted("N");
+            filterRequest.setOperator("AND");
+            filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        Pageable pageable = PageRequest.of(page, size, sortObj);
-        PageResponse<PortActivityMasterResponse> response = portActivityService.getPortActivityList(
-                code, name, active, UserContext.getGroupPoid(), pageable);
+        org.springframework.data.domain.Page<PortActivityMasterResponse> portActivityPage = portActivityService
+                .getAllPortActivitiesWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
+
+        java.util.Map<String, String> displayFields = new java.util.HashMap<>();
+        displayFields.put("PORT_ACTIVITY_TYPE_CODE", "text");
+        displayFields.put("PORT_ACTIVITY_TYPE_NAME", "text");
+        displayFields.put("ACTIVE", "text");
+        displayFields.put("PORT_ACTIVITY_TYPE_POID", "text");
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("content", portActivityPage.getContent());
+        response.put("pageNumber", portActivityPage.getNumber());
+        response.put("displayFields", displayFields);
+        response.put("pageSize", portActivityPage.getSize());
+        response.put("totalElements", portActivityPage.getTotalElements());
+        response.put("totalPages", portActivityPage.getTotalPages());
+        response.put("last", portActivityPage.isLast());
+
         return ApiResponse.success("Port activity list retrieved successfully", response);
     }
 

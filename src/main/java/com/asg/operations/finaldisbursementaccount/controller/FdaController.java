@@ -7,26 +7,28 @@ import com.asg.operations.finaldisbursementaccount.dto.*;
 import com.asg.operations.finaldisbursementaccount.service.FdaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
+
+import java.util.HashMap;
+import java.util.Map;
 //import org.springframework.core.io.Resource;
 //import org.springframework.http.HttpHeaders;
 //import org.springframework.http.MediaType;
 //import io.swagger.v3.oas.annotations.media.Content;
 //import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -37,35 +39,45 @@ public class FdaController {
 
     private final FdaService fdaService;
 
-    @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping
-    @Operation(summary = "Get FDA list", description = "Retrieve paginated list of Final Disbursement Accounts with optional filters")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA list retrieved successfully"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request parameters")
+    @Operation(summary = "Get all FDA", description = "Returns paginated list of FDA with optional filters. Supports pagination with page and size parameters.", responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA list fetched successfully", content = @Content(schema = @Schema(implementation = Page.class)))
     })
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @PostMapping("/search")
     public ResponseEntity<?> getFdaList(
-            @Parameter(description = "Page number (0-based)") @RequestParam(required = false, defaultValue = "0") int page,
-            @Parameter(description = "Page size") @RequestParam(required = false, defaultValue = "20") int size,
-            @Parameter(description = "Sort field and direction (e.g., 'transactionPoid,desc')") @RequestParam(required = false) String sort,
-            @Parameter(description = "Transaction identifier filter") @RequestParam(required = false) Long transactionPoid,
-            @Parameter(description = "Vessel name filter") @RequestParam(required = false) String vesselName,
-            @Parameter(description = "ETA from date filter (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate etaFrom,
-            @Parameter(description = "ETA to date filter (YYYY-MM-DD)") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate etaTo
-    ) {
-        Sort sortObj = Sort.by(Sort.Direction.DESC, "transactionPoid");
-        if (sort != null && !sort.isEmpty()) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                Sort.Direction direction = sortParts[1].equalsIgnoreCase("desc")
-                        ? Sort.Direction.DESC
-                        : Sort.Direction.ASC;
-                sortObj = Sort.by(direction, sortParts[0]);
-            }
+            @RequestBody(required = false) GetAllFdaFilterRequest filterRequest,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort) {
+
+        // If filterRequest is null, create a default one
+        if (filterRequest == null) {
+            filterRequest = new GetAllFdaFilterRequest();
+            filterRequest.setIsDeleted("N");
+            filterRequest.setOperator("AND");
+            filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        Pageable pageable = PageRequest.of(page, size, sortObj);
-        PageResponse<FdaHeaderDto> response = fdaService.getFdaList(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), transactionPoid, vesselName, etaFrom, etaTo, pageable);
+        org.springframework.data.domain.Page<FdaHeaderDto> fdaPage = fdaService
+                .getAllFdaWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
+
+        // Create displayFields
+        Map<String, String> displayFields = new HashMap<>();
+        displayFields.put("TRANSACTION_DATE", "date");
+        displayFields.put("DOC_REF", "text");
+        displayFields.put("VESSEL_NAME", "text");
+        displayFields.put("STATUS", "text");
+        displayFields.put("TRANSACTION_POID", "text");
+
+        // Create paginated response with new structure
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", fdaPage.getContent());
+        response.put("pageNumber", fdaPage.getNumber());
+        response.put("displayFields", displayFields);
+        response.put("pageSize", fdaPage.getSize());
+        response.put("totalElements", fdaPage.getTotalElements());
+        response.put("totalPages", fdaPage.getTotalPages());
+        response.put("last", fdaPage.isLast());
 
         return ApiResponse.success("FDA list fetched successfully", response);
     }

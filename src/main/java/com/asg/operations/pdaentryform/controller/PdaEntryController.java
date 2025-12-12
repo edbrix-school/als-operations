@@ -1,6 +1,5 @@
 package com.asg.operations.pdaentryform.controller;
 
-
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
@@ -16,16 +15,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,30 +71,43 @@ public class PdaEntryController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping
-    public ResponseEntity<PageResponse<PdaEntryResponse>> getPdaEntryList(
-            @Parameter(description = "Document reference (partial match)") @RequestParam(required = false) String docRef,
-            @Parameter(description = "Transaction reference (partial match)") @RequestParam(required = false) String transactionRef,
-            @Parameter(description = "Principal POID") @RequestParam(required = false) BigDecimal principalPoid,
-            @Parameter(description = "Status (e.g., PROPOSAL, CONFIRMED)") @RequestParam(required = false) String status,
-            @Parameter(description = "Reference type (GENERAL, ENQUIRY, TDR)") @RequestParam(required = false) String refType,
-            @Parameter(description = "Vessel POID") @RequestParam(required = false) BigDecimal vesselPoid,
-            @Parameter(description = "Port POID") @RequestParam(required = false) BigDecimal portPoid,
-            @Parameter(description = "Transaction date from") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate transactionDateFrom,
-            @Parameter(description = "Transaction date to") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate transactionDateTo,
-            @Parameter(description = "Deleted flag (Y/N, default: N)") @RequestParam(required = false, defaultValue = "N") String deleted,
-            @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size") @RequestParam(defaultValue = "20") int size,
-            @Parameter(description = "Sort criteria (format: field,direction)") @RequestParam(defaultValue = "transactionDate,desc") String sort
-    ) {
-        Sort sortObj = parseSort(sort);
-        Pageable pageable = PageRequest.of(page, size, sortObj);
+    @PostMapping("/search")
+    public ResponseEntity<?> getPdaEntryList(
+            @RequestBody(required = false) GetAllPdaFilterRequest filterRequest,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort) {
 
-        PageResponse<PdaEntryResponse> response = pdaEntryService.getPdaEntryList(
-                docRef, transactionRef, principalPoid, status, refType,
-                vesselPoid, portPoid, transactionDateFrom, transactionDateTo,
-                deleted, pageable, UserContext.getGroupPoid(), UserContext.getCompanyPoid()
-        );
+        // If filterRequest is null, create a default one
+        if (filterRequest == null) {
+            filterRequest = new GetAllPdaFilterRequest();
+            filterRequest.setIsDeleted("N");
+            filterRequest.setOperator("AND");
+            filterRequest.setFilters(new java.util.ArrayList<>());
+        }
+
+        org.springframework.data.domain.Page<PdaEntryResponse> pdaPage = pdaEntryService
+                .getAllPdaWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
+
+        // Create displayFields
+        Map<String, String> displayFields = new HashMap<>();
+        displayFields.put("DOC_REF", "text");
+        displayFields.put("TRANSACTION_DATE", "date");
+        displayFields.put("STATUS", "text");
+        displayFields.put("REF_TYPE", "text");
+        displayFields.put("PRINCIPAL_POID", "text");
+        displayFields.put("VESSEL_POID", "text");
+        displayFields.put("PORT_POID", "text");
+
+        // Create paginated response with new structure
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", pdaPage.getContent());
+        response.put("pageNumber", pdaPage.getNumber());
+        response.put("displayFields", displayFields);
+        response.put("pageSize", pdaPage.getSize());
+        response.put("totalElements", pdaPage.getTotalElements());
+        response.put("totalPages", pdaPage.getTotalPages());
+        response.put("last", pdaPage.isLast());
 
         return ResponseEntity.ok(response);
     }

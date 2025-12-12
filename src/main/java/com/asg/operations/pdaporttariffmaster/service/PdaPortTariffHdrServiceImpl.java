@@ -13,15 +13,19 @@ import com.asg.operations.pdaporttariffmaster.util.DateOverlapValidator;
 import com.asg.operations.pdaporttariffmaster.util.PdaPortTariffMapper;
 import com.asg.operations.pdaporttariffmaster.util.PortTariffDocumentRefGenerator;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,42 +47,230 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private final PortTariffDocumentRefGenerator docRefGenerator;
     private final EntityManager entityManager;
 
-
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<PdaPortTariffMasterResponse> getTariffList(
-            String portPoid,
-            LocalDate periodFrom,
-            LocalDate periodTo,
-            String vesselTypePoid,
-            Long groupPoid,
-            Pageable pageable
-    ) {
-        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
+    public Page<PdaPortTariffMasterResponse> getAllTariffsWithFilters(
+            Long groupPoid, Long companyPoid,
+            GetAllTariffFilterRequest filterRequest,
+            int page, int size, String sort) {
 
-        Page<PdaPortTariffHdr> tariffPage = tariffHdrRepository.searchTariffs(
-                groupPoidBD,
-                portPoid,
-                periodFrom,
-                periodTo,
-                vesselTypePoid,
-                pageable
-        );
+        // Build dynamic SQL query
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT t.TRANSACTION_POID, t.DOC_REF, t.TRANSACTION_DATE, t.PORTS, ");
+        sqlBuilder.append("t.VESSEL_TYPES, t.PERIOD_FROM, t.PERIOD_TO, t.REMARKS, t.DELETED, ");
+        sqlBuilder.append("t.CREATED_DATE, t.LASTMODIFIED_DATE ");
+        sqlBuilder.append("FROM PDA_PORT_TARIFF_HDR t ");
+        sqlBuilder.append("WHERE t.GROUP_POID = :groupPoid AND t.COMPANY_POID = :companyPoid ");
 
-        List<PdaPortTariffMasterResponse> content = tariffPage.getContent().stream()
-                .map(mapper::toHeaderOnlyResponse)
+        // Apply isDeleted filter
+        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND (t.DELETED IS NULL OR t.DELETED != 'Y') ");
+        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
+            sqlBuilder.append("AND t.DELETED = 'Y' ");
+        }
+
+        // Apply date range filters
+        if (StringUtils.hasText(filterRequest.getFrom())) {
+            sqlBuilder.append("AND TRUNC(t.TRANSACTION_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
+        }
+        if (StringUtils.hasText(filterRequest.getTo())) {
+            sqlBuilder.append("AND TRUNC(t.TRANSACTION_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
+        }
+
+        // Build filter conditions with sequential parameter indexing
+        List<String> filterConditions = new java.util.ArrayList<>();
+        List<GetAllTariffFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
+        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
+            for (GetAllTariffFilterRequest.FilterItem filter : filterRequest.getFilters()) {
+                if (StringUtils.hasText(filter.getSearchField()) && StringUtils.hasText(filter.getSearchValue())) {
+                    validFilters.add(filter);
+                    String columnName = mapTariffSearchFieldToColumn(filter.getSearchField());
+                    int paramIndex = validFilters.size() - 1;
+                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
+                }
+            }
+        }
+
+        // Add filter conditions with operator
+        if (!filterConditions.isEmpty()) {
+            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
+            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
+        }
+
+        // Apply sorting
+        String orderBy = "ORDER BY t.TRANSACTION_DATE DESC";
+        if (StringUtils.hasText(sort)) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                String sortField = mapTariffSortFieldToColumn(sortParts[0].trim());
+                String sortDirection = sortParts[1].trim().toUpperCase();
+                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
+                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
+                }
+            }
+        }
+        sqlBuilder.append(orderBy);
+
+        // Create count query
+        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
+
+        // Create query
+        Query query = entityManager.createNativeQuery(sqlBuilder.toString());
+        Query countQuery = entityManager.createNativeQuery(countSql);
+
+        // Set parameters
+        query.setParameter("groupPoid", groupPoid);
+        query.setParameter("companyPoid", companyPoid);
+        countQuery.setParameter("groupPoid", groupPoid);
+        countQuery.setParameter("companyPoid", companyPoid);
+
+        if (StringUtils.hasText(filterRequest.getFrom())) {
+            query.setParameter("fromDate", filterRequest.getFrom());
+            countQuery.setParameter("fromDate", filterRequest.getFrom());
+        }
+        if (StringUtils.hasText(filterRequest.getTo())) {
+            query.setParameter("toDate", filterRequest.getTo());
+            countQuery.setParameter("toDate", filterRequest.getTo());
+        }
+
+        // Set filter parameters using sequential indexing
+        if (!validFilters.isEmpty()) {
+            for (int i = 0; i < validFilters.size(); i++) {
+                GetAllTariffFilterRequest.FilterItem filter = validFilters.get(i);
+                String paramValue = "%" + filter.getSearchValue() + "%";
+                query.setParameter("filterValue" + i, paramValue);
+                countQuery.setParameter("filterValue" + i, paramValue);
+            }
+        }
+
+        // Get total count
+        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
+
+        // Apply pagination
+        int offset = page * size;
+        query.setFirstResult(offset);
+        query.setMaxResults(size);
+
+        // Execute query and map results
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        List<PdaPortTariffMasterResponse> dtos = results.stream()
+                .map(this::mapToTariffResponseDto)
                 .collect(Collectors.toList());
 
-        return new PageResponse<>(
-                content,
-                tariffPage.getNumber(),
-                tariffPage.getSize(),
-                tariffPage.getTotalElements(),
-                tariffPage.getTotalPages(),
-                tariffPage.isFirst(),
-                tariffPage.isLast(),
-                tariffPage.getNumberOfElements()
-        );
+        // Create page
+        Pageable pageable = PageRequest.of(page, size);
+        return new PageImpl<>(dtos, pageable, totalCount);
+    }
+
+    private String mapTariffSearchFieldToColumn(String searchField) {
+        if (searchField == null) {
+            return null;
+        }
+        // Normalize the field name by removing underscores and converting to uppercase
+        String normalizedField = searchField.toUpperCase().replace("_", "");
+
+        switch (normalizedField) {
+            case "DOCREF":
+                return "t.DOC_REF";
+            case "PORTS":
+            case "PORT":
+                return "t.PORTS";
+            case "VESSELTYPES":
+            case "VESSELTYPE":
+            case "VESSEL":
+                return "t.VESSEL_TYPES";
+            case "REMARKS":
+                return "t.REMARKS";
+            case "PERIODFROM":
+                return "t.PERIOD_FROM";
+            case "PERIODTO":
+                return "t.PERIOD_TO";
+            default:
+                // Fallback: assume it's a direct column name from t table
+                String columnName = searchField.toUpperCase().replace(" ", "_");
+                return "t." + columnName;
+        }
+    }
+
+    private String mapTariffSortFieldToColumn(String sortField) {
+        if (sortField == null) {
+            return "t.TRANSACTION_DATE";
+        }
+        String normalizedField = sortField.toUpperCase().replace("_", "");
+        
+        switch (normalizedField) {
+            case "TRANSACTIONPOID":
+                return "t.TRANSACTION_POID";
+            case "DOCREF":
+                return "t.DOC_REF";
+            case "TRANSACTIONDATE":
+                return "t.TRANSACTION_DATE";
+            case "PORTS":
+            case "PORT":
+                return "t.PORTS";
+            case "VESSELTYPES":
+            case "VESSELTYPE":
+            case "VESSEL":
+                return "t.VESSEL_TYPES";
+            case "PERIODFROM":
+                return "t.PERIOD_FROM";
+            case "PERIODTO":
+                return "t.PERIOD_TO";
+            case "REMARKS":
+                return "t.REMARKS";
+            case "DELETED":
+                return "t.DELETED";
+            case "CREATEDDATE":
+                return "t.CREATED_DATE";
+            case "LASTMODIFIEDDATE":
+                return "t.LASTMODIFIED_DATE";
+            default:
+                String columnName = sortField.toUpperCase().replace(" ", "_");
+                return "t." + columnName;
+        }
+    }
+
+    private PdaPortTariffMasterResponse mapToTariffResponseDto(Object[] row) {
+        PdaPortTariffMasterResponse dto = new PdaPortTariffMasterResponse();
+
+        dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
+        dto.setDocRef(convertToString(row[1]));
+        dto.setTransactionDate(row[2] != null ? ((Timestamp) row[2]).toLocalDateTime().toLocalDate() : null);
+        dto.setPorts(convertToStringList(row[3]));
+        dto.setVesselTypes(convertToStringList(row[4]));
+        dto.setPeriodFrom(row[5] != null ? ((Timestamp) row[5]).toLocalDateTime().toLocalDate() : null);
+        dto.setPeriodTo(row[6] != null ? ((Timestamp) row[6]).toLocalDateTime().toLocalDate() : null);
+        dto.setRemarks(convertToString(row[7]));
+        dto.setDeleted(convertToString(row[8]));
+        dto.setCreatedDate(row[9] != null ? ((Timestamp) row[9]).toLocalDateTime() : null);
+        dto.setLastModifiedDate(row[10] != null ? ((Timestamp) row[10]).toLocalDateTime() : null);
+
+        return dto;
+    }
+
+    private String convertToString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof String) {
+            return (String) value;
+        }
+        if (value instanceof Character) {
+            return String.valueOf((Character) value);
+        }
+        return value.toString();
+    }
+
+    private List<String> convertToStringList(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String str = convertToString(value);
+        if (str == null || str.trim().isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        return java.util.Arrays.asList(str.split(","));
     }
 
 
@@ -242,7 +434,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private void updateChargeDetails(PdaPortTariffHdr tariffHdr, List<PdaPortTariffChargeDetailRequest> chargeDetails, String currentUser) {
         for (PdaPortTariffChargeDetailRequest chargeRequest : chargeDetails) {
             ActionType action = chargeRequest.getActionType();
-            
+
             if (action == null) {
                 continue;
             }
@@ -266,7 +458,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                     existing.setLastModifiedBy(currentUser);
                     existing.setLastModifiedDate(LocalDateTime.now());
                     chargeDtlRepository.save(existing);
-                    
+
                     if (chargeRequest.getSlabDetails() != null) {
                         updateSlabDetails(tariffHdr.getTransactionPoid(), chargeRequest.getDetRowId(), chargeRequest.getSlabDetails(), currentUser);
                     }
@@ -284,7 +476,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private void updateSlabDetails(Long transactionPoid, Long chargeDetRowId, List<PdaPortTariffSlabDetailRequest> slabDetails, String currentUser) {
         for (PdaPortTariffSlabDetailRequest slabRequest : slabDetails) {
             ActionType action = slabRequest.getActionType();
-            
+
             if (action == null) {
                 continue;
             }
