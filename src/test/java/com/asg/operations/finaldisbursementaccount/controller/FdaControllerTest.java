@@ -48,13 +48,13 @@ class FdaControllerTest {
 
     @Test
     void getFdaList_ShouldReturnPageResponse() throws Exception {
-        org.springframework.data.domain.Page<FdaHeaderDto> page = 
-            new org.springframework.data.domain.PageImpl<>(java.util.List.of(new FdaHeaderDto()));
-        
+        org.springframework.data.domain.Page<FdaListResponse> page =
+            new org.springframework.data.domain.PageImpl<>(java.util.List.of(new FdaListResponse()));
+
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
             mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
-            
+
             when(fdaService.getAllFdaWithFilters(eq(1L), eq(100L), any(GetAllFdaFilterRequest.class), eq(0), eq(20), isNull()))
                     .thenReturn(page);
 
@@ -74,11 +74,11 @@ class FdaControllerTest {
     void getFda_ShouldReturnFdaHeader() throws Exception {
         FdaHeaderDto mockDto = new FdaHeaderDto();
         mockDto.setTransactionPoid(1L);
-        
+
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
             mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
-            
+
             when(fdaService.getFdaHeader(1L, 1L, 100L)).thenReturn(mockDto);
 
             mockMvc.perform(get("/v1/fdas/1"))
@@ -97,12 +97,12 @@ class FdaControllerTest {
 
         FdaHeaderDto responseDto = new FdaHeaderDto();
         responseDto.setTransactionPoid(1L);
-        
+
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
             mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
             mockedUserContext.when(UserContext::getUserId).thenReturn("user1");
-            
+
             when(fdaService.createFdaHeader(any(FdaHeaderDto.class), eq(1L), eq(100L), eq("user1")))
                     .thenReturn(responseDto);
 
@@ -124,12 +124,12 @@ class FdaControllerTest {
 
         FdaHeaderDto responseDto = new FdaHeaderDto();
         responseDto.setTransactionPoid(1L);
-        
+
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
             mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
             mockedUserContext.when(UserContext::getUserId).thenReturn("user1");
-            
+
             when(fdaService.updateFdaHeader(eq(1L), any(UpdateFdaHeaderRequest.class), eq(1L), eq(100L), eq("user1")))
                     .thenReturn(responseDto);
 
@@ -145,7 +145,7 @@ class FdaControllerTest {
     void deleteFda_ShouldSoftDeleteFda() throws Exception {
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockedUserContext.when(UserContext::getUserId).thenReturn("user1");
-            
+
             mockMvc.perform(delete("/v1/fdas/1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("FDA soft deleted successfully"));
@@ -155,11 +155,11 @@ class FdaControllerTest {
     @Test
     void getCharges_ShouldReturnCharges() throws Exception {
         PageResponse<FdaChargeDto> mockResponse = new PageResponse<>();
-        
+
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
             mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
-            
+
             when(fdaService.getCharges(eq(1L), eq(1L), eq(100L), any()))
                     .thenReturn(mockResponse);
 
@@ -179,7 +179,7 @@ class FdaControllerTest {
             mockedUserContext.when(UserContext::getUserId).thenReturn("user1");
             mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
             mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
-            
+
             mockMvc.perform(post("/v1/fdas/1/details/bulk-save")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(charges)))

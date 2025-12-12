@@ -76,10 +76,10 @@ class ContractCrewServiceImplTest {
     void getAllCrewWithFilters_ok() {
         GetAllCrewFilterRequest filterRequest = new GetAllCrewFilterRequest();
         filterRequest.setIsDeleted("N");
-        
+
         Query mockQuery = org.mockito.Mockito.mock(Query.class);
         Query mockCountQuery = org.mockito.Mockito.mock(Query.class);
-        
+
         when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery).thenReturn(mockCountQuery);
         when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
         when(mockCountQuery.setParameter(anyString(), any())).thenReturn(mockCountQuery);
@@ -112,7 +112,7 @@ class ContractCrewServiceImplTest {
         mockResults.add(mockRow);
         when(mockQuery.getResultList()).thenReturn(mockResults);
 
-        Page<ContractCrewResponse> res = service.getAllCrewWithFilters(1L, 1L, filterRequest, 0, 20, "crewName,asc");
+        Page<ContractCrewListResponse> res = service.getAllCrewWithFilters(1L, 1L, filterRequest, 0, 20, "crewName,asc");
 
         assertEquals(1, res.getTotalElements());
         assertEquals(1, res.getContent().size());
@@ -137,7 +137,7 @@ class ContractCrewServiceImplTest {
     @DisplayName("deleteCrewDetail throws when crew not found")
     void deleteCrewDetail_crewNotFound() {
         when(crewRepository.findByCrewPoidAndCompanyPoid(2L, 1L)).thenReturn(Optional.empty());
-        
+
         assertThrows(ResourceNotFoundException.class, () -> service.deleteCrewDetail(1L, 2L, 3L));
     }
 

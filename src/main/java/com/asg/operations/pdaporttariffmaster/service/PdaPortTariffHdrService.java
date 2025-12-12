@@ -19,5 +19,5 @@ public interface PdaPortTariffHdrService {
 
     ChargeDetailsResponse bulkSaveChargeDetails(Long transactionPoid, ChargeDetailsRequest request, Long groupPoid, String userId);
 
-    Page<PdaPortTariffMasterResponse> getAllTariffsWithFilters(Long groupPoid, Long companyPoid, GetAllTariffFilterRequest filterRequest, int page, int size, String sort);
+    Page<PdaPortTariffListResponse> getAllTariffsWithFilters(Long groupPoid, Long companyPoid, GetAllTariffFilterRequest filterRequest, int page, int size, String sort);
 }

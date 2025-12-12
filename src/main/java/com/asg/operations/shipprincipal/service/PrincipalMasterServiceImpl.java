@@ -54,7 +54,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PrincipalMasterDto> getAllPrincipalsWithFilters(
+    public Page<PrincipalListResponse> getAllPrincipalsWithFilters(
             Long groupPoid,
             GetAllPrincipalFilterRequest filterRequest,
             int page, int size, String sort) {
@@ -144,16 +144,9 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         // Execute query and map results
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
-        List<PrincipalMasterDto> dtos = results.stream()
-                .map(this::mapToPrincipalMasterDto)
+        List<PrincipalListResponse> dtos = results.stream()
+                .map(this::mapToPrincipalListResponseDto)
                 .collect(Collectors.toList());
-
-        for (PrincipalMasterDto dto : dtos) {
-            dto.setCountryDet(lovService.getLovItemByPoid(dto.getCountryPoid(), "COUNTRY", dto.getGroupPoid(), dto.getCompanyPoid(), UserContext.getUserPoid()));
-            dto.setGlCodeDet(lovService.getLovItemByPoid(dto.getGlCodePoid(), "GL_CODE", dto.getGroupPoid(), dto.getCompanyPoid(), UserContext.getUserPoid()));
-            dto.setCompanyDet(lovService.getLovItemByPoid(dto.getCompanyPoid(), "COMPANY", dto.getGroupPoid(), dto.getCompanyPoid(), UserContext.getUserPoid()));
-            dto.setTaxSlabDet(lovService.getLovItemByCode(dto.getTaxSlab(), "TAX_SLAB", dto.getGroupPoid(), dto.getCompanyPoid(), UserContext.getUserPoid()));
-        }
 
         // Create page
         Pageable pageable = PageRequest.of(page, size);
@@ -296,38 +289,35 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         }
     }
 
-    private PrincipalMasterDto mapToPrincipalMasterDto(Object[] row) {
-        return PrincipalMasterDto.builder()
-                .principalPoid(row[0] != null ? ((Number) row[0]).longValue() : null)
-                .principalCode(convertToString(row[1]))
-                .principalName(convertToString(row[2]))
-                .principalName2(convertToString(row[3]))
-                .groupPoid(row[4] != null ? ((Number) row[4]).longValue() : null)
-                .companyPoid(row[5] != null ? ((Number) row[5]).longValue() : null)
-                .groupName(convertToString(row[6]))
-                .countryPoid(row[7] != null ? ((Number) row[7]).longValue() : null)
-                .addressPoid(row[8] != null ? ((Number) row[8]).longValue() : null)
-                .creditPeriod(row[9] != null ? ((Number) row[9]).longValue() : null)
-                .agreedPeriod(row[10] != null ? ((Number) row[10]).longValue() : null)
-                .currencyCode(convertToString(row[11]))
-                .currencyRate(row[12] != null ? new java.math.BigDecimal(row[12].toString()) : null)
-                .buyingRate(row[13] != null ? new java.math.BigDecimal(row[13].toString()) : null)
-                .sellingRate(row[14] != null ? new java.math.BigDecimal(row[14].toString()) : null)
-                .glCodePoid(row[15] != null ? ((Number) row[15]).longValue() : null)
-                .glAcctNo(convertToString(row[16]))
-                .tinNumber(convertToString(row[17]))
-                .taxSlab(convertToString(row[18]))
-                .exemptionReason(convertToString(row[19]))
-                .remarks(convertToString(row[20]))
-                .seqNo(row[21] != null ? ((Number) row[21]).intValue() : null)
-                .active(convertToString(row[22]))
-                .principalCodeOld(convertToString(row[23]))
-                .deleted(convertToString(row[24]))
-                .createdBy(convertToString(row[25]))
-                .createdDate(row[26] != null ? convertToLocalDateTime(row[26]) : null)
-                .lastModifiedBy(convertToString(row[27]))
-                .lastModifiedDate(row[28] != null ? convertToLocalDateTime(row[28]) : null)
-                .build();
+    private PrincipalListResponse mapToPrincipalListResponseDto(Object[] row) {
+        PrincipalListResponse dto = new PrincipalListResponse();
+        dto.setPrincipalPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
+        dto.setPrincipalCode(convertToString(row[1]));
+        dto.setPrincipalName(convertToString(row[2]));
+        dto.setPrincipalName2(convertToString(row[3]));
+        dto.setGroupPoid(row[4] != null ? ((Number) row[4]).longValue() : null);
+        dto.setCompanyPoid(row[5] != null ? ((Number) row[5]).longValue() : null);
+        dto.setCountryPoid(row[7] != null ? ((Number) row[7]).longValue() : null);
+        dto.setAddressPoid(row[8] != null ? ((Number) row[8]).longValue() : null);
+        dto.setCreditPeriod(row[9] != null ? ((Number) row[9]).longValue() : null);
+        dto.setAgreedPeriod(row[10] != null ? ((Number) row[10]).longValue() : null);
+        dto.setCurrencyCode(convertToString(row[11]));
+        dto.setCurrencyRate(row[12] != null ? new java.math.BigDecimal(row[12].toString()) : null);
+        dto.setBuyingRate(row[13] != null ? new java.math.BigDecimal(row[13].toString()) : null);
+        dto.setSellingRate(row[14] != null ? new java.math.BigDecimal(row[14].toString()) : null);
+        dto.setGlCodePoid(row[15] != null ? ((Number) row[15]).longValue() : null);
+        dto.setTinNumber(convertToString(row[17]));
+        dto.setTaxSlab(convertToString(row[18]));
+        dto.setExemptionReason(convertToString(row[19]));
+        dto.setRemarks(convertToString(row[20]));
+        dto.setSeqNo(row[21] != null ? ((Number) row[21]).intValue() : null);
+        dto.setActive(convertToString(row[22]));
+        dto.setDeleted(convertToString(row[24]));
+        dto.setCreatedBy(convertToString(row[25]));
+        dto.setCreatedDate(row[26] != null ? convertToLocalDateTime(row[26]) : null);
+        dto.setLastModifiedBy(convertToString(row[27]));
+        dto.setLastModifiedDate(row[28] != null ? convertToLocalDateTime(row[28]) : null);
+        return dto;
     }
 
     private String convertToString(Object value) {

@@ -7,6 +7,7 @@ import com.asg.operations.common.ApiResponse;
 import com.asg.operations.portcallreport.dto.GetAllPortCallReportFilterRequest;
 import com.asg.operations.portcallreport.dto.PortActivityResponseDto;
 import com.asg.operations.portcallreport.dto.PortCallReportDto;
+import com.asg.operations.portcallreport.dto.PortCallReportListResponse;
 import com.asg.operations.portcallreport.dto.PortCallReportResponseDto;
 import com.asg.operations.portcallreport.service.PortCallReportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,7 +65,7 @@ public class PortCallReportController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<PortCallReportResponseDto> reportPage = portCallReportService
+        org.springframework.data.domain.Page<PortCallReportListResponse> reportPage = portCallReportService
                 .getAllPortCallReportsWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
 
         java.util.Map<String, String> displayFields = new java.util.HashMap<>();

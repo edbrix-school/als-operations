@@ -3,6 +3,7 @@ package com.asg.operations.pdaratetypemaster.controller;
 import com.asg.operations.pdaratetypemaster.dto.GetAllRateTypeFilterRequest;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeRequestDTO;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeResponseDTO;
+import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeListResponse;
 import com.asg.operations.pdaratetypemaster.service.PdaRateTypeService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -116,7 +117,7 @@ public class PdaRateTypeControllerTest {
         filterRequest.setOperator("AND");
         filterRequest.setFilters(Collections.emptyList());
 
-        Page<PdaRateTypeResponseDTO> page = new PageImpl<>(List.of(responseDTO));
+        Page<PdaRateTypeListResponse> page = new PageImpl<>(List.of(createListResponse()));
         when(service.getAllRateTypesWithFilters(eq(1L), any(GetAllRateTypeFilterRequest.class), eq(0), eq(20), any()))
                 .thenReturn(page);
 
@@ -168,5 +169,14 @@ public class PdaRateTypeControllerTest {
                 .andExpect(jsonPath("$.message").value("Rate type deleted successfully"));
 
         verify(service).deleteRateType(1L, 1L, "testUser", true);
+    }
+
+    private PdaRateTypeListResponse createListResponse() {
+        PdaRateTypeListResponse listResponse = new PdaRateTypeListResponse();
+        listResponse.setRateTypeId(1L);
+        listResponse.setRateTypeCode("RT01");
+        listResponse.setRateTypeName("Loading Rate");
+        listResponse.setActive("Y");
+        return listResponse;
     }
 }

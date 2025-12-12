@@ -58,7 +58,7 @@ public class FdaController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<FdaHeaderDto> fdaPage = fdaService
+        org.springframework.data.domain.Page<FdaListResponse> fdaPage = fdaService
                 .getAllFdaWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
 
         // Create displayFields

@@ -49,7 +49,7 @@ public class PdaPortTariffMasterController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<PdaPortTariffMasterResponse> tariffPage = tariffService
+        org.springframework.data.domain.Page<PdaPortTariffListResponse> tariffPage = tariffService
                 .getAllTariffsWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
 
         // Create displayFields

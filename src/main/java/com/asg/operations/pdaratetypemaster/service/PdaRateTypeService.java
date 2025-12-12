@@ -4,7 +4,7 @@ import com.asg.operations.pdaratetypemaster.dto.*;
 
 public interface PdaRateTypeService {
 
-    org.springframework.data.domain.Page<PdaRateTypeResponseDTO> getAllRateTypesWithFilters(Long groupPoid, GetAllRateTypeFilterRequest filterRequest, int page, int size, String sort);
+    org.springframework.data.domain.Page<PdaRateTypeListResponse> getAllRateTypesWithFilters(Long groupPoid, GetAllRateTypeFilterRequest filterRequest, int page, int size, String sort);
 
     PdaRateTypeResponseDTO getRateTypeById(Long rateTypePoid, Long groupPoid);
 

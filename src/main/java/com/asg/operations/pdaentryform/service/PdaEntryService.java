@@ -141,7 +141,7 @@ public interface PdaEntryService {
     /**
      * Get all PDA entries with filters
      */
-    org.springframework.data.domain.Page<PdaEntryResponse> getAllPdaWithFilters(Long groupPoid, Long companyPoid, GetAllPdaFilterRequest filterRequest, int page, int size, String sort);
+    org.springframework.data.domain.Page<PdaEntryListResponse> getAllPdaWithFilters(Long groupPoid, Long companyPoid, GetAllPdaFilterRequest filterRequest, int page, int size, String sort);
 
 }
 

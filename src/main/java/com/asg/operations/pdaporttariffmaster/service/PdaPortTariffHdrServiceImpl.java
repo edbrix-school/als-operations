@@ -52,7 +52,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PdaPortTariffMasterResponse> getAllTariffsWithFilters(
+    public Page<PdaPortTariffListResponse> getAllTariffsWithFilters(
             Long groupPoid, Long companyPoid,
             GetAllTariffFilterRequest filterRequest,
             int page, int size, String sort) {
@@ -157,13 +157,10 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         // Execute query and map results
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
-        List<PdaPortTariffMasterResponse> dtos = results.stream()
-                .map(this::mapToTariffResponseDto)
+        List<PdaPortTariffListResponse> dtos = results.stream()
+                .map(this::mapToTariffListResponseDto)
                 .collect(Collectors.toList());
 
-        for (PdaPortTariffMasterResponse dto : dtos) {
-            mapper.setLovDetails(dto);
-        }
         // Create page
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
@@ -237,14 +234,13 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         }
     }
 
-    private PdaPortTariffMasterResponse mapToTariffResponseDto(Object[] row) {
-        PdaPortTariffMasterResponse dto = new PdaPortTariffMasterResponse();
+    private PdaPortTariffListResponse mapToTariffListResponseDto(Object[] row) {
+        PdaPortTariffListResponse dto = new PdaPortTariffListResponse();
 
         dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
         dto.setDocRef(convertToString(row[1]));
         dto.setTransactionDate(row[2] != null ? ((Timestamp) row[2]).toLocalDateTime().toLocalDate() : null);
         dto.setPort(convertToString(row[3]));
-        dto.setVesselTypes(convertToStringList(row[4]));
         dto.setPeriodFrom(row[5] != null ? ((Timestamp) row[5]).toLocalDateTime().toLocalDate() : null);
         dto.setPeriodTo(row[6] != null ? ((Timestamp) row[6]).toLocalDateTime().toLocalDate() : null);
         dto.setRemarks(convertToString(row[7]));

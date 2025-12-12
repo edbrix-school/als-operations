@@ -154,7 +154,7 @@ public class FdaServiceImpl implements FdaService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<FdaHeaderDto> getAllFdaWithFilters(Long groupPoid, Long companyPoid, GetAllFdaFilterRequest filterRequest, int page, int size, String sort) {
+    public Page<FdaListResponse> getAllFdaWithFilters(Long groupPoid, Long companyPoid, GetAllFdaFilterRequest filterRequest, int page, int size, String sort) {
 
         // Build dynamic SQL query
         StringBuilder sqlBuilder = new StringBuilder();
@@ -276,13 +276,9 @@ public class FdaServiceImpl implements FdaService {
         // Execute query and map results
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
-        List<FdaHeaderDto> dtos = results.stream()
-                .map(this::mapToFdaResponseDto)
+        List<FdaListResponse> dtos = results.stream()
+                .map(this::mapToFdaListResponseDto)
                 .collect(Collectors.toList());
-
-        for (FdaHeaderDto fdaHeaderDto : dtos) {
-            setDetailsForHeader(fdaHeaderDto);
-        }
 
         // Create page
         Pageable pageable = PageRequest.of(page, size);
@@ -384,6 +380,42 @@ public class FdaServiceImpl implements FdaService {
                 String columnName = searchField.toUpperCase().replace(" ", "_");
                 return "f." + columnName;
         }
+    }
+
+    private FdaListResponse mapToFdaListResponseDto(Object[] row) {
+        FdaListResponse dto = new FdaListResponse();
+
+        dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
+        dto.setTransactionDate(row[1] != null ? ((Timestamp) row[1]).toLocalDateTime().toLocalDate() : null);
+        dto.setGroupPoid(row[2] != null ? ((Number) row[2]).longValue() : null);
+        dto.setCompanyPoid(row[3] != null ? ((Number) row[3]).longValue() : null);
+        dto.setPrincipalPoid(row[4] != null ? ((Number) row[4]).longValue() : null);
+        dto.setPrincipalContact(convertToString(row[5]));
+        dto.setDocRef(convertToString(row[6]));
+        dto.setVoyagePoid(row[7] != null ? ((Number) row[7]).longValue() : null);
+        dto.setVesselPoid(row[8] != null ? ((Number) row[8]).longValue() : null);
+        dto.setArrivalDate(row[9] != null ? ((Timestamp) row[9]).toLocalDateTime().toLocalDate() : null);
+        dto.setSailDate(row[10] != null ? ((Timestamp) row[10]).toLocalDateTime().toLocalDate() : null);
+        dto.setPortPoid(row[11] != null ? ((Number) row[11]).longValue() : null);
+        dto.setCommodityPoid(convertToString(row[12]));
+        dto.setOperationType(convertToString(row[13]));
+        dto.setTotalQuantity(row[16] != null ? (BigDecimal) row[16] : null);
+        dto.setUnit(convertToString(row[17]));
+        dto.setHarbourCallType(convertToString(row[18]));
+        dto.setCurrencyCode(convertToString(row[19]));
+        dto.setStatus(convertToString(row[32]));
+        dto.setTotalAmount(row[35] != null ? (BigDecimal) row[35] : null);
+        dto.setPdaRef(convertToString(row[41]));
+        dto.setSalesmanPoid(row[43] != null ? ((Number) row[43]).longValue() : null);
+        dto.setVoyageNo(convertToString(row[55]));
+        dto.setRefType(convertToString(row[60]));
+        dto.setDeleted(convertToString(row[40]));
+        dto.setCreatedBy(convertToString(row[36]));
+        dto.setCreatedDate(row[37] != null ? ((Timestamp) row[37]).toLocalDateTime() : null);
+        dto.setLastModifiedBy(convertToString(row[38]));
+        dto.setLastModifiedDate(row[39] != null ? ((Timestamp) row[39]).toLocalDateTime() : null);
+
+        return dto;
     }
 
     private FdaHeaderDto mapToFdaResponseDto(Object[] row) {

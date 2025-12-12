@@ -66,10 +66,10 @@ class PdaPortTariffHdrServiceImplTest {
     void getAllTariffsWithFilters_Success() {
         GetAllTariffFilterRequest filterRequest = new GetAllTariffFilterRequest();
         filterRequest.setIsDeleted("N");
-        
+
         jakarta.persistence.Query mockQuery = mock(jakarta.persistence.Query.class);
         jakarta.persistence.Query mockCountQuery = mock(jakarta.persistence.Query.class);
-        
+
         when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery).thenReturn(mockCountQuery);
         when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
         when(mockCountQuery.setParameter(anyString(), any())).thenReturn(mockCountQuery);
@@ -89,14 +89,14 @@ class PdaPortTariffHdrServiceImplTest {
         mockRow[8] = "N"; // DELETED (String)
         mockRow[9] = new java.sql.Timestamp(System.currentTimeMillis()); // CREATED_DATE (Timestamp)
         mockRow[10] = new java.sql.Timestamp(System.currentTimeMillis()); // LASTMODIFIED_DATE (Timestamp)
-        
+
         java.util.List<Object[]> mockResults = new java.util.ArrayList<>();
         mockResults.add(mockRow);
         when(mockQuery.getResultList()).thenReturn(mockResults);
-        
-        Page<PdaPortTariffMasterResponse> result = tariffService.getAllTariffsWithFilters(
+
+        Page<PdaPortTariffListResponse> result = tariffService.getAllTariffsWithFilters(
                 100L, 200L, filterRequest, 0, 10, "docRef,asc");
-        
+
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         assertEquals(1, result.getContent().size());
@@ -132,7 +132,7 @@ class PdaPortTariffHdrServiceImplTest {
                 transactionPoid, BigDecimal.valueOf(groupPoid)))
                 .thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, 
+        assertThrows(ResourceNotFoundException.class,
                 () -> tariffService.getTariffById(transactionPoid, groupPoid));
     }
 

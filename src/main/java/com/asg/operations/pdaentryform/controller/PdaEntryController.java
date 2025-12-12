@@ -86,7 +86,7 @@ public class PdaEntryController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<PdaEntryResponse> pdaPage = pdaEntryService
+        org.springframework.data.domain.Page<PdaEntryListResponse> pdaPage = pdaEntryService
                 .getAllPdaWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
 
         // Create displayFields
