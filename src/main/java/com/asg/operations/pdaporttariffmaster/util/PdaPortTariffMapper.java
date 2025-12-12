@@ -119,7 +119,7 @@ public class PdaPortTariffMapper {
             List<LovItem> portDetList = portPoidBDList.stream().map(p -> lovService.getLovItemByPoid(p.longValue(), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid())).toList();
             response.setPortsDet(portDetList);
 
-            List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(portPoidBDList, BigDecimal.valueOf(response.getGroupPoid()));
+            List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(portPoidBDList, BigDecimal.valueOf(UserContext.getGroupPoid()));
             response.setPortNames(portNames);
         }
 
@@ -132,7 +132,7 @@ public class PdaPortTariffMapper {
             List<LovItem> vesselTypesDetList = vesselPoidBDList.stream().map(p -> lovService.getLovItemByPoid(p.longValue(), "VESSEL_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid())).toList();
             response.setVesselTypesDet(vesselTypesDetList);
 
-            List<String> vesselNames = shipVesselTypeMasterRepository.findVesselTypeNamesByVesselTypePoidInAndGroupPoid(vesselPoidBDList, BigDecimal.valueOf(response.getGroupPoid()));
+            List<String> vesselNames = shipVesselTypeMasterRepository.findVesselTypeNamesByVesselTypePoidInAndGroupPoid(vesselPoidBDList, BigDecimal.valueOf(UserContext.getGroupPoid()));
             response.setVesselTypeNames(vesselNames);
         }
         response.setGroupDet(lovService.getLovItemByPoid(response.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));

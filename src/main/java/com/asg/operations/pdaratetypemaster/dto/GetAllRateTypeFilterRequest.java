@@ -5,8 +5,6 @@ import java.util.List;
 
 @Data
 public class GetAllRateTypeFilterRequest {
-    private String from;
-    private String to;
     private String operator = "AND";
     private String isDeleted = "N";
     private List<FilterItem> filters;

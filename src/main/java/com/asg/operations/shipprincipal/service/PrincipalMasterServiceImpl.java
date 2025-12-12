@@ -78,14 +78,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             sqlBuilder.append("AND p.ACTIVE = 'N' ");
         }
 
-        // Apply date range filters
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
-            sqlBuilder.append("AND TRUNC(p.CREATED_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
-        }
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
-            sqlBuilder.append("AND TRUNC(p.CREATED_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
-        }
-
         // Build filter conditions with sequential parameter indexing
         List<String> filterConditions = new java.util.ArrayList<>();
         List<GetAllPrincipalFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
@@ -130,15 +122,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         // Set parameters
         query.setParameter("groupPoid", groupPoid);
         countQuery.setParameter("groupPoid", groupPoid);
-
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
-            query.setParameter("fromDate", filterRequest.getFrom());
-            countQuery.setParameter("fromDate", filterRequest.getFrom());
-        }
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
-            query.setParameter("toDate", filterRequest.getTo());
-            countQuery.setParameter("toDate", filterRequest.getTo());
-        }
 
         // Set filter parameters using sequential indexing
         if (!validFilters.isEmpty()) {

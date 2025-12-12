@@ -69,14 +69,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             sqlBuilder.append("AND c.ACTIVE = 'N' ");
         }
 
-        // Apply date range filters
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
-            sqlBuilder.append("AND TRUNC(c.CREATED_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
-        }
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
-            sqlBuilder.append("AND TRUNC(c.CREATED_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
-        }
-
         // Build filter conditions with sequential parameter indexing
         List<String> filterConditions = new java.util.ArrayList<>();
         List<GetAllCrewFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
