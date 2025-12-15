@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,6 +23,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.asg.operations.common.ApiResponse;
 
 /**
  * REST Controller for PDA Entry Form operations
@@ -49,7 +49,7 @@ public class PdaEntryController {
                     "vessel, port, and transaction date range. Results are paginated and can be sorted by any field. " +
                     "Only records accessible to the user's company are returned (multi-tenant filtering).",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved PDA entry list",
                             content = @Content(
@@ -57,12 +57,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PageResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "500",
                             description = "Internal server error",
                             content = @Content(mediaType = "application/json")
@@ -108,7 +108,7 @@ public class PdaEntryController {
         response.put("totalPages", pdaPage.getTotalPages());
         response.put("last", pdaPage.isLast());
 
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("PDA entry list fetched successfully", response);
     }
 
     @Operation(
@@ -117,7 +117,7 @@ public class PdaEntryController {
                     "Returns the complete entry including all audit fields. " +
                     "The entry must belong to the user's company (multi-tenant filtering).",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved PDA entry",
                             content = @Content(
@@ -125,12 +125,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -155,7 +155,7 @@ public class PdaEntryController {
                     "Transaction POID and DocRef are auto-generated and retrieved after insert. " +
                     "Calls stored procedures for validation and post-save processing.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully created PDA entry",
                             content = @Content(
@@ -163,12 +163,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -194,7 +194,7 @@ public class PdaEntryController {
                     "Auto-populates vessel details and currency if changed. " +
                     "Calls stored procedures for validation and post-save processing.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully updated PDA entry",
                             content = @Content(
@@ -202,22 +202,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Edit not allowed for this entry",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -243,22 +243,22 @@ public class PdaEntryController {
                     "Validates that deletion is allowed based on status and principal approval. " +
                     "Cannot delete if status is CONFIRMED or CLOSED, or if principal approved for GENERAL ref type.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully deleted PDA entry",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Deletion not allowed for this entry",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -284,7 +284,7 @@ public class PdaEntryController {
             summary = "Get charge details",
             description = "Retrieves all charge details for a PDA entry, ordered by sequence number and row ID.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved charge details",
                             content = @Content(
@@ -292,12 +292,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryChargeDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -322,7 +322,7 @@ public class PdaEntryController {
                     "Automatically calculates amounts (QTY × DAYS × PDA_RATE + TAX_AMOUNT) and updates header total. " +
                     "Auto-populates tax information when charge changes.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully saved charge details",
                             content = @Content(
@@ -330,22 +330,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryChargeDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -369,22 +369,22 @@ public class PdaEntryController {
             summary = "Delete charge detail",
             description = "Deletes a single charge detail and recalculates the header total amount.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully deleted charge detail",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry or charge detail not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -413,22 +413,22 @@ public class PdaEntryController {
                     "For GENERAL ref type, status must be PROPOSAL. " +
                     "Cannot clear if status is CONFIRMED or CLOSED.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully cleared charge details",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Charge details cannot be cleared",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -454,7 +454,7 @@ public class PdaEntryController {
                     "Validates that all required header fields are present (vessel type, GRT, NRT, DWT, port, etc.). " +
                     "Recalculates header total amount after stored procedure execution.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully recalculated charge details",
                             content = @Content(
@@ -462,22 +462,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryChargeDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Validation error - Required header fields missing",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -501,7 +501,7 @@ public class PdaEntryController {
                     "Validates that all required header fields are present. " +
                     "Recalculates header total amount after loading default charges.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully loaded default charges",
                             content = @Content(
@@ -509,22 +509,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryChargeDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Validation error - Required header fields missing",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -548,7 +548,7 @@ public class PdaEntryController {
             summary = "Get vehicle details",
             description = "Retrieves all vehicle details for a PDA entry, ordered by row ID.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved vehicle details",
                             content = @Content(
@@ -556,12 +556,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryVehicleDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -584,7 +584,7 @@ public class PdaEntryController {
             description = "Bulk save vehicle details (create, update, delete in single transaction). " +
                     "For new records, detRowId should be null. For updates, provide existing detRowId.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully saved vehicle details",
                             content = @Content(
@@ -592,22 +592,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryVehicleDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -632,22 +632,22 @@ public class PdaEntryController {
             description = "Imports vehicle details from external source using stored procedure. " +
                     "Validates that entry is editable before importing.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully imported vehicle details",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -672,22 +672,22 @@ public class PdaEntryController {
             description = "Clears all vehicle details for a PDA entry using stored procedure. " +
                     "Validates that entry is editable before clearing.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully cleared vehicle details",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -712,22 +712,22 @@ public class PdaEntryController {
             description = "Publishes vehicle details for import using stored procedure. " +
                     "Validates that entry is editable before publishing.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully published vehicle details for import",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -753,7 +753,7 @@ public class PdaEntryController {
             summary = "Get TDR details",
             description = "Retrieves all TDR details for a PDA entry, ordered by row ID.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved TDR details",
                             content = @Content(
@@ -761,12 +761,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryTdrDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -790,7 +790,7 @@ public class PdaEntryController {
                     "For new records, detRowId should be null. For updates, provide existing detRowId. " +
                     "Note: TDR details are typically read-only in legacy. API supports create/update for future enhancements.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully saved TDR details",
                             content = @Content(
@@ -798,22 +798,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryTdrDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -839,7 +839,7 @@ public class PdaEntryController {
             summary = "Get acknowledgment details",
             description = "Retrieves all acknowledgment details for a PDA entry, ordered by row ID.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved acknowledgment details",
                             content = @Content(
@@ -847,12 +847,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryAcknowledgmentDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -876,7 +876,7 @@ public class PdaEntryController {
                     "For new records, detRowId should be null. For updates, provide existing detRowId. " +
                     "Note: Acknowledgment details are typically read-only in legacy. API supports create/update for future enhancements.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully saved acknowledgment details",
                             content = @Content(
@@ -884,22 +884,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryAcknowledgmentDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -951,7 +951,7 @@ public class PdaEntryController {
                     "Returns validation results with errors and warnings. " +
                     "Transaction POID can be null for new records.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Validation completed",
                             content = @Content(
@@ -959,12 +959,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = ValidationResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -990,7 +990,7 @@ public class PdaEntryController {
                     "Calls stored procedure for post-save validation and processing. " +
                     "Returns validation results.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Validation completed",
                             content = @Content(
@@ -998,12 +998,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = ValidationResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -1027,7 +1027,7 @@ public class PdaEntryController {
                     "Calls stored procedure to retrieve vessel type, IMO number, GRT, NRT, and DWT. " +
                     "Transaction POID is optional (can be null for new records).",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved vessel details",
                             content = @Content(
@@ -1035,12 +1035,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = VesselDetailsResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters - Vessel POID is required",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -1067,22 +1067,22 @@ public class PdaEntryController {
                     "Returns FDA_POID which can be used to redirect to FDA screen. " +
                     "Entry must be in editable state.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully created FDA",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "FDA creation failed",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
