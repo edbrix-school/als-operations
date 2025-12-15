@@ -2,6 +2,7 @@ package com.asg.operations.pdaporttariffmaster.service;
 
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.commonlov.dto.LovItem;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaentryform.dto.PdaEntryResponse;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffChargeDtl;
@@ -49,6 +50,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private final DateOverlapValidator overlapValidator;
     private final PortTariffDocumentRefGenerator docRefGenerator;
     private final EntityManager entityManager;
+    private final LovService lovService;
 
     @Override
     @Transactional(readOnly = true)
@@ -247,7 +249,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         dto.setDeleted(convertToString(row[8]));
         dto.setCreatedDate(row[9] != null ? ((Timestamp) row[9]).toLocalDateTime() : null);
         dto.setLastModifiedDate(row[10] != null ? ((Timestamp) row[10]).toLocalDateTime() : null);
-
+        dto.setPortName(dto.getPort() != null ? lovService.getLovItemByPoid(Long.parseLong(dto.getPort()), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()).getLabel() : null);
         return dto;
     }
 
