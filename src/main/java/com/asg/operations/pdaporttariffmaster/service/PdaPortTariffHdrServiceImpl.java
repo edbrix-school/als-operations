@@ -249,7 +249,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         dto.setDeleted(convertToString(row[8]));
         dto.setCreatedDate(row[9] != null ? ((Timestamp) row[9]).toLocalDateTime() : null);
         dto.setLastModifiedDate(row[10] != null ? ((Timestamp) row[10]).toLocalDateTime() : null);
-        dto.setPortName(dto.getPort() != null ? lovService.getLovItemByPoid(Long.parseLong(dto.getPort()), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()).getLabel() : null);
+        LovItem lovItem = dto.getPort() != null ? lovService.getLovItemByPoid(Long.parseLong(dto.getPort()), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()) : null;
+        dto.setPortName(lovItem != null ? lovItem.getLabel() : null);
         return dto;
     }
 

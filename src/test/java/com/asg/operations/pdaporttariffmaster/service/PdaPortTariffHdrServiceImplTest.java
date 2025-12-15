@@ -1,5 +1,8 @@
 package com.asg.operations.pdaporttariffmaster.service;
 
+import com.asg.operations.commonlov.dto.LovItem;
+import com.asg.operations.commonlov.dto.LovResponse;
+import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffHdr;
@@ -17,6 +20,7 @@ import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,6 +63,9 @@ class PdaPortTariffHdrServiceImplTest {
     @Mock
     private ShipChargeMasterRepository shipChargeMasterRepository;
 
+    @Mock
+    private LovService lovService;
+
     @InjectMocks
     private PdaPortTariffHdrServiceImpl tariffService;
 
@@ -76,12 +83,16 @@ class PdaPortTariffHdrServiceImplTest {
         when(mockQuery.setFirstResult(anyInt())).thenReturn(mockQuery);
         when(mockQuery.setMaxResults(anyInt())).thenReturn(mockQuery);
         when(mockCountQuery.getSingleResult()).thenReturn(1L);
+        LovResponse mockLovResponse = new LovResponse();
+        mockLovResponse.setItems(List.of(new LovItem(1L, "P1", "Port 1", "Port1 1", 1L, 1)));
+        lenient().when(lovService.getLovList(any(), any(), any(), any(), any(), any())).thenReturn(mockLovResponse);
+
         Object[] mockRow = new Object[11];
         // Fill with correct data types based on mapToTariffResponseDto expectations
         mockRow[0] = 1L; // TRANSACTION_POID (Number)
         mockRow[1] = "DOC001"; // DOC_REF (String)
         mockRow[2] = new java.sql.Timestamp(System.currentTimeMillis()); // TRANSACTION_DATE (Timestamp)
-        mockRow[3] = "PORT1,PORT2"; // PORTS (String)
+        mockRow[3] = "1"; // PORTS (String)
         mockRow[4] = "VESSEL1,VESSEL2"; // VESSEL_TYPES (String)
         mockRow[5] = new java.sql.Timestamp(System.currentTimeMillis()); // PERIOD_FROM (Timestamp)
         mockRow[6] = new java.sql.Timestamp(System.currentTimeMillis()); // PERIOD_TO (Timestamp)
