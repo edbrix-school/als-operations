@@ -7,7 +7,7 @@ import org.springframework.data.domain.Page;
 
 public interface PdaRoroEntryService {
 
-    PdaRoroEntryHdrResponseDto createRoroEntry(PdaRoroEntryHdrRequestDto request, Long groupPoid, Long companyPoid, String userId);
+    PdaRoroEntryHdrResponseDto createRoroEntry(PdaRoroEntryHdrRequestDto request);
 
     PdaRoroEntryHdrResponseDto updateRoroEntry(Long transactionPoid,
                          PdaRoroEntryHdrRequestDto request);

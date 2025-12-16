@@ -48,7 +48,7 @@ public class PdaRoroEntryServiceImpl implements PdaRoroEntryService{
     private final EntityManager entityManager;
 
     @Override
-    public PdaRoroEntryHdrResponseDto createRoroEntry(PdaRoroEntryHdrRequestDto request, Long groupPoid, Long companyPoid, String userId) {
+    public PdaRoroEntryHdrResponseDto createRoroEntry(PdaRoroEntryHdrRequestDto request) {
 
         PdaRoroEntryHdr entity = PdaRoroEntryHdr.builder()
                 .vesselVoyagePoid(request.getVesselVoyagePoid())
