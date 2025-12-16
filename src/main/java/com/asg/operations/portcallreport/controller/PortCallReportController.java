@@ -70,7 +70,6 @@ public class PortCallReportController {
                 .getAllPortCallReportsWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
 
         Map<String, String> displayFields = new LinkedHashMap<>();
-        displayFields.put("PORT_CALL_REPORT_POID", "text");
         displayFields.put("PORT_CALL_REPORT_ID", "text");
         displayFields.put("PORT_CALL_REPORT_NAME", "text");
 
