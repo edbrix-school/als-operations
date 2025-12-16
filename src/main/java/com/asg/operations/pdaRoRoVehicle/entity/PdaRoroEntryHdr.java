@@ -27,6 +27,15 @@ import java.time.LocalDateTime;
 public class PdaRoroEntryHdr {
 
     @Id
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "PDA_RORO_ENTRY_HDR_SEQ_GEN"
+    )
+    @SequenceGenerator(
+            name = "PDA_RORO_ENTRY_HDR_SEQ_GEN",
+            sequenceName = "PDA_RORO_ENTRY_HDR_SEQ",
+            allocationSize = 1
+    )
     @Column(name = "TRANSACTION_POID", nullable = false, updatable = false)
     private Long transactionPoid;
 
