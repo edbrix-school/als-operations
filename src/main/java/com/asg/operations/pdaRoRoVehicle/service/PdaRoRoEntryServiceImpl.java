@@ -423,6 +423,10 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
 
     @Override
     public String clearRoRoVehicleDetails(Long transactionPoid) {
+        hdrRepository.findById(transactionPoid)
+                .orElseThrow(() -> new com.asg.operations.exceptions.ResourceNotFoundException(
+                        "PDA Ro-Ro Entry not found with ID: " + transactionPoid));
+        
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withSchemaName("PRODUCTION")
                 .withProcedureName("PROC_PDA_RORO_DTLS_CLEAR")
