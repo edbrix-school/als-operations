@@ -12,7 +12,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Embeddable
-public class PdaRoroEntryDtlId implements Serializable {
+public class PdaRoRoEntryDtlId implements Serializable {
 
     @Column(name = "TRANSACTION_POID", nullable = false)
     private Long transactionPoid;

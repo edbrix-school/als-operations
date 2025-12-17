@@ -14,15 +14,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Entity
 @Table(name = "PDA_RORO_ENTRY_DTL")
-public class PdaRoroEntryDtl {
+public class PdaRoRoEntryDtl {
 
     @EmbeddedId
-    private PdaRoroEntryDtlId id;
+    private PdaRoRoEntryDtlId id;
 
     @MapsId("transactionPoid")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "TRANSACTION_POID", nullable = false, updatable = false)
-    private PdaRoroEntryHdr header;
+    private PdaRoRoEntryHdr header;
 
     @Column(name = "BL_NUMBER", length = 300)
     private String blNumber;

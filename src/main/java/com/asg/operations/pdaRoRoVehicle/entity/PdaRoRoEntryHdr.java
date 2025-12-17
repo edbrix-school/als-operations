@@ -24,18 +24,10 @@ import java.time.LocalDateTime;
                 )
         }
 )
-public class PdaRoroEntryHdr {
+public class PdaRoRoEntryHdr {
 
     @Id
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "PDA_RORO_ENTRY_HDR_SEQ_GEN"
-    )
-    @SequenceGenerator(
-            name = "PDA_RORO_ENTRY_HDR_SEQ_GEN",
-            sequenceName = "PDA_RORO_ENTRY_HDR_SEQ",
-            allocationSize = 1
-    )
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID", nullable = false, updatable = false)
     private Long transactionPoid;
 

@@ -5,14 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PdaRoroVehicleDtlResponseDto {
+public class PdaRoRoVehicleDtlResponseDto {
 
     private Long detRowId;
     private String blNumber;

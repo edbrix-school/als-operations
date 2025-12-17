@@ -13,6 +13,9 @@ public class RoRoVehicleListResponse {
     @JsonProperty("TRANSACTION_POID")
     private Long transactionPoid;
 
+    @JsonProperty("COMPANY_POID")
+    private Long companyPoid;
+
     @JsonProperty("TRANSACTION_DATE")
     private LocalDate transactionDate;
 
@@ -25,27 +28,9 @@ public class RoRoVehicleListResponse {
     @JsonProperty("VOYAGE_NO")
     private String VoyageNo;
 
-    @JsonProperty("PERIOD_FROM")
-    private LocalDate periodFrom;
-
-    @JsonProperty("PERIOD_TO")
-    private LocalDate periodTo;
-
     @JsonProperty("VESSEL_NAME")
     private String vesselName;
 
     @JsonProperty("DELETED")
     private String deleted;
-
-    @JsonProperty("CREATED_BY")
-    private String createdBy;
-
-    @JsonProperty("CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @JsonProperty("LAST_MODIFIED_BY")
-    private String lastModifiedBy;
-
-    @JsonProperty("LAST_MODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
 }

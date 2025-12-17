@@ -1,5 +1,6 @@
 package com.asg.operations.pdaRoRoVehicle.dto;
 
+import com.asg.operations.commonlov.dto.LovItem;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,12 +14,13 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PdaRoroEntryHdrResponseDto {
+public class PdaRoRoEntryHdrResponseDto {
     private Long transactionPoid;
     private String docRef;
     private LocalDate transactionDate;
 
     private Long vesselVoyagePoid;
+    private LovItem vesselVoyagePoidDetail;
     private String vesselName;
     private String voyageNo;
     private String remarks;
@@ -27,5 +29,5 @@ public class PdaRoroEntryHdrResponseDto {
     private LocalDateTime createDate;
     private LocalDateTime lastModifyDate;
 
-    private List<PdaRoroVehicleDtlResponseDto> vehicleDetails;
+    private List<PdaRoRoVehicleDtlResponseDto> vehicleDetails;
 }

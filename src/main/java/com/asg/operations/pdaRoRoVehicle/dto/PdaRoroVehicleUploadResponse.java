@@ -13,6 +13,6 @@ import java.util.List;
 @AllArgsConstructor
 public class PdaRoroVehicleUploadResponse {
 
-    private String status;
-    private List<PdaRoroVehicleDtlResponseDto> vehicleDetails;
+    String status;
+    List<PdaRoRoVehicleDtlResponseDto> vehicleDetails;
 }
