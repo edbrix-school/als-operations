@@ -45,6 +45,9 @@ public class PdaEntryListResponse {
     @JsonProperty("VESSEL_POID")
     private BigDecimal vesselPoid;
 
+    @JsonProperty("VESSEL_NAME")
+    private String vesselName;
+
     @JsonProperty("PORT_POID")
     private BigDecimal portPoid;
 

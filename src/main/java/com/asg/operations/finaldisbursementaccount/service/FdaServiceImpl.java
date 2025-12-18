@@ -280,6 +280,11 @@ public class FdaServiceImpl implements FdaService {
                 .map(this::mapToFdaListResponseDto)
                 .collect(Collectors.toList());
 
+        for (FdaListResponse dto : dtos) {
+            dto.setPrincipalName(lovService.getLovItemByPoid(dto.getPrincipalPoid(), "PRINCIPAL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()).getLabel());
+            dto.setVesselName(lovService.getLovItemByPoid(dto.getVesselPoid(), "VESSEL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()).getLabel());
+        }
+
         // Create page
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);

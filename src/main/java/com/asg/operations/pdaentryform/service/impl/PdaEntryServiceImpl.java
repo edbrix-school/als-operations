@@ -2626,6 +2626,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 .map(this::mapToPdaListResponseDto)
                 .collect(Collectors.toList());
 
+        for (PdaEntryListResponse dto : dtos) {
+            dto.setVesselName(lovService.getLovItemByPoid(dto.getVesselPoid() != null ? dto.getVesselPoid().longValue() : null, "VESSEL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null).getLabel());
+            dto.setPrincipalName(lovService.getLovItemByPoid(dto.getPrincipalPoid() != null ? dto.getPrincipalPoid().longValue() : null, "PRINCIPAL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null).getLabel());
+        }
+
         // Create page
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
         return new org.springframework.data.domain.PageImpl<>(dtos, pageable, totalCount);

@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.dto;
 
+import com.asg.operations.commonlov.dto.LovItem;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -29,6 +30,9 @@ public class FdaListResponse {
     @JsonProperty("PRINCIPAL_POID")
     private Long principalPoid;
 
+    @JsonProperty("PRINCIPAL_NAME")
+    private String principalName;
+
     @JsonProperty("PRINCIPAL_CONTACT")
     private String principalContact;
 
@@ -40,6 +44,9 @@ public class FdaListResponse {
 
     @JsonProperty("VESSEL_POID")
     private Long vesselPoid;
+
+    @JsonProperty("VESSEL_NAME")
+    private String vesselName;
 
     @JsonProperty("ARRIVAL_DATE")
     @JsonFormat(pattern = "yyyy-MM-dd")
