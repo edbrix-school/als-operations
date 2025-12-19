@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,6 +23,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.asg.operations.common.ApiResponse;
 
 /**
  * REST Controller for PDA Entry Form operations
@@ -49,7 +49,7 @@ public class PdaEntryController {
                     "vessel, port, and transaction date range. Results are paginated and can be sorted by any field. " +
                     "Only records accessible to the user's company are returned (multi-tenant filtering).",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved PDA entry list",
                             content = @Content(
@@ -57,12 +57,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PageResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "500",
                             description = "Internal server error",
                             content = @Content(mediaType = "application/json")
@@ -86,7 +86,7 @@ public class PdaEntryController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<PdaEntryResponse> pdaPage = pdaEntryService
+        org.springframework.data.domain.Page<PdaEntryListResponse> pdaPage = pdaEntryService
                 .getAllPdaWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
 
         // Create displayFields
@@ -94,9 +94,9 @@ public class PdaEntryController {
         displayFields.put("TRANSACTION_DATE", "date");
         displayFields.put("DOC_REF", "text");
         displayFields.put("FDA_REF", "text");
-        displayFields.put("PRINCIPAL_POID", "text");
-        displayFields.put("VESSEL_POID", "text");
-        displayFields.put("VOYAGE_POID", "text");
+        displayFields.put("PRINCIPAL_NAME", "text");
+        displayFields.put("VESSEL_NAME", "text");
+        displayFields.put("VOYAGE_NO", "text");
 
         // Create paginated response with new structure
         Map<String, Object> response = new HashMap<>();
@@ -108,7 +108,7 @@ public class PdaEntryController {
         response.put("totalPages", pdaPage.getTotalPages());
         response.put("last", pdaPage.isLast());
 
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("PDA entry list fetched successfully", response);
     }
 
     @Operation(
@@ -117,7 +117,7 @@ public class PdaEntryController {
                     "Returns the complete entry including all audit fields. " +
                     "The entry must belong to the user's company (multi-tenant filtering).",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved PDA entry",
                             content = @Content(
@@ -125,12 +125,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -140,12 +140,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}")
-    public ResponseEntity<PdaEntryResponse> getPdaEntryById(
+    public ResponseEntity<?> getPdaEntryById(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         PdaEntryResponse response = pdaEntryService.getPdaEntryById(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("PDA entry retrieved successfully", response);
     }
 
     @Operation(
@@ -155,7 +155,7 @@ public class PdaEntryController {
                     "Transaction POID and DocRef are auto-generated and retrieved after insert. " +
                     "Calls stored procedures for validation and post-save processing.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully created PDA entry",
                             content = @Content(
@@ -163,12 +163,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -178,12 +178,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
-    public ResponseEntity<PdaEntryResponse> createPdaEntry(
+    public ResponseEntity<?> createPdaEntry(
             @Parameter(description = "PDA Entry request", required = true)
             @Valid @RequestBody PdaEntryRequest request
     ) {
         PdaEntryResponse response = pdaEntryService.createPdaEntry(request, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ApiResponse.success("PDA entry created successfully", response);
     }
 
     @Operation(
@@ -194,7 +194,7 @@ public class PdaEntryController {
                     "Auto-populates vessel details and currency if changed. " +
                     "Calls stored procedures for validation and post-save processing.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully updated PDA entry",
                             content = @Content(
@@ -202,22 +202,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Edit not allowed for this entry",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -227,14 +227,14 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{transactionPoid}")
-    public ResponseEntity<PdaEntryResponse> updatePdaEntry(
+    public ResponseEntity<?> updatePdaEntry(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid,
             @Parameter(description = "PDA Entry request", required = true)
             @Valid @RequestBody PdaEntryRequest request
     ) {
         PdaEntryResponse response = pdaEntryService.updatePdaEntry(transactionPoid, request, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("PDA entry updated successfully", response);
     }
 
     @Operation(
@@ -243,22 +243,22 @@ public class PdaEntryController {
                     "Validates that deletion is allowed based on status and principal approval. " +
                     "Cannot delete if status is CONFIRMED or CLOSED, or if principal approved for GENERAL ref type.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully deleted PDA entry",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Deletion not allowed for this entry",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -268,14 +268,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}")
-    public ResponseEntity<Map<String, String>> deletePdaEntry(
+    public ResponseEntity<?> deletePdaEntry(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         pdaEntryService.deletePdaEntry(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "PDA entry deleted successfully");
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("PDA entry deleted successfully", null);
     }
 
     // ==================== Charge Details Operations ====================
@@ -284,7 +282,7 @@ public class PdaEntryController {
             summary = "Get charge details",
             description = "Retrieves all charge details for a PDA entry, ordered by sequence number and row ID.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved charge details",
                             content = @Content(
@@ -292,12 +290,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryChargeDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -307,12 +305,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/charge-details")
-    public ResponseEntity<List<PdaEntryChargeDetailResponse>> getChargeDetails(
+    public ResponseEntity<?> getChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         List<PdaEntryChargeDetailResponse> response = pdaEntryService.getChargeDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Charge details retrieved successfully", response);
     }
 
     @Operation(
@@ -322,7 +320,7 @@ public class PdaEntryController {
                     "Automatically calculates amounts (QTY × DAYS × PDA_RATE + TAX_AMOUNT) and updates header total. " +
                     "Auto-populates tax information when charge changes.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully saved charge details",
                             content = @Content(
@@ -330,22 +328,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryChargeDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -355,36 +353,36 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/charge-details/bulk-save")
-    public ResponseEntity<List<PdaEntryChargeDetailResponse>> bulkSaveChargeDetails(
+    public ResponseEntity<?> bulkSaveChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid,
             @Parameter(description = "Bulk save request with charge details and delete IDs", required = true)
             @Valid @RequestBody BulkSaveChargeDetailsRequest request
     ) {
         List<PdaEntryChargeDetailResponse> response = pdaEntryService.bulkSaveChargeDetails(transactionPoid, request, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Charge details saved successfully", response);
     }
 
     @Operation(
             summary = "Delete charge detail",
             description = "Deletes a single charge detail and recalculates the header total amount.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully deleted charge detail",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry or charge detail not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -394,16 +392,14 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}/charge-details/{detRowId}")
-    public ResponseEntity<Map<String, String>> deleteChargeDetail(
+    public ResponseEntity<?> deleteChargeDetail(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid,
             @Parameter(description = "Detail row ID", required = true)
             @PathVariable Long detRowId
     ) {
         pdaEntryService.deleteChargeDetail(transactionPoid, detRowId, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId());
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Charge detail deleted successfully");
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Charge detail deleted successfully", null);
     }
 
     @Operation(
@@ -413,22 +409,22 @@ public class PdaEntryController {
                     "For GENERAL ref type, status must be PROPOSAL. " +
                     "Cannot clear if status is CONFIRMED or CLOSED.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully cleared charge details",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Charge details cannot be cleared",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -438,14 +434,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/charge-details/clear")
-    public ResponseEntity<Map<String, String>> clearChargeDetails(
+    public ResponseEntity<?> clearChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         pdaEntryService.clearChargeDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Charge details cleared successfully");
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Charge details cleared successfully", null);
     }
 
     @Operation(
@@ -454,7 +448,7 @@ public class PdaEntryController {
                     "Validates that all required header fields are present (vessel type, GRT, NRT, DWT, port, etc.). " +
                     "Recalculates header total amount after stored procedure execution.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully recalculated charge details",
                             content = @Content(
@@ -462,22 +456,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryChargeDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Validation error - Required header fields missing",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -487,12 +481,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/recalculate")
-    public ResponseEntity<List<PdaEntryChargeDetailResponse>> recalculateChargeDetails(
+    public ResponseEntity<?> recalculateChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         List<PdaEntryChargeDetailResponse> response = pdaEntryService.recalculateChargeDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Charge details recalculated successfully", response);
     }
 
     @Operation(
@@ -501,7 +495,7 @@ public class PdaEntryController {
                     "Validates that all required header fields are present. " +
                     "Recalculates header total amount after loading default charges.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully loaded default charges",
                             content = @Content(
@@ -509,22 +503,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryChargeDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Validation error - Required header fields missing",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -534,12 +528,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/{transactionPoid}/load-default-charges")
-    public ResponseEntity<List<PdaEntryChargeDetailResponse>> loadDefaultCharges(
+    public ResponseEntity<?> loadDefaultCharges(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         List<PdaEntryChargeDetailResponse> response = pdaEntryService.loadDefaultCharges(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Default charges loaded successfully", response);
     }
 
     // ==================== Vehicle Details Operations ====================
@@ -548,7 +542,7 @@ public class PdaEntryController {
             summary = "Get vehicle details",
             description = "Retrieves all vehicle details for a PDA entry, ordered by row ID.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved vehicle details",
                             content = @Content(
@@ -556,12 +550,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryVehicleDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -571,12 +565,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/vehicle-details")
-    public ResponseEntity<List<PdaEntryVehicleDetailResponse>> getVehicleDetails(
+    public ResponseEntity<?> getVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         List<PdaEntryVehicleDetailResponse> response = pdaEntryService.getVehicleDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Vehicle details retrieved successfully", response);
     }
 
     @Operation(
@@ -584,7 +578,7 @@ public class PdaEntryController {
             description = "Bulk save vehicle details (create, update, delete in single transaction). " +
                     "For new records, detRowId should be null. For updates, provide existing detRowId.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully saved vehicle details",
                             content = @Content(
@@ -592,22 +586,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryVehicleDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -617,14 +611,14 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/vehicle-details/bulk-save")
-    public ResponseEntity<List<PdaEntryVehicleDetailResponse>> bulkSaveVehicleDetails(
+    public ResponseEntity<?> bulkSaveVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid,
             @Parameter(description = "Bulk save request with vehicle details and delete IDs", required = true)
             @Valid @RequestBody BulkSaveVehicleDetailsRequest request
     ) {
         List<PdaEntryVehicleDetailResponse> response = pdaEntryService.bulkSaveVehicleDetails(transactionPoid, request, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Vehicle details saved successfully", response);
     }
 
     @Operation(
@@ -632,22 +626,22 @@ public class PdaEntryController {
             description = "Imports vehicle details from external source using stored procedure. " +
                     "Validates that entry is editable before importing.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully imported vehicle details",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -657,14 +651,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/vehicle-details/import")
-    public ResponseEntity<Map<String, String>> importVehicleDetails(
+    public ResponseEntity<?> importVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         pdaEntryService.importVehicleDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Vehicle details imported successfully");
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Vehicle details imported successfully", null);
     }
 
     @Operation(
@@ -672,22 +664,22 @@ public class PdaEntryController {
             description = "Clears all vehicle details for a PDA entry using stored procedure. " +
                     "Validates that entry is editable before clearing.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully cleared vehicle details",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -697,14 +689,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/vehicle-details/clear")
-    public ResponseEntity<Map<String, String>> clearVehicleDetails(
+    public ResponseEntity<?> clearVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         pdaEntryService.clearVehicleDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Vehicle details cleared successfully");
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Vehicle details cleared successfully", null);
     }
 
     @Operation(
@@ -712,22 +702,22 @@ public class PdaEntryController {
             description = "Publishes vehicle details for import using stored procedure. " +
                     "Validates that entry is editable before publishing.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully published vehicle details for import",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -737,14 +727,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/vehicle-details/publish")
-    public ResponseEntity<Map<String, String>> publishVehicleDetailsForImport(
+    public ResponseEntity<?> publishVehicleDetailsForImport(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         pdaEntryService.publishVehicleDetailsForImport(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Vehicle details published for import successfully");
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Vehicle details published for import successfully", null);
     }
 
     // ==================== TDR Details Operations ====================
@@ -753,7 +741,7 @@ public class PdaEntryController {
             summary = "Get TDR details",
             description = "Retrieves all TDR details for a PDA entry, ordered by row ID.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved TDR details",
                             content = @Content(
@@ -761,12 +749,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryTdrDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -776,12 +764,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/tdr-details")
-    public ResponseEntity<List<PdaEntryTdrDetailResponse>> getTdrDetails(
+    public ResponseEntity<?> getTdrDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         List<PdaEntryTdrDetailResponse> response = pdaEntryService.getTdrDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("TDR details retrieved successfully", response);
     }
 
     @Operation(
@@ -790,7 +778,7 @@ public class PdaEntryController {
                     "For new records, detRowId should be null. For updates, provide existing detRowId. " +
                     "Note: TDR details are typically read-only in legacy. API supports create/update for future enhancements.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully saved TDR details",
                             content = @Content(
@@ -798,22 +786,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryTdrDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -823,14 +811,14 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/tdr-details/bulk-save")
-    public ResponseEntity<List<PdaEntryTdrDetailResponse>> bulkSaveTdrDetails(
+    public ResponseEntity<?> bulkSaveTdrDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid,
             @Parameter(description = "Bulk save request with TDR details and delete IDs", required = true)
             @Valid @RequestBody BulkSaveTdrDetailsRequest request
     ) {
         List<PdaEntryTdrDetailResponse> response = pdaEntryService.bulkSaveTdrDetails(transactionPoid, request, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("TDR details saved successfully", response);
     }
 
     // ==================== Acknowledgment Details Operations ====================
@@ -839,7 +827,7 @@ public class PdaEntryController {
             summary = "Get acknowledgment details",
             description = "Retrieves all acknowledgment details for a PDA entry, ordered by row ID.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved acknowledgment details",
                             content = @Content(
@@ -847,12 +835,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryAcknowledgmentDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -862,12 +850,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/acknowledgment-details")
-    public ResponseEntity<List<PdaEntryAcknowledgmentDetailResponse>> getAcknowledgmentDetails(
+    public ResponseEntity<?> getAcknowledgmentDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         List<PdaEntryAcknowledgmentDetailResponse> response = pdaEntryService.getAcknowledgmentDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Acknowledgment details retrieved successfully", response);
     }
 
     @Operation(
@@ -876,7 +864,7 @@ public class PdaEntryController {
                     "For new records, detRowId should be null. For updates, provide existing detRowId. " +
                     "Note: Acknowledgment details are typically read-only in legacy. API supports create/update for future enhancements.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully saved acknowledgment details",
                             content = @Content(
@@ -884,22 +872,22 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = PdaEntryAcknowledgmentDetailResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters or validation error",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "403",
                             description = "Forbidden - Entry cannot be edited",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -909,36 +897,32 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/acknowledgment-details/bulk-save")
-    public ResponseEntity<List<PdaEntryAcknowledgmentDetailResponse>> bulkSaveAcknowledgmentDetails(
+    public ResponseEntity<?> bulkSaveAcknowledgmentDetails(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid,
             @Parameter(description = "Bulk save request with acknowledgment details and delete IDs", required = true)
             @Valid @RequestBody BulkSaveAcknowledgmentDetailsRequest request
     ) {
         List<PdaEntryAcknowledgmentDetailResponse> response = pdaEntryService.bulkSaveAcknowledgmentDetails(transactionPoid, request, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Acknowledgment details saved successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/acknow/upload-details")
-    public ResponseEntity<Map<String, String>> uploadAcknowledgmentDetails(
+    public ResponseEntity<?> uploadAcknowledgmentDetails(
             @PathVariable Long transactionPoid
     ) {
         pdaEntryService.uploadAcknowledgmentDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Acknowledgment details uploaded successfully");
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Acknowledgment details uploaded successfully", null);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/acknow/clear-details")
-    public ResponseEntity<Map<String, String>> clearAcknowledgmentDetails(
+    public ResponseEntity<?> clearAcknowledgmentDetails(
             @PathVariable Long transactionPoid
     ) {
         pdaEntryService.clearAcknowledgmentDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Acknowledgment details cleared successfully");
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Acknowledgment details cleared successfully", null);
     }
 
 
@@ -951,7 +935,7 @@ public class PdaEntryController {
                     "Returns validation results with errors and warnings. " +
                     "Transaction POID can be null for new records.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Validation completed",
                             content = @Content(
@@ -959,12 +943,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = ValidationResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -974,14 +958,14 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/validate-before-save")
-    public ResponseEntity<ValidationResponse> validateBeforeSave(
+    public ResponseEntity<?> validateBeforeSave(
             @Parameter(description = "Transaction POID (optional, for existing records)")
             @RequestParam(required = false) Long transactionPoid,
             @Parameter(description = "PDA Entry request to validate", required = true)
             @Valid @RequestBody PdaEntryRequest request
     ) {
         ValidationResponse response = pdaEntryService.validateBeforeSave(transactionPoid, request, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Validation completed", response);
     }
 
     @Operation(
@@ -990,7 +974,7 @@ public class PdaEntryController {
                     "Calls stored procedure for post-save validation and processing. " +
                     "Returns validation results.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Validation completed",
                             content = @Content(
@@ -998,12 +982,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = ValidationResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -1013,12 +997,12 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/{transactionPoid}/validate-after-save")
-    public ResponseEntity<ValidationResponse> validateAfterSave(
+    public ResponseEntity<?> validateAfterSave(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         ValidationResponse response = pdaEntryService.validateAfterSave(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Validation completed", response);
     }
 
     @Operation(
@@ -1027,7 +1011,7 @@ public class PdaEntryController {
                     "Calls stored procedure to retrieve vessel type, IMO number, GRT, NRT, and DWT. " +
                     "Transaction POID is optional (can be null for new records).",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully retrieved vessel details",
                             content = @Content(
@@ -1035,12 +1019,12 @@ public class PdaEntryController {
                                     schema = @Schema(implementation = VesselDetailsResponse.class)
                             )
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "Invalid input parameters - Vessel POID is required",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -1050,14 +1034,14 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/vessel-details")
-    public ResponseEntity<VesselDetailsResponse> getVesselDetails(
+    public ResponseEntity<?> getVesselDetails(
             @Parameter(description = "Vessel POID", required = true)
             @RequestParam BigDecimal vesselPoid,
             @Parameter(description = "Transaction POID (optional, for existing records)")
             @RequestParam(required = false) Long transactionPoid
     ) {
         VesselDetailsResponse response = pdaEntryService.getVesselDetails(vesselPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ResponseEntity.ok(response);
+        return ApiResponse.success("Vessel details retrieved successfully", response);
     }
 
     @Operation(
@@ -1067,22 +1051,22 @@ public class PdaEntryController {
                     "Returns FDA_POID which can be used to redirect to FDA screen. " +
                     "Entry must be in editable state.",
             responses = {
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "200",
                             description = "Successfully created FDA",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "400",
                             description = "FDA creation failed",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "404",
                             description = "PDA entry not found",
                             content = @Content(mediaType = "application/json")
                     ),
-                    @ApiResponse(
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
                             responseCode = "401",
                             description = "Unauthorized - Authentication required",
                             content = @Content(mediaType = "application/json")
@@ -1092,15 +1076,14 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping("/{transactionPoid}/create-fda")
-    public ResponseEntity<Map<String, String>> createFda(
+    public ResponseEntity<?> createFda(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
         String result = pdaEntryService.createFda(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "FDA created successfully");
-        response.put("result", result);
-        return ResponseEntity.ok(response);
+        Map<String, String> responseData = new HashMap<>();
+        responseData.put("result", result);
+        return ApiResponse.success("FDA created successfully", responseData);
     }
 
     // ==================== Helper Methods ====================

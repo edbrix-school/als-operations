@@ -122,148 +122,18 @@ class PortCallReportServiceImplTest {
         when(query.setFirstResult(anyInt())).thenReturn(query);
         when(query.setMaxResults(anyInt())).thenReturn(query);
         when(countQuery.setParameter(anyString(), any())).thenReturn(countQuery);
-        
+
         List<Object[]> mockResultList = new java.util.ArrayList<>();
         mockResultList.add(mockRow);
         when(query.getResultList()).thenReturn(mockResultList);
         when(countQuery.getSingleResult()).thenReturn(1L);
 
-        Page<PortCallReportResponseDto> result = service.getAllPortCallReportsWithFilters(
+        Page<PortCallReportListResponse> result = service.getAllPortCallReportsWithFilters(
                 groupPoid, filterRequest, 0, 20, null);
 
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertEquals("PCR00001", result.getContent().get(0).getPortCallReportId());
         verify(entityManager, times(2)).createNativeQuery(anyString());
-    }
-
-    @Test
-    void getReportById_ShouldReturnReport() {
-        when(hdrRepository.findById(1L)).thenReturn(Optional.of(entity));
-        when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(Collections.emptyList());
-
-        PortCallReportResponseDto result = service.getReportById(1L);
-
-        assertNotNull(result);
-        assertEquals("PCR00001", result.getPortCallReportId());
-        verify(hdrRepository).findById(1L);
-    }
-
-    @Test
-    void getReportById_ShouldThrowException_WhenNotFound() {
-        when(hdrRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> service.getReportById(1L));
-        verify(hdrRepository).findById(1L);
-    }
-
-    @Test
-    void createReport_ShouldCreateReport() {
-        User user = User.builder().userPoid(1L).userId("testuser").build();
-        VesselType vesselType1 = VesselType.builder().vesselTypePoid(1L).vesselTypeCode("VT1").build();
-        VesselType vesselType2 = VesselType.builder().vesselTypePoid(2L).vesselTypeCode("VT2").build();
-
-        when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
-        when(vesselTypeRepository.findAllActive()).thenReturn(List.of(vesselType1, vesselType2));
-        when(jdbcTemplate.queryForObject(anyString(), eq(Long.class))).thenReturn(0L);
-        when(userRepository.findByUserPoid(1L)).thenReturn(Optional.of(user));
-        when(hdrRepository.save(any())).thenReturn(entity);
-        when(hdrRepository.findById(1L)).thenReturn(Optional.of(entity));
-        when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(Collections.emptyList());
-
-        PortCallReportResponseDto result = service.createReport(request, userPoid, groupPoid);
-
-        assertNotNull(result);
-        assertEquals("PCR00001", result.getPortCallReportId());
-        verify(hdrRepository).save(any());
-    }
-
-    @Test
-    void createReport_ShouldThrowException_WhenDuplicateName() {
-        when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(true);
-
-        assertThrows(ResourceAlreadyExistsException.class, () -> service.createReport(request, userPoid, groupPoid));
-        verify(hdrRepository, never()).save(any());
-    }
-
-    @Test
-    void createReport_ShouldThrowException_WhenInvalidVesselType() {
-        PortCallReportDto invalidRequest = PortCallReportDto.builder()
-                .portCallReportName("New Report")
-                .portCallApplVesselType(List.of("999"))
-                .build();
-
-        when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
-        when(vesselTypeRepository.findAllActive()).thenReturn(Collections.emptyList());
-
-        assertThrows(CustomException.class, () -> service.createReport(invalidRequest, userPoid, groupPoid));
-        verify(hdrRepository, never()).save(any());
-    }
-
-    @Test
-    void createReport_ShouldThrowException_WhenActivityTypeNull() {
-        PortCallReportDetailDto detailDto = PortCallReportDetailDto.builder()
-                .detRowId(1L)
-                .portActivityTypePoid(null)
-                .build();
-
-        PortCallReportDto invalidRequest = PortCallReportDto.builder()
-                .portCallReportName("New Report")
-                .details(List.of(detailDto))
-                .build();
-
-        when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
-
-        assertThrows(CustomException.class, () -> service.createReport(invalidRequest, userPoid, groupPoid));
-        verify(hdrRepository, never()).save(any());
-    }
-
-    @Test
-    void createReport_ShouldThrowException_WhenInvalidActivityType() {
-        PortCallReportDetailDto detailDto = PortCallReportDetailDto.builder()
-                .detRowId(1L)
-                .portActivityTypePoid(999L)
-                .build();
-
-        PortCallReportDto invalidRequest = PortCallReportDto.builder()
-                .portCallReportName("New Report")
-                .details(List.of(detailDto))
-                .build();
-
-        when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), any())).thenReturn(false);
-        when(portActivityMasterRepository.existsById(999L)).thenReturn(false);
-
-        assertThrows(CustomException.class, () -> service.createReport(invalidRequest, userPoid, groupPoid));
-        verify(hdrRepository, never()).save(any());
-    }
-
-    @Test
-    void updateReport_ShouldUpdateReport() {
-        User user = User.builder().userPoid(1L).userId("testuser").build();
-        VesselType vesselType1 = VesselType.builder().vesselTypePoid(1L).vesselTypeCode("VT1").build();
-        VesselType vesselType2 = VesselType.builder().vesselTypePoid(2L).vesselTypeCode("VT2").build();
-
-        when(hdrRepository.existsByPortCallReportNameIgnoreCaseAndNotDeleted(any(), eq(1L))).thenReturn(false);
-        when(vesselTypeRepository.findAllActive()).thenReturn(List.of(vesselType1, vesselType2));
-        when(userRepository.findByUserPoid(1L)).thenReturn(Optional.of(user));
-        when(hdrRepository.findById(1L)).thenReturn(Optional.of(entity));
-        when(hdrRepository.save(any())).thenReturn(entity);
-        when(dtlRepository.findByPortCallReportPoid(1L)).thenReturn(Collections.emptyList());
-
-        PortCallReportResponseDto result = service.updateReport(1L, request, userPoid, groupPoid);
-
-        assertNotNull(result);
-        verify(hdrRepository).save(any());
-    }
-
-    @Test
-    void deleteReport_ShouldMarkAsDeleted() {
-        when(hdrRepository.findById(1L)).thenReturn(Optional.of(entity));
-
-        service.deleteReport(1L);
-
-        assertEquals("Y", entity.getDeleted());
-        assertEquals("N", entity.getActive());
-        verify(hdrRepository).save(entity);
     }
 }

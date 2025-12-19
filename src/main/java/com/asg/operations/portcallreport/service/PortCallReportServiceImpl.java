@@ -54,7 +54,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PortCallReportResponseDto> getAllPortCallReportsWithFilters(
+    public Page<PortCallReportListResponse> getAllPortCallReportsWithFilters(
             Long groupPoid,
             GetAllPortCallReportFilterRequest filterRequest,
             int page, int size, String sort) {
@@ -126,26 +126,9 @@ public class PortCallReportServiceImpl implements PortCallReportService {
 
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
-        List<PortCallReportResponseDto> dtos = results.stream()
-                .map(this::mapToPortCallReportResponseDto)
+        List<PortCallReportListResponse> dtos = results.stream()
+                .map(this::mapToPortCallReportListResponseDto)
                 .collect(Collectors.toList());
-
-        for (PortCallReportResponseDto dto : dtos) {
-            List<LovItem> vesselTypeLovItems = null;
-            if (dto.getPortCallApplVesselType() != null) {
-                List<String> vesselTypeList = dto.getPortCallApplVesselType();
-                LovResponse lovResponse = lovService.getLovList("VESSEL_TYPE_MASTER", null, null, null, null, null);
-                if (lovResponse != null && lovResponse.getItems() != null) {
-                    Map<String, LovItem> vesselTypeByPoidMap = lovResponse.getItems().stream()
-                            .collect(Collectors.toMap(LovItem::getCode, item -> item));
-                    vesselTypeLovItems = vesselTypeList.stream()
-                            .map(vesselTypeByPoidMap::get)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
-                }
-            }
-            dto.setPortCallApplVesselTypeDet(vesselTypeLovItems);
-        }
 
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
@@ -213,22 +196,16 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         }
     }
 
-    private PortCallReportResponseDto mapToPortCallReportResponseDto(Object[] row) {
-        String vesselTypes = convertToString(row[3]);
-        List<String> vesselTypeList = new ArrayList<>();
-        if (vesselTypes != null && !vesselTypes.trim().isEmpty()) {
-            vesselTypeList = List.of(vesselTypes.split(","));
-        }
-
-        return PortCallReportResponseDto.builder()
-                .portCallReportPoid(row[0] != null ? ((Number) row[0]).longValue() : null)
-                .portCallReportId(convertToString(row[1]))
-                .portCallReportName(convertToString(row[2]))
-                .portCallApplVesselType(vesselTypeList)
-                .active(convertToString(row[4]))
-                .seqno(row[5] != null ? ((Number) row[5]).longValue() : null)
-                .remarks(convertToString(row[6]))
-                .build();
+    private PortCallReportListResponse mapToPortCallReportListResponseDto(Object[] row) {
+        PortCallReportListResponse dto = new PortCallReportListResponse();
+        dto.setPortCallReportPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
+        dto.setPortCallReportId(convertToString(row[1]));
+        dto.setPortCallReportName(convertToString(row[2]));
+        dto.setPortCallApplVesselType(convertToString(row[3]));
+        dto.setActive(convertToString(row[4]));
+        dto.setSeqno(row[5] != null ? ((Number) row[5]).longValue() : null);
+        dto.setRemarks(convertToString(row[6]));
+        return dto;
     }
 
     private String convertToString(Object value) {

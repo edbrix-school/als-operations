@@ -20,6 +20,7 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Page;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -49,14 +50,14 @@ public class PdaPortTariffMasterController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<PdaPortTariffMasterResponse> tariffPage = tariffService
+        org.springframework.data.domain.Page<PdaPortTariffListResponse> tariffPage = tariffService
                 .getAllTariffsWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
 
         // Create displayFields
-        Map<String, String> displayFields = new HashMap<>();
+        Map<String, String> displayFields = new LinkedHashMap<>();
         displayFields.put("PERIOD_FROM", "date");
         displayFields.put("PERIOD_TO", "date");
-        displayFields.put("PORTS", "text");
+        displayFields.put("PORT_NAME", "text");
 
         // Create paginated response with new structure
         Map<String, Object> response = new HashMap<>();

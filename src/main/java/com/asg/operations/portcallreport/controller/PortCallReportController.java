@@ -7,6 +7,7 @@ import com.asg.operations.common.ApiResponse;
 import com.asg.operations.portcallreport.dto.GetAllPortCallReportFilterRequest;
 import com.asg.operations.portcallreport.dto.PortActivityResponseDto;
 import com.asg.operations.portcallreport.dto.PortCallReportDto;
+import com.asg.operations.portcallreport.dto.PortCallReportListResponse;
 import com.asg.operations.portcallreport.dto.PortCallReportResponseDto;
 import com.asg.operations.portcallreport.service.PortCallReportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,7 +44,6 @@ public class PortCallReportController {
      * @param page   page number (0-based)
      * @param size   page size
      * @param sort   sort field and direction
-     * @param search search term for filtering
      * @return paginated list of port call reports
      */
     @AllowedAction(UserRolesRightsEnum.VIEW)
@@ -64,18 +66,14 @@ public class PortCallReportController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<PortCallReportResponseDto> reportPage = portCallReportService
+        org.springframework.data.domain.Page<PortCallReportListResponse> reportPage = portCallReportService
                 .getAllPortCallReportsWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
 
-        java.util.Map<String, String> displayFields = new java.util.HashMap<>();
+        Map<String, String> displayFields = new LinkedHashMap<>();
         displayFields.put("PORT_CALL_REPORT_ID", "text");
-        displayFields.put("VESSEL_NAME", "text");
-        displayFields.put("VOYAGE_NO", "text");
-        displayFields.put("PORT_NAME", "text");
-        displayFields.put("ARRIVAL_DATE", "date");
-        displayFields.put("DEPARTURE_DATE", "date");
+        displayFields.put("PORT_CALL_REPORT_NAME", "text");
 
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("content", reportPage.getContent());
         response.put("pageNumber", reportPage.getNumber());
         response.put("displayFields", displayFields);

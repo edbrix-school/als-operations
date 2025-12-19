@@ -38,7 +38,7 @@ public class PdaRateTypeController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<PdaRateTypeResponseDTO> rateTypePage = rateTypeService
+        org.springframework.data.domain.Page<PdaRateTypeListResponse> rateTypePage = rateTypeService
                 .getAllRateTypesWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
 
         java.util.Map<String, String> displayFields = new java.util.HashMap<>();

@@ -38,7 +38,7 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PdaRateTypeResponseDTO> getAllRateTypesWithFilters(
+    public Page<PdaRateTypeListResponse> getAllRateTypesWithFilters(
             Long groupPoid,
             GetAllRateTypeFilterRequest filterRequest,
             int page, int size, String sort) {
@@ -110,13 +110,9 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
 
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
-        List<PdaRateTypeResponseDTO> dtos = results.stream()
-                .map(this::mapToRateTypeResponseDto)
+        List<PdaRateTypeListResponse> dtos = results.stream()
+                .map(this::mapToRateTypeListResponseDto)
                 .collect(Collectors.toList());
-
-        for (PdaRateTypeResponseDTO dto : dtos) {
-            dto.setGroupDet(lovService.getLovItemByPoid(dto.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-        }
 
         Pageable pageable = PageRequest.of(page, size);
         return new PageImpl<>(dtos, pageable, totalCount);
@@ -174,15 +170,14 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         }
     }
 
-    private PdaRateTypeResponseDTO mapToRateTypeResponseDto(Object[] row) {
-        PdaRateTypeResponseDTO dto = new PdaRateTypeResponseDTO();
+    private PdaRateTypeListResponse mapToRateTypeListResponseDto(Object[] row) {
+        PdaRateTypeListResponse dto = new PdaRateTypeListResponse();
         dto.setRateTypeId(row[0] != null ? ((Number) row[0]).longValue() : null);
         dto.setRateTypeCode(convertToString(row[1]));
         dto.setRateTypeName(convertToString(row[2]));
         dto.setRateTypeFormula(convertToString(row[3]));
         dto.setDefDays(row[4] != null ? (BigDecimal) row[4] : null);
         dto.setActive(convertToString(row[5]));
-        // Skip deleted field as it's not in DTO
         dto.setSeqNo(row[7] != null ? new BigInteger(row[7].toString()) : null);
         dto.setCreatedBy(convertToString(row[8]));
         dto.setCreatedDate(row[9] != null ? ((java.sql.Timestamp) row[9]).toLocalDateTime() : null);

@@ -3,6 +3,7 @@ package com.asg.operations.portcallreport.service;
 import com.asg.operations.portcallreport.dto.GetAllPortCallReportFilterRequest;
 import com.asg.operations.portcallreport.dto.PortActivityResponseDto;
 import com.asg.operations.portcallreport.dto.PortCallReportDto;
+import com.asg.operations.portcallreport.dto.PortCallReportListResponse;
 import com.asg.operations.portcallreport.dto.PortCallReportResponseDto;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Map;
 
 public interface PortCallReportService {
 
-    org.springframework.data.domain.Page<PortCallReportResponseDto> getAllPortCallReportsWithFilters(Long groupPoid, GetAllPortCallReportFilterRequest filterRequest, int page, int size, String sort);
+    org.springframework.data.domain.Page<PortCallReportListResponse> getAllPortCallReportsWithFilters(Long groupPoid, GetAllPortCallReportFilterRequest filterRequest, int page, int size, String sort);
 
     PortCallReportResponseDto getReportById(Long id);
 

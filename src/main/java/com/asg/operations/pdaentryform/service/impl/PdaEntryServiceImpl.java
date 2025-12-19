@@ -2500,7 +2500,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     @Override
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<PdaEntryResponse> getAllPdaWithFilters(
+    public org.springframework.data.domain.Page<PdaEntryListResponse> getAllPdaWithFilters(
             Long groupPoid, Long companyPoid,
             GetAllPdaFilterRequest filterRequest,
             int page, int size, String sort) {
@@ -2622,12 +2622,13 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Execute query and map results
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
-        List<PdaEntryResponse> dtos = results.stream()
-                .map(this::mapToPdaResponseDto)
+        List<PdaEntryListResponse> dtos = results.stream()
+                .map(this::mapToPdaListResponseDto)
                 .collect(Collectors.toList());
 
-        for (PdaEntryResponse dto : dtos) {
-            setLovDetails(dto);
+        for (PdaEntryListResponse dto : dtos) {
+            dto.setVesselName(lovService.getLovItemByPoid(dto.getVesselPoid() != null ? dto.getVesselPoid().longValue() : null, "VESSEL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null).getLabel());
+            dto.setPrincipalName(lovService.getLovItemByPoid(dto.getPrincipalPoid() != null ? dto.getPrincipalPoid().longValue() : null, "PRINCIPAL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null).getLabel());
         }
 
         // Create page
@@ -2981,6 +2982,34 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private String convertToString(Object value) {
         return value != null ? value.toString() : null;
+    }
+
+    private PdaEntryListResponse mapToPdaListResponseDto(Object[] row) {
+        PdaEntryListResponse dto = new PdaEntryListResponse();
+
+        dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
+        dto.setTransactionDate(row[1] != null ? ((java.sql.Timestamp) row[1]).toLocalDateTime().toLocalDate() : null);
+        dto.setDocRef(convertToString(row[4]));
+        dto.setTransactionRef(convertToString(row[5]));
+        dto.setPrincipalPoid(row[6] != null ? (java.math.BigDecimal) row[6] : null);
+        dto.setPrincipalName(convertToString(row[7]));
+        dto.setVoyagePoid(row[9] != null ? (java.math.BigDecimal) row[9] : null);
+        dto.setVoyageNo(convertToString(row[10]));
+        dto.setVesselPoid(row[11] != null ? (java.math.BigDecimal) row[11] : null);
+        dto.setPortPoid(row[22] != null ? (java.math.BigDecimal) row[22] : null);
+        dto.setPortDescription(convertToString(row[23]));
+        dto.setStatus(convertToString(row[43]));
+        dto.setRefType(convertToString(row[41]));
+        dto.setFdaRef(convertToString(row[57]));
+        dto.setTotalAmount(row[36] != null ? (java.math.BigDecimal) row[36] : null);
+        dto.setCurrencyCode(convertToString(row[34]));
+        dto.setDeleted(convertToString(row[83]));
+        dto.setCreatedBy(convertToString(row[84]));
+        dto.setCreatedDate(row[85] != null ? ((java.sql.Timestamp) row[85]).toLocalDateTime() : null);
+        dto.setLastModifiedBy(convertToString(row[86]));
+        dto.setLastModifiedDate(row[87] != null ? ((java.sql.Timestamp) row[87]).toLocalDateTime() : null);
+
+        return dto;
     }
 
     private PdaEntryResponse mapToPdaResponseDto(Object[] row) {

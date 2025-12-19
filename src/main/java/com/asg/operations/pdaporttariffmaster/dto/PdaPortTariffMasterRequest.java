@@ -15,9 +15,9 @@ import java.util.List;
 @Setter
 public class PdaPortTariffMasterRequest {
 
-    @NotNull(message = "At least one port must be selected")
-    @NotEmpty(message = "Ports list cannot be empty")
-    private List<String> ports; // List of port POIDs as strings
+    @NotNull(message = "Port must be selected")
+    @NotEmpty(message = "Port cannot be empty")
+    private String port; // Port POID as string
 
     @NotNull(message = "At least one vessel type must be selected")
     @NotEmpty(message = "Vessel types list cannot be empty")

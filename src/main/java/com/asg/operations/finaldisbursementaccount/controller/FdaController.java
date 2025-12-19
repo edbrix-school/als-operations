@@ -58,7 +58,7 @@ public class FdaController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<FdaHeaderDto> fdaPage = fdaService
+        org.springframework.data.domain.Page<FdaListResponse> fdaPage = fdaService
                 .getAllFdaWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
 
         // Create displayFields
@@ -67,8 +67,8 @@ public class FdaController {
         displayFields.put("DOC_REF", "text");
         displayFields.put("PDA_REF", "text");
         displayFields.put("VESSEL_NAME", "text");
-        displayFields.put("PRINCIPAL_POID", "text");
-        displayFields.put("VOYAGE_POID", "text");
+        displayFields.put("PRINCIPAL_NAME", "text");
+        displayFields.put("VOYAGE_NO", "text");
 
         // Create paginated response with new structure
         Map<String, Object> response = new HashMap<>();

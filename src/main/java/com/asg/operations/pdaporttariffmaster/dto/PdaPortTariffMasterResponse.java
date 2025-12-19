@@ -21,9 +21,9 @@ public class PdaPortTariffMasterResponse {
 
     private String docRef;
 
-    private List<String> ports; // Array of port POIDs
-    private List<LovItem> portsDet;
-    private List<String> portNames; // Array of port names (resolved)
+    private String port; // Port POID
+    private LovItem portDet;
+    private String portName; // Port name (resolved)
 
     private List<String> vesselTypes; // Array of vessel type POIDs
     private List<LovItem> vesselTypesDet;

@@ -45,6 +45,6 @@ public interface ContractCrewService {
     /**
      * Get all crew with filters
      */
-    Page<ContractCrewResponse> getAllCrewWithFilters(Long groupPoid, Long companyPoid, GetAllCrewFilterRequest filterRequest, int page, int size, String sort);
+    Page<ContractCrewListResponse> getAllCrewWithFilters(Long groupPoid, Long companyPoid, GetAllCrewFilterRequest filterRequest, int page, int size, String sort);
 }
 

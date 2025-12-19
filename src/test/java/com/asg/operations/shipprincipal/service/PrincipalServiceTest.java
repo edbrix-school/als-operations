@@ -92,19 +92,18 @@ class PrincipalServiceTest {
     void testGetAllPrincipalsWithFilters_Success() {
         GetAllPrincipalFilterRequest filterRequest = new GetAllPrincipalFilterRequest();
         filterRequest.setIsDeleted("N");
-        
+
         jakarta.persistence.Query mockQuery = mock(jakarta.persistence.Query.class);
         jakarta.persistence.Query mockCountQuery = mock(jakarta.persistence.Query.class);
-        
+
         when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery).thenReturn(mockCountQuery);
         when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
         when(mockCountQuery.setParameter(anyString(), any())).thenReturn(mockCountQuery);
         when(mockQuery.setFirstResult(anyInt())).thenReturn(mockQuery);
         when(mockQuery.setMaxResults(anyInt())).thenReturn(mockQuery);
         when(mockCountQuery.getSingleResult()).thenReturn(1L);
-        
+
         Object[] mockRow = new Object[29];
-        // Fill with correct data types based on mapToPrincipalMasterDto expectations
         mockRow[0] = 1L; // PRINCIPAL_POID (Number)
         mockRow[1] = "PRIN001"; // PRINCIPAL_CODE (String)
         mockRow[2] = "Test Principal"; // PRINCIPAL_NAME (String)
@@ -134,12 +133,12 @@ class PrincipalServiceTest {
         mockRow[26] = new java.sql.Timestamp(System.currentTimeMillis()); // CREATED_DATE (Timestamp)
         mockRow[27] = "testuser"; // LASTMODIFIED_BY (String)
         mockRow[28] = new java.sql.Timestamp(System.currentTimeMillis()); // LASTMODIFIED_DATE (Timestamp)
-        
+
         java.util.List<Object[]> mockResults = new java.util.ArrayList<>();
         mockResults.add(mockRow);
         when(mockQuery.getResultList()).thenReturn(mockResults);
 
-        Page<PrincipalMasterDto> result = principalMasterService.getAllPrincipalsWithFilters(
+        Page<PrincipalListResponse> result = principalMasterService.getAllPrincipalsWithFilters(
                 100L, filterRequest, 0, 10, "principalName,asc");
 
         assertNotNull(result);

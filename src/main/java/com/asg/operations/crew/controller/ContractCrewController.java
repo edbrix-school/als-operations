@@ -56,7 +56,7 @@ public class ContractCrewController {
             filterRequest.setFilters(new java.util.ArrayList<>());
         }
 
-        org.springframework.data.domain.Page<ContractCrewResponse> crewPage = crewService
+        org.springframework.data.domain.Page<ContractCrewListResponse> crewPage = crewService
                 .getAllCrewWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
 
         // Create displayFields
