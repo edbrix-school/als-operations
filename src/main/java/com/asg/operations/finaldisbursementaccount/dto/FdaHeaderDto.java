@@ -39,7 +39,6 @@ public class FdaHeaderDto {
     private LocalDate arrivalDate;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate sailDate;
-    @NotNull(message = "Port is required")
     private Long portPoid;
     private LovItem portDet;
     @Size(max = 100, message = "Commodity Poid cannot exceed 100 characters")
