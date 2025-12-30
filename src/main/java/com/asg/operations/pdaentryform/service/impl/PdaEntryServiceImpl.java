@@ -661,9 +661,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         callClearAcknowledgmentDetails(groupPoid, userPoid, companyPoid, transactionPoid);
     }
 
-    public Map<String, Object> getVoyageDefaults(Long groupPoid, Long companyPoid, Long userPoid, BigDecimal voyagePoid) {
-        return callGetVoyageDefaults(groupPoid, companyPoid, userPoid, voyagePoid);
-    }
 
     @Override
     public void publishVehicleDetailsForImport(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
@@ -1678,7 +1675,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
-    private void callReCalculateCharges(
+    private String callReCalculateCharges(
             Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid,
             BigDecimal vesselPoid, BigDecimal vesselTypePoid, BigDecimal grt, BigDecimal nrt, BigDecimal dwt,
             BigDecimal portPoid, LocalDate arrivalDate, LocalDate sailDate,
@@ -1734,14 +1731,16 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             String status = (String) result.get("P_STATUS");
 
             logger.info("[SP-3] PROC_PDA_RE_CALCULATE - Completed. Status: {}", status);
+            return status != null ? status : "Success";
 
         } catch (Exception e) {
             logger.error("[SP-3] PROC_PDA_RE_CALCULATE - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
         }
     }
 
 
-    private void callLoadDefaultCharges(
+    private String callLoadDefaultCharges(
             Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid,
             BigDecimal vesselPoid, BigDecimal vesselTypePoid, BigDecimal grt, BigDecimal nrt, BigDecimal dwt,
             BigDecimal portPoid, LocalDate arrivalDate, LocalDate sailDate,
@@ -1796,9 +1795,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             String status = (String) result.get("P_STATUS");
 
             logger.info("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - Completed. Status: {}", status);
+            return status != null ? status : "Success";
 
         } catch (Exception e) {
             logger.error("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
         }
     }
 
@@ -2180,11 +2181,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private void createAcknowledgmentDetail(Long transactionPoid, PdaEntryAcknowledgmentDetailRequest request,
                                             String userId, LocalDateTime now) {
+        // Get next available detRowId
+        Long maxDetRowId = acknowledgmentDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid);
+        Long nextDetRowId = (maxDetRowId != null) ? maxDetRowId + 1 : 1;
+        
         // Create new entity
         PdaEntryAcknowledgmentDtl detail = new PdaEntryAcknowledgmentDtl();
         detail.setTransactionPoid(transactionPoid);
-        long detRowId = System.nanoTime() % 1000000;
-        detail.setDetRowId(detRowId > 0 ? detRowId : Math.abs(detRowId) + 1);
+        detail.setDetRowId(nextDetRowId);
 
         // Map request to entity
         mapAcknowledgmentDetailRequestToEntity(request, detail);
@@ -2250,40 +2254,111 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     // Additional SP Methods with Logging
 
-    public void callImportTdrDetail(Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid) {
+    public String callImportTdrDetail(Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid) {
         try {
             logger.info("[SP-3] PROC_PDA_IMPORT_TDR_DETAIL2 - transactionPoid: {}", transactionPoid);
-            String sql = "{ call PROC_PDA_IMPORT_TDR_DETAIL2(?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, userPoid, companyPoid, transactionPoid);
-            logger.info("[SP-3] PROC_PDA_IMPORT_TDR_DETAIL2 - Completed");
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_IMPORT_TDR_DETAIL2")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_TRANSACTION_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_TRANSACTION_POID", new BigDecimal(transactionPoid));
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+
+            String status = (String) result.get("P_STATUS");
+
+            logger.info("[SP-3] PROC_PDA_IMPORT_TDR_DETAIL2 - Completed. Status: {}", status);
+            return status != null ? status : "Success";
+
         } catch (Exception e) {
-            logger.error("[SP-3] PROC_PDA_IMPORT_TDR_DETAIL2 - Error: {}", e.getMessage());
+            logger.error("[SP-3] PROC_PDA_IMPORT_TDR_DETAIL2 - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
         }
     }
 
-    public void callDefaultChargesFromTdr(Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid, LocalDate arrivalDate) {
+    public String callDefaultChargesFromTdr(Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid, LocalDate arrivalDate) {
         try {
             logger.info("[SP-4] PROC_PDA_DEFAULT_CH_FROM_TDR - transactionPoid: {}", transactionPoid);
-            String sql = "{ call PROC_PDA_DEFAULT_CH_FROM_TDR(?, ?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, userPoid, companyPoid, transactionPoid, arrivalDate);
-            logger.info("[SP-4] PROC_PDA_DEFAULT_CH_FROM_TDR - Completed");
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_DEFAULT_CH_FROM_TDR")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_TRANSACTION_POID", Types.NUMERIC),
+                            new SqlParameter("P_ARRAIVAL_DATE", Types.DATE),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_TRANSACTION_POID", new BigDecimal(transactionPoid));
+            inputMap.put("P_ARRAIVAL_DATE", java.sql.Date.valueOf(arrivalDate));
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+
+            String status = (String) result.get("P_STATUS");
+
+            logger.info("[SP-4] PROC_PDA_DEFAULT_CH_FROM_TDR - Completed. Status: {}", status);
+            return status != null ? status : "Success";
+
         } catch (Exception e) {
-            logger.error("[SP-4] PROC_PDA_DEFAULT_CH_FROM_TDR - Error: {}", e.getMessage());
+            logger.error("[SP-4] PROC_PDA_DEFAULT_CH_FROM_TDR - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
         }
     }
 
-    public void callClearTdrDetails(Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid) {
+    public String callClearTdrDetails(Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid) {
         try {
             logger.info("[SP-5] PROC_PDA_TDR_DETAIL_CLEAR - transactionPoid: {}", transactionPoid);
-            String sql = "{ call PROC_PDA_TDR_DETAIL_CLEAR(?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, userPoid, companyPoid, transactionPoid);
-            logger.info("[SP-5] PROC_PDA_TDR_DETAIL_CLEAR - Completed");
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_TDR_DETAIL_CLEAR")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+
+            String status = (String) result.get("P_STATUS");
+
+            logger.info("[SP-5] PROC_PDA_TDR_DETAIL_CLEAR - Completed. Status: {}", status);
+            return status != null ? status : "Success";
+
         } catch (Exception e) {
-            logger.error("[SP-5] PROC_PDA_TDR_DETAIL_CLEAR - Error: {}", e.getMessage());
+            logger.error("[SP-5] PROC_PDA_TDR_DETAIL_CLEAR - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
         }
     }
 
-    public void callCancelPdaEntry(Long groupPoid, Long companyPoid, Long userPoid, Long pdaPoid, String cancelRemark) {
+    public String callCancelPdaEntry(Long groupPoid, Long companyPoid, Long userPoid, Long pdaPoid, String cancelRemark) {
         try {
             logger.info("[SP-6] PROC_PDA_ENTRY_CANCEL - START - pdaPoid: {}", pdaPoid);
 
@@ -2309,8 +2384,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             String spResult = (String) result.get("P_RESULT");
 
             logger.info("[SP-6] PROC_PDA_ENTRY_CANCEL - END - Result: {}", spResult);
+            return spResult != null ? spResult : "Success";
         } catch (Exception e) {
             logger.error("[SP-6] PROC_PDA_ENTRY_CANCEL - ERROR: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
         }
     }
 
@@ -2372,40 +2449,114 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
-    public void callUpdateFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
+    public String callUpdateFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
         try {
             logger.info("[SP-8] PROC_PDA_DTL_UPDATE_FDA - transactionPoid: {}", transactionPoid);
-            String sql = "{ call PROC_PDA_DTL_UPDATE_FDA(?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, companyPoid, userPoid, transactionPoid);
-            logger.info("[SP-8] PROC_PDA_DTL_UPDATE_FDA - Completed");
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_DTL_UPDATE_FDA")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.VARCHAR),
+                            new SqlOutParameter("P_RESULT", Types.VARCHAR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_PDA_POID", transactionPoid.toString());
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+
+            String status = (String) result.get("P_RESULT");
+
+            logger.info("[SP-8] PROC_PDA_DTL_UPDATE_FDA - Completed. Status: {}", status);
+            return status != null ? status : "Success";
+
         } catch (Exception e) {
-            logger.error("[SP-8] PROC_PDA_DTL_UPDATE_FDA - Error: {}", e.getMessage());
+            logger.error("[SP-8] PROC_PDA_DTL_UPDATE_FDA - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
+
         }
     }
 
-    public void callSubmitPdaToFda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
+    public String callSubmitPdaToFda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
         try {
             logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - transactionPoid: {}", transactionPoid);
-            String sql = "{ call PROC_PDA_TO_FDA_DOC_SUBMISSION(?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, companyPoid, userPoid, transactionPoid);
-            logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - Completed");
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_TO_FDA_DOC_SUBMISSION")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_RESULT", Types.VARCHAR),
+                            new SqlOutParameter("OUTDATA", Types.REF_CURSOR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+
+            String status = (String) result.get("P_RESULT");
+
+            logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - Completed. Status: {}", status);
+            return status != null ? status : "Success";
+
         } catch (Exception e) {
-            logger.error("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - Error: {}", e.getMessage());
+            logger.error("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
         }
     }
 
-    public void callRejectFdaDocs(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid, String correctionRemarks) {
+    public String callRejectFdaDocs(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid, String correctionRemarks) {
         try {
             logger.info("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - transactionPoid: {}", transactionPoid);
-            String sql = "{ call PROC_PDA_REJECT_THE_FDA_DOCS(?, ?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, companyPoid, userPoid, transactionPoid, correctionRemarks);
-            logger.info("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - Completed");
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_REJECT_THE_FDA_DOCS")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.NUMERIC),
+                            new SqlParameter("P_CORRECTION_REMARKS", Types.VARCHAR),
+                            new SqlOutParameter("P_RESULT", Types.VARCHAR),
+                            new SqlOutParameter("OUTDATA", Types.REF_CURSOR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
+            inputMap.put("P_CORRECTION_REMARKS", correctionRemarks);
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+
+            String status = (String) result.get("P_RESULT");
+
+            logger.info("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - Completed. Status: {}", status);
+            return status != null ? status : "Success";
+
         } catch (Exception e) {
-            logger.error("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - Error: {}", e.getMessage());
+            logger.error("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
         }
     }
 
-    public void callUploadAcknowledgmentDetails(
+    public String callUploadAcknowledgmentDetails(
             Long groupPoid,
             Long userPoid,
             Long companyPoid,
@@ -2435,14 +2586,16 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             String status = (String) result.get("P_STATUS");
 
             logger.info("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - Completed. Status: {}", status);
+            return status != null ? status : "Success";
 
         } catch (Exception e) {
             logger.error("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
         }
     }
 
 
-    public void callClearAcknowledgmentDetails(
+    public String callClearAcknowledgmentDetails(
             Long groupPoid,
             Long userPoid,
             Long companyPoid,
@@ -2472,29 +2625,42 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             String status = (String) result.get("P_STATUS");
 
             logger.info("[SP-13] PROC_PDA_ACKNOW_DTL_CLEAR - Completed. Status: {}", status);
+            return status != null ? status : "Success";
 
         } catch (Exception e) {
             logger.error("[SP-13] PROC_PDA_ACKNOW_DTL_CLEAR - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
         }
     }
 
-    public Map<String, Object> callGetVoyageDefaults(Long groupPoid, Long companyPoid, Long userPoid, BigDecimal voyagePoid) {
+    public String callVerifyFdaDocs(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
         try {
-            logger.info("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - voyagePoid: {}", voyagePoid);
-            String sql = "{ call PROC_PDA_VOYAGE_DEFAULT_DTLS(?, ?, ?, ?) }";
-            try {
-                Map<String, Object> result = jdbcTemplate.queryForMap(sql, groupPoid, companyPoid, userPoid, voyagePoid);
-                logger.info("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - Completed");
-                return result;
-            } catch (Exception ex) {
-                logger.debug("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - No result returned");
-                jdbcTemplate.update(sql, groupPoid, companyPoid, userPoid, voyagePoid);
-                logger.info("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - Completed");
-                return null;
-            }
+            logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - transactionPoid: {}", transactionPoid);
+            
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_VERIFY_THE_FDA_DOCS")
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_RESULT", Types.VARCHAR)
+                    );
+
+            Map<String, Object> inParams = new HashMap<>();
+            inParams.put("P_LOGIN_GROUP_POID", groupPoid);
+            inParams.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inParams.put("P_LOGIN_USER_POID", userPoid);
+            inParams.put("P_PDA_POID", transactionPoid);
+
+            Map<String, Object> result = jdbcCall.execute(inParams);
+            String spResult = (String) result.get("P_RESULT");
+
+            logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Result: {}", spResult);
+            return spResult != null ? spResult : "Success";
         } catch (Exception e) {
-            logger.error("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - Error: {}", e.getMessage());
-            return null;
+            logger.error("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Error: {}", e.getMessage());
+            return "Error: " + e.getMessage();
         }
     }
 
@@ -3121,5 +3287,183 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             return taxPercentage;
         }
     }
+
+    // New FDA Document Methods
+    @Override
+    public FdaDocumentViewResponse getFdaDocumentInfo(Long transactionPoid, Long groupPoid, Long companyPoid) {
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        
+        if (entry.getFdaPoid() == null) {
+            throw new ValidationException("No FDA document found for this PDA entry", 
+                List.of(new ValidationError("fdaPoid", "FDA document not created yet")));
+        }
+        
+        return FdaDocumentViewResponse.builder()
+                .fdaPoid(entry.getFdaPoid())
+                .fdaRef(entry.getFdaRef())
+                .fdaUrl("/fda-entry/" + entry.getFdaPoid())
+                .status(entry.getDocumentReceivedStatus())
+                .build();
+    }
+
+    @Override
+    public void acceptFdaDocuments(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - transactionPoid: {}", transactionPoid);
+        
+        try {
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_VERIFY_THE_FDA_DOCS")
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+            String status = (String) result.get("P_STATUS");
+            
+            logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Completed. Status: {}", status);
+            
+        } catch (Exception e) {
+            logger.error("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Error: {}", e.getMessage(), e);
+            throw new ValidationException(
+                    "FDA document verification failed",
+                    List.of(new ValidationError("general", "Error verifying FDA documents: " + e.getMessage()))
+            );
+        }
+        
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        
+        entry.setVerificationAcceptedDate(LocalDate.now());
+        entry.setVerificationAcceptedBy(UserContext.getUserId());
+        entry.setDocumentReceivedStatus("ACCEPTED");
+        entry.setLastModifiedBy(UserContext.getUserId());
+        entry.setLastModifiedDate(LocalDateTime.now());
+        
+        entryHdrRepository.save(entry);
+    }
+
+
+    @Override
+    public SubmissionLogResponse getSubmissionLogInfo(Long transactionPoid, Long groupPoid, Long companyPoid) {
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        
+        String reportUrl = "/reports/pda-fda-submission-log?" +
+                "docRef=" + entry.getDocRef() +
+                "&fdaRef=" + (entry.getFdaRef() != null ? entry.getFdaRef() : "") +
+                "&transactionPoid=" + transactionPoid;
+        
+        return SubmissionLogResponse.builder()
+                .transactionPoid(transactionPoid)
+                .docRef(entry.getDocRef())
+                .fdaRef(entry.getFdaRef())
+                .fdaPoid(entry.getFdaPoid())
+                .reportUrl(reportUrl)
+                .build();
+    }
+
+    public String callClearPdaEntryDetails(Long groupPoid, Long userPoid, Long companyPoid, Long pdaPoid) {
+        try {
+            logger.info("[SP-8] PROC_PDA_ENTRY_DTL_CLEAR - pdaPoid: {}", pdaPoid);
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_ENTRY_DTL_CLEAR")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_PDA_POID", new BigDecimal(pdaPoid));
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+
+            String status = (String) result.get("P_STATUS");
+
+            logger.info("[SP-8] PROC_PDA_ENTRY_DTL_CLEAR - Completed. Status: {}", status);
+            return status != null ? status : "Success";
+
+        } catch (Exception e) {
+            logger.error("[SP-8] PROC_PDA_ENTRY_DTL_CLEAR - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    public String cancelPdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String cancelRemark) {
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        
+        String result = callCancelPdaEntry(groupPoid, companyPoid, userPoid, transactionPoid, cancelRemark);
+        
+        // Update entity status
+        entry.setCancelRemark(cancelRemark);
+        entry.setStatus("CANCELLED");
+        entry.setLastModifiedBy(UserContext.getUserId());
+        entry.setLastModifiedDate(LocalDateTime.now());
+        entryHdrRepository.save(entry);
+        
+        // Return the actual stored procedure result or success message
+        return (result != null && !result.trim().isEmpty()) ? result : "PDA entry cancelled successfully";
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional(timeout = 300)
+    public String uploadAcknowledgmentDetailsFromExcel(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new ValidationException(
+                    "File is empty",
+                    List.of(new ValidationError("file", "Please select a valid Excel file"))
+            );
+        }
+
+        // Validate transaction exists and is editable
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+
+        if (!canEdit(entry)) {
+            throw new ValidationException(
+                    "Entry cannot be edited",
+                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
+            );
+        }
+
+        // Use stored procedure for Excel upload as per SRS
+        String result = callUploadAcknowledgmentDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+        
+        if (result != null && result.startsWith("Error")) {
+            throw new ValidationException(
+                    "Failed to upload acknowledgment details from Excel",
+                    List.of(new ValidationError("file", result))
+            );
+        }
+        
+        return result != null ? result : "Acknowledgment details uploaded successfully from Excel";
+    }
+
+
+
 }
 

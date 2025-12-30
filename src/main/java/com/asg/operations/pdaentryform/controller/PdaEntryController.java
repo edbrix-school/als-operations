@@ -910,10 +910,22 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/acknow/upload-details")
     public ResponseEntity<?> uploadAcknowledgmentDetails(
+            @PathVariable Long transactionPoid,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file
+    ) {
+        String result = pdaEntryService.uploadAcknowledgmentDetailsFromExcel(
+                transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), 
+                UserContext.getUserPoid(), file);
+        return ApiResponse.success(result, null);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping("/{transactionPoid}/acknow/load-details")
+    public ResponseEntity<?> loadAcknowledgmentDetails(
             @PathVariable Long transactionPoid
     ) {
         pdaEntryService.uploadAcknowledgmentDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ApiResponse.success("Acknowledgment details uploaded successfully", null);
+        return ApiResponse.success("Acknowledgment details loaded successfully", null);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -1084,6 +1096,62 @@ public class PdaEntryController {
         Map<String, String> responseData = new HashMap<>();
         responseData.put("result", result);
         return ApiResponse.success("FDA created successfully", responseData);
+    }
+
+    // ==================== FDA Document Operations ====================
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/fda-documents/view")
+    public ResponseEntity<?> viewFdaDocument(@PathVariable Long transactionPoid) {
+        FdaDocumentViewResponse response = pdaEntryService.getFdaDocumentInfo(
+                transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
+        return ApiResponse.success("FDA document info retrieved successfully", response);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping("/{transactionPoid}/fda-documents/accept")
+    public ResponseEntity<?> acceptFdaDocuments(@PathVariable Long transactionPoid) {
+        pdaEntryService.acceptFdaDocuments(transactionPoid, UserContext.getGroupPoid(), 
+                UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return ApiResponse.success("FDA documents accepted successfully", null);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping("/{transactionPoid}/fda-documents/return")
+    public ResponseEntity<?> returnFdaDocuments(
+            @PathVariable Long transactionPoid,
+            @Valid @RequestBody FdaDocumentReturnRequest request
+    ) {
+        pdaEntryService.rejectFdaDocs(transactionPoid, UserContext.getGroupPoid(), 
+                UserContext.getCompanyPoid(), UserContext.getUserPoid(), request.getCorrectionRemarks());
+        return ApiResponse.success("FDA documents returned successfully", null);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping("/{transactionPoid}/documents/submit-to-accounts")
+    public ResponseEntity<?> submitDocumentsToAccounts(@PathVariable Long transactionPoid) {
+        pdaEntryService.submitPdaToFda(transactionPoid, UserContext.getGroupPoid(), 
+                UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return ApiResponse.success("Documents submitted to accounts successfully", null);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping("/{transactionPoid}/cancel")
+    public ResponseEntity<?> cancelPdaEntry(
+            @PathVariable Long transactionPoid,
+            @Valid @RequestBody CancelPdaRequest request
+    ) {
+        pdaEntryService.cancelPdaEntry(transactionPoid, UserContext.getGroupPoid(),
+                UserContext.getCompanyPoid(), UserContext.getUserPoid(), request.getCancelRemark());
+        return ApiResponse.success("PDA entry cancelled successfully", null);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/submission-log")
+    public ResponseEntity<?> getSubmissionLog(@PathVariable Long transactionPoid) {
+        SubmissionLogResponse response = pdaEntryService.getSubmissionLogInfo(
+                transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
+        return ApiResponse.success("Submission log info retrieved successfully", response);
     }
 
     // ==================== Helper Methods ====================

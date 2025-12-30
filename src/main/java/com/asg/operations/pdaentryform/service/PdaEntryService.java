@@ -143,5 +143,40 @@ public interface PdaEntryService {
      */
     org.springframework.data.domain.Page<PdaEntryListResponse> getAllPdaWithFilters(Long groupPoid, Long companyPoid, GetAllPdaFilterRequest filterRequest, int page, int size, String sort);
 
+    /**
+     * Get FDA document info for viewing
+     */
+    FdaDocumentViewResponse getFdaDocumentInfo(Long transactionPoid, Long groupPoid, Long companyPoid);
+
+    /**
+     * Accept FDA documents
+     */
+    void acceptFdaDocuments(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
+     * Cancel PDA entry
+     */
+    String cancelPdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String cancelRemark);
+
+    /**
+     * Get submission log info
+     */
+    SubmissionLogResponse getSubmissionLogInfo(Long transactionPoid, Long groupPoid, Long companyPoid);
+
+    /**
+     * Reject FDA documents
+     */
+    void rejectFdaDocs(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String correctionRemarks);
+
+    /**
+     * Submit PDA to FDA
+     */
+    void submitPdaToFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
+     * Upload acknowledgment details from Excel file
+     */
+    String uploadAcknowledgmentDetailsFromExcel(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file);
+
 }
 

@@ -33,5 +33,11 @@ public interface PdaEntryAcknowledgmentDtlRepository extends JpaRepository<PdaEn
      */
     long countByTransactionPoid(Long transactionPoid);
 
+    /**
+     * Find maximum detRowId for a transaction
+     */
+    @Query("SELECT MAX(d.detRowId) FROM PdaEntryAcknowledgmentDtl d WHERE d.transactionPoid = :transactionPoid")
+    Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
+
 }
 
