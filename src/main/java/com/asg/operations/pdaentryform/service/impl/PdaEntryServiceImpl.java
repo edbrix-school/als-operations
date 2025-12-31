@@ -3450,10 +3450,40 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        // Use stored procedure for Excel upload as per SRS
+        String docId = "110-160_3";
+        ExcelConfig config = getExcelConfig(docId);
+        
+        jdbcTemplate.update("DELETE FROM " + config.tempTableName);
+        
+        List<List<Object>> rowsCollection = new ArrayList<>();
+
+        try (org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(file.getInputStream())) {
+            org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+            
+            for (org.apache.poi.ss.usermodel.Row row : sheet) {
+                List<Object> colCollection = new ArrayList<>();
+                for (int cn = config.startColNumber - 1; cn <= config.endColNumber - 1; cn++) {
+                    org.apache.poi.ss.usermodel.Cell cell = row.getCell(cn, org.apache.poi.ss.usermodel.Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    switch (cell.getCellType()) {
+                        case NUMERIC -> colCollection.add(cell.getNumericCellValue());
+                        case STRING -> colCollection.add(cell.getStringCellValue());
+                        case BOOLEAN -> colCollection.add(cell.getBooleanCellValue());
+                        default -> colCollection.add("");
+                    }
+                }
+                rowsCollection.add(colCollection);
+            }
+        } catch (Exception e) {
+            throw new ValidationException(
+                    "Error processing Excel file",
+                    List.of(new ValidationError("file", "Failed to read Excel file: " + e.getMessage()))
+            );
+        }
+
+        saveImportedData(config.startRowNumber, rowsCollection, config.tempTableName);
         String result = callUploadAcknowledgmentDetails(groupPoid, userPoid, companyPoid, transactionPoid);
         
-        if (result != null && result.startsWith("Error")) {
+        if (result != null && result.startsWith("ERROR")) {
             throw new ValidationException(
                     "Failed to upload acknowledgment details from Excel",
                     List.of(new ValidationError("file", result))
@@ -3461,6 +3491,69 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
         
         return result != null ? result : "Acknowledgment details uploaded successfully from Excel";
+    }
+
+    private ExcelConfig getExcelConfig(String docId) {
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withSchemaName("PRODUCTION")
+                .withProcedureName("PROC_GLOB_EXCEL_IMPORT_SHEETS")
+                .declareParameters(
+                        new SqlParameter("P_COMPANY_POID", Types.NUMERIC),
+                        new SqlParameter("P_DOC_ID", Types.VARCHAR),
+                        new SqlOutParameter("OUTDATA", oracle.jdbc.internal.OracleTypes.CURSOR),
+                        new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                );
+
+        Map<String, Object> result = jdbcCall.execute(
+                Map.of(
+                        "P_COMPANY_POID", UserContext.getCompanyPoid(),
+                        "P_DOC_ID", docId
+                )
+        );
+
+        List<Map<String, Object>> configs = (List<Map<String, Object>>) result.get("OUTDATA");
+        if (configs == null || configs.isEmpty()) {
+            throw new ValidationException(
+                    "Excel configuration not found",
+                    List.of(new ValidationError("file", "No Excel configuration found for DOC_ID: " + docId))
+            );
+        }
+
+        Map<String, Object> configRow = configs.get(0);
+        ExcelConfig config = new ExcelConfig();
+        config.startRowNumber = ((Number) configRow.get("START_ROW_NUMBER")).intValue();
+        config.startColNumber = ((Number) configRow.get("START_COL_NUMBER")).intValue();
+        config.endColNumber = ((Number) configRow.get("END_COL_NUMBER")).intValue();
+        config.tempTableName = (String) configRow.get("TEMP_TABLE_NAME");
+        return config;
+    }
+
+    private void saveImportedData(int startRowNumber, List<List<Object>> rowsCollection, String tempTableName) {
+        int rowNum = 0;
+        for (List<Object> cols : rowsCollection) {
+            rowNum++;
+            if (startRowNumber <= rowNum) {
+                StringBuilder insertQuery = new StringBuilder("INSERT INTO " + tempTableName + " VALUES (");
+                for (int i = 0; i < cols.size(); i++) {
+                    if (i > 0) insertQuery.append(", ");
+                    Object col = cols.get(i);
+                    if (col instanceof String) {
+                        insertQuery.append("'").append(col.toString().replace("'", "''")).append("'");
+                    } else {
+                        insertQuery.append(col != null ? col.toString() : "NULL");
+                    }
+                }
+                insertQuery.append(")");
+                jdbcTemplate.update(insertQuery.toString());
+            }
+        }
+    }
+
+    private static class ExcelConfig {
+        int startRowNumber;
+        int startColNumber;
+        int endColNumber;
+        String tempTableName;
     }
 
 
