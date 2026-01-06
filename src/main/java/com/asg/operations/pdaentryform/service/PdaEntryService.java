@@ -131,7 +131,7 @@ public interface PdaEntryService {
     /**
      * Upload acknowledgment details
      */
-    void uploadAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    List<PdaEntryAcknowledgmentDetailResponse> uploadAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
      * Clear acknowledgment details

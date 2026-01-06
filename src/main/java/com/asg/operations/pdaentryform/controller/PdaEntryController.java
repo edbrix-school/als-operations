@@ -1056,8 +1056,7 @@ public class PdaEntryController {
     public ResponseEntity<?> loadAcknowledgmentDetails(
             @PathVariable Long transactionPoid
     ) {
-        pdaEntryService.uploadAcknowledgmentDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ApiResponse.success("Acknowledgment details loaded successfully", null);
+        return ApiResponse.success("Acknowledgment details loaded successfully", pdaEntryService.uploadAcknowledgmentDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
