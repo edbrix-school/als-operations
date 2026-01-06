@@ -16,6 +16,7 @@ import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import oracle.jdbc.internal.OracleTypes;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +26,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.Types;
 import java.time.LocalDate;
@@ -637,8 +640,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         callRejectFdaDocs(groupPoid, companyPoid, userPoid, transactionPoid, correctionRemarks);
     }
 
-    public void uploadAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public List<PdaEntryAcknowledgmentDetailResponse> uploadAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        logger.info("Calling acknowledgment upload SP for transactionPoid: {}", transactionPoid);
         callUploadAcknowledgmentDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+        List<PdaEntryAcknowledgmentDtl> list = acknowledgmentDtlRepository.findByTransactionPoid(transactionPoid);
+        return toAcknowledgmentDetailResponseList(list);
     }
 
     public void clearAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
@@ -2237,6 +2243,12 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         return response;
     }
 
+    private List<PdaEntryAcknowledgmentDetailResponse> toAcknowledgmentDetailResponseList(List<PdaEntryAcknowledgmentDtl> details) {
+        return details.stream()
+                .map(this::toAcknowledgmentDetailResponse)
+                .collect(Collectors.toList());
+    }
+
     // Additional SP Methods with Logging
 
     public String callImportTdrDetail(Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid) {
@@ -2581,6 +2593,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public String callUploadAcknowledgmentDetails(
             Long groupPoid,
             Long userPoid,
@@ -2591,7 +2604,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             logger.info("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - transactionPoid: {}", transactionPoid);
 
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withSchemaName("PRODUCTION")
                     .withProcedureName("PROC_PDA_ACKNOW_DTLS_UPLOAD")
+                    .withoutProcedureColumnMetaDataAccess()
                     .declareParameters(
                             new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
                             new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
@@ -2602,12 +2617,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> params = new HashMap<>();
             params.put("P_LOGIN_GROUP_POID", groupPoid);
-            params.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            params.put("P_LOGIN_USER_POID", userPoid);
             params.put("P_LOGIN_COMPANY_POID", companyPoid);
-            params.put("P_TRANSACTION_POID", new BigDecimal(transactionPoid));
+            params.put("P_TRANSACTION_POID", transactionPoid);
 
             Map<String, Object> result = jdbcCall.execute(params);
-
             String status = (String) result.get("P_STATUS");
 
             logger.info("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - Completed. Status: {}", status);
@@ -3464,6 +3478,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     @Override
     @org.springframework.transaction.annotation.Transactional(timeout = 300)
     public String uploadAcknowledgmentDetailsFromExcel(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+        logger.info("Starting acknowledgment upload from Excel - transactionPoid: {}, file: {}", transactionPoid, file.getOriginalFilename());
+        
         if (file.isEmpty()) {
             throw new ValidationException(
                     "File is empty",
@@ -3513,17 +3529,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        saveImportedData(config.startRowNumber, rowsCollection, config.tempTableName);
-        String result = callUploadAcknowledgmentDetails(groupPoid, userPoid, companyPoid, transactionPoid);
-
-        if (result != null && result.startsWith("ERROR")) {
-            throw new ValidationException(
-                    "Failed to upload acknowledgment details from Excel",
-                    List.of(new ValidationError("file", result))
-            );
-        }
-
-        return result != null ? result : "Acknowledgment details uploaded successfully from Excel";
+        saveImportedDataAsync(config.startRowNumber, rowsCollection, config.tempTableName);
+        return "Successfully imported Excel data to temp table";
     }
 
     private ExcelConfig getExcelConfig(String docId) {
@@ -3561,7 +3568,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         return config;
     }
 
-    private void saveImportedData(int startRowNumber, List<List<Object>> rowsCollection, String tempTableName) {
+    protected void saveImportedDataAsync(int startRowNumber, List<List<Object>> rowsCollection, String tempTableName) {
         List<String> batchQueries = new ArrayList<>();
         int rowNum = 0;
         
@@ -3569,26 +3576,45 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             rowNum++;
             if (startRowNumber <= rowNum) {
                 StringBuilder insertQuery = new StringBuilder("INSERT INTO " + tempTableName + " VALUES (");
-                for (int i = 0; i < cols.size(); i++) {
-                    if (i > 0) insertQuery.append(", ");
-                    Object col = cols.get(i);
-                    if (col instanceof String) {
-                        insertQuery.append("'").append(col.toString().replace("'", "''")).append("'");
+                for (Object col : cols) {
+                    if (col == null) {
+                        insertQuery.append("NULL,");
                     } else {
-                        insertQuery.append(col != null ? col.toString() : "NULL");
+                        insertQuery.append("'").append(col.toString().replace("'", "''")).append("',");
                     }
                 }
+                insertQuery.setLength(insertQuery.length() - 1);
                 insertQuery.append(")");
-                batchQueries.add(insertQuery.toString());
+
+                jdbcTemplate.update(insertQuery.toString());
             }
         }
         
-        // Execute in batches of 100
-        int batchSize = 50;
-        for (int i = 0; i < batchQueries.size(); i += batchSize) {
-            int endIndex = Math.min(i + batchSize, batchQueries.size());
-            List<String> batch = batchQueries.subList(i, endIndex);
-            jdbcTemplate.batchUpdate(batch.toArray(new String[0]));
+//        // Execute in batches of 50
+//        int batchSize = 50;
+//        for (int i = 0; i < batchQueries.size(); i += batchSize) {
+//            int endIndex = Math.min(i + batchSize, batchQueries.size());
+//            List<String> batch = batchQueries.subList(i, endIndex);
+//            jdbcTemplate.batchUpdate(batch.toArray(new String[0]));
+//        }
+    }
+
+   
+    public String uploadAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+        if (file != null && !file.isEmpty()) {
+            processAcknowledgmentFileAsync(transactionPoid, groupPoid, companyPoid, userPoid, file);
+            return "Acknowledgment file upload started. Processing in background...";
+        } else {
+            return callUploadAcknowledgmentDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+        }
+    }
+
+    @org.springframework.scheduling.annotation.Async
+    public void processAcknowledgmentFileAsync(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+        try {
+            uploadAcknowledgmentDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file);
+        } catch (Exception e) {
+            logger.error("Async acknowledgment file processing failed for transaction {}: {}", transactionPoid, e.getMessage(), e);
         }
     }
 
@@ -3688,7 +3714,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        saveImportedData(config.startRowNumber, rowsCollection, config.tempTableName);
+        saveImportedDataAsync(config.startRowNumber, rowsCollection, config.tempTableName);
         String result = callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
 
         if (result != null && result.startsWith("ERROR")) {

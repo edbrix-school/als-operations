@@ -22,6 +22,11 @@ public interface PdaEntryAcknowledgmentDtlRepository extends JpaRepository<PdaEn
     List<PdaEntryAcknowledgmentDtl> findByTransactionPoidOrderByDetRowIdAsc(Long transactionPoid);
 
     /**
+     * Find acknowledgment details by transaction POID
+     */
+    List<PdaEntryAcknowledgmentDtl> findByTransactionPoid(Long transactionPoid);
+
+    /**
      * Delete all acknowledgment details for a transaction
      */
     @Modifying
