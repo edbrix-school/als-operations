@@ -5,6 +5,7 @@ import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
+import com.asg.operations.pdaRoRoVehicle.service.PdaRoRoEntryServiceImpl;
 import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaentryform.entity.*;
 import com.asg.operations.pdaentryform.repository.*;
@@ -607,7 +608,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         callClearVehicleDetails(groupPoid, userPoid, companyPoid, transactionPoid);
     }
 
-    public void clearTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public String importTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
                 transactionPoid, groupPoid, companyPoid
         ).orElseThrow(() -> new ResourceNotFoundException(
@@ -621,24 +622,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        callClearTdrDetails(groupPoid, userPoid, companyPoid, transactionPoid);
-    }
-
-    public void importTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
-                "PDA Entry not found with id: " + transactionPoid
-        ));
-
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
-
-        callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
+        return callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
     }
 
     public void updateFdaFromPda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
@@ -1068,6 +1052,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entity.setCurrencyCode(request.getCurrencyCode());
         entity.setCurrencyRate(request.getCurrencyRate());
         entity.setTotalAmount(request.getTotalAmount());
+        // Note: totalTax and totalAmountFc are calculated fields, not set from request
         entity.setCostCentrePoid(request.getCostCentrePoid());
         entity.setSalesmanPoid(request.getSalesmanPoid());
         entity.setTermsPoid(request.getTermsPoid());
@@ -2184,7 +2169,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Get next available detRowId
         Long maxDetRowId = acknowledgmentDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid);
         Long nextDetRowId = (maxDetRowId != null) ? maxDetRowId + 1 : 1;
-        
+
         // Create new entity
         PdaEntryAcknowledgmentDtl detail = new PdaEntryAcknowledgmentDtl();
         detail.setTransactionPoid(transactionPoid);
@@ -2271,9 +2256,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> inputMap = new HashMap<>();
             inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
-            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_LOGIN_USER_POID", userPoid);
             inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
-            inputMap.put("P_TRANSACTION_POID", new BigDecimal(transactionPoid));
+            inputMap.put("P_TRANSACTION_POID", transactionPoid);
 
             Map<String, Object> result = jdbcCall.execute(inputMap);
 
@@ -2285,6 +2270,46 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         } catch (Exception e) {
             logger.error("[SP-3] PROC_PDA_IMPORT_TDR_DETAIL2 - Error: {}", e.getMessage(), e);
             return "Error: " + e.getMessage();
+        }
+    }
+
+    private String callImportTdrFileFromExcel(Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+        try {
+            logger.info("[SP] PROC_PDA_IMPORT_TDR_FILE - Processing Excel file: {}", file.getOriginalFilename());
+
+            // Process Excel file and call stored procedure
+            // This is a simplified implementation - you may need to process the Excel file first
+            // and then call the appropriate stored procedure with the data
+            
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_IMPORT_TDR_DETAIL2")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_TRANSACTION_POID", Types.NUMERIC),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+
+            // For file import, we might not have a specific transaction POID
+            // This depends on your business logic - you may need to process the Excel file
+            // to extract transaction information or handle it differently
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_USER_POID", userPoid);
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_TRANSACTION_POID", null); // May need to be extracted from file
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+            String status = (String) result.get("P_STATUS");
+
+            logger.info("[SP] PROC_PDA_IMPORT_TDR_FILE - Completed. Status: {}", status);
+            return status != null ? status : "TDR file imported successfully";
+
+        } catch (Exception e) {
+            logger.error("[SP] PROC_PDA_IMPORT_TDR_FILE - Error: {}", e.getMessage(), e);
+            return "Error importing TDR file: " + e.getMessage();
         }
     }
 
@@ -2306,9 +2331,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> inputMap = new HashMap<>();
             inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
-            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_LOGIN_USER_POID", userPoid);
             inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
-            inputMap.put("P_TRANSACTION_POID", new BigDecimal(transactionPoid));
+            inputMap.put("P_TRANSACTION_POID", transactionPoid);
             inputMap.put("P_ARRAIVAL_DATE", java.sql.Date.valueOf(arrivalDate));
 
             Map<String, Object> result = jdbcCall.execute(inputMap);
@@ -2341,9 +2366,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> inputMap = new HashMap<>();
             inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
-            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_LOGIN_USER_POID", userPoid);
             inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
-            inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
+            inputMap.put("P_PDA_POID", transactionPoid);
 
             Map<String, Object> result = jdbcCall.execute(inputMap);
 
@@ -2636,7 +2661,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public String callVerifyFdaDocs(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
         try {
             logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - transactionPoid: {}", transactionPoid);
-            
+
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_VERIFY_THE_FDA_DOCS")
                     .declareParameters(
@@ -3288,18 +3313,26 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
+    // Inner class for Excel configuration
+    private static class ExcelConfig {
+        int startRowNumber;
+        int startColNumber;
+        int endColNumber;
+        String tempTableName;
+    }
+
     // New FDA Document Methods
     @Override
     public FdaDocumentViewResponse getFdaDocumentInfo(Long transactionPoid, Long groupPoid, Long companyPoid) {
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
                 transactionPoid, groupPoid, companyPoid
         ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
-        
+
         if (entry.getFdaPoid() == null) {
-            throw new ValidationException("No FDA document found for this PDA entry", 
-                List.of(new ValidationError("fdaPoid", "FDA document not created yet")));
+            throw new ValidationException("No FDA document found for this PDA entry",
+                    List.of(new ValidationError("fdaPoid", "FDA document not created yet")));
         }
-        
+
         return FdaDocumentViewResponse.builder()
                 .fdaPoid(entry.getFdaPoid())
                 .fdaRef(entry.getFdaRef())
@@ -3311,7 +3344,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     @Override
     public void acceptFdaDocuments(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
         logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - transactionPoid: {}", transactionPoid);
-        
+
         try {
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_VERIFY_THE_FDA_DOCS")
@@ -3331,9 +3364,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> result = jdbcCall.execute(inputMap);
             String status = (String) result.get("P_STATUS");
-            
+
             logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Completed. Status: {}", status);
-            
+
         } catch (Exception e) {
             logger.error("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Error: {}", e.getMessage(), e);
             throw new ValidationException(
@@ -3341,17 +3374,17 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     List.of(new ValidationError("general", "Error verifying FDA documents: " + e.getMessage()))
             );
         }
-        
+
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
                 transactionPoid, groupPoid, companyPoid
         ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
-        
+
         entry.setVerificationAcceptedDate(LocalDate.now());
         entry.setVerificationAcceptedBy(UserContext.getUserId());
         entry.setDocumentReceivedStatus("ACCEPTED");
         entry.setLastModifiedBy(UserContext.getUserId());
         entry.setLastModifiedDate(LocalDateTime.now());
-        
+
         entryHdrRepository.save(entry);
     }
 
@@ -3361,12 +3394,12 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
                 transactionPoid, groupPoid, companyPoid
         ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
-        
+
         String reportUrl = "/reports/pda-fda-submission-log?" +
                 "docRef=" + entry.getDocRef() +
                 "&fdaRef=" + (entry.getFdaRef() != null ? entry.getFdaRef() : "") +
                 "&transactionPoid=" + transactionPoid;
-        
+
         return SubmissionLogResponse.builder()
                 .transactionPoid(transactionPoid)
                 .docRef(entry.getDocRef())
@@ -3414,16 +3447,16 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
                 transactionPoid, groupPoid, companyPoid
         ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
-        
+
         String result = callCancelPdaEntry(groupPoid, companyPoid, userPoid, transactionPoid, cancelRemark);
-        
+
         // Update entity status
         entry.setCancelRemark(cancelRemark);
         entry.setStatus("CANCELLED");
         entry.setLastModifiedBy(UserContext.getUserId());
         entry.setLastModifiedDate(LocalDateTime.now());
         entryHdrRepository.save(entry);
-        
+
         // Return the actual stored procedure result or success message
         return (result != null && !result.trim().isEmpty()) ? result : "PDA entry cancelled successfully";
     }
@@ -3452,14 +3485,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         String docId = "110-160_3";
         ExcelConfig config = getExcelConfig(docId);
-        
+
         jdbcTemplate.update("DELETE FROM " + config.tempTableName);
-        
+
         List<List<Object>> rowsCollection = new ArrayList<>();
 
         try (org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(file.getInputStream())) {
             org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
-            
+
             for (org.apache.poi.ss.usermodel.Row row : sheet) {
                 List<Object> colCollection = new ArrayList<>();
                 for (int cn = config.startColNumber - 1; cn <= config.endColNumber - 1; cn++) {
@@ -3482,14 +3515,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         saveImportedData(config.startRowNumber, rowsCollection, config.tempTableName);
         String result = callUploadAcknowledgmentDetails(groupPoid, userPoid, companyPoid, transactionPoid);
-        
+
         if (result != null && result.startsWith("ERROR")) {
             throw new ValidationException(
                     "Failed to upload acknowledgment details from Excel",
                     List.of(new ValidationError("file", result))
             );
         }
-        
+
         return result != null ? result : "Acknowledgment details uploaded successfully from Excel";
     }
 
@@ -3529,7 +3562,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     private void saveImportedData(int startRowNumber, List<List<Object>> rowsCollection, String tempTableName) {
+        List<String> batchQueries = new ArrayList<>();
         int rowNum = 0;
+        
         for (List<Object> cols : rowsCollection) {
             rowNum++;
             if (startRowNumber <= rowNum) {
@@ -3544,19 +3579,162 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     }
                 }
                 insertQuery.append(")");
-                jdbcTemplate.update(insertQuery.toString());
+                batchQueries.add(insertQuery.toString());
             }
+        }
+        
+        // Execute in batches of 100
+        int batchSize = 50;
+        for (int i = 0; i < batchQueries.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, batchQueries.size());
+            List<String> batch = batchQueries.subList(i, endIndex);
+            jdbcTemplate.batchUpdate(batch.toArray(new String[0]));
         }
     }
 
-    private static class ExcelConfig {
-        int startRowNumber;
-        int startColNumber;
-        int endColNumber;
-        String tempTableName;
+    @Override
+    @org.springframework.transaction.annotation.Transactional(timeout = 600)
+    public String importTdrFileWithTransaction(org.springframework.web.multipart.MultipartFile file, Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        if (file.isEmpty()) {
+            throw new ValidationException(
+                    "TDR file is empty",
+                    List.of(new ValidationError("file", "Please select a valid Excel file"))
+            );
+        }
+
+        return uploadTdrDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file);
     }
 
+    @Override
+    public String uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException(
+                "PDA Entry not found with id: " + transactionPoid
+        ));
 
+        if (!canEdit(entry)) {
+            throw new ValidationException(
+                    "Entry cannot be edited",
+                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
+            );
+        }
 
+        if (file != null && !file.isEmpty()) {
+            // Process async for large files
+            processTdrFileAsync(transactionPoid, groupPoid, companyPoid, userPoid, file);
+            return "TDR file upload started. Processing in background...";
+        } else {
+            return callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
+        }
+    }
+
+    @org.springframework.scheduling.annotation.Async
+    public void processTdrFileAsync(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+        try {
+            uploadTdrDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file);
+        } catch (Exception e) {
+            logger.error("Async TDR file processing failed for transaction {}: {}", transactionPoid, e.getMessage(), e);
+        }
+    }
+
+    @org.springframework.transaction.annotation.Transactional(timeout = 600)
+    public String uploadTdrDetailsFromExcel(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new ValidationException(
+                    "File is empty",
+                    List.of(new ValidationError("file", "Please select a valid Excel file"))
+            );
+        }
+
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+
+        if (!canEdit(entry)) {
+            throw new ValidationException(
+                    "Entry cannot be edited",
+                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
+            );
+        }
+
+        String docId = "110-160_1";
+        ExcelConfig config = getExcelConfig(docId);
+
+        jdbcTemplate.update("DELETE FROM " + config.tempTableName);
+
+        List<List<Object>> rowsCollection = new ArrayList<>();
+
+        try (org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(file.getInputStream())) {
+            org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+
+            for (org.apache.poi.ss.usermodel.Row row : sheet) {
+                List<Object> colCollection = new ArrayList<>();
+                for (int cn = config.startColNumber - 1; cn <= config.endColNumber - 1; cn++) {
+                    org.apache.poi.ss.usermodel.Cell cell = row.getCell(cn, org.apache.poi.ss.usermodel.Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    switch (cell.getCellType()) {
+                        case NUMERIC -> colCollection.add(cell.getNumericCellValue());
+                        case STRING -> colCollection.add(cell.getStringCellValue());
+                        case BOOLEAN -> colCollection.add(cell.getBooleanCellValue());
+                        default -> colCollection.add("");
+                    }
+                }
+                rowsCollection.add(colCollection);
+            }
+        } catch (Exception e) {
+            throw new ValidationException(
+                    "Error processing Excel file",
+                    List.of(new ValidationError("file", "Failed to read Excel file: " + e.getMessage()))
+            );
+        }
+
+        saveImportedData(config.startRowNumber, rowsCollection, config.tempTableName);
+        String result = callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
+
+        if (result != null && result.startsWith("ERROR")) {
+            throw new ValidationException(
+                    "Failed to upload TDR details from Excel",
+                    List.of(new ValidationError("file", result))
+            );
+        }
+
+        return result != null ? result : "TDR details uploaded successfully from Excel";
+    }
+
+    @Override
+    public String clearTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException(
+                "PDA Entry not found with id: " + transactionPoid
+        ));
+
+        if (!canEdit(entry)) {
+            throw new ValidationException(
+                    "Entry cannot be edited",
+                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
+            );
+        }
+
+        return callClearTdrDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+    }
+
+    @Override
+    public String processTdrCharges(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException(
+                "PDA Entry not found with id: " + transactionPoid
+        ));
+
+        if (!canEdit(entry)) {
+            throw new ValidationException(
+                    "Entry cannot be edited",
+                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
+            );
+        }
+
+        return callDefaultChargesFromTdr(groupPoid, userPoid, companyPoid, transactionPoid, entry.getArrivalDate());
+    }
 }
 

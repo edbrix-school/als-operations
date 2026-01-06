@@ -178,5 +178,25 @@ public interface PdaEntryService {
      */
     String uploadAcknowledgmentDetailsFromExcel(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file);
 
+    /**
+     * Import TDR file with transaction
+     */
+    String importTdrFileWithTransaction(org.springframework.web.multipart.MultipartFile file, Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
+     * Upload TDR details
+     */
+    String uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file);
+
+    /**
+     * Clear TDR details
+     */
+    String clearTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
+     * Process TDR charges
+     */
+    String processTdrCharges(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
 }
 

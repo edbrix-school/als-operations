@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -819,6 +820,137 @@ public class PdaEntryController {
     ) {
         List<PdaEntryTdrDetailResponse> response = pdaEntryService.bulkSaveTdrDetails(transactionPoid, request, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId());
         return ApiResponse.success("TDR details saved successfully", response);
+    }
+
+    @Operation(
+            summary = "Import TDR file",
+            description = "Import Excel file containing TDR details using PROC_PDA_IMPORT_TDR_DETAIL2 stored procedure.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully imported TDR file",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid file or import error",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/tdr-details/import-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> importTdrFile(
+            @Parameter(description = "Transaction POID", required = true)
+            @PathVariable Long transactionPoid,
+            @Parameter(description = "Excel file containing TDR details", required = true)
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file
+    ) {
+        String result = pdaEntryService.importTdrFileWithTransaction(file, transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return ApiResponse.success(result, null);
+    }
+
+    @Operation(
+            summary = "Upload TDR details",
+            description = "Upload TDR details for a PDA entry with optional Excel file.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully uploaded TDR details",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "PDA entry not found",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping("/{transactionPoid}/tdr-details/upload")
+    public ResponseEntity<?> uploadTdrDetails(
+            @Parameter(description = "Transaction POID", required = true)
+            @PathVariable Long transactionPoid,
+            @RequestParam(value = "file", required = false) org.springframework.web.multipart.MultipartFile file
+    ) {
+        String result = pdaEntryService.uploadTdrDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), file);
+        return ApiResponse.success(result, null);
+    }
+
+    @Operation(
+            summary = "Clear TDR details",
+            description = "Clear all TDR details for a PDA entry using PROC_PDA_TDR_DETAIL_CLEAR stored procedure.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully cleared TDR details",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "PDA entry not found",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping("/{transactionPoid}/tdr-details/clear")
+    public ResponseEntity<?> clearTdrDetails(
+            @Parameter(description = "Transaction POID", required = true)
+            @PathVariable Long transactionPoid
+    ) {
+        String result = pdaEntryService.clearTdrDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return ApiResponse.success(result, null);
+    }
+
+    @Operation(
+            summary = "Process TDR charges",
+            description = "Process uploaded TDR details and add THC charges to PDA charge detail using PROC_PDA_DEFAULT_CH_FROM_TDR stored procedure.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully processed TDR charges",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "PDA entry not found",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping("/{transactionPoid}/tdr-details/process-charges")
+    public ResponseEntity<?> processTdrCharges(
+            @Parameter(description = "Transaction POID", required = true)
+            @PathVariable Long transactionPoid
+    ) {
+        String result = pdaEntryService.processTdrCharges(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return ApiResponse.success(result, null);
     }
 
     // ==================== Acknowledgment Details Operations ====================
