@@ -1,6 +1,7 @@
 package com.asg.operations.shipprincipal.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -229,9 +230,9 @@ public class PrincipalController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> deletePrincipal(
-            @Parameter(description = "Principal ID") @PathVariable Long id) {
+            @Parameter(description = "Principal ID") @PathVariable Long id,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
         log.info("Deleting principal with id: {}", id);
-        principalMasterService.deletePrincipal(id);
+        principalMasterService.deletePrincipal(id,deleteReasonDto);
         log.info("Successfully deleted principal with id: {}", id);
         return ApiResponse.success("Principal deleted successfully");
     }

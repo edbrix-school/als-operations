@@ -1,7 +1,9 @@
 package com.asg.operations.portcallreport.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.dto.LovResponse;
@@ -23,6 +25,7 @@ import com.asg.operations.user.repository.UserRepository;
 import com.asg.operations.vesseltype.entity.VesselType;
 import com.asg.operations.vesseltype.repository.VesselTypeRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -39,6 +42,7 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -56,6 +60,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
     private final LovService lovService;
     private final EntityManager entityManager;
     private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
     @Override
     @Transactional(readOnly = true)
@@ -444,15 +449,19 @@ public class PortCallReportServiceImpl implements PortCallReportService {
 
     @Override
     @Transactional
-    public void deleteReport(Long id) {
+    public void deleteReport(Long id, @Valid DeleteReasonDto deleteReasonDto) {
         log.info("Deleting port call report id: {}", id);
 
         PortCallReportHdr hdr = hdrRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Port call report"));
 
-        hdr.setActive("N");
-        hdr.setDeleted("Y");
-        hdrRepository.save(hdr);
+        documentDeleteService.deleteDocument(
+                id,
+                "OPS_PORT_CALL_REPORT_HDR",
+                "PORT_CALL_REPORT_POID",
+                deleteReasonDto,
+                LocalDate.now()
+        );
     }
 
     @Override

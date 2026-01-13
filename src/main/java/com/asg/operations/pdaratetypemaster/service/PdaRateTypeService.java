@@ -1,6 +1,8 @@
 package com.asg.operations.pdaratetypemaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.pdaratetypemaster.dto.*;
+import jakarta.validation.Valid;
 
 public interface PdaRateTypeService {
 
@@ -12,7 +14,7 @@ public interface PdaRateTypeService {
 
     PdaRateTypeResponseDTO updateRateType(Long rateTypePoid, PdaRateTypeRequestDTO request, Long groupPoid, String userId);
 
-    void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, boolean hardDelete);
+    void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, boolean hardDelete, @Valid DeleteReasonDto deleteReasonDto);
 
     FormulaValidationResponse validateFormula(FormulaValidationRequest request);
 }

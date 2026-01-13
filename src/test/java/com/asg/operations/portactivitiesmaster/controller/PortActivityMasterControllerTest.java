@@ -151,7 +151,7 @@ class PortActivityMasterControllerTest {
 
     @Test
     void deletePortActivity_SoftDelete_ShouldReturnSuccess() throws Exception {
-        doNothing().when(portActivityService).deletePortActivity(1L, 1L, "testUser", false);
+        doNothing().when(portActivityService).deletePortActivity(1L, 1L, "testUser", false, deleteReasonDto);
 
         mockMvc.perform(delete("/v1/port-activities/1")
                 .param("hardDelete", "false"))
@@ -159,12 +159,12 @@ class PortActivityMasterControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Port activity deleted successfully"));
 
-        verify(portActivityService).deletePortActivity(1L, 1L, "testUser", false);
+        verify(portActivityService).deletePortActivity(1L, 1L, "testUser", false, deleteReasonDto);
     }
 
     @Test
     void deletePortActivity_HardDelete_ShouldReturnSuccess() throws Exception {
-        doNothing().when(portActivityService).deletePortActivity(1L, 1L, "testUser", true);
+        doNothing().when(portActivityService).deletePortActivity(1L, 1L, "testUser", true, deleteReasonDto);
 
         mockMvc.perform(delete("/v1/port-activities/1")
                 .param("hardDelete", "true"))
@@ -172,7 +172,7 @@ class PortActivityMasterControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Port activity deleted successfully"));
 
-        verify(portActivityService).deletePortActivity(1L, 1L, "testUser", true);
+        verify(portActivityService).deletePortActivity(1L, 1L, "testUser", true, deleteReasonDto);
     }
 
     private PortActivityListResponse createListResponse() {

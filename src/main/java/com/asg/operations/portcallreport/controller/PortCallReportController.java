@@ -1,6 +1,7 @@
 package com.asg.operations.portcallreport.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
@@ -164,8 +165,8 @@ public class PortCallReportController {
             description = "Delete a port call report",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<?> deleteReport(@Parameter(description = "Report ID") @PathVariable Long id) {
-        portCallReportService.deleteReport(id);
+    public ResponseEntity<?> deleteReport(@Parameter(description = "Report ID") @PathVariable Long id,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
+        portCallReportService.deleteReport(id,deleteReasonDto);
         return ApiResponse.success("Report deleted successfully");
     }
 

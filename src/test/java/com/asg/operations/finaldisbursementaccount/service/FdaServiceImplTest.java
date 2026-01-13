@@ -96,7 +96,7 @@ class FdaServiceImplTest {
         when(pdaFdaHdrRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(pdaFdaDtlRepository.findByIdTransactionPoid(1L)).thenReturn(Arrays.asList());
 
-        fdaService.softDeleteFda(1L, "user1");
+        fdaService.softDeleteFda(1L, "user1", deleteReasonDto);
 
         assertEquals("Y", entity.getDeleted());
         verify(pdaFdaHdrRepository).save(entity);

@@ -122,7 +122,7 @@ public class PdaRateTypeServiceImplTest {
         when(repository.findByRateTypePoidAndGroupPoid(1L, BigDecimal.ONE)).thenReturn(Optional.of(entity));
         when(repository.save(any(PdaRateTypeMaster.class))).thenReturn(entity);
 
-        assertDoesNotThrow(() -> service.deleteRateType(1L, 1L, "testUser", false));
+        assertDoesNotThrow(() -> service.deleteRateType(1L, 1L, "testUser", false, deleteReasonDto));
         
         verify(repository).save(argThat(e -> "Y".equals(e.getDeleted()) && "N".equals(e.getActive())));
     }

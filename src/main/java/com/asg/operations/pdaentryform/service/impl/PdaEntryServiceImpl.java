@@ -1,39 +1,34 @@
 package com.asg.operations.pdaentryform.service.impl;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
-import com.asg.operations.pdaRoRoVehicle.service.PdaRoRoEntryServiceImpl;
 import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaentryform.entity.*;
 import com.asg.operations.pdaentryform.repository.*;
 import jakarta.persistence.EntityManager;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
 import com.asg.operations.pdaentryform.util.PdaEntryDocumentRefGenerator;
-import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
 import lombok.RequiredArgsConstructor;
 import oracle.jdbc.internal.OracleTypes;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.Types;
 import java.time.LocalDate;
@@ -62,6 +57,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     private final EntityManager entityManager;
     private final LovService lovService;
     private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
     @Override
     @Transactional(readOnly = true)
@@ -264,7 +260,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Override
-    public void deletePdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public void deletePdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, @Valid DeleteReasonDto deleteReasonDto) {
 
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
                 transactionPoid, groupPoid, companyPoid
@@ -272,30 +268,13 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        // Check if deletion is allowed
-        if ("CONFIRMED".equals(entry.getStatus()) || "CLOSED".equals(entry.getStatus())) {
-            throw new ValidationException(
-                    "Entry cannot be deleted",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow deletion"))
-            );
-        }
-
-        if ("Y".equals(entry.getPrincipalApproved()) && "GENERAL".equals(entry.getRefType())) {
-            throw new ValidationException(
-                    "Entry cannot be deleted",
-                    List.of(new ValidationError("status", "Principal approved entries cannot be deleted"))
-            );
-        }
-
-        // Call cancel SP if needed
-        callCancelPdaEntry(groupPoid, companyPoid, userPoid, transactionPoid, "Deleted by user");
-
-        // Soft delete
-        entry.setDeleted("Y");
-        entry.setLastModifiedBy(String.valueOf(userPoid));
-        entry.setLastModifiedDate(LocalDateTime.now());
-
-        entryHdrRepository.save(entry);
+        documentDeleteService.deleteDocument(
+                transactionPoid,
+                "PDA_ENTRY_HDR",
+                "TRANSACTION_POID",
+                deleteReasonDto,
+                entry.getTransactionDate()
+        );
     }
 
     // Charge Details Methods - Batch 5

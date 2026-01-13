@@ -20,7 +20,6 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 
-import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -190,7 +189,7 @@ class PortActivityMasterServiceImplTest {
         when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        service.deletePortActivity(1L, groupPoid, userId, false);
+        service.deletePortActivity(1L, groupPoid, userId, false, deleteReasonDto);
 
         assertEquals("Y", entity.getDeleted());
         assertEquals("N", entity.getActive());
@@ -203,7 +202,7 @@ class PortActivityMasterServiceImplTest {
         when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        service.deletePortActivity(1L, groupPoid, userId, true);
+        service.deletePortActivity(1L, groupPoid, userId, true, deleteReasonDto);
 
         verify(repository).delete(entity);
         verify(repository, never()).save(any());
@@ -215,6 +214,6 @@ class PortActivityMasterServiceImplTest {
                 .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () ->
-                service.deletePortActivity(1L, groupPoid, userId, false));
+                service.deletePortActivity(1L, groupPoid, userId, false, deleteReasonDto));
     }
 }

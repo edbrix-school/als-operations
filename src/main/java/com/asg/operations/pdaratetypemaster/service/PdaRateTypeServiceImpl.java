@@ -1,8 +1,11 @@
 package com.asg.operations.pdaratetypemaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import com.asg.operations.common.Util.FormulaValidator;
 import com.asg.operations.commonlov.service.LovService;
@@ -24,6 +27,7 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,6 +43,7 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     private final EntityManager entityManager;
     private final LovService lovService;
     private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
     @Override
     @Transactional(readOnly = true)
@@ -276,26 +281,21 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     }
 
     @Override
-    public void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, boolean hardDelete) {
+    public void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, boolean hardDelete, @Valid DeleteReasonDto deleteReasonDto) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
         PdaRateTypeMaster rateType = repository.findByRateTypePoidAndGroupPoid(rateTypePoid, groupPoidBD)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "PdaRateTypeMaster", "rateTypePoid", rateTypePoid));
 
-        if (hardDelete) {
-            try {
-                repository.delete(rateType);
-            } catch (Exception e) {
-                throw new ValidationException("Cannot delete rate type due to existing references");
-            }
-        } else {
-            rateType.setActive("N");
-            rateType.setDeleted("Y");
-            rateType.setLastmodifiedBy(userId);
-            rateType.setLastmodifiedDate(LocalDateTime.now());
-            repository.save(rateType);
-        }
+        documentDeleteService.deleteDocument(
+                rateTypePoid,
+                "PDA_RATE_TYPE_MASTER",
+                "RATE_TYPE_POID",
+                deleteReasonDto,
+                LocalDate.now()
+        );
+
     }
 
     @Override

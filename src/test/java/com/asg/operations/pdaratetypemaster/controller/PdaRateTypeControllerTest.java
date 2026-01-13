@@ -147,7 +147,7 @@ public class PdaRateTypeControllerTest {
 
     @Test
     void testSoftDelete() throws Exception {
-        doNothing().when(service).deleteRateType(1L, 1L, "testUser", false);
+        doNothing().when(service).deleteRateType(1L, 1L, "testUser", false, deleteReasonDto);
 
         mockMvc.perform(delete("/v1/pda-rate-types/1")
                 .param("hardDelete", "false"))
@@ -155,12 +155,12 @@ public class PdaRateTypeControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Rate type deleted successfully"));
 
-        verify(service).deleteRateType(1L, 1L, "testUser", false);
+        verify(service).deleteRateType(1L, 1L, "testUser", false, deleteReasonDto);
     }
 
     @Test
     void testHardDelete() throws Exception {
-        doNothing().when(service).deleteRateType(1L, 1L, "testUser", true);
+        doNothing().when(service).deleteRateType(1L, 1L, "testUser", true, deleteReasonDto);
 
         mockMvc.perform(delete("/v1/pda-rate-types/1")
                 .param("hardDelete", "true"))
@@ -168,7 +168,7 @@ public class PdaRateTypeControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Rate type deleted successfully"));
 
-        verify(service).deleteRateType(1L, 1L, "testUser", true);
+        verify(service).deleteRateType(1L, 1L, "testUser", true, deleteReasonDto);
     }
 
     private PdaRateTypeListResponse createListResponse() {

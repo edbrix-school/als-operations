@@ -1,9 +1,11 @@
 package com.asg.operations.portactivitiesmaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.portactivitiesmaster.dto.GetAllPortActivityFilterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityListResponse;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
+import jakarta.validation.Valid;
 
 public interface PortActivityMasterService {
 
@@ -15,5 +17,5 @@ public interface PortActivityMasterService {
 
     PortActivityMasterResponse updatePortActivity(Long portActivityTypePoid, PortActivityMasterRequest request, Long groupPoid, String userId);
 
-    void deletePortActivity(Long portActivityTypePoid, Long groupPoid, String userId, boolean hardDelete);
+    void deletePortActivity(Long portActivityTypePoid, Long groupPoid, String userId, boolean hardDelete, @Valid DeleteReasonDto deleteReasonDto);
 }

@@ -1,6 +1,7 @@
 package com.asg.operations.pdaratetypemaster.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -93,9 +94,10 @@ public class PdaRateTypeController {
     @DeleteMapping("/{rateTypePoid}")
     public ResponseEntity<?> deleteRateType(
             @PathVariable @NotNull @Positive Long rateTypePoid,
-            @RequestParam(defaultValue = "false") boolean hardDelete
+            @RequestParam(defaultValue = "false") boolean hardDelete,
+            @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        rateTypeService.deleteRateType(rateTypePoid, UserContext.getGroupPoid(), UserContext.getUserId(), hardDelete);
+        rateTypeService.deleteRateType(rateTypePoid, UserContext.getGroupPoid(), UserContext.getUserId(), hardDelete,deleteReasonDto);
         return ApiResponse.success("Rate type deleted successfully");
     }
 

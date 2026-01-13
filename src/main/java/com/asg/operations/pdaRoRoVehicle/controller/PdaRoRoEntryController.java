@@ -1,6 +1,7 @@
 package com.asg.operations.pdaRoRoVehicle.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -63,8 +64,8 @@ public class PdaRoRoEntryController {
 
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}")
-    public ResponseEntity<?> deleteRoRoEntry(@PathVariable @NotNull @Positive Long transactionPoid) {
-        pdaRoroEntryService.deleteRoRoEntry(transactionPoid);
+    public ResponseEntity<?> deleteRoRoEntry(@PathVariable @NotNull @Positive Long transactionPoid,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
+        pdaRoroEntryService.deleteRoRoEntry(transactionPoid,deleteReasonDto);
         return ApiResponse.success("PDA Ro-Ro Entry deleted successfully");
     }
 

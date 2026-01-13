@@ -6,7 +6,6 @@ import com.asg.operations.shipprincipal.repository.*;
 import com.asg.operations.shipprincipal.util.PrincipalMasterMapper;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.vesseltype.repository.VesselTypeRepository;
-import com.asg.operations.user.entity.User;
 import com.asg.operations.user.repository.UserRepository;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
@@ -17,8 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -190,7 +187,7 @@ class PrincipalServiceTest {
         when(principalRepository.findByIdAndNotDeleted(1L)).thenReturn(Optional.of(mockPrincipal));
         when(principalRepository.save(any(ShipPrincipalMaster.class))).thenReturn(mockPrincipal);
 
-        principalMasterService.deletePrincipal(1L);
+        principalMasterService.deletePrincipal(1L, deleteReasonDto);
 
         verify(principalRepository).findByIdAndNotDeleted(1L);
         verify(principalRepository).save(any(ShipPrincipalMaster.class));

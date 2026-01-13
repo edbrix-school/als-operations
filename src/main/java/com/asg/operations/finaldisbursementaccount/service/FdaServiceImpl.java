@@ -1,8 +1,11 @@
 package com.asg.operations.finaldisbursementaccount.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import com.asg.operations.common.PageResponse;
 import com.asg.operations.commonlov.service.LovService;
@@ -62,6 +65,7 @@ public class FdaServiceImpl implements FdaService {
     private final LovService lovService;
     private final EntityManager entityManager;
     private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 //    private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -576,18 +580,18 @@ public class FdaServiceImpl implements FdaService {
 
     @Override
     @Transactional
-    public void softDeleteFda(Long transactionPoid, String userId) {
+    public void softDeleteFda(Long transactionPoid, String userId, @Valid DeleteReasonDto deleteReasonDto) {
 
         PdaFdaHdr hdr = pdaFdaHdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
 
-        hdr.setDeleted("Y");
-        hdr.setLastModifiedBy(userId);
-        hdr.setLastModifiedDate(LocalDateTime.now());
-        pdaFdaHdrRepository.save(hdr);
-
-        List<PdaFdaDtl> details = pdaFdaDtlRepository.findByIdTransactionPoid(transactionPoid);
-        pdaFdaDtlRepository.deleteAll(details);
+        documentDeleteService.deleteDocument(
+                transactionPoid,
+                "PDA_FDA_HDR",
+                "TRANSACTION_POID",
+                deleteReasonDto,
+                hdr.getTransactionDate()
+        );
     }
 
     @Override

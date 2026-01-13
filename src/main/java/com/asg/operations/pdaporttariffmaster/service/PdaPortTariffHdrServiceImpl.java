@@ -1,12 +1,14 @@
 package com.asg.operations.pdaporttariffmaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.service.LovService;
-import com.asg.operations.pdaentryform.dto.PdaEntryResponse;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffChargeDtl;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffHdr;
@@ -55,6 +57,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private final EntityManager entityManager;
     private final LovService lovService;
     private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
     @Override
     @Transactional(readOnly = true)
@@ -369,23 +372,20 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     @Override
-    public void deleteTariff(Long transactionPoid, Long groupPoid, String userId, boolean hardDelete) {
+    public void deleteTariff(Long transactionPoid, Long groupPoid, String userId, boolean hardDelete, @Valid DeleteReasonDto deleteReasonDto) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
         PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
                         transactionPoid, groupPoidBD, "N")
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
-        if (hardDelete) {
-            slabDtlRepository.deleteByTransactionPoid(transactionPoid);
-            chargeDtlRepository.deleteByTransactionPoid(transactionPoid);
-            tariffHdrRepository.delete(tariff);
-        } else {
-            tariff.setDeleted("Y");
-            tariff.setLastModifiedBy(userId);
-            tariff.setLastModifiedDate(LocalDateTime.now());
-            tariffHdrRepository.save(tariff);
-        }
+        documentDeleteService.deleteDocument(
+                transactionPoid,
+                "PDA_PORT_TARIFF_HDR",
+                "TRANSACTION_POID",
+                deleteReasonDto,
+                tariff.getTransactionDate()
+        );
     }
 
     @Override

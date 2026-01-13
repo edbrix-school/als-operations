@@ -1,6 +1,7 @@
 package com.asg.operations.pdaporttariffmaster.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -112,9 +113,10 @@ public class PdaPortTariffMasterController {
     @DeleteMapping("/{transactionPoid}")
     public ResponseEntity<?> deleteTariff(
             @PathVariable @NotNull @Positive Long transactionPoid,
-            @RequestParam(defaultValue = "false") boolean hardDelete
+            @RequestParam(defaultValue = "false") boolean hardDelete,
+            @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        tariffService.deleteTariff(transactionPoid, UserContext.getGroupPoid(), UserContext.getUserId(), hardDelete);
+        tariffService.deleteTariff(transactionPoid, UserContext.getGroupPoid(), UserContext.getUserId(), hardDelete,deleteReasonDto);
         return ApiResponse.success("Tariff deleted successfully");
     }
 

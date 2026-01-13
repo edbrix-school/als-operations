@@ -1,6 +1,8 @@
 package com.asg.operations.shipprincipal.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.commonlov.service.LovService;
@@ -20,6 +22,7 @@ import com.asg.operations.vesseltype.entity.VesselType;
 import com.asg.operations.vesseltype.repository.VesselTypeRepository;
 import com.asg.operations.user.entity.User;
 import com.asg.operations.user.repository.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +35,7 @@ import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -54,6 +58,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
     private final VesselTypeRepository vesselTypeRepository;
     private final EntityManager entityManager;
     private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
 
     @Override
@@ -713,15 +718,19 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
     @Override
     @Transactional
-    public void deletePrincipal(Long id) {
+    public void deletePrincipal(Long id, @Valid DeleteReasonDto deleteReasonDto) {
         log.info("Soft deleting principal with id: {}", id);
 
         ShipPrincipalMaster principal = principalRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Principal", "id", id));
-        principal.setActive("N");
-        principal.setLastModifiedDate(LocalDateTime.now());
-        principalRepository.save(principal);
-        log.info("Successfully soft deleted principal with id: {}", id);
+
+        documentDeleteService.deleteDocument(
+                id,
+                "SHIP_PRINCIPAL_MASTER",
+                "PRINCIPAL_POID",
+                deleteReasonDto,
+                LocalDate.now()
+        );
     }
 
 

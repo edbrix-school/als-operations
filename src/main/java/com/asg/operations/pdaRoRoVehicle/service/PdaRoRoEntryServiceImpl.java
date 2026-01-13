@@ -1,9 +1,12 @@
 package com.asg.operations.pdaRoRoVehicle.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.commonlov.service.LovService;
+import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryHdr;
@@ -45,6 +48,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     private final EntityManager entityManager;
     private final LovService lovService;
     private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
     @Override
     public PdaRoRoEntryHdrResponseDto createRoRoEntry(PdaRoroEntryHdrRequestDto request) {
@@ -172,15 +176,18 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     }
 
     @Override
-    public void deleteRoRoEntry(Long transactionPoid) {
+    public void deleteRoRoEntry(Long transactionPoid, @Valid DeleteReasonDto deleteReasonDto) {
         PdaRoRoEntryHdr hdr = hdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new com.asg.operations.exceptions.ResourceNotFoundException(
                         "PDA Ro-Ro Entry not found with ID: " + transactionPoid));
 
-        hdr.setDeleted("Y");
-        hdr.setLastModifiedBy(getCurrentUser());
-        hdr.setLastModifiedDate(LocalDateTime.now());
-        hdrRepository.save(hdr);
+        documentDeleteService.deleteDocument(
+                transactionPoid,
+                "PDA_RORO_ENTRY_HDR",
+                "TRANSACTION_POID",
+                deleteReasonDto,
+                hdr.getTransactionDate()
+        );
     }
 
     @Override

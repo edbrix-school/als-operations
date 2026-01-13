@@ -157,7 +157,7 @@ class PdaPortTariffHdrServiceImplTest {
                 transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
                 .thenReturn(Optional.of(tariff));
 
-        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", false);
+        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", false, deleteReasonDto);
 
         verify(tariffHdrRepository).save(tariff);
         assertEquals("Y", tariff.getDeleted());
@@ -173,7 +173,7 @@ class PdaPortTariffHdrServiceImplTest {
                 transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
                 .thenReturn(Optional.of(tariff));
 
-        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", true);
+        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", true, deleteReasonDto);
 
         verify(slabDtlRepository).deleteByTransactionPoid(transactionPoid);
         verify(chargeDtlRepository).deleteByTransactionPoid(transactionPoid);

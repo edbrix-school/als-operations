@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
@@ -136,9 +137,9 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
     })
     public ResponseEntity<?> deleteFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
+            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        fdaService.softDeleteFda(transactionPoid, UserContext.getUserId());
+        fdaService.softDeleteFda(transactionPoid, UserContext.getUserId(),deleteReasonDto);
         return ApiResponse.success("FDA soft deleted successfully");
     }
 

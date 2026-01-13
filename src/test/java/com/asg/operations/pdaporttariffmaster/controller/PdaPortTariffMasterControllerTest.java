@@ -131,7 +131,7 @@ class PdaPortTariffMasterControllerTest {
 
     @Test
     void deleteTariff_Success() throws Exception {
-        doNothing().when(tariffService).deleteTariff(1L, 200L, "user1", false);
+        doNothing().when(tariffService).deleteTariff(1L, 200L, "user1", false, deleteReasonDto);
 
         mockMvc.perform(delete("/v1/pda-port-tariffs/1")
                 .param("hardDelete", "false"))
@@ -139,7 +139,7 @@ class PdaPortTariffMasterControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Tariff deleted successfully"));
 
-        verify(tariffService).deleteTariff(1L, 200L, "user1", false);
+        verify(tariffService).deleteTariff(1L, 200L, "user1", false, deleteReasonDto);
     }
 
     @Test

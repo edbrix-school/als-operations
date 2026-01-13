@@ -169,13 +169,13 @@ class PdaEntryControllerTest {
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
 
-            doNothing().when(pdaEntryService).deletePdaEntry(transactionPoid, groupPoid, companyPoid, userPoid);
+            doNothing().when(pdaEntryService).deletePdaEntry(transactionPoid, groupPoid, companyPoid, userPoid, deleteReasonDto);
 
             mockMvc.perform(delete("/v1/pda-entries/{transactionPoid}", transactionPoid)
                     .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
-            verify(pdaEntryService, times(1)).deletePdaEntry(transactionPoid, groupPoid, companyPoid, userPoid);
+            verify(pdaEntryService, times(1)).deletePdaEntry(transactionPoid, groupPoid, companyPoid, userPoid, deleteReasonDto);
         }
     }
 

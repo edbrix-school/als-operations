@@ -11,8 +11,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -134,12 +132,12 @@ class PortCallReportControllerTest {
 
     @Test
     void deleteReport_ShouldReturnSuccess() throws Exception {
-        doNothing().when(portCallReportService).deleteReport(1L);
+        doNothing().when(portCallReportService).deleteReport(1L, deleteReasonDto);
 
         mockMvc.perform(delete("/v1/port-call-reports/1"))
                 .andExpect(status().isOk());
 
-        verify(portCallReportService).deleteReport(1L);
+        verify(portCallReportService).deleteReport(1L, deleteReasonDto);
     }
 
     @Test

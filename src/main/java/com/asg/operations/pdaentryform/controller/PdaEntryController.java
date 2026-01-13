@@ -1,6 +1,7 @@
 package com.asg.operations.pdaentryform.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -276,9 +277,10 @@ public class PdaEntryController {
     @DeleteMapping("/{transactionPoid}")
     public ResponseEntity<?> deletePdaEntry(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable Long transactionPoid,
+            @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        pdaEntryService.deletePdaEntry(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        pdaEntryService.deletePdaEntry(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(),deleteReasonDto);
         return ApiResponse.success("PDA entry deleted successfully", null);
     }
 

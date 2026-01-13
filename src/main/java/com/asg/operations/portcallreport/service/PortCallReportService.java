@@ -1,10 +1,12 @@
 package com.asg.operations.portcallreport.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.portcallreport.dto.GetAllPortCallReportFilterRequest;
 import com.asg.operations.portcallreport.dto.PortActivityResponseDto;
 import com.asg.operations.portcallreport.dto.PortCallReportDto;
 import com.asg.operations.portcallreport.dto.PortCallReportListResponse;
 import com.asg.operations.portcallreport.dto.PortCallReportResponseDto;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.Map;
@@ -19,7 +21,7 @@ public interface PortCallReportService {
 
     PortCallReportResponseDto updateReport(Long id, PortCallReportDto dto, Long userPoid, Long groupPoid);
 
-    void deleteReport(Long id);
+    void deleteReport(Long id, @Valid DeleteReasonDto deleteReasonDto);
 
     List<PortActivityResponseDto> getPortActivities(Long userPoid);
 

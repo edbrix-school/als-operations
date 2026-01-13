@@ -10,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -139,13 +138,13 @@ class PrincipalControllerTest {
 
     @Test
     void testDeletePrincipal_Success() throws Exception {
-        doNothing().when(principalMasterService).deletePrincipal(1L);
+        doNothing().when(principalMasterService).deletePrincipal(1L, deleteReasonDto);
 
         mockMvc.perform(delete("/v1/principal-master/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(principalMasterService).deletePrincipal(1L);
+        verify(principalMasterService).deletePrincipal(1L, deleteReasonDto);
     }
 
     @Test

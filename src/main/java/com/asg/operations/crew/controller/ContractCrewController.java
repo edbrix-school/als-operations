@@ -1,6 +1,7 @@
 package com.asg.operations.crew.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -286,9 +287,9 @@ public class ContractCrewController {
             @Parameter(description = "Primary key of the crew master to delete", required = true)
             @PathVariable Long crewPoid,
             @Parameter(description = "If true, performs hard delete (physical deletion). Default is false (soft delete).")
-            @RequestParam(defaultValue = "false") boolean hardDelete
+            @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        crewService.deleteCrew(UserContext.getCompanyPoid(), crewPoid);
+        crewService.deleteCrew(UserContext.getCompanyPoid(), crewPoid,deleteReasonDto);
         return ApiResponse.success("Crew master deleted successfully");
     }
 

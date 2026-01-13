@@ -124,11 +124,11 @@ class PdaRoRoEntryServiceTest {
     void testDeleteRoRoEntry_Success() {
         Long transactionPoid = 1L;
 
-        doNothing().when(pdaRoroEntryService).deleteRoRoEntry(transactionPoid);
+        doNothing().when(pdaRoroEntryService).deleteRoRoEntry(transactionPoid, deleteReasonDto);
 
-        pdaRoroEntryService.deleteRoRoEntry(transactionPoid);
+        pdaRoroEntryService.deleteRoRoEntry(transactionPoid, deleteReasonDto);
 
-        verify(pdaRoroEntryService, times(1)).deleteRoRoEntry(transactionPoid);
+        verify(pdaRoroEntryService, times(1)).deleteRoRoEntry(transactionPoid, deleteReasonDto);
     }
 
     @Test
