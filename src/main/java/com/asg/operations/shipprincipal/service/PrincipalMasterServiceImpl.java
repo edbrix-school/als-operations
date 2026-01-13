@@ -1,6 +1,8 @@
 package com.asg.operations.shipprincipal.service;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.CustomException;
@@ -21,6 +23,7 @@ import com.asg.operations.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -50,6 +53,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
     private final LovService lovService;
     private final VesselTypeRepository vesselTypeRepository;
     private final EntityManager entityManager;
+    private final LoggingService loggingService;
 
 
     @Override
@@ -500,6 +504,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             log.info("Successfully created GL account with POID: {} for principal: {}", result.getGlCodePoid(), principalId);
         }
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), principalId.toString());
         log.info("Successfully created principal with id: {}", principalId);
         return getPrincipal(principalId);
     }
@@ -513,6 +518,9 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     log.error("Principal not found with id: {}", id);
                     return new ResourceNotFoundException("Principal", "Principal Poid", id);
                 });
+
+        ShipPrincipalMaster oldPrincipal = new ShipPrincipalMaster();
+        BeanUtils.copyProperties(principal, oldPrincipal);
 
         mapper.mapUpdateDTOToEntity(dto, principal, groupPoid);
 
@@ -681,6 +689,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             principalRepository.save(principal);
             log.info("Successfully created GL account with POID: {} for principal: {}", result.getGlCodePoid(), principal.getPrincipalPoid());
         }
+
+        loggingService.logChanges(oldPrincipal, principal, ShipPrincipalMaster.class, UserContext.getDocumentId(), id.toString(), LogDetailsEnum.MODIFIED, "PRINCIPAL_POID");
         log.info("Successfully updated principal with id: {}", id);
         return getPrincipal(id);
     }

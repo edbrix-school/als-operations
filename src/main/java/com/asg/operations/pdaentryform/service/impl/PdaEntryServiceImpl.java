@@ -1,6 +1,9 @@
 package com.asg.operations.pdaentryform.service.impl;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.ResourceNotFoundException;
@@ -58,6 +61,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     private final JdbcTemplate jdbcTemplate;
     private final EntityManager entityManager;
     private final LovService lovService;
+    private final LoggingService loggingService;
 
     @Override
     @Transactional(readOnly = true)
@@ -162,6 +166,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 entry.getVoyageNo(), entry.getVoyagePoid()
         );
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entry.getTransactionPoid().toString());
         return toResponse(entry);
     }
 
@@ -174,6 +179,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         ).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
+
+        PdaEntryHdr oldEntry = new PdaEntryHdr();
+        BeanUtils.copyProperties(entry, oldEntry);
 
         // Check edit permissions
         if (!canEdit(entry)) {
@@ -251,6 +259,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 entry.getVoyageNo(), entry.getVoyagePoid()
         );
 
+        loggingService.logChanges(oldEntry, entry, PdaEntryHdr.class, UserContext.getDocumentId(), entry.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return toResponse(entry);
     }
 

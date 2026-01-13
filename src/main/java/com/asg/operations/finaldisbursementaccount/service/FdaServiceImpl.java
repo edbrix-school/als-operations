@@ -1,6 +1,9 @@
 package com.asg.operations.finaldisbursementaccount.service;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.common.PageResponse;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.exceptions.CustomException;
@@ -58,6 +61,7 @@ public class FdaServiceImpl implements FdaService {
     private final ValidationUtils validationUtils;
     private final LovService lovService;
     private final EntityManager entityManager;
+    private final LoggingService loggingService;
 //    private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -110,6 +114,7 @@ public class FdaServiceImpl implements FdaService {
             saveCharges(entity.getTransactionPoid(), dto.getCharges(), userId, groupPoid, companyPoid);
         }
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entity.getTransactionPoid().toString());
         return getFdaHeader(entity.getTransactionPoid(), groupPoid, companyPoid);
     }
 
@@ -122,6 +127,9 @@ public class FdaServiceImpl implements FdaService {
         PdaFdaHdr entity = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(transactionPoid, groupPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
 
+        PdaFdaHdr oldEntity = new PdaFdaHdr();
+        BeanUtils.copyProperties(entity, oldEntity);
+
         HeaderMapper.mapUpdateHeaderDtoToEntity(dto, entity, userId);
         pdaFdaHdrRepository.save(entity);
 
@@ -129,6 +137,7 @@ public class FdaServiceImpl implements FdaService {
             saveCharges(transactionPoid, dto.getCharges(), userId, groupPoid, companyPoid);
         }
 
+        loggingService.logChanges(oldEntity, entity, PdaFdaHdr.class, UserContext.getDocumentId(), transactionPoid.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return getFdaHeader(transactionPoid, groupPoid, companyPoid);
     }
 

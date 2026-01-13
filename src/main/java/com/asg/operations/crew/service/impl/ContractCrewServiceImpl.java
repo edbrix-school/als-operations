@@ -1,6 +1,9 @@
 package com.asg.operations.crew.service.impl;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.*;
 import com.asg.operations.crew.entity.ContractCrew;
@@ -47,6 +50,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
     private final CrewCodeGenerator codeGenerator;
     private final EntityManager entityManager;
     private final LovService lovService;
+    private final LoggingService loggingService;
 
     @Override
     @Transactional(readOnly = true)
@@ -368,6 +372,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             }
         }
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), crew.getCrewPoid().toString());
         return getCrewById(crew.getCrewPoid());
     }
 
@@ -380,6 +385,9 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         ContractCrew crew = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
+
+        ContractCrew oldCrew = new ContractCrew();
+        BeanUtils.copyProperties(crew, oldCrew);
 
         // Update entity
         entityMapper.updateContractCrewEntity(crew, request);
@@ -402,7 +410,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             }
         }
 
-
+        loggingService.logChanges(oldCrew, crew, ContractCrew.class, UserContext.getDocumentId(), crewPoid.toString(), LogDetailsEnum.MODIFIED, "CREW_POID");
         return getCrewById(crew.getCrewPoid());
     }
 

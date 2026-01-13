@@ -1,6 +1,9 @@
 package com.asg.operations.pdaporttariffmaster.service;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaentryform.dto.PdaEntryResponse;
@@ -51,6 +54,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private final PortTariffDocumentRefGenerator docRefGenerator;
     private final EntityManager entityManager;
     private final LovService lovService;
+    private final LoggingService loggingService;
 
     @Override
     @Transactional(readOnly = true)
@@ -325,6 +329,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
             saveChargeDetails(savedTariff, request.getChargeDetails(), userId);
         }
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedTariff.getTransactionPoid().toString());
         return getTariffById(savedTariff.getTransactionPoid(), groupPoid);
     }
 
@@ -337,6 +342,9 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         PdaPortTariffHdr existingTariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
                         transactionPoid, groupPoidBD, "N")
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
+
+        PdaPortTariffHdr oldTariff = new PdaPortTariffHdr();
+        BeanUtils.copyProperties(existingTariff, oldTariff);
 
         String portsStr = request.getPort();
         String vesselTypesStr = mapper.listToString(request.getVesselTypes());
@@ -356,6 +364,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         entityManager.flush();
         entityManager.clear();
 
+        loggingService.logChanges(oldTariff, existingTariff, PdaPortTariffHdr.class, UserContext.getDocumentId(), transactionPoid.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return getTariffById(transactionPoid, groupPoid);
     }
 

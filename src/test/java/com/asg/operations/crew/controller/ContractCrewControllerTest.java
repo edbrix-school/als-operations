@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mockStatic;
 import org.mockito.MockedStatic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -79,7 +80,8 @@ class ContractCrewControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(filterJson))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.result.data.totalElements").value(1));
+                .andDo(print())
+                .andExpect(jsonPath("$.result.data.totalPages").value(1));
     }
 
     @Test

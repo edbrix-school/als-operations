@@ -1,6 +1,10 @@
 package com.asg.operations.pdaRoRoVehicle.service;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import com.asg.operations.commonlov.service.LovService;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryHdr;
 import com.asg.operations.pdaRoRoVehicle.repository.PdaRoroEntryDtlRepository;
@@ -39,7 +43,8 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     private final PdaRoroEntryDtlRepository dtlRepository;
     private final JdbcTemplate jdbcTemplate;
     private final EntityManager entityManager;
-    private final com.asg.operations.commonlov.service.LovService lovService;
+    private final LovService lovService;
+    private final LoggingService loggingService;
 
     @Override
     public PdaRoRoEntryHdrResponseDto createRoRoEntry(PdaRoroEntryHdrRequestDto request) {
@@ -61,6 +66,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                 .build();
 
         hdrRepository.save(entity);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entity.getTransactionPoid().toString());
         return mapToResponse(entity);
     }
 
@@ -89,6 +95,9 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                 .orElseThrow(() -> new com.asg.operations.exceptions.ResourceNotFoundException(
                         "PDA Ro-Ro Entry not found with ID: " + transactionPoid));
 
+        PdaRoRoEntryHdr oldEntity = new PdaRoRoEntryHdr();
+        BeanUtils.copyProperties(entity, oldEntity);
+
         Map<String, Object> voyageDetails = getVoyageDetails(request.getVesselVoyagePoid());
         
         entity.setVesselVoyagePoid(request.getVesselVoyagePoid());
@@ -98,6 +107,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         entity.setDeleted("N");
         entity.setLastModifiedBy(getCurrentUser());
         entity.setLastModifiedDate(LocalDateTime.now());
+        loggingService.logChanges(oldEntity, entity, PdaRoRoEntryHdr.class, UserContext.getDocumentId(), entity.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return mapToResponse(entity);
     }
 

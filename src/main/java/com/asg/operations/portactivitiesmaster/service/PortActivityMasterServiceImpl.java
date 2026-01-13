@@ -1,6 +1,9 @@
 package com.asg.operations.portactivitiesmaster.service;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.portactivitiesmaster.dto.*;
@@ -28,6 +31,7 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
     private final PortActivityMasterRepository repository;
     private final LovService lovService;
     private final EntityManager entityManager;
+    private final LoggingService loggingService;
 
     @Override
     @Transactional(readOnly = true)
@@ -227,6 +231,7 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
                 .build();
 
         entity = repository.save(entity);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entity.getPortActivityTypePoid().toString());
         return mapToResponse(entity);
     }
 
@@ -234,6 +239,9 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
     public PortActivityMasterResponse updatePortActivity(Long portActivityTypePoid, PortActivityMasterRequest request, Long groupPoid, String userId) {
         PortActivityMaster entity = repository.findByPortActivityTypePoidAndGroupPoid(portActivityTypePoid, groupPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Port activity not found"));
+
+        PortActivityMaster oldEntity = new PortActivityMaster();
+        BeanUtils.copyProperties(entity, oldEntity);
 
         entity.setPortActivityTypeName(request.getPortActivityTypeName());
         entity.setPortActivityTypeName2(request.getPortActivityTypeName2());
@@ -244,6 +252,7 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
         entity.setLastModifiedDate(LocalDateTime.now());
 
         entity = repository.save(entity);
+        loggingService.logChanges(oldEntity, entity, PortActivityMaster.class, UserContext.getDocumentId(), entity.getPortActivityTypePoid().toString(), LogDetailsEnum.MODIFIED, "PORT_ACTIVITY_TYPE_POID");
         return mapToResponse(entity);
     }
 

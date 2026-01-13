@@ -3,6 +3,8 @@ package com.asg.operations.portactivitiesmaster.controller;
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.portactivitiesmaster.dto.GetAllPortActivityFilterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityListResponse;
@@ -28,6 +30,7 @@ import jakarta.validation.constraints.Positive;
 public class PortActivityMasterController {
 
     private final PortActivityMasterService portActivityService;
+    private final LoggingService loggingService;
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
@@ -70,6 +73,7 @@ public class PortActivityMasterController {
             @PathVariable @NotNull @Positive Long portActivityTypePoid
     ) {
         PortActivityMasterResponse response = portActivityService.getPortActivityById(portActivityTypePoid, UserContext.getGroupPoid());
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), portActivityTypePoid.toString());
         return ApiResponse.success("Port activity retrieved successfully", response);
     }
 
