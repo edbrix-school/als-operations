@@ -1285,6 +1285,35 @@ public class PdaEntryController {
         return ApiResponse.success("Submission log info retrieved successfully", response);
     }
 
+    @Operation(
+            summary = "Print PDA",
+            description = "Generates PDF report for PDA entry with optional principal-wise printing"
+    )
+    @AllowedAction(UserRolesRightsEnum.PRINT)
+    @GetMapping("/{transactionPoid}/print")
+    public ResponseEntity<byte[]> printPda(
+            @PathVariable Long transactionPoid,
+            @RequestParam(required = false) BigDecimal otherPrincipalPoid
+    ) {
+        try {
+            byte[] pdf = pdaEntryService.printPda(transactionPoid, UserContext.getGroupPoid(), 
+                    UserContext.getCompanyPoid(), UserContext.getUserPoid(), otherPrincipalPoid);
+            
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(
+                org.springframework.http.ContentDisposition.builder("inline")
+                    .filename("PDA_" + transactionPoid + ".pdf")
+                    .build()
+            );
+            
+            return ResponseEntity.ok().headers(headers).body(pdf);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     // ==================== Helper Methods ====================
 
     /**
