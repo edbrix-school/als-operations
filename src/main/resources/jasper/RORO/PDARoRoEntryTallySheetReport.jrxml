@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="PDARoRoEntryTallySheetReport" language="groovy" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="541876ce-4320-45fd-8a4a-aab793964545">
+	<property name="ireport.zoom" value="1.9487171000000025"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="SUB_RORO_DETAIL" class="net.sf.jasperreports.engine.JasperReport"/>
+	<parameter name="DOC_ID" class="java.lang.String"/>
+	<parameter name="LOGIN_COMP_POID" class="java.lang.String"/>
+	<parameter name="LOGIN_USER_POID" class="java.lang.String"/>
+	<parameter name="LOGIN_GROUP_POID" class="java.lang.String"/>
+	<parameter name="DOC_KEY_POID" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT PRE.TRANSACTION_DATE, PRE.DOC_REF, UPPER(GCM.COMPANY_NAME) AS COMPANY_NAME, SLM.LINE_NAME, SVH.VOYAGE_NO,
+SVM.VESSEL_NAME || ' / '|| SVH.VOYAGE_NO AS VESSEL_NAME, SPM.PORT_NAME, PEH.DOC_REF AS PDA_REF
+FROM PDA_RORO_ENTRY_HDR PRE
+INNER JOIN SHIP_VOYAGE_HDR SVH ON SVH.TRANSACTION_POID = PRE.VESSEL_VOYAGE_POID
+INNER JOIN SHIP_VESSEL_MASTER SVM ON SVM.VESSEL_POID = SVH.VESSEL_POID
+INNER JOIN SHIP_LINE_MASTER SLM ON SLM.LINE_POID = SVH.LINE_POID
+LEFT JOIN SHIP_PORT_MASTER SPM ON SPM.PORT_POID = SVH.DESTINATION_PORT_POID
+INNER JOIN GLOBAL_COMPANY_MASTER GCM ON GCM.COMPANY_POID = PRE.COMPANY_POID
+LEFT JOIN PDA_ENTRY_HDR PEH ON PEH.VOYAGE_POID = SVH.TRANSACTION_POID AND PEH.VOYAGE_NO = SVH.VOYAGE_NO
+WHERE PRE.TRANSACTION_POID = $P{DOC_KEY_POID}]]>
+	</queryString>
+	<field name="TRANSACTION_DATE" class="java.sql.Timestamp"/>
+	<field name="DOC_REF" class="java.lang.String"/>
+	<field name="COMPANY_NAME" class="java.lang.String"/>
+	<field name="LINE_NAME" class="java.lang.String"/>
+	<field name="VOYAGE_NO" class="java.lang.String"/>
+	<field name="VESSEL_NAME" class="java.lang.String"/>
+	<field name="PORT_NAME" class="java.lang.String"/>
+	<field name="PDA_REF" class="java.lang.String"/>
+	<title>
+		<band height="14"/>
+	</title>
+	<pageHeader>
+		<band height="81" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="555" height="20" uuid="24eb95b2-98ca-4dae-83b2-d8a7a01dc120"/>
+				<textElement textAlignment="Center">
+					<font size="15" isBold="true" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMPANY_NAME}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="20" width="555" height="20" uuid="4f1c7c51-f771-4a15-9133-c993df99fe9a"/>
+				<textElement textAlignment="Center">
+					<font size="13" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[TALLY SHEET - RORO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="12" y="40" width="72" height="20" uuid="3001f114-2753-4f1b-8d4d-f7e93c7ef77a"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Vessel Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="12" y="60" width="72" height="20" uuid="07768d02-ada1-4c24-a904-d5a036852988"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Port]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="425" y="60" width="51" height="20" uuid="208d1352-802f-4f90-8353-5e68d08d335f"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="101" y="40" width="252" height="20" uuid="312d3ffb-6596-4f7f-9368-850e1a7cda08"/>
+				<textFieldExpression><![CDATA[$F{VESSEL_NAME}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="425" y="40" width="51" height="20" uuid="d1f77792-8bc9-48f1-9314-f7369ac1ee0d"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[PDA Ref]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="476" y="40" width="12" height="20" uuid="535d7f5a-a793-4824-b34e-47eadc1a5452"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="476" y="60" width="12" height="20" uuid="bf6d4b7c-982e-45ca-bc5f-d36fc3680582"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="101" y="60" width="252" height="20" uuid="0a1991c3-74e1-4674-ba7a-4a9b31ffd68a"/>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[KHALIFA BIN SALMAN PORT, BAHRAIN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="84" y="40" width="11" height="20" uuid="5c8f9860-c1db-45bd-9a54-76db3bffed77"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="84" y="60" width="11" height="20" uuid="d1c2a8de-51ee-471b-b4a6-efd6ef3b1778"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="488" y="40" width="67" height="20" uuid="673501d8-fae3-4a90-9cc5-484cd26241cc"/>
+				<textFieldExpression><![CDATA[$F{PDA_REF}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="45" splitType="Stretch">
+			<subreport>
+				<reportElement x="12" y="0" width="543" height="45" uuid="6aca6dec-64d8-424e-8b82-ef9db979502c"/>
+				<subreportParameter name="DOC_KEY_POID">
+					<subreportParameterExpression><![CDATA[$P{DOC_KEY_POID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUB_RORO_DETAIL}]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="47">
+			<staticText>
+				<reportElement x="12" y="29" width="100" height="15" uuid="43e7e633-6d55-4066-bf8f-5cda16ad2a8b"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Agent]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="226" y="29" width="100" height="15" uuid="33df7bcc-dafe-44f0-ad01-64c43f0761ca"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Tally Clerk]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="440" y="29" width="100" height="15" uuid="9c65d7d1-5847-4b44-8b8c-1374217674ec"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Vessel]]></text>
+			</staticText>
+			<line>
+				<reportElement x="13" y="29" width="100" height="1" forecolor="#999999" uuid="f06cf344-1752-4432-be20-65b5a2db4ebc"/>
+			</line>
+			<line>
+				<reportElement x="226" y="28" width="100" height="1" forecolor="#999999" uuid="d034de7d-d61f-4b53-8ead-feba7634b14e"/>
+			</line>
+			<line>
+				<reportElement x="440" y="28" width="100" height="1" forecolor="#999999" uuid="4b038658-2cf6-4822-9897-c67b0343e8e3"/>
+			</line>
+		</band>
+	</columnFooter>
+	<pageFooter>
+		<band height="34" splitType="Stretch">
+			<textField pattern="EEE, d MMM yyyy HH:mm" isBlankWhenNull="true">
+				<reportElement x="12" y="11" width="302" height="20" forecolor="#999999" uuid="5cbc2c36-3eda-4dac-8298-88627be770af"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="454" y="11" width="74" height="15" forecolor="#666666" uuid="43310a52-80f0-4e94-8d4c-1146fbe09276"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="7" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Page-"+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" isBlankWhenNull="true">
+				<reportElement x="530" y="11" width="25" height="15" forecolor="#666666" uuid="e40852b5-f541-4bdf-99bf-e00fea93c10a"/>
+				<textElement verticalAlignment="Middle">
+					<font size="7" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" "+$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+</jasperReport>

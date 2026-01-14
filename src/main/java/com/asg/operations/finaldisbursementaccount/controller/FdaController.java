@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.asg.common.lib.annotation.AllowedAction;
@@ -405,24 +407,28 @@ public class FdaController {
         return ApiResponse.success("Logs fetched successfully", logs);
     }
 
-//    @AllowedAction(UserRolesRightsEnum.PRINT)
-//    @GetMapping(path = "/{transactionPoid}/print", produces = MediaType.APPLICATION_PDF_VALUE)
-//    @Operation(summary = "Print FDA report", description = "Generate and download PDF report for an FDA")
-//    @ApiResponses({
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "PDF report generated successfully",
-//                    content = @Content(mediaType = "application/pdf")),
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
-//    })
-//    public ResponseEntity<Resource> printFda(
-//            @Parameter(description = "Transaction identifier", required = true) @PathVariable("transactionPoid") Long transactionPoid,
-//            @Parameter(description = "Report type", schema = @Schema(defaultValue = "default")) @RequestParam(value = "type", defaultValue = "default") String reportType) {
-//
-//        Resource pdfResource = fdaService.generateFdaReport(transactionPoid, reportType, UserContext.getCompanyPoid(), UserContext.getUserPoid(), UserContext.getGroupPoid());
-//
-//        return ResponseEntity.ok()
-//                .header(HttpHeaders.CONTENT_DISPOSITION,
-//                        "attachment; filename=\"FDA_Report_" + transactionPoid + "_" + reportType + ".pdf\"")
-//                .contentType(MediaType.APPLICATION_PDF)
-//                .body(pdfResource);
-//    }
+   @AllowedAction(UserRolesRightsEnum.PRINT)
+    @GetMapping(path = "/{transactionPoid}/print", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Print FDA report", description = "Generate and download PDF report for an FDA")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "PDF report generated successfully",
+                    content = @Content(mediaType = "application/pdf")),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
+    })
+    public ResponseEntity<byte[]> printFda(
+            @Parameter(description = "Transaction identifier", required = true) @PathVariable("transactionPoid") Long transactionPoid,
+            @Parameter(description = "Currency (BHD or USD)", schema = @Schema(defaultValue = "BHD")) @RequestParam(value = "currency", defaultValue = "BHD") String currency) {
+
+        try {
+            byte[] pdfBytes = fdaService.printFda(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), currency);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"FDA_Report_" + transactionPoid + "_" + currency + ".pdf\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate FDA PDF: " + e.getMessage(), e);
+        }
+    }
 }

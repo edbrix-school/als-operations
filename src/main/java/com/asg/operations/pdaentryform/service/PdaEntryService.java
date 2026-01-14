@@ -198,5 +198,10 @@ public interface PdaEntryService {
      */
     String processTdrCharges(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
+    /**
+     * Print PDA entry as PDF
+     */
+    byte[] printPda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, BigDecimal otherPrincipalPoid) throws Exception;
+
 }
 
