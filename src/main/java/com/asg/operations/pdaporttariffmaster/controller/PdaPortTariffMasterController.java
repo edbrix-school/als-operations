@@ -113,10 +113,9 @@ public class PdaPortTariffMasterController {
     @DeleteMapping("/{transactionPoid}")
     public ResponseEntity<?> deleteTariff(
             @PathVariable @NotNull @Positive Long transactionPoid,
-            @RequestParam(defaultValue = "false") boolean hardDelete,
             @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        tariffService.deleteTariff(transactionPoid, UserContext.getGroupPoid(), UserContext.getUserId(), hardDelete,deleteReasonDto);
+        tariffService.deleteTariff(transactionPoid, UserContext.getGroupPoid(), UserContext.getUserId(), deleteReasonDto);
         return ApiResponse.success("Tariff deleted successfully");
     }
 

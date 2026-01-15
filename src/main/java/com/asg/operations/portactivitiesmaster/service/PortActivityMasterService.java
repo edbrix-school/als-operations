@@ -17,5 +17,5 @@ public interface PortActivityMasterService {
 
     PortActivityMasterResponse updatePortActivity(Long portActivityTypePoid, PortActivityMasterRequest request, Long groupPoid, String userId);
 
-    void deletePortActivity(Long portActivityTypePoid, Long groupPoid, String userId, boolean hardDelete, @Valid DeleteReasonDto deleteReasonDto);
+    void deletePortActivity(Long portActivityTypePoid, Long groupPoid, String userId, @Valid DeleteReasonDto deleteReasonDto);
 }

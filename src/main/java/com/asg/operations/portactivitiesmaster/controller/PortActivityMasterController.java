@@ -102,10 +102,9 @@ public class PortActivityMasterController {
     @DeleteMapping("/{portActivityTypePoid}")
     public ResponseEntity<?> deletePortActivity(
             @PathVariable @NotNull @Positive Long portActivityTypePoid,
-            @RequestParam(defaultValue = "false") boolean hardDelete,
             @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        portActivityService.deletePortActivity(portActivityTypePoid, UserContext.getGroupPoid(), UserContext.getUserId(), hardDelete,deleteReasonDto);
+        portActivityService.deletePortActivity(portActivityTypePoid, UserContext.getGroupPoid(), UserContext.getUserId(), deleteReasonDto);
         return ApiResponse.success("Port activity deleted successfully");
     }
 }

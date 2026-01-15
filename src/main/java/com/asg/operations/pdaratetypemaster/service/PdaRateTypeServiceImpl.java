@@ -281,7 +281,7 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     }
 
     @Override
-    public void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, boolean hardDelete, @Valid DeleteReasonDto deleteReasonDto) {
+    public void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, @Valid DeleteReasonDto deleteReasonDto) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
         PdaRateTypeMaster rateType = repository.findByRateTypePoidAndGroupPoid(rateTypePoid, groupPoidBD)

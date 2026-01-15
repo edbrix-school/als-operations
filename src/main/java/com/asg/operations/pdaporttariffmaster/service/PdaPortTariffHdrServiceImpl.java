@@ -372,7 +372,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     @Override
-    public void deleteTariff(Long transactionPoid, Long groupPoid, String userId, boolean hardDelete, @Valid DeleteReasonDto deleteReasonDto) {
+    public void deleteTariff(Long transactionPoid, Long groupPoid, String userId, @Valid DeleteReasonDto deleteReasonDto) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
         PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(

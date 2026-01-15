@@ -161,7 +161,7 @@ class PdaPortTariffHdrServiceImplTest {
                 transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
                 .thenReturn(Optional.of(tariff));
 
-        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", false, new DeleteReasonDto());
+        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", new DeleteReasonDto());
 
         verify(documentDeleteService).deleteDocument(eq(transactionPoid), eq("PDA_PORT_TARIFF_HDR"), eq("TRANSACTION_POID"), any(), any());
     }
@@ -176,7 +176,7 @@ class PdaPortTariffHdrServiceImplTest {
                 transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
                 .thenReturn(Optional.of(tariff));
 
-        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", true, new DeleteReasonDto());
+        tariffService.deleteTariff(transactionPoid, groupPoid, "user1",  new DeleteReasonDto());
 
         verify(documentDeleteService).deleteDocument(eq(transactionPoid), eq("PDA_PORT_TARIFF_HDR"), eq("TRANSACTION_POID"), any(), any());
     }

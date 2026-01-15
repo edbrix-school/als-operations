@@ -128,7 +128,7 @@ public class PdaRateTypeServiceImplTest {
     void testSoftDelete_Success() {
         when(repository.findByRateTypePoidAndGroupPoid(1L, BigDecimal.ONE)).thenReturn(Optional.of(entity));
 
-        assertDoesNotThrow(() -> service.deleteRateType(1L, 1L, "testUser", false, new DeleteReasonDto()));
+        assertDoesNotThrow(() -> service.deleteRateType(1L, 1L, "testUser",  new DeleteReasonDto()));
         
         verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }

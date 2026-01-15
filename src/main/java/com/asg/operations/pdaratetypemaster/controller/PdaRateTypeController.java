@@ -94,10 +94,9 @@ public class PdaRateTypeController {
     @DeleteMapping("/{rateTypePoid}")
     public ResponseEntity<?> deleteRateType(
             @PathVariable @NotNull @Positive Long rateTypePoid,
-            @RequestParam(defaultValue = "false") boolean hardDelete,
             @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        rateTypeService.deleteRateType(rateTypePoid, UserContext.getGroupPoid(), UserContext.getUserId(), hardDelete,deleteReasonDto);
+        rateTypeService.deleteRateType(rateTypePoid, UserContext.getGroupPoid(), UserContext.getUserId(), deleteReasonDto);
         return ApiResponse.success("Rate type deleted successfully");
     }
 

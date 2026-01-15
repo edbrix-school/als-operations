@@ -139,9 +139,9 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
     })
     public ResponseEntity<?> deleteFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
+            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid, @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        fdaService.softDeleteFda(transactionPoid, UserContext.getUserId(),deleteReasonDto);
+        fdaService.softDeleteFda(transactionPoid, UserContext.getUserId(), deleteReasonDto);
         return ApiResponse.success("FDA soft deleted successfully");
     }
 

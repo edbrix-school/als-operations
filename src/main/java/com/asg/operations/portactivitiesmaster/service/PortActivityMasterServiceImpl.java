@@ -262,7 +262,7 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
     }
 
     @Override
-    public void deletePortActivity(Long portActivityTypePoid, Long groupPoid, String userId, boolean hardDelete, @Valid DeleteReasonDto deleteReasonDto) {
+    public void deletePortActivity(Long portActivityTypePoid, Long groupPoid, String userId, @Valid DeleteReasonDto deleteReasonDto) {
         PortActivityMaster entity = repository.findByPortActivityTypePoidAndGroupPoid(portActivityTypePoid, groupPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Port activity not found"));
 

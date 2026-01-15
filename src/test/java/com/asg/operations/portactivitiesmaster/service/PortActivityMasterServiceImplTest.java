@@ -196,7 +196,7 @@ class PortActivityMasterServiceImplTest {
         when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        service.deletePortActivity(1L, groupPoid, userId, false, new DeleteReasonDto());
+        service.deletePortActivity(1L, groupPoid, userId, new DeleteReasonDto());
 
         verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }
@@ -206,7 +206,7 @@ class PortActivityMasterServiceImplTest {
         when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        service.deletePortActivity(1L, groupPoid, userId, true, new DeleteReasonDto());
+        service.deletePortActivity(1L, groupPoid, userId,  new DeleteReasonDto());
 
         verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }
@@ -217,6 +217,6 @@ class PortActivityMasterServiceImplTest {
                 .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () ->
-                service.deletePortActivity(1L, groupPoid, userId, false, new DeleteReasonDto()));
+                service.deletePortActivity(1L, groupPoid, userId,  new DeleteReasonDto()));
     }
 }

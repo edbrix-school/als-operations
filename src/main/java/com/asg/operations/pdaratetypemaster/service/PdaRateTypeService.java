@@ -14,7 +14,7 @@ public interface PdaRateTypeService {
 
     PdaRateTypeResponseDTO updateRateType(Long rateTypePoid, PdaRateTypeRequestDTO request, Long groupPoid, String userId);
 
-    void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, boolean hardDelete, @Valid DeleteReasonDto deleteReasonDto);
+    void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, @Valid DeleteReasonDto deleteReasonDto);
 
     FormulaValidationResponse validateFormula(FormulaValidationRequest request);
 }
