@@ -17,6 +17,7 @@ public class PortCallOperationEstBertDetailResponseDto {
     private Long detRowId;
     private LocalDateTime eta;
     private LocalDateTime etb;
+    private String updatedBy;
     private String berthingAttachments;
     private Long emailPoid;
 }

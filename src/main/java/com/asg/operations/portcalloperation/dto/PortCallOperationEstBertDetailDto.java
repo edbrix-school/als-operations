@@ -24,7 +24,7 @@ public class PortCallOperationEstBertDetailDto {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime etb;
 
-    @Size(max = 4000)
+    @Size(max = 4000, message = "Berthing Attachments should not exceed 4000 characters")
     private String berthingAttachments;
 
     private Long emailPoid;

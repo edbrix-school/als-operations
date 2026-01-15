@@ -1,18 +1,16 @@
 package com.asg.operations.portcalloperation.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class PortCallOperationResponseDto {
     private Long transactionPoid;
     private LocalDate transactionDate;
@@ -42,14 +40,15 @@ public class PortCallOperationResponseDto {
     private String portCallActualTimingRemarks;
     private String husbandryCrewReqBy;
     private Long docsCopyEmailPoid;
+    private Long grt;
+    private Long nrt;
+    private Long dwt;
     private String status;
     private List<PortCallOperationCargoDetailResponseDto> cargoDetails;
     private List<PortCallOperationMailDetailResponseDto> mailDetails;
     private List<PortCallOperationEstBertDetailResponseDto> estBertDetails;
     private List<PortCallOperationEstPrearrivalDetailResponseDto> estPrearrivalDetails;
-    private List<PortCallOperationEstPrearrivalActDetailResponseDto> estPrearrivalActDetails;
     private List<PortCallOperationActTimingDetailResponseDto> actTimingDetails;
-    private List<PortCallOperationActTimingsActvtyDetailResponseDto> actTimingsActvtyDetails;
     private List<PortCallOperationActCondDetailResponseDto> actCondDetails;
     private List<PortCallOperationActRmksDetailResponseDto> actRmksDetails;
     private List<PortCallOperationActProgDetailResponseDto> actProgDetails;

@@ -13,8 +13,10 @@ import java.util.List;
 public interface PortCallOperationMailDtlRepository extends JpaRepository<PortCallOperationMailDtl, PortCallOperationMailDtlId> {
     void deleteByTransactionPoid(Long transactionPoid);
 
+    long countByTransactionPoid(Long transactionPoid);
+
     List<PortCallOperationMailDtl> findByTransactionPoid(Long transactionPoid);
-    
+
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationMailDtl d where d.transactionPoid = :transactionPoid")
     Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
 }

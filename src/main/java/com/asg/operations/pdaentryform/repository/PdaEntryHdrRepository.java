@@ -104,6 +104,8 @@ public interface PdaEntryHdrRepository extends JpaRepository<PdaEntryHdr, Long> 
     );
 
     Optional<PdaEntryHdr> findByTransactionPoid(Long transactionPoid);
+
+    boolean existsByTransactionPoid(Long transactionPoid);
 }
 
 

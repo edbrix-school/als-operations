@@ -48,4 +48,5 @@ public interface PdaFdaHdrRepository extends JpaRepository<PdaFdaHdr, Long> {
 
     List<PdaFdaHdr> findByPdaRefAndGroupPoidAndCompanyPoidAndDeleted(String pdaRef, Long groupPoid, Long companyPoid, String deleted);
 
+    boolean existsByTransactionPoid(Long transactionPoid);
 }
