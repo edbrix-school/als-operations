@@ -1,10 +1,15 @@
 package com.asg.operations.pdaratetypemaster.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterDto;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.dto.RawSearchResult;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
+import com.asg.common.lib.utility.PaginationUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import com.asg.operations.common.Util.FormulaValidator;
@@ -30,6 +35,7 @@ import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,87 +50,24 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     private final LovService lovService;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
+    private final DocumentSearchService documentSearchService;
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PdaRateTypeListResponse> getAllRateTypesWithFilters(
-            Long groupPoid,
-            GetAllRateTypeFilterRequest filterRequest,
-            int page, int size, String sort) {
+    public Map<String, Object> getAllRateTypesWithFilters(
+            String documentId, FilterRequestDto filterRequestDto, Pageable pageable, LocalDate periodFrom, LocalDate periodTo) {
 
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT r.RATE_TYPE_POID, r.RATE_TYPE_CODE, r.RATE_TYPE_NAME, ");
-        sqlBuilder.append("r.RATE_TYPE_FORMULA, r.DEF_DAYS, r.ACTIVE, r.DELETED, ");
-        sqlBuilder.append("r.SEQNO, r.CREATED_BY, r.CREATED_DATE, r.LASTMODIFIED_BY, r.LASTMODIFIED_DATE ");
-        sqlBuilder.append("FROM PDA_RATE_TYPE_MASTER r ");
-        sqlBuilder.append("WHERE r.GROUP_POID = :groupPoid ");
+        String operator = documentSearchService.resolveOperator(filterRequestDto);
+        String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
 
-        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND (r.DELETED IS NULL OR r.DELETED != 'Y') ");
-        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND r.DELETED = 'Y' ");
-        }
+        RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
+                "DOC_REF",
+                "TRANSACTION_POID");
 
-        List<String> filterConditions = new java.util.ArrayList<>();
-        List<GetAllRateTypeFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
-        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
-            for (GetAllRateTypeFilterRequest.FilterItem filter : filterRequest.getFilters()) {
-                if (StringUtils.hasText(filter.getSearchField()) && StringUtils.hasText(filter.getSearchValue())) {
-                    validFilters.add(filter);
-                    String columnName = mapRateTypeSearchFieldToColumn(filter.getSearchField());
-                    int paramIndex = validFilters.size() - 1;
-                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
-                }
-            }
-        }
+        Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
-        if (!filterConditions.isEmpty()) {
-            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
-            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
-        }
-
-        String orderBy = "ORDER BY r.RATE_TYPE_CODE ASC";
-        if (StringUtils.hasText(sort)) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                String sortField = mapRateTypeSortFieldToColumn(sortParts[0].trim());
-                String sortDirection = sortParts[1].trim().toUpperCase();
-                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
-                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
-                }
-            }
-        }
-        sqlBuilder.append(orderBy);
-
-        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
-        jakarta.persistence.Query query = entityManager.createNativeQuery(sqlBuilder.toString());
-        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
-
-        query.setParameter("groupPoid", groupPoid);
-        countQuery.setParameter("groupPoid", groupPoid);
-
-        if (!validFilters.isEmpty()) {
-            for (int i = 0; i < validFilters.size(); i++) {
-                GetAllRateTypeFilterRequest.FilterItem filter = validFilters.get(i);
-                String paramValue = "%" + filter.getSearchValue() + "%";
-                query.setParameter("filterValue" + i, paramValue);
-                countQuery.setParameter("filterValue" + i, paramValue);
-            }
-        }
-
-        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
-        int offset = page * size;
-        query.setFirstResult(offset);
-        query.setMaxResults(size);
-
-        @SuppressWarnings("unchecked")
-        List<Object[]> results = query.getResultList();
-        List<PdaRateTypeListResponse> dtos = results.stream()
-                .map(this::mapToRateTypeListResponseDto)
-                .collect(Collectors.toList());
-
-        Pageable pageable = PageRequest.of(page, size);
-        return new PageImpl<>(dtos, pageable, totalCount);
+        return PaginationUtil.wrapPage(page, raw.displayFields());
     }
 
     private String mapRateTypeSearchFieldToColumn(String searchField) {

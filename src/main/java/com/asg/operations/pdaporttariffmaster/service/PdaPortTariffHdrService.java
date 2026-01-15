@@ -1,9 +1,14 @@
 package com.asg.operations.pdaporttariffmaster.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDate;
+import java.util.Map;
 
 public interface PdaPortTariffHdrService {
 
@@ -21,5 +26,5 @@ public interface PdaPortTariffHdrService {
 
     ChargeDetailsResponse bulkSaveChargeDetails(Long transactionPoid, ChargeDetailsRequest request, Long groupPoid, String userId);
 
-    Page<PdaPortTariffListResponse> getAllTariffsWithFilters(Long groupPoid, Long companyPoid, GetAllTariffFilterRequest filterRequest, int page, int size, String sort);
+    Map<String, Object> getAllTariffsWithFilters(String documentId, FilterRequestDto filters, Pageable pageable, LocalDate periodFrom, LocalDate periodTo);
 }

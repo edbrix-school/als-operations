@@ -3,6 +3,11 @@ package com.asg.operations.pdaentryform.service.impl;
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.dto.FilterDto;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import jakarta.validation.Valid;
@@ -22,6 +27,9 @@ import oracle.jdbc.internal.OracleTypes;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
 import org.springframework.jdbc.core.SqlParameter;
@@ -58,6 +66,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     private final LovService lovService;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
+    private final DocumentSearchService documentSearchService;
 
     @Override
     @Transactional(readOnly = true)
@@ -2693,140 +2702,21 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     @Override
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<PdaEntryListResponse> getAllPdaWithFilters(
-            Long groupPoid, Long companyPoid,
-            GetAllPdaFilterRequest filterRequest,
-            int page, int size, String sort) {
+    public Map<String, Object> getAllPdaWithFilters(
+            String documentId, FilterRequestDto filterRequestDto, Pageable pageable, LocalDate periodFrom, LocalDate periodTo) {
 
-        // Build dynamic SQL query
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT p.TRANSACTION_POID, p.TRANSACTION_DATE, p.GROUP_POID, p.COMPANY_POID, ");
-        sqlBuilder.append("p.DOC_REF, p.TRANSACTION_REF, p.PRINCIPAL_POID, p.PRINCIPAL_NAME, p.PRINCIPAL_CONTACT, ");
-        sqlBuilder.append("p.VOYAGE_POID, p.VOYAGE_NO, p.VESSEL_POID, p.VESSEL_TYPE_POID, p.GRT, p.NRT, p.DWT, ");
-        sqlBuilder.append("p.IMO_NUMBER, p.ARRIVAL_DATE, p.SAIL_DATE, p.ACTUAL_ARRIVAL_DATE, p.ACTUAL_SAIL_DATE, ");
-        sqlBuilder.append("p.VESSEL_SAIL_DATE, p.PORT_POID, p.PORT_DESCRIPTION, p.LINE_POID, p.COMODITY_POID, ");
-        sqlBuilder.append("p.OPERATION_TYPE, p.HARBOUR_CALL_TYPE, p.IMPORT_QTY, p.EXPORT_QTY, p.TRANSHIPMENT_QTY, ");
-        sqlBuilder.append("p.TOTAL_QUANTITY, p.UNIT, p.NUMBER_OF_DAYS, p.CURRENCY_CODE, p.CURRENCY_RATE, ");
-        sqlBuilder.append("p.TOTAL_AMOUNT, p.COST_CENTRE_POID, p.SALESMAN_POID, p.TERMS_POID, p.ADDRESS_POID, ");
-        sqlBuilder.append("p.REF_TYPE, p.SUB_CATEGORY, p.STATUS, p.CARGO_DETAILS, p.REMARKS, ");
-        sqlBuilder.append("p.VESSEL_VERIFIED, p.VESSEL_VERIFIED_DATE, p.VESSEL_VERIFIED_BY, p.VESSEL_HANDLED_BY, ");
-        sqlBuilder.append("p.URGENT_APPROVAL, p.PRINCIPAL_APPROVED, p.PRINCIPAL_APPROVED_DATE, p.PRINCIPAL_APPROVED_BY, ");
-        sqlBuilder.append("p.PRINCIPAL_APRVL_DAYS, p.REMINDER_MINUTES, p.PRINT_PRINCIPAL, p.FDA_REF, p.FDA_POID, ");
-        sqlBuilder.append("p.MULTIPLE_FDA, p.NOMINATED_PARTY_TYPE, p.NOMINATED_PARTY_POID, p.BANK_POID, ");
-        sqlBuilder.append("p.BUSINESS_REF_BY, p.PMI_DOCUMENT, p.CANCEL_REMARK, p.OLD_PORT_CODE, p.OLD_VESSEL_CODE, ");
-        sqlBuilder.append("p.OLD_PRINCIPAL_CODE, p.OLD_VOYAGE_JOB, p.MENAS_DUES, p.DOCUMENT_SUBMITTED_DATE, ");
-        sqlBuilder.append("p.DOCUMENT_SUBMITTED_BY, p.DOCUMENT_SUBMITTED_STATUS, p.DOCUMENT_RECEIVED_DATE, ");
-        sqlBuilder.append("p.DOCUMENT_RECEIVED_FROM, p.DOCUMENT_RECEIVED_STATUS, p.SUBMISSION_ACCEPTED_DATE, ");
-        sqlBuilder.append("p.SUBMISSION_ACCEPTED_BY, p.VERIFICATION_ACCEPTED_DATE, p.VERIFICATION_ACCEPTED_BY, ");
-        sqlBuilder.append("p.ACCTS_CORRECTION_REMARKS, p.ACCTS_RETURNED_DATE, p.DELETED, p.CREATED_BY, ");
-        sqlBuilder.append("p.CREATED_DATE, p.LASTMODIFIED_BY, p.LASTMODIFIED_DATE ");
-        sqlBuilder.append("FROM PDA_ENTRY_HDR p ");
-        sqlBuilder.append("WHERE p.GROUP_POID = :groupPoid AND p.COMPANY_POID = :companyPoid ");
+        String operator = documentSearchService.resolveOperator(filterRequestDto);
+        String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
 
-        // Apply isDeleted filter
-        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND (p.DELETED IS NULL OR p.DELETED != 'Y') ");
-        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND p.DELETED = 'Y' ");
-        }
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
 
-        // Apply date range filters
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
-            sqlBuilder.append("AND TRUNC(p.TRANSACTION_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
-        }
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
-            sqlBuilder.append("AND TRUNC(p.TRANSACTION_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
-        }
+        RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
+                "DOC_REF",
+                "TRANSACTION_POID");
 
-        // Build filter conditions
-        List<String> filterConditions = new java.util.ArrayList<>();
-        List<GetAllPdaFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
-        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
-            for (GetAllPdaFilterRequest.FilterItem filter : filterRequest.getFilters()) {
-                if (org.springframework.util.StringUtils.hasText(filter.getSearchField()) && org.springframework.util.StringUtils.hasText(filter.getSearchValue())) {
-                    validFilters.add(filter);
-                    String columnName = mapPdaSearchFieldToColumn(filter.getSearchField());
-                    int paramIndex = validFilters.size() - 1;
-                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
-                }
-            }
-        }
+        Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
-        // Add filter conditions with operator
-        if (!filterConditions.isEmpty()) {
-            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
-            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
-        }
-
-        // Apply sorting
-        String orderBy = "ORDER BY p.TRANSACTION_DATE DESC";
-        if (org.springframework.util.StringUtils.hasText(sort)) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                String sortField = mapPdaSortFieldToColumn(sortParts[0].trim());
-                String sortDirection = sortParts[1].trim().toUpperCase();
-                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
-                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
-                }
-            }
-        }
-        sqlBuilder.append(orderBy);
-
-        // Create count query
-        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
-
-        // Create query
-        jakarta.persistence.Query query = entityManager.createNativeQuery(sqlBuilder.toString());
-        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
-
-        // Set parameters
-        query.setParameter("groupPoid", groupPoid);
-        query.setParameter("companyPoid", companyPoid);
-        countQuery.setParameter("groupPoid", groupPoid);
-        countQuery.setParameter("companyPoid", companyPoid);
-
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
-            query.setParameter("fromDate", filterRequest.getFrom());
-            countQuery.setParameter("fromDate", filterRequest.getFrom());
-        }
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
-            query.setParameter("toDate", filterRequest.getTo());
-            countQuery.setParameter("toDate", filterRequest.getTo());
-        }
-
-        // Set filter parameters
-        if (!validFilters.isEmpty()) {
-            for (int i = 0; i < validFilters.size(); i++) {
-                GetAllPdaFilterRequest.FilterItem filter = validFilters.get(i);
-                String paramValue = "%" + filter.getSearchValue() + "%";
-                query.setParameter("filterValue" + i, paramValue);
-                countQuery.setParameter("filterValue" + i, paramValue);
-            }
-        }
-
-        // Get total count
-        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
-
-        // Apply pagination
-        int offset = page * size;
-        query.setFirstResult(offset);
-        query.setMaxResults(size);
-
-        // Execute query and map results
-        @SuppressWarnings("unchecked")
-        List<Object[]> results = query.getResultList();
-        List<PdaEntryListResponse> dtos = results.stream()
-                .map(this::mapToPdaListResponseDto)
-                .collect(Collectors.toList());
-
-        for (PdaEntryListResponse dto : dtos) {
-            dto.setVesselName(lovService.getLovItemByPoid(dto.getVesselPoid() != null ? dto.getVesselPoid().longValue() : null, "VESSEL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null).getLabel());
-            dto.setPrincipalName(lovService.getLovItemByPoid(dto.getPrincipalPoid() != null ? dto.getPrincipalPoid().longValue() : null, "PRINCIPAL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), null).getLabel());
-        }
-
-        // Create page
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
-        return new org.springframework.data.domain.PageImpl<>(dtos, pageable, totalCount);
+        return PaginationUtil.wrapPage(page, raw.displayFields());
     }
 
     private void setLovDetails(PdaEntryResponse response) {

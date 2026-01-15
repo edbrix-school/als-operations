@@ -4,6 +4,11 @@ import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.dto.FilterDto;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
@@ -54,103 +59,23 @@ public class ContractCrewServiceImpl implements ContractCrewService {
     private final LovService lovService;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
+    private final DocumentSearchService documentSearchService;
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ContractCrewListResponse> getAllCrewWithFilters(Long groupPoid, Long companyPoid, GetAllCrewFilterRequest filterRequest, int page, int size, String sort) {
+    public Map<String, Object> getAllCrewWithFilters(String documentId, FilterRequestDto filterRequest, Pageable pageable, LocalDate periodFrom, LocalDate periodTo) {
 
-        // Build dynamic SQL query
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT c.CREW_POID, c.CREW_NAME, c.CREW_NATION_POID, c.CREW_CDC_NUMBER, ");
-        sqlBuilder.append("c.CREW_COMPANY, c.CREW_DESIGNATION, c.CREW_PASSPORT_NUMBER, ");
-        sqlBuilder.append("c.CREW_PASSPORT_ISS_DATE, c.CREW_PASSPORT_EXP_DATE, c.CREW_PASSPORT_ISS_PLACE, ");
-        sqlBuilder.append("c.REMARKS, c.GROUP_POID, c.COMPANY_POID, c.ACTIVE, c.SEQNO, c.DELETED, ");
-        sqlBuilder.append("c.CREATED_BY, c.CREATED_DATE, c.LASTMODIFIED_BY, c.LASTMODIFIED_DATE ");
-        sqlBuilder.append("FROM CONTRACT_CREW_MASTER c ");
-        sqlBuilder.append("WHERE c.GROUP_POID = :groupPoid AND c.COMPANY_POID = :companyPoid ");
+        String operator = documentSearchService.resolveOperator(filterRequest);
+        String isDeleted = documentSearchService.resolveIsDeleted(filterRequest);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequest,"TRANSACTION_DATE", periodFrom, periodTo);
 
-        // Apply isDeleted filter (using ACTIVE field)
-        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND c.ACTIVE = 'Y' ");
-        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND c.ACTIVE = 'N' ");
-        }
+        RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
+                "DOC_REF",
+                "TRANSACTION_POID");
 
-        // Build filter conditions with sequential parameter indexing
-        List<String> filterConditions = new java.util.ArrayList<>();
-        List<GetAllCrewFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
-        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
-            for (GetAllCrewFilterRequest.FilterItem filter : filterRequest.getFilters()) {
-                if (org.springframework.util.StringUtils.hasText(filter.getSearchField()) && org.springframework.util.StringUtils.hasText(filter.getSearchValue())) {
-                    validFilters.add(filter);
-                    String columnName = mapCrewSearchFieldToColumn(filter.getSearchField());
-                    int paramIndex = validFilters.size() - 1;
-                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
-                }
-            }
-        }
+        Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
-        // Add filter conditions with operator
-        if (!filterConditions.isEmpty()) {
-            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
-            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
-        }
-
-        // Apply sorting
-        String orderBy = "ORDER BY c.CREATED_DATE DESC";
-        if (org.springframework.util.StringUtils.hasText(sort)) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                String sortField = mapSortFieldToColumn(sortParts[0].trim());
-                String sortDirection = sortParts[1].trim().toUpperCase();
-                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
-                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
-                }
-            }
-        }
-        sqlBuilder.append(orderBy);
-
-        // Create count query
-        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
-
-        // Create query
-        Query query = entityManager.createNativeQuery(sqlBuilder.toString());
-        Query countQuery = entityManager.createNativeQuery(countSql);
-
-        // Set parameters
-        query.setParameter("groupPoid", groupPoid);
-        query.setParameter("companyPoid", companyPoid);
-        countQuery.setParameter("groupPoid", groupPoid);
-        countQuery.setParameter("companyPoid", companyPoid);
-
-
-        // Set filter parameters using sequential indexing
-        if (!validFilters.isEmpty()) {
-            for (int i = 0; i < validFilters.size(); i++) {
-                GetAllCrewFilterRequest.FilterItem filter = validFilters.get(i);
-                String paramValue = "%" + filter.getSearchValue() + "%";
-                query.setParameter("filterValue" + i, paramValue);
-                countQuery.setParameter("filterValue" + i, paramValue);
-            }
-        }
-
-        // Get total count
-        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
-
-        // Apply pagination
-        int offset = page * size;
-        query.setFirstResult(offset);
-        query.setMaxResults(size);
-
-        // Execute query and map results
-        @SuppressWarnings("unchecked")
-        List<Object[]> results = query.getResultList();
-        List<ContractCrewListResponse> dtos = results.stream()
-                .map(this::mapToCrewListResponseDto)
-                .collect(Collectors.toList());
-        // Create page
-        Pageable pageable = PageRequest.of(page, size);
-        return new PageImpl<>(dtos, pageable, totalCount);
+        return PaginationUtil.wrapPage(page, raw.displayFields());
     }
 
     private void setLovDetails(List<ContractCrewResponse> dtos) {

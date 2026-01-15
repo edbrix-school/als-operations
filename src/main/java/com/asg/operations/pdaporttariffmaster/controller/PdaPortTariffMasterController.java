@@ -2,6 +2,7 @@ package com.asg.operations.pdaporttariffmaster.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -10,6 +11,8 @@ import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.service.PdaPortTariffHdrService;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,9 +25,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @RestController
 @RequestMapping("/v1/pda-port-tariffs")
@@ -45,39 +52,19 @@ public class PdaPortTariffMasterController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     public ResponseEntity<?> getTariffList(
-            @RequestBody(required = false) GetAllTariffFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort) {
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo) {
 
-        // If filterRequest is null, create a default one
-        if (filterRequest == null) {
-            filterRequest = new GetAllTariffFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+        try {
+            Map<String, Object> tariffPage = tariffService.getAllTariffsWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            return success("Tariff list fetched successfully", tariffPage);
+        }
+        catch (Exception ex){
+            return internalServerError("Unable to fetch tariff list: " + ex.getMessage());
         }
 
-        org.springframework.data.domain.Page<PdaPortTariffListResponse> tariffPage = tariffService
-                .getAllTariffsWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
-
-        // Create displayFields
-        Map<String, String> displayFields = new LinkedHashMap<>();
-        displayFields.put("PERIOD_FROM", "date");
-        displayFields.put("PERIOD_TO", "date");
-        displayFields.put("PORT_NAME", "text");
-
-        // Create paginated response with new structure
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", tariffPage.getContent());
-        response.put("pageNumber", tariffPage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", tariffPage.getSize());
-        response.put("totalElements", tariffPage.getTotalElements());
-        response.put("totalPages", tariffPage.getTotalPages());
-        response.put("last", tariffPage.isLast());
-
-        return ApiResponse.success("Tariff list fetched successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)

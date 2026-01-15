@@ -3,6 +3,11 @@ package com.asg.operations.pdaRoRoVehicle.service;
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.dto.FilterDto;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.commonlov.service.LovService;
@@ -49,6 +54,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     private final LovService lovService;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
+    private final DocumentSearchService documentSearchService;
 
     @Override
     public PdaRoRoEntryHdrResponseDto createRoRoEntry(PdaRoroEntryHdrRequestDto request) {
@@ -111,6 +117,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         entity.setDeleted("N");
         entity.setLastModifiedBy(getCurrentUser());
         entity.setLastModifiedDate(LocalDateTime.now());
+        hdrRepository.save(entity);
         loggingService.logChanges(oldEntity, entity, PdaRoRoEntryHdr.class, UserContext.getDocumentId(), entity.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return mapToResponse(entity);
     }
@@ -192,104 +199,20 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
 
     @Override
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public Page<RoRoVehicleListResponse> getRoRoVehicleList(
-            Long groupPoid, Long companyPoid,
-            GetAllRoRoVehicleFilterRequest filterRequest,
-            int page, int size, String sort) {
+    public Map<String, Object> getRoRoVehicleList(
+            String documentId, FilterRequestDto filterRequestDto, Pageable pageable, LocalDate periodFrom, LocalDate periodTo) {
 
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT PRE.TRANSACTION_POID, PRE.DELETED, PRE.COMPANY_POID, ");
-        sqlBuilder.append("PRE.TRANSACTION_DATE, PRE.DOC_REF, SLM.LINE_NAME, ");
-        sqlBuilder.append("SVH.VOYAGE_NO, SVM.VESSEL_NAME ");
-        sqlBuilder.append("FROM PDA_RORO_ENTRY_HDR PRE ");
-        sqlBuilder.append("INNER JOIN SHIP_VOYAGE_HDR SVH ON SVH.TRANSACTION_POID = PRE.VESSEL_VOYAGE_POID ");
-        sqlBuilder.append("INNER JOIN SHIP_VESSEL_MASTER SVM ON SVM.VESSEL_POID = SVH.VESSEL_POID ");
-        sqlBuilder.append("INNER JOIN SHIP_LINE_MASTER SLM ON SLM.LINE_POID = SVH.LINE_POID ");
-        sqlBuilder.append("WHERE PRE.GROUP_POID = :groupPoid AND PRE.COMPANY_POID = :companyPoid ");
+        String operator = documentSearchService.resolveOperator(filterRequestDto);
+        String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
 
-        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND (PRE.DELETED IS NULL OR PRE.DELETED != 'Y') ");
-        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND PRE.DELETED = 'Y' ");
-        }
+        RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
+                "DOC_REF",
+                "TRANSACTION_POID");
 
-        if (StringUtils.hasText(filterRequest.getFrom())) {
-            sqlBuilder.append("AND TRUNC(PRE.TRANSACTION_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
-        }
-        if (StringUtils.hasText(filterRequest.getTo())) {
-            sqlBuilder.append("AND TRUNC(PRE.TRANSACTION_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
-        }
+        Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
-        List<String> filterConditions = new ArrayList<>();
-        List<GetAllRoRoVehicleFilterRequest.FilterItem> validFilters = new ArrayList<>();
-        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
-            for (GetAllRoRoVehicleFilterRequest.FilterItem filter : filterRequest.getFilters()) {
-                if (StringUtils.hasText(filter.getSearchField()) && StringUtils.hasText(filter.getSearchValue())) {
-                    validFilters.add(filter);
-                    String columnName = mapSearchFieldToColumn(filter.getSearchField());
-                    int paramIndex = validFilters.size() - 1;
-                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
-                }
-            }
-        }
-
-        if (!filterConditions.isEmpty()) {
-            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
-            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
-        }
-
-        String orderBy = "ORDER BY PRE.TRANSACTION_DATE DESC";
-        if (StringUtils.hasText(sort)) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                String sortField = mapSortFieldToColumn(sortParts[0].trim());
-                String sortDirection = sortParts[1].trim().toUpperCase();
-                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
-                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
-                }
-            }
-        }
-        sqlBuilder.append(orderBy);
-
-        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
-        Query query = entityManager.createNativeQuery(sqlBuilder.toString());
-        Query countQuery = entityManager.createNativeQuery(countSql);
-
-        query.setParameter("groupPoid", groupPoid);
-        query.setParameter("companyPoid", companyPoid);
-        countQuery.setParameter("groupPoid", groupPoid);
-        countQuery.setParameter("companyPoid", companyPoid);
-
-        if (StringUtils.hasText(filterRequest.getFrom())) {
-            query.setParameter("fromDate", filterRequest.getFrom());
-            countQuery.setParameter("fromDate", filterRequest.getFrom());
-        }
-        if (StringUtils.hasText(filterRequest.getTo())) {
-            query.setParameter("toDate", filterRequest.getTo());
-            countQuery.setParameter("toDate", filterRequest.getTo());
-        }
-
-        if (!validFilters.isEmpty()) {
-            for (int i = 0; i < validFilters.size(); i++) {
-                GetAllRoRoVehicleFilterRequest.FilterItem filter = validFilters.get(i);
-                String paramValue = "%" + filter.getSearchValue() + "%";
-                query.setParameter("filterValue" + i, paramValue);
-                countQuery.setParameter("filterValue" + i, paramValue);
-            }
-        }
-
-        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
-        query.setFirstResult(page * size);
-        query.setMaxResults(size);
-
-        @SuppressWarnings("unchecked")
-        List<Object[]> results = query.getResultList();
-        List<RoRoVehicleListResponse> dtos = results.stream()
-                .map(this::mapToRoRoVehicleListResponse)
-                .collect(Collectors.toList());
-
-        Pageable pageable = PageRequest.of(page, size);
-        return new PageImpl<>(dtos, pageable, totalCount);
+        return PaginationUtil.wrapPage(page, raw.displayFields());
     }
 
     @Override

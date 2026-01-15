@@ -1,10 +1,15 @@
 package com.asg.operations.shipprincipal.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterDto;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.dto.RawSearchResult;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
+import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.CustomException;
@@ -59,107 +64,26 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
     private final EntityManager entityManager;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
+    private final DocumentSearchService documentSearchService;
 
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PrincipalListResponse> getAllPrincipalsWithFilters(
-            Long groupPoid,
-            GetAllPrincipalFilterRequest filterRequest,
-            int page, int size, String sort) {
+    public Map<String, Object> getAllPrincipalsWithFilters(
+            String documentId, FilterRequestDto filterRequestDto, Pageable pageable, LocalDate periodFrom, LocalDate periodTo) {
 
-        // Build dynamic SQL query
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT p.PRINCIPAL_POID, p.PRINCIPAL_CODE, p.PRINCIPAL_NAME, p.PRINCIPAL_NAME2, ");
-        sqlBuilder.append("p.GROUP_POID, p.COMPANY_POID, p.GROUP_NAME, p.COUNTRY_POID, p.ADDRESS_POID, ");
-        sqlBuilder.append("p.CREDIT_PERIOD, p.AGREED_PERIOD, p.CURRENCY_CODE, p.CURRENCY_RATE, ");
-        sqlBuilder.append("p.BUYING_RATE, p.SELLING_RATE, p.GL_CODE_POID, p.GL_ACCTNO, p.TIN_NUMBER, ");
-        sqlBuilder.append("p.TAX_SLAB, p.EXEMPTION_REASON, p.REMARKS, p.SEQNO, p.ACTIVE, ");
-        sqlBuilder.append("p.PRINCIPAL_CODE_OLD, p.DELETED, p.CREATED_BY, p.CREATED_DATE, ");
-        sqlBuilder.append("p.LASTMODIFIED_BY, p.LASTMODIFIED_DATE ");
-        sqlBuilder.append("FROM SHIP_PRINCIPAL_MASTER p ");
-        sqlBuilder.append("WHERE p.GROUP_POID = :groupPoid ");
+        String operator = documentSearchService.resolveOperator(filterRequestDto);
+        String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
 
-        // Apply isDeleted filter (using ACTIVE field)
-        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND p.ACTIVE = 'Y' ");
-        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND p.ACTIVE = 'N' ");
-        }
+        RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
+                "DOC_REF",
+                "TRANSACTION_POID");
 
-        // Build filter conditions with sequential parameter indexing
-        List<String> filterConditions = new java.util.ArrayList<>();
-        List<GetAllPrincipalFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
-        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
-            for (GetAllPrincipalFilterRequest.FilterItem filter : filterRequest.getFilters()) {
-                if (org.springframework.util.StringUtils.hasText(filter.getSearchField()) && org.springframework.util.StringUtils.hasText(filter.getSearchValue())) {
-                    validFilters.add(filter);
-                    String columnName = mapPrincipalSearchFieldToColumn(filter.getSearchField());
-                    int paramIndex = validFilters.size() - 1;
-                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
-                }
-            }
-        }
+        Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
-        // Add filter conditions with operator
-        if (!filterConditions.isEmpty()) {
-            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
-            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
-        }
+        return PaginationUtil.wrapPage(page, raw.displayFields());
 
-        // Apply sorting
-        String orderBy = "ORDER BY p.CREATED_DATE DESC";
-        if (org.springframework.util.StringUtils.hasText(sort)) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                String sortField = mapPrincipalSortFieldToColumn(sortParts[0].trim());
-                String sortDirection = sortParts[1].trim().toUpperCase();
-                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
-                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
-                }
-            }
-        }
-        sqlBuilder.append(orderBy);
-
-        // Create count query
-        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
-
-        // Create query
-        jakarta.persistence.Query query = entityManager.createNativeQuery(sqlBuilder.toString());
-        jakarta.persistence.Query countQuery = entityManager.createNativeQuery(countSql);
-
-        // Set parameters
-        query.setParameter("groupPoid", groupPoid);
-        countQuery.setParameter("groupPoid", groupPoid);
-
-        // Set filter parameters using sequential indexing
-        if (!validFilters.isEmpty()) {
-            for (int i = 0; i < validFilters.size(); i++) {
-                GetAllPrincipalFilterRequest.FilterItem filter = validFilters.get(i);
-                String paramValue = "%" + filter.getSearchValue() + "%";
-                query.setParameter("filterValue" + i, paramValue);
-                countQuery.setParameter("filterValue" + i, paramValue);
-            }
-        }
-
-        // Get total count
-        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
-
-        // Apply pagination
-        int offset = page * size;
-        query.setFirstResult(offset);
-        query.setMaxResults(size);
-
-        // Execute query and map results
-        @SuppressWarnings("unchecked")
-        List<Object[]> results = query.getResultList();
-        List<PrincipalListResponse> dtos = results.stream()
-                .map(this::mapToPrincipalListResponseDto)
-                .collect(Collectors.toList());
-
-        // Create page
-        Pageable pageable = PageRequest.of(page, size);
-        return new PageImpl<>(dtos, pageable, totalCount);
     }
 
     private String mapPrincipalSearchFieldToColumn(String searchField) {

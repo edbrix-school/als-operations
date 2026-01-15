@@ -2,6 +2,7 @@ package com.asg.operations.pdaRoRoVehicle.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -17,13 +18,19 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @RestController
 @RequiredArgsConstructor
@@ -83,38 +90,19 @@ public class PdaRoRoEntryController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     public ResponseEntity<?> getRoRoVehicleList(
-            @RequestBody(required = false) GetAllRoRoVehicleFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort) {
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo) {
 
-        if (filterRequest == null) {
-            filterRequest = new GetAllRoRoVehicleFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+        try {
+            Map<String, Object> rateTypePage = pdaRoroEntryService.getRoRoVehicleList(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            return success("Ro Ro Vehicle list fetched successfully", rateTypePage);
+        }
+        catch (Exception ex){
+            return internalServerError("Unable to fetch Ro Ro Vehicle list: " + ex.getMessage());
         }
 
-        Page<RoRoVehicleListResponse> roroVehiclePage = pdaRoroEntryService
-                .getRoRoVehicleList(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
-
-        Map<String, String> displayFields = new LinkedHashMap<>();
-        displayFields.put("TRANSACTION_DATE", "date");
-        displayFields.put("DOC_REF", "text");
-        displayFields.put("LINE_NAME", "text");
-        displayFields.put("VOYAGE_NO", "text");
-        displayFields.put("VESSEL_NAME", "text");
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", roroVehiclePage.getContent());
-        response.put("pageNumber", roroVehiclePage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", roroVehiclePage.getSize());
-        response.put("totalElements", roroVehiclePage.getTotalElements());
-        response.put("totalPages", roroVehiclePage.getTotalPages());
-        response.put("last", roroVehiclePage.isLast());
-
-        return ApiResponse.success("Ro Ro Vehicle list fetched successfully", response);
     }
 
     @Operation(

@@ -2,6 +2,7 @@ package com.asg.operations.pdaratetypemaster.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -10,6 +11,8 @@ import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaratetypemaster.dto.*;
 import com.asg.operations.pdaratetypemaster.service.PdaRateTypeService;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +20,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+
+import java.time.LocalDate;
+import java.util.Map;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,35 +39,20 @@ public class PdaRateTypeController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     public ResponseEntity<?> getRateTypeList(
-            @RequestBody(required = false) GetAllRateTypeFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo
     ) {
-        if (filterRequest == null) {
-            filterRequest = new GetAllRateTypeFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+
+        try {
+            Map<String, Object> rateTypePage = rateTypeService.getAllRateTypesWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            return success("Rate type list retrieved successfully", rateTypePage);
+        }
+        catch (Exception ex){
+            return internalServerError("Unable to fetch Rate type list: " + ex.getMessage());
         }
 
-        org.springframework.data.domain.Page<PdaRateTypeListResponse> rateTypePage = rateTypeService
-                .getAllRateTypesWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
-
-        java.util.Map<String, String> displayFields = new java.util.HashMap<>();
-        displayFields.put("RATE_TYPE_CODE", "text");
-        displayFields.put("RATE_TYPE_NAME", "text");
-
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
-        response.put("content", rateTypePage.getContent());
-        response.put("pageNumber", rateTypePage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", rateTypePage.getSize());
-        response.put("totalElements", rateTypePage.getTotalElements());
-        response.put("totalPages", rateTypePage.getTotalPages());
-        response.put("last", rateTypePage.isLast());
-
-        return ApiResponse.success("Rate type list retrieved successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)

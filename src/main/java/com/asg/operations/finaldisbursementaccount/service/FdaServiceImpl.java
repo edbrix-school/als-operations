@@ -3,6 +3,11 @@ package com.asg.operations.finaldisbursementaccount.service;
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.dto.FilterDto;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import jakarta.validation.Valid;
@@ -66,6 +71,7 @@ public class FdaServiceImpl implements FdaService {
     private final EntityManager entityManager;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
+    private final DocumentSearchService documentSearchService;
 //    private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -167,140 +173,19 @@ public class FdaServiceImpl implements FdaService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<FdaListResponse> getAllFdaWithFilters(Long groupPoid, Long companyPoid, GetAllFdaFilterRequest filterRequest, int page, int size, String sort) {
+    public Map<String, Object> getAllFdaWithFilters(String documentId, FilterRequestDto filterRequest, Pageable pageable, LocalDate periodFrom, LocalDate periodTo) {
 
-        // Build dynamic SQL query
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT f.TRANSACTION_POID, f.TRANSACTION_DATE, f.GROUP_POID, f.COMPANY_POID, ");
-        sqlBuilder.append("f.PRINCIPAL_POID, f.PRINCIPAL_CONTACT, f.DOC_REF, f.VOYAGE_POID, f.VESSEL_POID, ");
-        sqlBuilder.append("f.ARRIVAL_DATE, f.SAIL_DATE, f.PORT_POID, f.COMODITY_POID, f.OPERATION_TYPE, ");
-        sqlBuilder.append("f.IMPORT_QTY, f.EXPORT_QTY, f.TOTAL_QUANTITY, f.UNIT, f.HARBOUR_CALL_TYPE, ");
-        sqlBuilder.append("f.CURRENCY_CODE, f.CURRENCY_RATE, f.COST_CENTRE_POID, f.VESSEL_VERIFIED, ");
-        sqlBuilder.append("f.VESSEL_VERIFIED_DATE, f.VESSEL_VERIFIED_BY, f.URGENT_APPROVAL, ");
-        sqlBuilder.append("f.PRINCIPAL_APRVL_DAYS, f.PRINCIPAL_APPROVED, f.PRINCIPAL_APPROVED_DATE, ");
-        sqlBuilder.append("f.PRINCIPAL_APPROVED_BY, f.REMINDER_MINUTES, f.CARGO_DETAILS, f.STATUS, ");
-        sqlBuilder.append("f.FDA_CLOSED_DATE, f.REMARKS, f.TOTAL_AMOUNT, f.CREATED_BY, f.CREATED_DATE, ");
-        sqlBuilder.append("f.LASTMODIFIED_BY, f.LASTMODIFIED_DATE, f.DELETED, f.PDA_REF, f.ADDRESS_POID, ");
-        sqlBuilder.append("f.SALESMAN_POID, f.TRANSHIPMENT_QTY, f.DWT, f.GRT, f.IMO_NUMBER, f.NRT, ");
-        sqlBuilder.append("f.NUMBER_OF_DAYS, f.PORT_DESCRIPTION, f.TERMS_POID, f.VESSEL_TYPE_POID, ");
-        sqlBuilder.append("f.LINE_POID, f.PRINT_PRINCIPAL, f.VOYAGE_NO, f.PROFIT_LOSS_AMOUNT, ");
-        sqlBuilder.append("f.PROFIT_LOSS_PER, f.FDA_CLOSING_BY, f.GL_CLOSING_DATE, f.REF_TYPE, ");
-        sqlBuilder.append("f.CLOSED_REMARK, f.SUPPLEMENTARY, f.SUPPLEMENTARY_FDA_POID, f.BUSINESS_REF_BY, ");
-        sqlBuilder.append("f.FDA_WITHOUT_CHARGES, f.PRINT_BANK_POID, f.PORT_CALL_NUMBER, ");
-        sqlBuilder.append("f.NOMINATED_PARTY_TYPE, f.NOMINATED_PARTY_POID, f.DOCUMENT_SUBMITTED_DATE, ");
-        sqlBuilder.append("f.DOCUMENT_SUBMITTED_BY, f.DOCUMENT_SUBMITTED_STATUS, f.FDA_SUB_TYPE, ");
-        sqlBuilder.append("f.SUB_CATEGORY, f.DOCUMENT_RECEIVED_DATE, f.DOCUMENT_RECEIVED_FROM, ");
-        sqlBuilder.append("f.DOCUMENT_RECEIVED_STATUS, f.SUBMISSION_ACCEPTED_DATE, ");
-        sqlBuilder.append("f.VERIFICATION_ACCEPTED_DATE, f.SUBMISSION_ACCEPTED_BY, ");
-        sqlBuilder.append("f.VERIFICATION_ACCEPTED_BY, f.VESSEL_HANDLED_BY, f.VESSEL_SAIL_DATE, ");
-        sqlBuilder.append("f.ACCOUNTS_VERIFIED, f.OPS_CORRECTION_REMARKS, f.OPS_RETURNED_DATE ");
-        sqlBuilder.append("FROM PDA_FDA_HDR f ");
-        sqlBuilder.append("WHERE f.GROUP_POID = :groupPoid AND f.COMPANY_POID = :companyPoid ");
+        String operator = documentSearchService.resolveOperator(filterRequest);
+        String isDeleted = documentSearchService.resolveIsDeleted(filterRequest);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequest,"TRANSACTION_DATE", periodFrom, periodTo);
 
-        // Apply isDeleted filter
-        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND (f.DELETED IS NULL OR f.DELETED != 'Y') ");
-        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND f.DELETED = 'Y' ");
-        }
+        RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
+                "DOC_REF",
+                "TRANSACTION_POID");
 
-        // Apply date range filters
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
-            sqlBuilder.append("AND TRUNC(f.TRANSACTION_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
-        }
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
-            sqlBuilder.append("AND TRUNC(f.TRANSACTION_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
-        }
+        Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
-        // Build filter conditions with sequential parameter indexing
-        List<String> filterConditions = new java.util.ArrayList<>();
-        List<GetAllFdaFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
-        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
-            for (GetAllFdaFilterRequest.FilterItem filter : filterRequest.getFilters()) {
-                if (org.springframework.util.StringUtils.hasText(filter.getSearchField()) && org.springframework.util.StringUtils.hasText(filter.getSearchValue())) {
-                    validFilters.add(filter);
-                    String columnName = mapFdaSearchFieldToColumn(filter.getSearchField());
-                    int paramIndex = validFilters.size() - 1;
-                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
-                }
-            }
-        }
-
-        // Add filter conditions with operator
-        if (!filterConditions.isEmpty()) {
-            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
-            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
-        }
-
-        // Apply sorting
-        String orderBy = "ORDER BY f.TRANSACTION_DATE DESC";
-        if (org.springframework.util.StringUtils.hasText(sort)) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                String sortField = mapSortFieldToColumn(sortParts[0].trim());
-                String sortDirection = sortParts[1].trim().toUpperCase();
-                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
-                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
-                }
-            }
-        }
-        sqlBuilder.append(orderBy);
-
-        // Create count query
-        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
-
-        // Create query
-        Query query = entityManager.createNativeQuery(sqlBuilder.toString());
-        Query countQuery = entityManager.createNativeQuery(countSql);
-
-        // Set parameters
-        query.setParameter("groupPoid", groupPoid);
-        query.setParameter("companyPoid", companyPoid);
-        countQuery.setParameter("groupPoid", groupPoid);
-        countQuery.setParameter("companyPoid", companyPoid);
-
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getFrom())) {
-            query.setParameter("fromDate", filterRequest.getFrom());
-            countQuery.setParameter("fromDate", filterRequest.getFrom());
-        }
-        if (org.springframework.util.StringUtils.hasText(filterRequest.getTo())) {
-            query.setParameter("toDate", filterRequest.getTo());
-            countQuery.setParameter("toDate", filterRequest.getTo());
-        }
-
-        // Set filter parameters using sequential indexing
-        if (!validFilters.isEmpty()) {
-            for (int i = 0; i < validFilters.size(); i++) {
-                GetAllFdaFilterRequest.FilterItem filter = validFilters.get(i);
-                String paramValue = "%" + filter.getSearchValue() + "%";
-                query.setParameter("filterValue" + i, paramValue);
-                countQuery.setParameter("filterValue" + i, paramValue);
-            }
-        }
-
-        // Get total count
-        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
-
-        // Apply pagination
-        int offset = page * size;
-        query.setFirstResult(offset);
-        query.setMaxResults(size);
-
-        // Execute query and map results
-        @SuppressWarnings("unchecked")
-        List<Object[]> results = query.getResultList();
-        List<FdaListResponse> dtos = results.stream()
-                .map(this::mapToFdaListResponseDto)
-                .collect(Collectors.toList());
-
-        for (FdaListResponse dto : dtos) {
-            dto.setPrincipalName(lovService.getLovItemByPoid(dto.getPrincipalPoid(), "PRINCIPAL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()).getLabel());
-            dto.setVesselName(lovService.getLovItemByPoid(dto.getVesselPoid(), "VESSEL_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()).getLabel());
-        }
-
-        // Create page
-        Pageable pageable = PageRequest.of(page, size);
-        return new PageImpl<>(dtos, pageable, totalCount);
+        return PaginationUtil.wrapPage(page, raw.displayFields());
     }
 
     private String mapFdaSearchFieldToColumn(String searchField) {

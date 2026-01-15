@@ -1,12 +1,17 @@
 package com.asg.operations.pdaratetypemaster.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.pdaratetypemaster.dto.*;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDate;
+import java.util.Map;
 
 public interface PdaRateTypeService {
 
-    org.springframework.data.domain.Page<PdaRateTypeListResponse> getAllRateTypesWithFilters(Long groupPoid, GetAllRateTypeFilterRequest filterRequest, int page, int size, String sort);
+    Map<String, Object> getAllRateTypesWithFilters(String documentId, FilterRequestDto filters, Pageable pageable, LocalDate periodFrom, LocalDate periodTo);
 
     PdaRateTypeResponseDTO getRateTypeById(Long rateTypePoid, Long groupPoid);
 

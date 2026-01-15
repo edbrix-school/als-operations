@@ -1,9 +1,14 @@
 package com.asg.operations.pdaRoRoVehicle.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDate;
+import java.util.Map;
 
 public interface PdaRoRoEntryService {
 
@@ -15,9 +20,7 @@ public interface PdaRoRoEntryService {
 
     void deleteRoRoEntry(Long transactionPoid, @Valid DeleteReasonDto deleteReasonDto);
 
-    Page<RoRoVehicleListResponse> getRoRoVehicleList(Long groupPoid, Long companyPoid,
-                                                     GetAllRoRoVehicleFilterRequest filterRequest, 
-                                                     int page, int size, String sort);
+    Map<String, Object> getRoRoVehicleList(String documentId, FilterRequestDto filters, Pageable pageable, LocalDate periodFrom, LocalDate periodTo);
 
     String uploadExcel(org.springframework.web.multipart.MultipartFile file);
 

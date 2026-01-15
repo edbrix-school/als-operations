@@ -1,6 +1,7 @@
 package com.asg.operations.finaldisbursementaccount.controller;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
@@ -17,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 //import org.springframework.core.io.Resource;
@@ -33,6 +36,9 @@ import java.util.Map;
 //import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @RestController
 @RequestMapping("/v1/fdas")
@@ -49,42 +55,20 @@ public class FdaController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     public ResponseEntity<?> getFdaList(
-            @RequestBody(required = false) GetAllFdaFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort) {
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo) {
+        try {
 
-        // If filterRequest is null, create a default one
-        if (filterRequest == null) {
-            filterRequest = new GetAllFdaFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+            Map<String, Object> fdaPage = fdaService
+                    .getAllFdaWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+
+            return success("FDA list fetched successfully", fdaPage);
         }
-
-        org.springframework.data.domain.Page<FdaListResponse> fdaPage = fdaService
-                .getAllFdaWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
-
-        // Create displayFields
-        Map<String, String> displayFields = new HashMap<>();
-        displayFields.put("TRANSACTION_DATE", "date");
-        displayFields.put("DOC_REF", "text");
-        displayFields.put("PDA_REF", "text");
-        displayFields.put("VESSEL_NAME", "text");
-        displayFields.put("PRINCIPAL_NAME", "text");
-        displayFields.put("VOYAGE_NO", "text");
-
-        // Create paginated response with new structure
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", fdaPage.getContent());
-        response.put("pageNumber", fdaPage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", fdaPage.getSize());
-        response.put("totalElements", fdaPage.getTotalElements());
-        response.put("totalPages", fdaPage.getTotalPages());
-        response.put("last", fdaPage.isLast());
-
-        return ApiResponse.success("FDA list fetched successfully", response);
+        catch (Exception ex){
+            return internalServerError("Unable to fetch fda list: " + ex.getMessage());
+        }
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)

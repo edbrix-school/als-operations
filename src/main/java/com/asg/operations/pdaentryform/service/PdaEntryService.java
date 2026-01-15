@@ -1,11 +1,15 @@
 package com.asg.operations.pdaentryform.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.pdaentryform.dto.*;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service interface for PDA Entry operations
@@ -140,7 +144,7 @@ public interface PdaEntryService {
     /**
      * Get all PDA entries with filters
      */
-    org.springframework.data.domain.Page<PdaEntryListResponse> getAllPdaWithFilters(Long groupPoid, Long companyPoid, GetAllPdaFilterRequest filterRequest, int page, int size, String sort);
+    Map<String, Object> getAllPdaWithFilters(String documentId, FilterRequestDto filters, Pageable pageable, LocalDate periodFrom, LocalDate periodTo);
 
     /**
      * Get FDA document info for viewing
