@@ -53,7 +53,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     private final com.asg.operations.commonlov.service.LovService lovService;
     private final com.asg.common.lib.service.PrintService printService;
     private final javax.sql.DataSource dataSource;
-    private final LovService lovService;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
 
