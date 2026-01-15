@@ -1,8 +1,11 @@
 package com.asg.operations.shipprincipal.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.shipprincipal.dto.*;
 import com.asg.operations.shipprincipal.service.PrincipalMasterService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +15,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
@@ -33,6 +37,9 @@ class PrincipalControllerTest {
     @Mock
     private PrincipalMasterService principalMasterService;
 
+    @Mock
+    private LoggingService loggingService;
+
     @InjectMocks
     private PrincipalController controller;
 
@@ -46,10 +53,16 @@ class PrincipalControllerTest {
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getGroupPoid).thenReturn(200L);
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getUserPoid).thenReturn(1L);
 
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+        converter.setObjectMapper(objectMapper);
+
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .setMessageConverters(converter)
                 .build();
-        objectMapper = new ObjectMapper();
 
         mockPrincipalDetail = new PrincipalMasterDto();
         mockPrincipalDetail.setPrincipalPoid(1L);
@@ -138,13 +151,13 @@ class PrincipalControllerTest {
 
     @Test
     void testDeletePrincipal_Success() throws Exception {
-        doNothing().when(principalMasterService).deletePrincipal(1L, deleteReasonDto);
+        doNothing().when(principalMasterService).deletePrincipal(eq(1L), any());
 
         mockMvc.perform(delete("/v1/principal-master/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(principalMasterService).deletePrincipal(1L, deleteReasonDto);
+        verify(principalMasterService).deletePrincipal(eq(1L), any());
     }
 
     @Test

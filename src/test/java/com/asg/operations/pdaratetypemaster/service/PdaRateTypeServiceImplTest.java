@@ -1,5 +1,6 @@
 package com.asg.operations.pdaratetypemaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.common.Util.FormulaValidator;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeRequestDTO;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeResponseDTO;
@@ -35,6 +36,12 @@ public class PdaRateTypeServiceImplTest {
     
     @Mock
     private FormulaValidator formulaValidator;
+
+    @Mock
+    private com.asg.common.lib.service.DocumentDeleteService documentDeleteService;
+
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
 
     @InjectMocks
     private PdaRateTypeServiceImpl service;
@@ -120,11 +127,10 @@ public class PdaRateTypeServiceImplTest {
     @Test
     void testSoftDelete_Success() {
         when(repository.findByRateTypePoidAndGroupPoid(1L, BigDecimal.ONE)).thenReturn(Optional.of(entity));
-        when(repository.save(any(PdaRateTypeMaster.class))).thenReturn(entity);
 
-        assertDoesNotThrow(() -> service.deleteRateType(1L, 1L, "testUser", false, deleteReasonDto));
+        assertDoesNotThrow(() -> service.deleteRateType(1L, 1L, "testUser", false, new DeleteReasonDto()));
         
-        verify(repository).save(argThat(e -> "Y".equals(e.getDeleted()) && "N".equals(e.getActive())));
+        verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }
 
 

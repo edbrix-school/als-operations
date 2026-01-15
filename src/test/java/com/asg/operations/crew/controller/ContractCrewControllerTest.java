@@ -6,6 +6,7 @@ import com.asg.operations.crew.dto.ContractCrewListResponse;
 import com.asg.operations.crew.dto.GetAllCrewFilterRequest;
 import com.asg.operations.crew.service.ContractCrewService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -40,6 +41,9 @@ class ContractCrewControllerTest {
     @Mock
     private ContractCrewService crewService;
 
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
     @InjectMocks
     private ContractCrewController controller;
 
@@ -52,8 +56,11 @@ class ContractCrewControllerTest {
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getGroupPoid).thenReturn(200L);
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getUserId).thenReturn("tester");
 
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
     }
 
     @org.junit.jupiter.api.AfterEach

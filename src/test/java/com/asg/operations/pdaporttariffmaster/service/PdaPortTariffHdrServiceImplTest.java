@@ -1,5 +1,6 @@
 package com.asg.operations.pdaporttariffmaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.dto.LovResponse;
 import com.asg.operations.commonlov.service.LovService;
@@ -65,6 +66,9 @@ class PdaPortTariffHdrServiceImplTest {
 
     @Mock
     private LovService lovService;
+
+    @Mock
+    private com.asg.common.lib.service.DocumentDeleteService documentDeleteService;
 
     @InjectMocks
     private PdaPortTariffHdrServiceImpl tariffService;
@@ -157,10 +161,9 @@ class PdaPortTariffHdrServiceImplTest {
                 transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
                 .thenReturn(Optional.of(tariff));
 
-        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", false, deleteReasonDto);
+        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", false, new DeleteReasonDto());
 
-        verify(tariffHdrRepository).save(tariff);
-        assertEquals("Y", tariff.getDeleted());
+        verify(documentDeleteService).deleteDocument(eq(transactionPoid), eq("PDA_PORT_TARIFF_HDR"), eq("TRANSACTION_POID"), any(), any());
     }
 
     @Test
@@ -173,11 +176,9 @@ class PdaPortTariffHdrServiceImplTest {
                 transactionPoid, BigDecimal.valueOf(groupPoid), "N"))
                 .thenReturn(Optional.of(tariff));
 
-        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", true, deleteReasonDto);
+        tariffService.deleteTariff(transactionPoid, groupPoid, "user1", true, new DeleteReasonDto());
 
-        verify(slabDtlRepository).deleteByTransactionPoid(transactionPoid);
-        verify(chargeDtlRepository).deleteByTransactionPoid(transactionPoid);
-        verify(tariffHdrRepository).delete(tariff);
+        verify(documentDeleteService).deleteDocument(eq(transactionPoid), eq("PDA_PORT_TARIFF_HDR"), eq("TRANSACTION_POID"), any(), any());
     }
 
     @Test

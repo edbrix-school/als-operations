@@ -1,5 +1,6 @@
 package com.asg.operations.pdaRoRoVehicle.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import com.asg.operations.pdaRoRoVehicle.service.PdaRoRoEntryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -30,6 +32,9 @@ class PdaRoRoEntryControllerTest {
     @Mock
     private PdaRoRoEntryService pdaRoroEntryService;
 
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
     @InjectMocks
     private PdaRoRoEntryController pdaRoRoEntryController;
 
@@ -38,9 +43,11 @@ class PdaRoRoEntryControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(pdaRoRoEntryController).build();
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
+        mockMvc = MockMvcBuilders.standaloneSetup(pdaRoRoEntryController)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
     }
 
     @Test
@@ -155,14 +162,14 @@ class PdaRoRoEntryControllerTest {
     void testDeleteRoRoEntry_Success() throws Exception {
         Long transactionPoid = 1L;
 
-        doNothing().when(pdaRoroEntryService).deleteRoRoEntry(transactionPoid, deleteReasonDto);
+        doNothing().when(pdaRoroEntryService).deleteRoRoEntry(eq(transactionPoid), any());
 
         mockMvc.perform(delete("/v1/pda-roro-entries/{transactionPoid}", transactionPoid)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("PDA Ro-Ro Entry deleted successfully"));
 
-        verify(pdaRoroEntryService, times(1)).deleteRoRoEntry(transactionPoid, deleteReasonDto);
+        verify(pdaRoroEntryService, times(1)).deleteRoRoEntry(eq(transactionPoid), any());
     }
 
     @Test
