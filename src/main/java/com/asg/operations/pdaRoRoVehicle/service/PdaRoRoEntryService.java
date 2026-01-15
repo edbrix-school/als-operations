@@ -24,4 +24,6 @@ public interface PdaRoRoEntryService {
     PdaRoroVehicleUploadResponse uploadVehicleDetails(PdaRoRoVehicleUploadRequest request);
 
     String clearRoRoVehicleDetails(Long transactionPoid);
+
+    byte[] printTallySheet(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) throws Exception;
 }

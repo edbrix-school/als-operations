@@ -55,4 +55,6 @@ public interface FdaService {
 
     Page<FdaListResponse> getAllFdaWithFilters(Long groupPoid, Long companyPoid, GetAllFdaFilterRequest filterRequest, int page, int size, String sort);
 
+    byte[] printFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String currency) throws Exception;
+
 }

@@ -30,6 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.sql.Date;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
@@ -42,10 +44,15 @@ import java.util.stream.Collectors;
 
 public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PdaRoRoEntryServiceImpl.class);
+
     private final PdaRoRoEntryHdrRepository hdrRepository;
     private final PdaRoroEntryDtlRepository dtlRepository;
     private final JdbcTemplate jdbcTemplate;
     private final EntityManager entityManager;
+    private final com.asg.operations.commonlov.service.LovService lovService;
+    private final com.asg.common.lib.service.PrintService printService;
+    private final javax.sql.DataSource dataSource;
     private final LovService lovService;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
@@ -591,5 +598,22 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
 
     public static String getCurrentUser() {
         return UserContext.getUserId() != null ? String.valueOf(UserContext.getUserId()) : "SYSTEM";
+    }
+
+    @Override
+    public byte[] printTallySheet(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) throws Exception {
+        logger.info("Generating Tally Sheet PDF for RoRo Entry: {}", transactionPoid);
+        
+        try {
+            Map<String, Object> params = printService.buildBaseParams(transactionPoid, "110-162");
+            params.put("SUB_RORO_DETAIL", printService.load("PDA/PDARoRoEntryTallySheetSubreport.jrxml"));
+
+            net.sf.jasperreports.engine.JasperReport mainReport = printService.load("RORO/PDARoRoEntryTallySheetReport.jrxml");
+            return printService.fillReportToPdf(mainReport, params, dataSource);
+            
+        } catch (RuntimeException e) {
+            logger.error("Error generating Tally Sheet PDF for RoRo Entry: {}", transactionPoid, e);
+            throw new RuntimeException("Tally Sheet PDF generation failed: " + e.getMessage(), e);
+        }
     }
 }

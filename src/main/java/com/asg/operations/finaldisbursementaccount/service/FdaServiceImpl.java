@@ -7,6 +7,7 @@ import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
+import com.asg.common.lib.service.PrintService;
 import com.asg.operations.common.PageResponse;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.exceptions.CustomException;
@@ -51,6 +52,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -64,6 +66,8 @@ public class FdaServiceImpl implements FdaService {
     private final ValidationUtils validationUtils;
     private final LovService lovService;
     private final EntityManager entityManager;
+    private final PrintService printService;
+    private final javax.sql.DataSource dataSource;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
 //    private final JdbcTemplate jdbcTemplate;
@@ -982,6 +986,31 @@ public class FdaServiceImpl implements FdaService {
         charge.setPrincipalDet(lovService.getLovItemByPoid(charge.getPrincipalPoid(), "PRINCIPAL_MASTER_FOR_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         charge.setPdaDet(lovService.getLovItemByPoid(charge.getPdaPoid(), "PROCESS_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         charge.setDetailsFromDet(lovService.getLovItemByCode(charge.getDetailsFrom(), "FDA_DETAIL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+    }
+
+    @Override
+    public byte[] printFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String currency) throws Exception {
+        try {
+            Map<String, Object> params = printService.buildBaseParams(transactionPoid, "110-161");
+            
+            params.put("SUB_HEADER", printService.load("Templates/DocHeaderSubReport.jrxml"));
+            params.put("SUB_FOOTER", printService.load("Templates/DocFooterSubReport.jrxml"));
+            
+            String reportName;
+            if ("USD".equalsIgnoreCase(currency)) {
+                params.put("SUB_FDA_DETAIL", printService.load("PDA/FDA_Subreport_USD_ProcCall.jrxml"));
+                reportName = "PDA/FDAreportUSD.jrxml";
+            } else {
+                params.put("SUB_FDA_DETAIL", printService.load("PDA/FDA_Subreport_ProcCall.jrxml"));
+                reportName = "PDA/FDAreport1.jrxml";
+            }
+            
+            net.sf.jasperreports.engine.JasperReport mainReport = printService.load(reportName);
+            return printService.fillReportToPdf(mainReport, params, dataSource);
+            
+        } catch (RuntimeException e) {
+            throw new RuntimeException("FDA PDF generation failed: " + e.getMessage(), e);
+        }
     }
 
 }
