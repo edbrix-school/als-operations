@@ -1,6 +1,12 @@
 package com.asg.operations.crew.service.impl;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.validation.Valid;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.*;
 import com.asg.operations.crew.entity.ContractCrew;
@@ -19,7 +25,6 @@ import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -27,8 +32,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -47,6 +52,8 @@ public class ContractCrewServiceImpl implements ContractCrewService {
     private final CrewCodeGenerator codeGenerator;
     private final EntityManager entityManager;
     private final LovService lovService;
+    private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
     @Override
     @Transactional(readOnly = true)
@@ -368,6 +375,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             }
         }
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), crew.getCrewPoid().toString());
         return getCrewById(crew.getCrewPoid());
     }
 
@@ -380,6 +388,9 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         ContractCrew crew = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
+
+        ContractCrew oldCrew = new ContractCrew();
+        BeanUtils.copyProperties(crew, oldCrew);
 
         // Update entity
         entityMapper.updateContractCrewEntity(crew, request);
@@ -402,19 +413,23 @@ public class ContractCrewServiceImpl implements ContractCrewService {
             }
         }
 
-
+        loggingService.logChanges(oldCrew, crew, ContractCrew.class, UserContext.getDocumentId(), crewPoid.toString(), LogDetailsEnum.MODIFIED, "CREW_POID");
         return getCrewById(crew.getCrewPoid());
     }
 
     @Override
-    public void deleteCrew(Long companyPoid, Long crewPoid) {
-
+    public void deleteCrew(Long companyPoid, Long crewPoid, @Valid DeleteReasonDto deleteReasonDto) {
 
         ContractCrew crew = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
-        crew.setActive("N");
-        crewRepository.save(crew);
-        crewDtlRepository.deleteByIdCrewPoid(crewPoid);
+
+        documentDeleteService.deleteDocument(
+                crewPoid,
+                "GL_ADVANCE_PETTY_CASH_HDR",
+                "CREW_POID",
+                deleteReasonDto,
+                LocalDate.now()
+        );
     }
 
     @Override

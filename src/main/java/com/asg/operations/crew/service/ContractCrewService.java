@@ -1,6 +1,8 @@
 package com.asg.operations.crew.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.crew.dto.*;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 
 /**
@@ -25,7 +27,7 @@ public interface ContractCrewService {
     /**
      * Delete crew master (soft or hard delete)
      */
-    void deleteCrew(Long companyPoid, Long crewPoid);
+    void deleteCrew(Long companyPoid, Long crewPoid, @Valid DeleteReasonDto deleteReasonDto);
 
     /**
      * Get crew details list

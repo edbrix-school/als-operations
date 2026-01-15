@@ -1,6 +1,10 @@
 package com.asg.operations.shipprincipal.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.CustomException;
@@ -18,9 +22,11 @@ import com.asg.operations.vesseltype.entity.VesselType;
 import com.asg.operations.vesseltype.repository.VesselTypeRepository;
 import com.asg.operations.user.entity.User;
 import com.asg.operations.user.repository.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -29,6 +35,7 @@ import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,6 +57,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
     private final LovService lovService;
     private final VesselTypeRepository vesselTypeRepository;
     private final EntityManager entityManager;
+    private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
 
     @Override
@@ -500,6 +509,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             log.info("Successfully created GL account with POID: {} for principal: {}", result.getGlCodePoid(), principalId);
         }
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), principalId.toString());
         log.info("Successfully created principal with id: {}", principalId);
         return getPrincipal(principalId);
     }
@@ -513,6 +523,9 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     log.error("Principal not found with id: {}", id);
                     return new ResourceNotFoundException("Principal", "Principal Poid", id);
                 });
+
+        ShipPrincipalMaster oldPrincipal = new ShipPrincipalMaster();
+        BeanUtils.copyProperties(principal, oldPrincipal);
 
         mapper.mapUpdateDTOToEntity(dto, principal, groupPoid);
 
@@ -681,6 +694,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             principalRepository.save(principal);
             log.info("Successfully created GL account with POID: {} for principal: {}", result.getGlCodePoid(), principal.getPrincipalPoid());
         }
+
+        loggingService.logChanges(oldPrincipal, principal, ShipPrincipalMaster.class, UserContext.getDocumentId(), id.toString(), LogDetailsEnum.MODIFIED, "PRINCIPAL_POID");
         log.info("Successfully updated principal with id: {}", id);
         return getPrincipal(id);
     }
@@ -703,15 +718,19 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
     @Override
     @Transactional
-    public void deletePrincipal(Long id) {
+    public void deletePrincipal(Long id, @Valid DeleteReasonDto deleteReasonDto) {
         log.info("Soft deleting principal with id: {}", id);
 
         ShipPrincipalMaster principal = principalRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Principal", "id", id));
-        principal.setActive("N");
-        principal.setLastModifiedDate(LocalDateTime.now());
-        principalRepository.save(principal);
-        log.info("Successfully soft deleted principal with id: {}", id);
+
+        documentDeleteService.deleteDocument(
+                id,
+                "SHIP_PRINCIPAL_MASTER",
+                "PRINCIPAL_POID",
+                deleteReasonDto,
+                LocalDate.now()
+        );
     }
 
 

@@ -1,6 +1,12 @@
 package com.asg.operations.portactivitiesmaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.validation.Valid;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.portactivitiesmaster.dto.*;
@@ -16,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +35,8 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
     private final PortActivityMasterRepository repository;
     private final LovService lovService;
     private final EntityManager entityManager;
+    private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
     @Override
     @Transactional(readOnly = true)
@@ -227,6 +236,7 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
                 .build();
 
         entity = repository.save(entity);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entity.getPortActivityTypePoid().toString());
         return mapToResponse(entity);
     }
 
@@ -234,6 +244,9 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
     public PortActivityMasterResponse updatePortActivity(Long portActivityTypePoid, PortActivityMasterRequest request, Long groupPoid, String userId) {
         PortActivityMaster entity = repository.findByPortActivityTypePoidAndGroupPoid(portActivityTypePoid, groupPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Port activity not found"));
+
+        PortActivityMaster oldEntity = new PortActivityMaster();
+        BeanUtils.copyProperties(entity, oldEntity);
 
         entity.setPortActivityTypeName(request.getPortActivityTypeName());
         entity.setPortActivityTypeName2(request.getPortActivityTypeName2());
@@ -244,23 +257,22 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
         entity.setLastModifiedDate(LocalDateTime.now());
 
         entity = repository.save(entity);
+        loggingService.logChanges(oldEntity, entity, PortActivityMaster.class, UserContext.getDocumentId(), entity.getPortActivityTypePoid().toString(), LogDetailsEnum.MODIFIED, "PORT_ACTIVITY_TYPE_POID");
         return mapToResponse(entity);
     }
 
     @Override
-    public void deletePortActivity(Long portActivityTypePoid, Long groupPoid, String userId, boolean hardDelete) {
+    public void deletePortActivity(Long portActivityTypePoid, Long groupPoid, String userId, @Valid DeleteReasonDto deleteReasonDto) {
         PortActivityMaster entity = repository.findByPortActivityTypePoidAndGroupPoid(portActivityTypePoid, groupPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Port activity not found"));
 
-        if (hardDelete) {
-            repository.delete(entity);
-        } else {
-            entity.setDeleted("Y");
-            entity.setActive("N");
-            entity.setLastModifiedBy(userId);
-            entity.setLastModifiedDate(LocalDateTime.now());
-            repository.save(entity);
-        }
+        documentDeleteService.deleteDocument(
+                portActivityTypePoid,
+                "OPS_PORT_ACTIVITY_MASTER",
+                "PORT_ACTIVITY_TYPE_POID",
+                deleteReasonDto,
+                LocalDate.now()
+        );
     }
 
     private PortActivityMasterResponse mapToResponse(PortActivityMaster entity) {

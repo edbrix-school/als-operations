@@ -1,6 +1,13 @@
 package com.asg.operations.pdaRoRoVehicle.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import com.asg.operations.commonlov.service.LovService;
+import jakarta.validation.Valid;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryHdr;
 import com.asg.operations.pdaRoRoVehicle.repository.PdaRoroEntryDtlRepository;
@@ -46,6 +53,8 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     private final com.asg.operations.commonlov.service.LovService lovService;
     private final com.asg.common.lib.service.PrintService printService;
     private final javax.sql.DataSource dataSource;
+    private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
     @Override
     public PdaRoRoEntryHdrResponseDto createRoRoEntry(PdaRoroEntryHdrRequestDto request) {
@@ -67,6 +76,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                 .build();
 
         hdrRepository.save(entity);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entity.getTransactionPoid().toString());
         return mapToResponse(entity);
     }
 
@@ -95,6 +105,9 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                 .orElseThrow(() -> new com.asg.operations.exceptions.ResourceNotFoundException(
                         "PDA Ro-Ro Entry not found with ID: " + transactionPoid));
 
+        PdaRoRoEntryHdr oldEntity = new PdaRoRoEntryHdr();
+        BeanUtils.copyProperties(entity, oldEntity);
+
         Map<String, Object> voyageDetails = getVoyageDetails(request.getVesselVoyagePoid());
         
         entity.setVesselVoyagePoid(request.getVesselVoyagePoid());
@@ -104,6 +117,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         entity.setDeleted("N");
         entity.setLastModifiedBy(getCurrentUser());
         entity.setLastModifiedDate(LocalDateTime.now());
+        loggingService.logChanges(oldEntity, entity, PdaRoRoEntryHdr.class, UserContext.getDocumentId(), entity.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return mapToResponse(entity);
     }
 
@@ -168,15 +182,18 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     }
 
     @Override
-    public void deleteRoRoEntry(Long transactionPoid) {
+    public void deleteRoRoEntry(Long transactionPoid, @Valid DeleteReasonDto deleteReasonDto) {
         PdaRoRoEntryHdr hdr = hdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new com.asg.operations.exceptions.ResourceNotFoundException(
                         "PDA Ro-Ro Entry not found with ID: " + transactionPoid));
 
-        hdr.setDeleted("Y");
-        hdr.setLastModifiedBy(getCurrentUser());
-        hdr.setLastModifiedDate(LocalDateTime.now());
-        hdrRepository.save(hdr);
+        documentDeleteService.deleteDocument(
+                transactionPoid,
+                "PDA_RORO_ENTRY_HDR",
+                "TRANSACTION_POID",
+                deleteReasonDto,
+                hdr.getTransactionDate()
+        );
     }
 
     @Override

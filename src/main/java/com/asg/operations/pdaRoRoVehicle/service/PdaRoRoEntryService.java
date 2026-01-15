@@ -1,6 +1,8 @@
 package com.asg.operations.pdaRoRoVehicle.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 
 public interface PdaRoRoEntryService {
@@ -11,7 +13,7 @@ public interface PdaRoRoEntryService {
 
     PdaRoRoEntryHdrResponseDto updateRoRoEntry(Long transactionPoid, PdaRoroEntryHdrRequestDto request);
 
-    void deleteRoRoEntry(Long transactionPoid);
+    void deleteRoRoEntry(Long transactionPoid, @Valid DeleteReasonDto deleteReasonDto);
 
     Page<RoRoVehicleListResponse> getRoRoVehicleList(Long groupPoid, Long companyPoid,
                                                      GetAllRoRoVehicleFilterRequest filterRequest, 

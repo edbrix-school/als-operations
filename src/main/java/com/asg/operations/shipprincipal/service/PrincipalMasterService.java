@@ -1,6 +1,8 @@
 package com.asg.operations.shipprincipal.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.shipprincipal.dto.*;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +17,7 @@ public interface PrincipalMasterService {
 
     PrincipalMasterDto updatePrincipal(Long id, PrincipalUpdateDTO dto, Long groupPoid, Long userPoid);
 
-    void deletePrincipal(Long id);
+    void deletePrincipal(Long id, @Valid DeleteReasonDto deleteReasonDto);
 
     CreateLedgerResponseDto createLedger(Long principalPoid, Long groupPoid, Long companyPoid, Long userPoid);
 

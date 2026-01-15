@@ -1,6 +1,12 @@
 package com.asg.operations.pdaratetypemaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.validation.Valid;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.common.Util.FormulaValidator;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaratetypemaster.dto.*;
@@ -21,6 +27,7 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,6 +42,8 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     private final FormulaValidator formulaValidator;
     private final EntityManager entityManager;
     private final LovService lovService;
+    private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 
     @Override
     @Transactional(readOnly = true)
@@ -235,6 +244,7 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         }
 
         PdaRateTypeMaster savedRateType = repository.save(rateType);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedRateType.getRateTypePoid().toString());
         return mapper.toResponse(savedRateType);
     }
 
@@ -247,6 +257,9 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         PdaRateTypeMaster existingRateType = repository.findByRateTypePoidAndGroupPoid(rateTypePoid, groupPoidBD)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "PdaRateTypeMaster", "rateTypePoid", rateTypePoid));
+
+        PdaRateTypeMaster oldRateType = new PdaRateTypeMaster();
+        BeanUtils.copyProperties(existingRateType, oldRateType);
 
         String normalizedName = request.getRateTypeName() != null
                 ? request.getRateTypeName().trim()
@@ -263,30 +276,26 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         mapper.updateEntityFromRequest(existingRateType, request, userId);
         repository.save(existingRateType);
 
+        loggingService.logChanges(oldRateType, existingRateType, PdaRateTypeMaster.class, UserContext.getDocumentId(), existingRateType.getRateTypePoid().toString(), LogDetailsEnum.MODIFIED, "RATE_TYPE_POID");
         return mapper.toResponse(existingRateType);
     }
 
     @Override
-    public void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, boolean hardDelete) {
+    public void deleteRateType(Long rateTypePoid, Long groupPoid, String userId, @Valid DeleteReasonDto deleteReasonDto) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
         PdaRateTypeMaster rateType = repository.findByRateTypePoidAndGroupPoid(rateTypePoid, groupPoidBD)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "PdaRateTypeMaster", "rateTypePoid", rateTypePoid));
 
-        if (hardDelete) {
-            try {
-                repository.delete(rateType);
-            } catch (Exception e) {
-                throw new ValidationException("Cannot delete rate type due to existing references");
-            }
-        } else {
-            rateType.setActive("N");
-            rateType.setDeleted("Y");
-            rateType.setLastmodifiedBy(userId);
-            rateType.setLastmodifiedDate(LocalDateTime.now());
-            repository.save(rateType);
-        }
+        documentDeleteService.deleteDocument(
+                rateTypePoid,
+                "PDA_RATE_TYPE_MASTER",
+                "RATE_TYPE_POID",
+                deleteReasonDto,
+                LocalDate.now()
+        );
+
     }
 
     @Override

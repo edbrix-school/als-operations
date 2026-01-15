@@ -1,6 +1,8 @@
 package com.asg.operations.pdaporttariffmaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.pdaporttariffmaster.dto.*;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 
 public interface PdaPortTariffHdrService {
@@ -11,7 +13,7 @@ public interface PdaPortTariffHdrService {
 
     PdaPortTariffMasterResponse updateTariff(Long transactionPoid, PdaPortTariffMasterRequest request, Long groupPoid, String userId);
 
-    void deleteTariff(Long transactionPoid, Long groupPoid, String userId, boolean hardDelete);
+    void deleteTariff(Long transactionPoid, Long groupPoid, String userId, @Valid DeleteReasonDto deleteReasonDto);
 
     PdaPortTariffMasterResponse copyTariff(Long sourceTransactionPoid, CopyTariffRequest request, Long groupPoid, String userId);
 

@@ -1,8 +1,10 @@
 package com.asg.operations.finaldisbursementaccount.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.common.PageResponse;
 //import org.springframework.core.io.Resource;
 import com.asg.operations.finaldisbursementaccount.dto.*;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -17,7 +19,7 @@ public interface FdaService {
 
     FdaHeaderDto updateFdaHeader(Long fdaPoid, UpdateFdaHeaderRequest dto, Long groupPoid, Long companyPoid, String userId);
 
-    void softDeleteFda(Long fdaPoid, String userId);
+    void softDeleteFda(Long fdaPoid, String userId, @Valid DeleteReasonDto deleteReasonDto);
 
     PageResponse<FdaHeaderDto> getFdaList(Long groupPoid, Long companyPoid, Long transactionPoid, String vesselName, LocalDate etaFrom, LocalDate etaTo, Pageable pageable);
 

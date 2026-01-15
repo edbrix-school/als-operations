@@ -1,11 +1,10 @@
 package com.asg.operations.pdaentryform.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.pdaentryform.dto.*;
-import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
-import org.springframework.data.domain.Pageable;
+import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -31,7 +30,7 @@ public interface PdaEntryService {
     /**
      * Soft delete PDA entry
      */
-    void deletePdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    void deletePdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, @Valid DeleteReasonDto deleteReasonDto);
 
     /**
      * Get charge details for a PDA entry

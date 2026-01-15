@@ -1,9 +1,11 @@
 package com.asg.operations.pdaporttariffmaster.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.service.PdaPortTariffHdrService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -36,6 +39,9 @@ class PdaPortTariffMasterControllerTest {
     @Mock
     private PdaPortTariffHdrService tariffService;
 
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
     @InjectMocks
     private PdaPortTariffMasterController controller;
 
@@ -47,9 +53,11 @@ class PdaPortTariffMasterControllerTest {
         mockedUserContext.when(UserContext::getUserId).thenReturn("user1");
 
         objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules();
+        objectMapper.registerModule(new JavaTimeModule());
 
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
     }
 
     @org.junit.jupiter.api.AfterEach
@@ -131,7 +139,7 @@ class PdaPortTariffMasterControllerTest {
 
     @Test
     void deleteTariff_Success() throws Exception {
-        doNothing().when(tariffService).deleteTariff(1L, 200L, "user1", false);
+        doNothing().when(tariffService).deleteTariff(eq(1L), eq(200L), eq("user1"), any());
 
         mockMvc.perform(delete("/v1/pda-port-tariffs/1")
                 .param("hardDelete", "false"))
@@ -139,7 +147,7 @@ class PdaPortTariffMasterControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Tariff deleted successfully"));
 
-        verify(tariffService).deleteTariff(1L, 200L, "user1", false);
+        verify(tariffService).deleteTariff(eq(1L), eq(200L), eq("user1"), any());
     }
 
     @Test

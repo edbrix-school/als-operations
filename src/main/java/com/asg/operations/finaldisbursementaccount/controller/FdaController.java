@@ -1,6 +1,9 @@
 package com.asg.operations.finaldisbursementaccount.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.common.PageResponse;
 import com.asg.operations.finaldisbursementaccount.dto.*;
@@ -40,6 +43,7 @@ import java.util.List;
 public class FdaController {
 
     private final FdaService fdaService;
+    private final LoggingService loggingService;
 
     @Operation(summary = "Get all FDA", description = "Returns paginated list of FDA with optional filters. Supports pagination with page and size parameters.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA list fetched successfully", content = @Content(schema = @Schema(implementation = Page.class)))
@@ -95,6 +99,7 @@ public class FdaController {
     public ResponseEntity<?> getFda(
             @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
     ) {
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return ApiResponse.success("FDA fetched successfully", fdaService.getFdaHeader(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid()));
     }
 
@@ -134,9 +139,9 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
     })
     public ResponseEntity<?> deleteFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
+            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid, @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        fdaService.softDeleteFda(transactionPoid, UserContext.getUserId());
+        fdaService.softDeleteFda(transactionPoid, UserContext.getUserId(), deleteReasonDto);
         return ApiResponse.success("FDA soft deleted successfully");
     }
 

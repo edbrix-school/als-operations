@@ -1,5 +1,6 @@
 package com.asg.operations.portactivitiesmaster.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.portactivitiesmaster.dto.GetAllPortActivityFilterRequest;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterRequest;
@@ -7,6 +8,7 @@ import com.asg.operations.portactivitiesmaster.dto.PortActivityMasterResponse;
 import com.asg.operations.portactivitiesmaster.dto.PortActivityListResponse;
 import com.asg.operations.portactivitiesmaster.service.PortActivityMasterService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -39,6 +42,9 @@ class PortActivityMasterControllerTest {
     @Mock
     private PortActivityMasterService portActivityService;
 
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
     @InjectMocks
     private PortActivityMasterController portActivityMasterController;
 
@@ -51,8 +57,11 @@ class PortActivityMasterControllerTest {
         mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
         mockedUserContext.when(UserContext::getUserId).thenReturn("testUser");
 
-        mockMvc = MockMvcBuilders.standaloneSetup(portActivityMasterController).build();
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        mockMvc = MockMvcBuilders.standaloneSetup(portActivityMasterController)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
 
         request = PortActivityMasterRequest.builder()
                 .portActivityTypeName("Test Activity")
@@ -151,7 +160,7 @@ class PortActivityMasterControllerTest {
 
     @Test
     void deletePortActivity_SoftDelete_ShouldReturnSuccess() throws Exception {
-        doNothing().when(portActivityService).deletePortActivity(1L, 1L, "testUser", false);
+        doNothing().when(portActivityService).deletePortActivity(eq(1L), eq(1L), eq("testUser"), any());
 
         mockMvc.perform(delete("/v1/port-activities/1")
                 .param("hardDelete", "false"))
@@ -159,12 +168,12 @@ class PortActivityMasterControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Port activity deleted successfully"));
 
-        verify(portActivityService).deletePortActivity(1L, 1L, "testUser", false);
+        verify(portActivityService).deletePortActivity(eq(1L), eq(1L), eq("testUser"), any());
     }
 
     @Test
     void deletePortActivity_HardDelete_ShouldReturnSuccess() throws Exception {
-        doNothing().when(portActivityService).deletePortActivity(1L, 1L, "testUser", true);
+        doNothing().when(portActivityService).deletePortActivity(eq(1L), eq(1L), eq("testUser"), any());
 
         mockMvc.perform(delete("/v1/port-activities/1")
                 .param("hardDelete", "true"))
@@ -172,7 +181,7 @@ class PortActivityMasterControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Port activity deleted successfully"));
 
-        verify(portActivityService).deletePortActivity(1L, 1L, "testUser", true);
+        verify(portActivityService).deletePortActivity(eq(1L), eq(1L), eq("testUser"), any());
     }
 
     private PortActivityListResponse createListResponse() {
