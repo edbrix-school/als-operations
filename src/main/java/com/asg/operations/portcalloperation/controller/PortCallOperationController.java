@@ -1,0 +1,238 @@
+package com.asg.operations.portcalloperation.controller;
+
+import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.enums.UserRolesRightsEnum;
+import com.asg.common.lib.security.util.UserContext;
+import com.asg.operations.portcalloperation.dto.PortCallOperationCreateDto;
+import com.asg.operations.portcalloperation.dto.PortCallOperationDto;
+import com.asg.operations.portcalloperation.dto.PortCallOperationResponseDto;
+import com.asg.operations.portcalloperation.service.PortCallOperationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.Map;
+
+import static com.asg.common.lib.dto.response.ApiResponse.notFound;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
+
+/**
+ * Controller for managing port call operations.
+ * Provides REST endpoints for CRUD operations on port call operations.
+ */
+@RestController
+@RequestMapping("/v1/port-call-operations")
+@RequiredArgsConstructor
+@Slf4j
+@Tag(name = "Port Call Operation", description = "APIs for managing port call operations")
+public class PortCallOperationController {
+
+    private final PortCallOperationService portCallOperationService;
+
+    /**
+     * Retrieves paginated list of port call operations.
+     *
+     * @return paginated list of port call operations
+     */
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @PostMapping("/list")
+    @Operation(
+            summary = "Get port call operation list",
+            description = "Retrieve paginated list of port call operations with optional search and sorting",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> listOperations(@ParameterObject Pageable pageable,
+                                            @RequestBody(required = false) FilterRequestDto filters,
+                                            @RequestParam(required = false) LocalDate startDate,
+                                            @RequestParam(required = false) LocalDate endDate) {
+        return success("Operations retrieved successfully", portCallOperationService.listOperations(UserContext.getDocumentId(), filters, pageable, startDate, endDate));
+    }
+
+    /**
+     * Retrieves port call operation by ID.
+     *
+     * @param id operation ID
+     * @return port call operation details
+     */
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "Get port call operation by ID",
+            description = "Retrieve port call operation details including activities",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getOperationById(@Parameter(description = "Operation ID") @PathVariable Long id) {
+
+        PortCallOperationResponseDto operation = portCallOperationService.getOperationById(id);
+        if (operation == null) {
+            return notFound("Operation not found");
+        }
+        return success("Operation retrieved successfully", operation);
+    }
+
+    /**
+     * Creates a new port call operation.
+     *
+     * @param dto port call operation data
+     * @return created port call operation
+     */
+    @AllowedAction(UserRolesRightsEnum.CREATE)
+    @PostMapping
+    @Operation(
+            summary = "Create port call operation",
+            description = "Create a new port call operation",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> createOperation(@Valid @RequestBody PortCallOperationCreateDto dto) {
+        PortCallOperationResponseDto created = portCallOperationService.createOperation(dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
+        return success("Operation created successfully", created);
+    }
+
+    /**
+     * Updates an existing port call operation.
+     *
+     * @param id  operation ID
+     * @param dto port call operation data
+     * @return updated port call operation
+     */
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PutMapping("/{id}")
+    @Operation(
+            summary = "Update port call operation",
+            description = "Update an existing port call operation",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> updateOperation(@Parameter(description = "Operation ID") @PathVariable Long id,
+                                             @Valid @RequestBody PortCallOperationDto dto) {
+        PortCallOperationResponseDto updated = portCallOperationService.updateOperation(id, dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
+        return success("Operation updated successfully", updated);
+    }
+
+    /**
+     * Deletes a port call operation.
+     *
+     * @param id operation ID
+     * @return success response
+     */
+    @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{id}")
+    @Operation(
+            summary = "Delete port call operation",
+            description = "Delete a port call operation",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> deleteOperation(@Parameter(description = "Operation ID") @PathVariable Long id) {
+        portCallOperationService.deleteOperation(id);
+        return success("Operation deleted successfully");
+    }
+
+    // Stored Procedure Endpoints
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/load-pda/{pdaPoid}")
+    @Operation(
+            summary = "Load PDA data",
+            description = "Load PDA Header and Detail data to be displayed on the screen",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> loadPda(@Parameter(description = "PDA POID") @PathVariable String pdaPoid) {
+        Map<String, Object> result = portCallOperationService.loadPda(pdaPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return success("PDA data loaded successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/load-fda/{fdaPoid}")
+    @Operation(
+            summary = "Load FDA data",
+            description = "Load FDA Header and Detail data to be displayed on the screen",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> loadFda(@Parameter(description = "FDA POID") @PathVariable String fdaPoid) {
+        Map<String, Object> result = portCallOperationService.loadFda(fdaPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return success("FDA data loaded successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/load-voyage/{voyagePoid}")
+    @Operation(
+            summary = "Load Voyage data",
+            description = "Load Vessel Voyage Detail data to be displayed on the screen",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> loadVoyage(@Parameter(description = "Voyage POID") @PathVariable Long voyagePoid) {
+        Map<String, Object> result = portCallOperationService.loadVoyage(voyagePoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return success("Voyage data loaded successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/load-email-list/{transactionPoid}")
+    @Operation(
+            summary = "Load Email List",
+            description = "List down the email details added in Port Call Information - Other details tab",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> loadEmailList(@Parameter(description = "Transaction POID") @PathVariable String transactionPoid) {
+        Map<String, Object> result = portCallOperationService.loadEmailList(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return success("Email list loaded successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/mail-template/{transactionPoid}/{templatePoid}")
+    @Operation(
+            summary = "Get Mail Template",
+            description = "Get mail template with port call header, cargo details, activity details, and email template",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getMailTemplate(@Parameter(description = "Transaction POID") @PathVariable String transactionPoid,
+                                             @Parameter(description = "Template POID") @PathVariable Long templatePoid) {
+        Map<String, Object> result = portCallOperationService.getMailTemplate(transactionPoid, templatePoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return success("Mail template retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/port-report-activities/{transactionPoid}/{portReportPoid}")
+    @Operation(
+            summary = "Get Port Report Activities",
+            description = "List down the activities based on the passed port activity report poid",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getPortReportActivities(@Parameter(description = "Transaction POID") @PathVariable String transactionPoid,
+                                                     @Parameter(description = "Port Report POID") @PathVariable Long portReportPoid) {
+        Map<String, Object> result = portCallOperationService.getPortReportActivities(transactionPoid, portReportPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return success("Port report activities retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/email-record/{emailPoid}/{transactionPoid}")
+    @Operation(
+            summary = "Get Email Record",
+            description = "Retrieve the email details sent to be used in various screen for preview purpose",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getEmailRecord(@Parameter(description = "Email POID") @PathVariable Long emailPoid,
+                                            @Parameter(description = "Transaction POID") @PathVariable String transactionPoid) {
+        Map<String, Object> result = portCallOperationService.getEmailRecord(emailPoid, transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return success("Email record retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/email-history/{transactionPoid}")
+    @Operation(
+            summary = "Get Email History",
+            description = "Retrieve the list of email sent for the selected port call",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getEmailHistory(@Parameter(description = "Transaction POID") @PathVariable String transactionPoid) {
+        Map<String, Object> result = portCallOperationService.getEmailHistory(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return success("Email history retrieved successfully", result);
+    }
+}
