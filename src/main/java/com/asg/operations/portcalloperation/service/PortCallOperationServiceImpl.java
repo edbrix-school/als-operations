@@ -889,6 +889,22 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         PortCallOperationHdr hdr = hdrRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", id));
 
+        if (dto.getVesselVoyagePoid() != null) {
+            if (!shipVoyageHdrRepository.existsByTransactionPoid(dto.getVesselVoyagePoid())) {
+                throw new ResourceNotFoundException("Vessel Voyage", "Vessel Voyage Poid", dto.getVesselVoyagePoid());
+            }
+        }
+        if (dto.getPrincipalPoid() != null) {
+            if (!shipPrincipalRepository.existsByPrincipalPoid(dto.getPrincipalPoid())) {
+                throw new ResourceNotFoundException("Principal master", "Principal master Poid", dto.getPrincipalPoid());
+            }
+        }
+        if (dto.getPortOfCallPoid() != null) {
+            if (!shipPortMasterRepository.existsByIdPortPoid(BigDecimal.valueOf(dto.getPortOfCallPoid()))) {
+                throw new ResourceNotFoundException("Vessel Voyage", "Vessel Voyage Poid", dto.getVesselVoyagePoid());
+            }
+        }
+
         hdr.setTransactionDate(dto.getTransactionDate());
         hdr.setGroupPoid(groupPoid);
         hdr.setCompanyPoid(UserContext.getCompanyPoid());
