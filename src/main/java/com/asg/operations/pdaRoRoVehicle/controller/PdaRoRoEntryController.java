@@ -152,4 +152,28 @@ public class PdaRoRoEntryController {
         String status = pdaRoroEntryService.clearRoRoVehicleDetails(transactionPoid);
         return ApiResponse.success(status);
     }
+
+    @Operation(
+            summary = "Print Tally Sheet",
+            description = "Generate and download Tally Sheet PDF for RoRo vehicle entry"
+    )
+    @AllowedAction(UserRolesRightsEnum.PRINT)
+    @GetMapping("/{transactionPoid}/print-tally-sheet")
+    public ResponseEntity<byte[]> printTallySheet(@PathVariable @NotNull @Positive Long transactionPoid) {
+        try {
+            byte[] pdfBytes = pdaRoroEntryService.printTallySheet(
+                    transactionPoid,
+                    UserContext.getGroupPoid(),
+                    UserContext.getCompanyPoid(),
+                    UserContext.getUserPoid()
+            );
+            
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"RoRo_TallySheet_" + transactionPoid + ".pdf\"")
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate Tally Sheet PDF: " + e.getMessage(), e);
+        }
+    }
 }

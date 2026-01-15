@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="FDA_Subreport_ProcCall" language="groovy" pageWidth="540" pageHeight="802" columnWidth="540" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="a47f7453-c872-4be2-8dcb-562c2a90f531">
+    <property name="ireport.zoom" value="1.3310000000000095"/>
+    <property name="ireport.x" value="0"/>
+    <property name="ireport.y" value="0"/>
+    <subDataset name="dataset1" uuid="b3af35eb-e542-4a0a-9210-8faad38328b5"/>
+    <parameter name="DOC_KEY_POID" class="java.lang.String">
+        <defaultValueExpression><![CDATA[]]></defaultValueExpression>
+    </parameter>
+    <queryString language="plsql">
+        <![CDATA[{call PROC_PDA_FDA_COVERING_PRNT($P{DOC_KEY_POID}, $P{ORACLE_REF_CURSOR} )}]]>
+    </queryString>
+    <field name="FDA_DESCRIPTION" class="java.lang.String"/>
+    <field name="FDA_AMOUNT" class="java.math.BigDecimal"/>
+    <field name="FDA_SEQ_NO" class="java.lang.String"/>
+    <variable name="TOTAL" class="java.math.BigDecimal" calculation="Sum">
+        <variableExpression><![CDATA[$F{FDA_AMOUNT}]]></variableExpression>
+    </variable>
+    <background>
+        <band splitType="Stretch"/>
+    </background>
+    <columnHeader>
+        <band height="17" splitType="Stretch">
+            <staticText>
+                <reportElement x="438" y="1" width="102" height="15" uuid="8a32fa39-c36b-4cc6-a0d2-a8a5184ba29d"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font isBold="true"/>
+                    <paragraph rightIndent="2"/>
+                </textElement>
+                <text><![CDATA[Amount (BHD)]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="45" y="1" width="393" height="15" uuid="9bccb239-baa7-49c2-836e-e871b512ab48"/>
+                <textElement verticalAlignment="Middle">
+                    <font isBold="true"/>
+                </textElement>
+                <text><![CDATA[Particulars]]></text>
+            </staticText>
+            <line>
+                <reportElement x="0" y="16" width="540" height="1" forecolor="#999999" uuid="4b94fe3c-5957-469b-a2ab-fc3018760b49"/>
+                <graphicElement>
+                    <pen lineStyle="Double"/>
+                </graphicElement>
+            </line>
+            <staticText>
+                <reportElement x="0" y="1" width="30" height="15" uuid="a8f58927-40e5-4d8a-9848-d6b0207e368c"/>
+                <textElement verticalAlignment="Middle">
+                    <font isBold="true"/>
+                    <paragraph leftIndent="1"/>
+                </textElement>
+                <text><![CDATA[Sl No]]></text>
+            </staticText>
+            <line>
+                <reportElement x="0" y="1" width="540" height="1" forecolor="#999999" uuid="d71cfb3c-190b-4789-9773-346357bc4e0b"/>
+                <graphicElement>
+                    <pen lineStyle="Double"/>
+                </graphicElement>
+            </line>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="19" splitType="Stretch">
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="0" width="30" height="18" uuid="d5334fa4-f03f-4baa-ad4f-80830d2ef9dd"/>
+                <textElement textAlignment="Left" verticalAlignment="Middle">
+                    <paragraph leftIndent="1"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="45" y="0" width="393" height="18" uuid="06a2653d-173f-4603-9948-c59c4b022e2c"/>
+                <textElement verticalAlignment="Middle"/>
+                <textFieldExpression><![CDATA[$F{FDA_DESCRIPTION}]]></textFieldExpression>
+            </textField>
+            <textField pattern="#,##0.000" isBlankWhenNull="true">
+                <reportElement x="438" y="0" width="102" height="18" uuid="889805c7-9a6e-40aa-8f07-5dff0dc82789"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <paragraph rightIndent="2"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{FDA_AMOUNT}]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement x="0" y="18" width="540" height="1" forecolor="#999999" uuid="5343705b-a705-4b18-8f7c-27b81da712d1"/>
+                <graphicElement>
+                    <pen lineWidth="0.5" lineStyle="Dashed"/>
+                </graphicElement>
+            </line>
+        </band>
+    </detail>
+    <columnFooter>
+        <band height="3"/>
+    </columnFooter>
+</jasperReport>
