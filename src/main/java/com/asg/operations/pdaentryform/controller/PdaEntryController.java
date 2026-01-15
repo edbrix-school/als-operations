@@ -1,8 +1,11 @@
 package com.asg.operations.pdaentryform.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
@@ -35,10 +38,12 @@ import com.asg.operations.common.ApiResponse;
 public class PdaEntryController {
 
     private final PdaEntryService pdaEntryService;
+    private final LoggingService loggingService;
 
     @Autowired
-    public PdaEntryController(PdaEntryService pdaEntryService) {
+    public PdaEntryController(PdaEntryService pdaEntryService, LoggingService loggingService) {
         this.pdaEntryService = pdaEntryService;
+        this.loggingService = loggingService;
     }
 
     // ==================== Header CRUD Operations ====================
@@ -146,6 +151,7 @@ public class PdaEntryController {
             @PathVariable Long transactionPoid
     ) {
         PdaEntryResponse response = pdaEntryService.getPdaEntryById(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return ApiResponse.success("PDA entry retrieved successfully", response);
     }
 
@@ -271,9 +277,10 @@ public class PdaEntryController {
     @DeleteMapping("/{transactionPoid}")
     public ResponseEntity<?> deletePdaEntry(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable Long transactionPoid,
+            @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        pdaEntryService.deletePdaEntry(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        pdaEntryService.deletePdaEntry(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(),deleteReasonDto);
         return ApiResponse.success("PDA entry deleted successfully", null);
     }
 

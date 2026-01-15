@@ -1,8 +1,11 @@
 package com.asg.operations.pdaporttariffmaster.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.service.PdaPortTariffHdrService;
@@ -24,12 +27,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/v1/pda-port-tariffs")
 @Tag(name = "PDA Port Tariff Master", description = "APIs for managing PDA Port Tariff Master records")
 public class PdaPortTariffMasterController {
 
     private final PdaPortTariffHdrService tariffService;
+    private final LoggingService loggingService;
+
+    public PdaPortTariffMasterController(PdaPortTariffHdrService tariffService, LoggingService loggingService) {
+        this.tariffService = tariffService;
+        this.loggingService = loggingService;
+    }
 
     @Operation(summary = "Get all Tariffs", description = "Returns paginated list of Tariffs with optional filters. Supports pagination with page and size parameters.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tariff list fetched successfully", content = @Content(schema = @Schema(implementation = Page.class)))
@@ -78,6 +86,7 @@ public class PdaPortTariffMasterController {
             @PathVariable @NotNull @Positive Long transactionPoid
     ) {
         PdaPortTariffMasterResponse response = tariffService.getTariffById(transactionPoid, UserContext.getGroupPoid());
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return ApiResponse.success("Tariff retrieved successfully", response);
     }
 
@@ -104,9 +113,9 @@ public class PdaPortTariffMasterController {
     @DeleteMapping("/{transactionPoid}")
     public ResponseEntity<?> deleteTariff(
             @PathVariable @NotNull @Positive Long transactionPoid,
-            @RequestParam(defaultValue = "false") boolean hardDelete
+            @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        tariffService.deleteTariff(transactionPoid, UserContext.getGroupPoid(), UserContext.getUserId(), hardDelete);
+        tariffService.deleteTariff(transactionPoid, UserContext.getGroupPoid(), UserContext.getUserId(), deleteReasonDto);
         return ApiResponse.success("Tariff deleted successfully");
     }
 

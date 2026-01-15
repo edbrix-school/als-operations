@@ -1,8 +1,11 @@
 package com.asg.operations.pdaratetypemaster.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaratetypemaster.dto.*;
 import com.asg.operations.pdaratetypemaster.service.PdaRateTypeService;
@@ -22,6 +25,7 @@ import jakarta.validation.constraints.Positive;
 public class PdaRateTypeController {
 
     private final PdaRateTypeService rateTypeService;
+    private final LoggingService loggingService;
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
@@ -63,6 +67,7 @@ public class PdaRateTypeController {
             @PathVariable @NotNull @Positive Long rateTypePoid
     ) {
         PdaRateTypeResponseDTO response = rateTypeService.getRateTypeById(rateTypePoid, UserContext.getGroupPoid());
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), rateTypePoid.toString());
         return ApiResponse.success("Rate type retrieved successfully", response);
     }
 
@@ -89,9 +94,9 @@ public class PdaRateTypeController {
     @DeleteMapping("/{rateTypePoid}")
     public ResponseEntity<?> deleteRateType(
             @PathVariable @NotNull @Positive Long rateTypePoid,
-            @RequestParam(defaultValue = "false") boolean hardDelete
+            @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        rateTypeService.deleteRateType(rateTypePoid, UserContext.getGroupPoid(), UserContext.getUserId(), hardDelete);
+        rateTypeService.deleteRateType(rateTypePoid, UserContext.getGroupPoid(), UserContext.getUserId(), deleteReasonDto);
         return ApiResponse.success("Rate type deleted successfully");
     }
 

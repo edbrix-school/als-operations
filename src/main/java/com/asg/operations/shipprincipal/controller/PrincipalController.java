@@ -1,8 +1,11 @@
 package com.asg.operations.shipprincipal.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.shipprincipal.dto.*;
 import com.asg.operations.shipprincipal.service.PrincipalMasterService;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Principal Management", description = "APIs for managing ship principals")
 public class PrincipalController {
     private final PrincipalMasterService principalMasterService;
+    private final LoggingService loggingService;
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
@@ -96,6 +100,7 @@ public class PrincipalController {
             @Parameter(description = "Principal ID") @PathVariable Long id) {
         log.info("Getting principal with id: {}", id);
         PrincipalMasterDto principal = principalMasterService.getPrincipal(id);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), id.toString());
         log.info("Successfully retrieved principal with id: {}", id);
         return ApiResponse.success("Principal retrieved successfully", principal);
     }
@@ -225,9 +230,9 @@ public class PrincipalController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> deletePrincipal(
-            @Parameter(description = "Principal ID") @PathVariable Long id) {
+            @Parameter(description = "Principal ID") @PathVariable Long id,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
         log.info("Deleting principal with id: {}", id);
-        principalMasterService.deletePrincipal(id);
+        principalMasterService.deletePrincipal(id,deleteReasonDto);
         log.info("Successfully deleted principal with id: {}", id);
         return ApiResponse.success("Principal deleted successfully");
     }

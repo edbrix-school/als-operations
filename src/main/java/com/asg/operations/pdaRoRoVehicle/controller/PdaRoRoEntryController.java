@@ -1,8 +1,11 @@
 package com.asg.operations.pdaRoRoVehicle.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import com.asg.operations.pdaRoRoVehicle.service.PdaRoRoEntryService;
@@ -32,6 +35,7 @@ import java.util.Map;
 public class PdaRoRoEntryController {
 
     private final PdaRoRoEntryService pdaRoroEntryService;
+    private final LoggingService loggingService;
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
@@ -54,13 +58,14 @@ public class PdaRoRoEntryController {
     @GetMapping("/{transactionPoid}")
     public ResponseEntity<?> getRoRoEntryById(@PathVariable @NotNull @Positive Long transactionPoid) {
         PdaRoRoEntryHdrResponseDto response = pdaRoroEntryService.getRoRoEntry(transactionPoid);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return ApiResponse.success("PDA Ro-Ro Entry retrieved successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}")
-    public ResponseEntity<?> deleteRoRoEntry(@PathVariable @NotNull @Positive Long transactionPoid) {
-        pdaRoroEntryService.deleteRoRoEntry(transactionPoid);
+    public ResponseEntity<?> deleteRoRoEntry(@PathVariable @NotNull @Positive Long transactionPoid,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
+        pdaRoroEntryService.deleteRoRoEntry(transactionPoid,deleteReasonDto);
         return ApiResponse.success("PDA Ro-Ro Entry deleted successfully");
     }
 
