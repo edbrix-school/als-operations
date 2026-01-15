@@ -20,8 +20,7 @@ public class PortCallOperationHdr {
 
     @Id
     @Column(name = "TRANSACTION_POID", nullable = false)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ops_pc_operation_hdr_seq")
-    @SequenceGenerator(name = "ops_pc_operation_hdr_seq", sequenceName = "OPS_PC_OPERATION_HDR_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long transactionPoid;
 
     @Column(name = "TRANSACTION_DATE", nullable = false)
