@@ -1,12 +1,11 @@
 package com.asg.operations.portcalloperation.service;
 
 import com.asg.common.lib.dto.FilterRequestDto;
-import com.asg.operations.portcalloperation.dto.PortCallOperationCreateDto;
-import com.asg.operations.portcalloperation.dto.PortCallOperationDto;
-import com.asg.operations.portcalloperation.dto.PortCallOperationResponseDto;
+import com.asg.operations.portcalloperation.dto.*;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 public interface PortCallOperationService {
@@ -37,5 +36,26 @@ public interface PortCallOperationService {
     Map<String, Object> getEmailRecord(Long emailPoid, String transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     Map<String, Object> getEmailHistory(String transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    // EstBertDtl CRUD operations
+    PortCallOperationEstBertDetailResponseDto getEstBertDetail(Long transactionPoid, Long detRowId);
+
+    PortCallOperationResponseDto createEstBertDetail(Long transactionPoid, PortCallOperationEstBertDetailDto dto);
+
+    PortCallOperationResponseDto updateEstBertDetail(Long transactionPoid, Long detRowId, PortCallOperationEstBertDetailDto dto);
+
+    // EstPrearrivalActDtl CRUD operations
+    List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId);
+
+    PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto);
+
+    PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto);
+
+    // ActTimingsActvtyDtl CRUD operations
+    List<PortCallOperationActTimingsActvtyDetailResponseDto> listActTimingsActvtyDetails(Long transactionPoid, Long detRowId);
+
+    PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActvtyDetailDto dto);
+
+    PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActvtyDetailDto dto);
 
 }

@@ -104,9 +104,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         List<PortCallOperationMailDtl> mailDetails = mailDtlRepository.findByTransactionPoid(id);
         List<PortCallOperationEstBertDtl> estBertDetails = estBertDtlRepository.findByTransactionPoid(id);
         List<PortCallOperationEstPrearrivalDtl> estPrearrivalDetails = estPrearrivalDtlRepository.findByTransactionPoid(id);
-        List<PortCallOperationEstPrearrivalActDtl> estPrearrivalActDetails = estPrearrivalActDtlRepository.findByTransactionPoid(id);
         List<PortCallOperationActTimingDtl> actTimingDetails = actTimingDtlRepository.findByTransactionPoid(id);
-        List<PortCallOperationActTimingsActvtyDtl> actTimingsActvtyDetails = actTimingsActvtyDtlRepository.findByTransactionPoid(id);
         List<PortCallOperationActCondDtl> actCondDetails = actCondDtlRepository.findByTransactionPoid(id);
         List<PortCallOperationActRmksDtl> actRmksDetails = actRmksDtlRepository.findByTransactionPoid(id);
         List<PortCallOperationActProgDtl> actProgDetails = actProgDtlRepository.findByTransactionPoid(id);
@@ -225,17 +223,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .build()).collect(Collectors.toList());
     }
 
-    private List<PortCallOperationEstPrearrivalActDetailResponseDto> mapEstPrearrivalActDetailsToResponse(List<PortCallOperationEstPrearrivalActDtl> details) {
-        return details.stream().map(dtl -> PortCallOperationEstPrearrivalActDetailResponseDto.builder()
-                .transactionPoid(dtl.getTransactionPoid())
-                .detRowId(dtl.getDetRowId())
-                .preActivityDtlPoid(dtl.getPreActivityDtlPoid())
-                .activityPoid(dtl.getActivityPoid())
-                .otherDescription(dtl.getOtherDescription())
-                .estimatedDatetime(dtl.getEstimatedDatetime())
-                .build()).collect(Collectors.toList());
-    }
-
     private List<PortCallOperationActTimingDetailResponseDto> mapActTimingDetailsToResponse(List<PortCallOperationActTimingDtl> details) {
         return details.stream().map(dtl -> PortCallOperationActTimingDetailResponseDto.builder()
                 .transactionPoid(dtl.getTransactionPoid())
@@ -243,17 +230,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .portReportPoid(dtl.getPortReportPoid())
                 .actualsTimingDtlPoid(dtl.getActualsTimingDtlPoid())
                 .emailPoid(dtl.getEmailPoid())
-                .build()).collect(Collectors.toList());
-    }
-
-    private List<PortCallOperationActTimingsActvtyDetailResponseDto> mapActTimingsActvtyDetailsToResponse(List<PortCallOperationActTimingsActvtyDtl> details) {
-        return details.stream().map(dtl -> PortCallOperationActTimingsActvtyDetailResponseDto.builder()
-                .transactionPoid(dtl.getTransactionPoid())
-                .detRowId(dtl.getDetRowId())
-                .actualsTimingDtlPoid(dtl.getActualsTimingDtlPoid())
-                .activityPoid(dtl.getActivityPoid())
-                .details(dtl.getDetails())
-                .estimatedDatetime(dtl.getEstimatedDatetime())
                 .build()).collect(Collectors.toList());
     }
 
@@ -1851,5 +1827,244 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             log.error("[SP] PROC_PC_GET_EMAIL_HISTORY - Error: {}", e.getMessage(), e);
             throw new CustomException("Error getting email history: " + e.getMessage(), 500);
         }
+    }
+
+    @Override
+    public PortCallOperationEstBertDetailResponseDto getEstBertDetail(Long transactionPoid, Long detRowId) {
+        log.info("Fetching EstBertDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+        
+        PortCallOperationEstBertDtl entity = estBertDtlRepository.findById(new PortCallOperationEstBertDtlId(transactionPoid, detRowId))
+                .orElseThrow(() -> new ResourceNotFoundException("EstBertDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
+        
+        return PortCallOperationEstBertDetailResponseDto.builder()
+                .transactionPoid(entity.getTransactionPoid())
+                .detRowId(entity.getDetRowId())
+                .eta(entity.getEta())
+                .etb(entity.getEtb())
+                .berthingAttachments(entity.getBerthingAttachments())
+                .emailPoid(entity.getEmailPoid())
+                .updatedBy(entity.getLastModifiedBy())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public PortCallOperationResponseDto createEstBertDetail(Long transactionPoid, PortCallOperationEstBertDetailDto dto) {
+        log.info("Creating EstBertDetail for transactionPoid: {}", transactionPoid);
+        
+        if (!hdrRepository.existsById(transactionPoid)) {
+            throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
+        }
+        
+        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+            throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
+        }
+        
+        Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+        
+        PortCallOperationEstBertDtl entity = PortCallOperationEstBertDtl.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(nextDetRowId)
+                .eta(dto.getEta())
+                .etb(dto.getEtb())
+                .berthingAttachments(dto.getBerthingAttachments())
+                .emailPoid(dto.getEmailPoid())
+                .createdBy(UserContext.getUserId())
+                .createdDate(LocalDateTime.now())
+                .lastModifiedBy(UserContext.getUserId())
+                .lastModifiedDate(LocalDateTime.now())
+                .build();
+        
+        estBertDtlRepository.save(entity);
+        return getOperationById(transactionPoid);
+    }
+
+    @Override
+    @Transactional
+    public PortCallOperationResponseDto updateEstBertDetail(Long transactionPoid, Long detRowId, PortCallOperationEstBertDetailDto dto) {
+        log.info("Updating EstBertDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+        
+        PortCallOperationEstBertDtl entity = estBertDtlRepository.findById(new PortCallOperationEstBertDtlId(transactionPoid, detRowId))
+                .orElseThrow(() -> new ResourceNotFoundException("EstBertDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
+        
+        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+            throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
+        }
+        
+        entity.setEta(dto.getEta());
+        entity.setEtb(dto.getEtb());
+        entity.setBerthingAttachments(dto.getBerthingAttachments());
+        entity.setEmailPoid(dto.getEmailPoid());
+        entity.setLastModifiedBy(UserContext.getUserId());
+        entity.setLastModifiedDate(LocalDateTime.now());
+        
+        estBertDtlRepository.save(entity);
+        return getOperationById(transactionPoid);
+    }
+
+    @Override
+    public List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId) {
+        log.info("Listing EstPrearrivalActDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+        
+        List<PortCallOperationEstPrearrivalActDtl> entities = estPrearrivalActDtlRepository
+                .findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        
+        return entities.stream()
+                .map(e -> PortCallOperationEstPrearrivalActDetailResponseDto.builder()
+                        .transactionPoid(e.getTransactionPoid())
+                        .detRowId(e.getDetRowId())
+                        .preActivityDtlPoid(e.getPreActivityDtlPoid())
+                        .activityPoid(e.getActivityPoid())
+                        .otherDescription(e.getOtherDescription())
+                        .estimatedDatetime(e.getEstimatedDatetime())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto) {
+        log.info("Creating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+        
+        if (!hdrRepository.existsById(transactionPoid)) {
+            throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
+        }
+        
+        Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository
+                .findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+        
+        PortCallOperationEstPrearrivalActDtl entity = PortCallOperationEstPrearrivalActDtl.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(detRowId)
+                .preActivityDtlPoid(nextPreActivityDtlPoid)
+                .activityPoid(dto.getActivityPoid())
+                .otherDescription(dto.getOtherDescription())
+                .estimatedDatetime(dto.getEstimatedDatetime())
+                .createdBy(UserContext.getUserId())
+                .createdDate(LocalDateTime.now())
+                .lastModifiedBy(UserContext.getUserId())
+                .lastModifiedDate(LocalDateTime.now())
+                .build();
+        
+        entity = estPrearrivalActDtlRepository.save(entity);
+        
+        return PortCallOperationEstPrearrivalActDetailResponseDto.builder()
+                .transactionPoid(entity.getTransactionPoid())
+                .detRowId(entity.getDetRowId())
+                .preActivityDtlPoid(entity.getPreActivityDtlPoid())
+                .activityPoid(entity.getActivityPoid())
+                .otherDescription(entity.getOtherDescription())
+                .estimatedDatetime(entity.getEstimatedDatetime())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto) {
+        log.info("Updating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}, preActivityDtlPoid: {}", transactionPoid, detRowId, preActivityDtlPoid);
+        
+        PortCallOperationEstPrearrivalActDtl entity = estPrearrivalActDtlRepository
+                .findById(new PortCallOperationEstPrearrivalActDtlId(transactionPoid, detRowId, preActivityDtlPoid))
+                .orElseThrow(() -> new ResourceNotFoundException("EstPrearrivalActDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", preActivityDtlPoid", preActivityDtlPoid));
+        
+        entity.setActivityPoid(dto.getActivityPoid());
+        entity.setOtherDescription(dto.getOtherDescription());
+        entity.setEstimatedDatetime(dto.getEstimatedDatetime());
+        entity.setLastModifiedBy(UserContext.getUserId());
+        entity.setLastModifiedDate(LocalDateTime.now());
+        
+        entity = estPrearrivalActDtlRepository.save(entity);
+        
+        return PortCallOperationEstPrearrivalActDetailResponseDto.builder()
+                .transactionPoid(entity.getTransactionPoid())
+                .detRowId(entity.getDetRowId())
+                .preActivityDtlPoid(entity.getPreActivityDtlPoid())
+                .activityPoid(entity.getActivityPoid())
+                .otherDescription(entity.getOtherDescription())
+                .estimatedDatetime(entity.getEstimatedDatetime())
+                .build();
+    }
+
+    @Override
+    public List<PortCallOperationActTimingsActvtyDetailResponseDto> listActTimingsActvtyDetails(Long transactionPoid, Long detRowId) {
+        log.info("Listing ActTimingsActvtyDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+        
+        List<PortCallOperationActTimingsActvtyDtl> entities = actTimingsActvtyDtlRepository
+                .findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        
+        return entities.stream()
+                .map(e -> PortCallOperationActTimingsActvtyDetailResponseDto.builder()
+                        .transactionPoid(e.getTransactionPoid())
+                        .detRowId(e.getDetRowId())
+                        .actualsTimingDtlPoid(e.getActualsTimingDtlPoid())
+                        .activityPoid(e.getActivityPoid())
+                        .details(e.getDetails())
+                        .estimatedDatetime(e.getEstimatedDatetime())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActvtyDetailDto dto) {
+        log.info("Creating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+        
+        if (!hdrRepository.existsById(transactionPoid)) {
+            throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
+        }
+        
+        Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository
+                .findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+        
+        PortCallOperationActTimingsActvtyDtl entity = PortCallOperationActTimingsActvtyDtl.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(detRowId)
+                .actualsTimingDtlPoid(nextActualsTimingDtlPoid)
+                .activityPoid(dto.getActivityPoid())
+                .details(dto.getDetails())
+                .estimatedDatetime(dto.getEstimatedDatetime())
+                .createdBy(UserContext.getUserId())
+                .createdDate(LocalDateTime.now())
+                .lastModifiedBy(UserContext.getUserId())
+                .lastModifiedDate(LocalDateTime.now())
+                .build();
+        
+        entity = actTimingsActvtyDtlRepository.save(entity);
+        
+        return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
+                .transactionPoid(entity.getTransactionPoid())
+                .detRowId(entity.getDetRowId())
+                .actualsTimingDtlPoid(entity.getActualsTimingDtlPoid())
+                .activityPoid(entity.getActivityPoid())
+                .details(entity.getDetails())
+                .estimatedDatetime(entity.getEstimatedDatetime())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActvtyDetailDto dto) {
+        log.info("Updating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}, actualsTimingDtlPoid: {}", transactionPoid, detRowId, actualsTimingDtlPoid);
+        
+        PortCallOperationActTimingsActvtyDtl entity = actTimingsActvtyDtlRepository
+                .findById(new PortCallOperationActTimingsActvtyDtlId(transactionPoid, detRowId, actualsTimingDtlPoid))
+                .orElseThrow(() -> new ResourceNotFoundException("ActTimingsActvtyDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", actualsTimingDtlPoid", actualsTimingDtlPoid));
+        
+        entity.setActivityPoid(dto.getActivityPoid());
+        entity.setDetails(dto.getDetails());
+        entity.setEstimatedDatetime(dto.getEstimatedDatetime());
+        entity.setLastModifiedBy(UserContext.getUserId());
+        entity.setLastModifiedDate(LocalDateTime.now());
+        
+        entity = actTimingsActvtyDtlRepository.save(entity);
+        
+        return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
+                .transactionPoid(entity.getTransactionPoid())
+                .detRowId(entity.getDetRowId())
+                .actualsTimingDtlPoid(entity.getActualsTimingDtlPoid())
+                .activityPoid(entity.getActivityPoid())
+                .details(entity.getDetails())
+                .estimatedDatetime(entity.getEstimatedDatetime())
+                .build();
     }
 }

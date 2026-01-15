@@ -13,6 +13,11 @@ import java.util.List;
 public interface PortCallOperationEstPrearrivalActDtlRepository extends JpaRepository<PortCallOperationEstPrearrivalActDtl, PortCallOperationEstPrearrivalActDtlId> {
     void deleteByTransactionPoid(Long transactionPoid);
     List<PortCallOperationEstPrearrivalActDtl> findByTransactionPoid(Long transactionPoid);
+    List<PortCallOperationEstPrearrivalActDtl> findByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
+    
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationEstPrearrivalActDtl d where d.transactionPoid = :transactionPoid")
     Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
+    
+    @Query("select coalesce(max(d.preActivityDtlPoid), 0) from PortCallOperationEstPrearrivalActDtl d where d.transactionPoid = :transactionPoid and d.detRowId = :detRowId")
+    Long findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(@Param("transactionPoid") Long transactionPoid, @Param("detRowId") Long detRowId);
 }

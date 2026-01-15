@@ -6,6 +6,12 @@ import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.portcalloperation.dto.PortCallOperationCreateDto;
 import com.asg.operations.portcalloperation.dto.PortCallOperationDto;
+import com.asg.operations.portcalloperation.dto.PortCallOperationEstBertDetailDto;
+import com.asg.operations.portcalloperation.dto.PortCallOperationEstBertDetailResponseDto;
+import com.asg.operations.portcalloperation.dto.PortCallOperationEstPrearrivalActDetailDto;
+import com.asg.operations.portcalloperation.dto.PortCallOperationEstPrearrivalActDetailResponseDto;
+import com.asg.operations.portcalloperation.dto.PortCallOperationActTimingsActvtyDetailDto;
+import com.asg.operations.portcalloperation.dto.PortCallOperationActTimingsActvtyDetailResponseDto;
 import com.asg.operations.portcalloperation.dto.PortCallOperationResponseDto;
 import com.asg.operations.portcalloperation.service.PortCallOperationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 import static com.asg.common.lib.dto.response.ApiResponse.notFound;
@@ -234,5 +241,129 @@ public class PortCallOperationController {
     public ResponseEntity<?> getEmailHistory(@Parameter(description = "Transaction POID") @PathVariable String transactionPoid) {
         Map<String, Object> result = portCallOperationService.getEmailHistory(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return success("Email history retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/est-bert-details/{detRowId}")
+    @Operation(
+            summary = "Get EstBertDetail",
+            description = "Retrieve a specific EstBertDetail by transaction and detail row ID",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                              @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
+        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.getEstBertDetail(transactionPoid, detRowId);
+        return success("EstBertDetail retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.CREATE)
+    @PostMapping("/{transactionPoid}/est-bert-details")
+    @Operation(
+            summary = "Create EstBertDetail",
+            description = "Create a new EstBertDetail for a port call operation",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> createEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                  @Valid @RequestBody PortCallOperationEstBertDetailDto dto) {
+        PortCallOperationResponseDto result = portCallOperationService.createEstBertDetail(transactionPoid, dto);
+        return success("EstBertDetail created successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PutMapping("/{transactionPoid}/est-bert-details/{detRowId}")
+    @Operation(
+            summary = "Update EstBertDetail",
+            description = "Update an existing EstBertDetail for a port call operation",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> updateEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                  @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                  @Valid @RequestBody PortCallOperationEstBertDetailDto dto) {
+        PortCallOperationResponseDto result = portCallOperationService.updateEstBertDetail(transactionPoid, detRowId, dto);
+        return success("EstBertDetail updated successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/est-prearrival-details/{detRowId}/activities")
+    @Operation(
+            summary = "List EstPrearrivalActDetails",
+            description = "Retrieve list of activities for a specific prearrival detail",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> listEstPrearrivalActDetails(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
+        List<PortCallOperationEstPrearrivalActDetailResponseDto> result = portCallOperationService.listEstPrearrivalActDetails(transactionPoid, detRowId);
+        return success("EstPrearrivalActDetails retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.CREATE)
+    @PostMapping("/{transactionPoid}/est-prearrival-details/{detRowId}/activities")
+    @Operation(
+            summary = "Create EstPrearrivalActDetail",
+            description = "Create a new activity for a prearrival detail",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> createEstPrearrivalActDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                           @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
+        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, detRowId, dto);
+        return success("EstPrearrivalActDetail created successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PutMapping("/{transactionPoid}/est-prearrival-details/{detRowId}/activities/{preActivityDtlPoid}")
+    @Operation(
+            summary = "Update EstPrearrivalActDetail",
+            description = "Update an existing activity for a prearrival detail",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> updateEstPrearrivalActDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                           @Parameter(description = "Pre Activity Detail POID") @PathVariable Long preActivityDtlPoid,
+                                                           @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
+        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, preActivityDtlPoid, dto);
+        return success("EstPrearrivalActDetail updated successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/act-timing-details/{detRowId}/activities")
+    @Operation(
+            summary = "List ActTimingsActvtyDetails",
+            description = "Retrieve list of activities for a specific actual timing detail",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> listActTimingsActvtyDetails(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
+        List<PortCallOperationActTimingsActvtyDetailResponseDto> result = portCallOperationService.listActTimingsActvtyDetails(transactionPoid, detRowId);
+        return success("ActTimingsActvtyDetails retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.CREATE)
+    @PostMapping("/{transactionPoid}/act-timing-details/{detRowId}/activities")
+    @Operation(
+            summary = "Create ActTimingsActvtyDetail",
+            description = "Create a new activity for an actual timing detail",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> createActTimingsActvtyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                           @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
+        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, detRowId, dto);
+        return success("ActTimingsActvtyDetail created successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PutMapping("/{transactionPoid}/act-timing-details/{detRowId}/activities/{actualsTimingDtlPoid}")
+    @Operation(
+            summary = "Update ActTimingsActvtyDetail",
+            description = "Update an existing activity for an actual timing detail",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> updateActTimingsActvtyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                           @Parameter(description = "Actuals Timing Detail POID") @PathVariable Long actualsTimingDtlPoid,
+                                                           @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
+        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto);
+        return success("ActTimingsActvtyDetail updated successfully", result);
     }
 }
