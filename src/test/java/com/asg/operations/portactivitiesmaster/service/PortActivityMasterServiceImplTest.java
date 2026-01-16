@@ -1,5 +1,6 @@
 package com.asg.operations.portactivitiesmaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.exceptions.ResourceNotFoundException;
@@ -20,7 +21,6 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 
-import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -42,6 +42,12 @@ class PortActivityMasterServiceImplTest {
 
     @Mock
     private EntityManager entityManager;
+
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
+    @Mock
+    private com.asg.common.lib.service.DocumentDeleteService documentDeleteService;
 
     @Mock
     private Query query;
@@ -190,12 +196,9 @@ class PortActivityMasterServiceImplTest {
         when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        service.deletePortActivity(1L, groupPoid, userId, false);
+        service.deletePortActivity(1L, groupPoid, userId, new DeleteReasonDto());
 
-        assertEquals("Y", entity.getDeleted());
-        assertEquals("N", entity.getActive());
-        verify(repository).save(entity);
-        verify(repository, never()).delete(any());
+        verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }
 
     @Test
@@ -203,10 +206,9 @@ class PortActivityMasterServiceImplTest {
         when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        service.deletePortActivity(1L, groupPoid, userId, true);
+        service.deletePortActivity(1L, groupPoid, userId,  new DeleteReasonDto());
 
-        verify(repository).delete(entity);
-        verify(repository, never()).save(any());
+        verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }
 
     @Test
@@ -215,6 +217,6 @@ class PortActivityMasterServiceImplTest {
                 .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () ->
-                service.deletePortActivity(1L, groupPoid, userId, false));
+                service.deletePortActivity(1L, groupPoid, userId,  new DeleteReasonDto()));
     }
 }

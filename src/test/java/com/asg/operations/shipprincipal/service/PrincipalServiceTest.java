@@ -1,12 +1,14 @@
 package com.asg.operations.shipprincipal.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.shipprincipal.dto.*;
 import com.asg.operations.shipprincipal.entity.ShipPrincipalMaster;
 import com.asg.operations.shipprincipal.repository.*;
 import com.asg.operations.shipprincipal.util.PrincipalMasterMapper;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.vesseltype.repository.VesselTypeRepository;
-import com.asg.operations.user.entity.User;
 import com.asg.operations.user.repository.UserRepository;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import jakarta.persistence.EntityManager;
@@ -17,8 +19,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -69,6 +69,12 @@ class PrincipalServiceTest {
 
     @Mock
     private EntityManager entityManager;
+
+    @Mock
+    private DocumentDeleteService documentDeleteService;
+
+    @Mock
+    private LoggingService loggingService;
 
     @InjectMocks
     private PrincipalMasterServiceImpl principalMasterService;
@@ -188,11 +194,11 @@ class PrincipalServiceTest {
     @Test
     void testDeletePrincipal_Success() {
         when(principalRepository.findByIdAndNotDeleted(1L)).thenReturn(Optional.of(mockPrincipal));
-        when(principalRepository.save(any(ShipPrincipalMaster.class))).thenReturn(mockPrincipal);
+        when(documentDeleteService.deleteDocument(eq(1L), anyString(), anyString(), any(), any())).thenReturn("Success");
 
-        principalMasterService.deletePrincipal(1L);
+        principalMasterService.deletePrincipal(1L, new DeleteReasonDto());
 
         verify(principalRepository).findByIdAndNotDeleted(1L);
-        verify(principalRepository).save(any(ShipPrincipalMaster.class));
+        verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }
 }

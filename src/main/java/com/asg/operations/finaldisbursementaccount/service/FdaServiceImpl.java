@@ -1,6 +1,12 @@
 package com.asg.operations.finaldisbursementaccount.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.validation.Valid;
+import org.springframework.beans.BeanUtils;
 import com.asg.common.lib.service.PrintService;
 import com.asg.operations.common.PageResponse;
 import com.asg.operations.commonlov.service.LovService;
@@ -62,6 +68,8 @@ public class FdaServiceImpl implements FdaService {
     private final EntityManager entityManager;
     private final PrintService printService;
     private final javax.sql.DataSource dataSource;
+    private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
 //    private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -114,6 +122,7 @@ public class FdaServiceImpl implements FdaService {
             saveCharges(entity.getTransactionPoid(), dto.getCharges(), userId, groupPoid, companyPoid);
         }
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entity.getTransactionPoid().toString());
         return getFdaHeader(entity.getTransactionPoid(), groupPoid, companyPoid);
     }
 
@@ -126,6 +135,9 @@ public class FdaServiceImpl implements FdaService {
         PdaFdaHdr entity = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(transactionPoid, groupPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
 
+        PdaFdaHdr oldEntity = new PdaFdaHdr();
+        BeanUtils.copyProperties(entity, oldEntity);
+
         HeaderMapper.mapUpdateHeaderDtoToEntity(dto, entity, userId);
         pdaFdaHdrRepository.save(entity);
 
@@ -133,6 +145,7 @@ public class FdaServiceImpl implements FdaService {
             saveCharges(transactionPoid, dto.getCharges(), userId, groupPoid, companyPoid);
         }
 
+        loggingService.logChanges(oldEntity, entity, PdaFdaHdr.class, UserContext.getDocumentId(), transactionPoid.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return getFdaHeader(transactionPoid, groupPoid, companyPoid);
     }
 
@@ -571,18 +584,18 @@ public class FdaServiceImpl implements FdaService {
 
     @Override
     @Transactional
-    public void softDeleteFda(Long transactionPoid, String userId) {
+    public void softDeleteFda(Long transactionPoid, String userId, @Valid DeleteReasonDto deleteReasonDto) {
 
         PdaFdaHdr hdr = pdaFdaHdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
 
-        hdr.setDeleted("Y");
-        hdr.setLastModifiedBy(userId);
-        hdr.setLastModifiedDate(LocalDateTime.now());
-        pdaFdaHdrRepository.save(hdr);
-
-        List<PdaFdaDtl> details = pdaFdaDtlRepository.findByIdTransactionPoid(transactionPoid);
-        pdaFdaDtlRepository.deleteAll(details);
+        documentDeleteService.deleteDocument(
+                transactionPoid,
+                "PDA_FDA_HDR",
+                "TRANSACTION_POID",
+                deleteReasonDto,
+                hdr.getTransactionDate()
+        );
     }
 
     @Override

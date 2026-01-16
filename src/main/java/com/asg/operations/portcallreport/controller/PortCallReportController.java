@@ -1,8 +1,11 @@
 package com.asg.operations.portcallreport.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.portcallreport.dto.GetAllPortCallReportFilterRequest;
 import com.asg.operations.portcallreport.dto.PortActivityResponseDto;
@@ -37,6 +40,7 @@ import java.util.Map;
 public class PortCallReportController {
 
     private final PortCallReportService portCallReportService;
+    private final LoggingService loggingService;
 
     /**
      * Retrieves paginated list of port call reports.
@@ -101,6 +105,7 @@ public class PortCallReportController {
     public ResponseEntity<?> getReportById(@Parameter(description = "Report ID") @PathVariable Long id) {
 
         PortCallReportResponseDto report = portCallReportService.getReportById(id);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), id.toString());
         if (report == null) {
             return ApiResponse.notFound("Report not found");
         }
@@ -160,8 +165,8 @@ public class PortCallReportController {
             description = "Delete a port call report",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<?> deleteReport(@Parameter(description = "Report ID") @PathVariable Long id) {
-        portCallReportService.deleteReport(id);
+    public ResponseEntity<?> deleteReport(@Parameter(description = "Report ID") @PathVariable Long id,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
+        portCallReportService.deleteReport(id,deleteReasonDto);
         return ApiResponse.success("Report deleted successfully");
     }
 

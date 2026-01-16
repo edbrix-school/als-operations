@@ -1,5 +1,6 @@
 package com.asg.operations.pdaRoRoVehicle.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -124,11 +125,11 @@ class PdaRoRoEntryServiceTest {
     void testDeleteRoRoEntry_Success() {
         Long transactionPoid = 1L;
 
-        doNothing().when(pdaRoroEntryService).deleteRoRoEntry(transactionPoid);
+        doNothing().when(pdaRoroEntryService).deleteRoRoEntry(transactionPoid, new DeleteReasonDto());
 
-        pdaRoroEntryService.deleteRoRoEntry(transactionPoid);
+        pdaRoroEntryService.deleteRoRoEntry(transactionPoid, new DeleteReasonDto());
 
-        verify(pdaRoroEntryService, times(1)).deleteRoRoEntry(transactionPoid);
+        verify(pdaRoroEntryService, times(1)).deleteRoRoEntry(transactionPoid, new DeleteReasonDto());
     }
 
     @Test
