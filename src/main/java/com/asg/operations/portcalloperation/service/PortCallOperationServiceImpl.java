@@ -2122,6 +2122,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
 
+        validateLatestRecord(transactionPoid);
+
         Long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
 
         PortCallOperationDocsCopyDtl entity = PortCallOperationDocsCopyDtl.builder()
@@ -2149,6 +2151,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         PortCallOperationDocsCopyDtl entity = docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detRowId))
                 .orElseThrow(() -> new ResourceNotFoundException("DocsCopyDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
 
+        validateLatestRecord(transactionPoid);
+
         entity.setDocumentFrom(dto.getDocumentFrom());
         entity.setDocumentList(dto.getDocumentList());
         entity.setDocumentSelect(dto.getDocumentSelect());
@@ -2158,5 +2162,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         docsCopyDtlRepository.save(entity);
         return getOperationById(transactionPoid);
+    }
+
+    private void validateLatestRecord(Long transactionPoid) {
+        PortCallOperationHdr hdr = hdrRepository.findById(transactionPoid)
+                .orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
+
+        Long maxTransactionPoid = hdrRepository.findMaxTransactionPoidByVesselVoyagePoid(hdr.getVesselVoyagePoid());
+
+        if (!transactionPoid.equals(maxTransactionPoid)) {
+            throw new ValidationException("Cannot create or edit records. This is not the latest record");
+        }
     }
 }
