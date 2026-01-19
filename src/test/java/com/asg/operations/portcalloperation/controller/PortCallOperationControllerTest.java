@@ -1,5 +1,6 @@
 package com.asg.operations.portcalloperation.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.portcalloperation.dto.*;
 import com.asg.operations.portcalloperation.service.PortCallOperationService;
@@ -141,13 +142,18 @@ class PortCallOperationControllerTest {
 
     @Test
     void deleteOperation_Success() throws Exception {
-        doNothing().when(service).deleteOperation(1L);
+        DeleteReasonDto deleteReasonDto = new DeleteReasonDto();
+        deleteReasonDto.setDeleteReason("Test deletion");
+        
+        doNothing().when(service).deleteOperation(eq(1L), any(DeleteReasonDto.class));
 
-        mockMvc.perform(delete("/v1/port-call-operations/1"))
+        mockMvc.perform(delete("/v1/port-call-operations/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(deleteReasonDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Operation deleted successfully"));
         
-        verify(service).deleteOperation(1L);
+        verify(service).deleteOperation(eq(1L), any(DeleteReasonDto.class));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.asg.operations.portcalloperation.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.portcalloperation.dto.*;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +19,7 @@ public interface PortCallOperationService {
 
     PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid);
 
-    void deleteOperation(Long id);
+    void deleteOperation(Long id, DeleteReasonDto deleteReasonDto);
 
     // Stored Procedure Methods
     Map<String, Object> loadPda(String pdaPoid, Long groupPoid, Long companyPoid, Long userPoid);

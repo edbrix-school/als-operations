@@ -1,6 +1,7 @@
 package com.asg.operations.portcalloperation.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
@@ -129,6 +130,7 @@ public class PortCallOperationController {
      * Deletes a port call operation.
      *
      * @param id operation ID
+     * @param deleteReasonDto delete reason details
      * @return success response
      */
     @AllowedAction(UserRolesRightsEnum.DELETE)
@@ -138,8 +140,9 @@ public class PortCallOperationController {
             description = "Delete a port call operation",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<?> deleteOperation(@Parameter(description = "Operation ID") @PathVariable Long id) {
-        portCallOperationService.deleteOperation(id);
+    public ResponseEntity<?> deleteOperation(@Parameter(description = "Operation ID") @PathVariable Long id,
+                                             @Valid @RequestBody DeleteReasonDto deleteReasonDto) {
+        portCallOperationService.deleteOperation(id, deleteReasonDto);
         return success("Operation deleted successfully");
     }
 
