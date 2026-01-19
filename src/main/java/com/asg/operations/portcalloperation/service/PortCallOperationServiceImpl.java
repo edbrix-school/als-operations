@@ -1947,6 +1947,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
         }
 
+        validateLatestRecord(transactionPoid);
+
         Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository
                 .findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
@@ -1987,6 +1989,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
             throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
         }
+
+        validateLatestRecord(transactionPoid);
 
         entity.setActivityPoid(dto.getActivityPoid());
         entity.setOtherDescription(dto.getOtherDescription());
@@ -2037,6 +2041,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
         }
 
+        validateLatestRecord(transactionPoid);
+
         Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository
                 .findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
@@ -2077,6 +2083,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
             throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
         }
+
+        validateLatestRecord(transactionPoid);
 
         entity.setActivityPoid(dto.getActivityPoid());
         entity.setDetails(dto.getDetails());
