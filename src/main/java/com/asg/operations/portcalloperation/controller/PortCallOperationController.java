@@ -15,6 +15,8 @@ import com.asg.operations.portcalloperation.dto.PortCallOperationEstPrearrivalAc
 import com.asg.operations.portcalloperation.dto.PortCallOperationEstPrearrivalActDetailResponseDto;
 import com.asg.operations.portcalloperation.dto.PortCallOperationActTimingsActvtyDetailDto;
 import com.asg.operations.portcalloperation.dto.PortCallOperationActTimingsActvtyDetailResponseDto;
+import com.asg.operations.portcalloperation.dto.PortCallOperationDocsCopyDetailDto;
+import com.asg.operations.portcalloperation.dto.PortCallOperationDocsCopyDetailResponseDto;
 import com.asg.operations.portcalloperation.dto.PortCallOperationResponseDto;
 import com.asg.operations.portcalloperation.service.PortCallOperationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -372,5 +374,45 @@ public class PortCallOperationController {
                                                            @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto);
         return success("ActTimingsActvtyDetail updated successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/docs-copy-details/{detRowId}")
+    @Operation(
+            summary = "Get DocsCopyDetail",
+            description = "Retrieve a specific DocsCopyDetail by transaction and detail row ID",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getDocsCopyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                               @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
+        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.getDocsCopyDetail(transactionPoid, detRowId);
+        return success("DocsCopyDetail retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.CREATE)
+    @PostMapping("/{transactionPoid}/docs-copy-details")
+    @Operation(
+            summary = "Create DocsCopyDetail",
+            description = "Create a new DocsCopyDetail for a port call operation",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> createDocsCopyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                  @Valid @RequestBody PortCallOperationDocsCopyDetailDto dto) {
+        PortCallOperationResponseDto result = portCallOperationService.createDocsCopyDetail(transactionPoid, dto);
+        return success("DocsCopyDetail created successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PutMapping("/{transactionPoid}/docs-copy-details/{detRowId}")
+    @Operation(
+            summary = "Update DocsCopyDetail",
+            description = "Update an existing DocsCopyDetail for a port call operation",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> updateDocsCopyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                  @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                  @Valid @RequestBody PortCallOperationDocsCopyDetailDto dto) {
+        PortCallOperationResponseDto result = portCallOperationService.updateDocsCopyDetail(transactionPoid, detRowId, dto);
+        return success("DocsCopyDetail updated successfully", result);
     }
 }

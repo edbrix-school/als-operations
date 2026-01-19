@@ -2095,4 +2095,68 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .estimatedDatetime(entity.getEstimatedDatetime())
                 .build();
     }
+
+    @Override
+    public PortCallOperationDocsCopyDetailResponseDto getDocsCopyDetail(Long transactionPoid, Long detRowId) {
+        log.info("Fetching DocsCopyDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+
+        PortCallOperationDocsCopyDtl entity = docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detRowId))
+                .orElseThrow(() -> new ResourceNotFoundException("DocsCopyDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
+
+        return PortCallOperationDocsCopyDetailResponseDto.builder()
+                .transactionPoid(entity.getTransactionPoid())
+                .detRowId(entity.getDetRowId())
+                .documentFrom(entity.getDocumentFrom())
+                .documentList(entity.getDocumentList())
+                .documentSelect(entity.getDocumentSelect())
+                .documentAttachments(entity.getDocumentAttachments())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public PortCallOperationResponseDto createDocsCopyDetail(Long transactionPoid, PortCallOperationDocsCopyDetailDto dto) {
+        log.info("Creating DocsCopyDetail for transactionPoid: {}", transactionPoid);
+
+        if (!hdrRepository.existsById(transactionPoid)) {
+            throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
+        }
+
+        Long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+
+        PortCallOperationDocsCopyDtl entity = PortCallOperationDocsCopyDtl.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(nextDetRowId)
+                .documentFrom(dto.getDocumentFrom())
+                .documentList(dto.getDocumentList())
+                .documentSelect(dto.getDocumentSelect())
+                .documentAttachments(dto.getDocumentAttachments())
+                .createdBy(UserContext.getUserId())
+                .createdDate(LocalDateTime.now())
+                .lastModifiedBy(UserContext.getUserId())
+                .lastModifiedDate(LocalDateTime.now())
+                .build();
+
+        docsCopyDtlRepository.save(entity);
+        return getOperationById(transactionPoid);
+    }
+
+    @Override
+    @Transactional
+    public PortCallOperationResponseDto updateDocsCopyDetail(Long transactionPoid, Long detRowId, PortCallOperationDocsCopyDetailDto dto) {
+        log.info("Updating DocsCopyDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+
+        PortCallOperationDocsCopyDtl entity = docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detRowId))
+                .orElseThrow(() -> new ResourceNotFoundException("DocsCopyDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
+
+        entity.setDocumentFrom(dto.getDocumentFrom());
+        entity.setDocumentList(dto.getDocumentList());
+        entity.setDocumentSelect(dto.getDocumentSelect());
+        entity.setDocumentAttachments(dto.getDocumentAttachments());
+        entity.setLastModifiedBy(UserContext.getUserId());
+        entity.setLastModifiedDate(LocalDateTime.now());
+
+        docsCopyDtlRepository.save(entity);
+        return getOperationById(transactionPoid);
+    }
 }
