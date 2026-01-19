@@ -316,6 +316,7 @@ public class PortCallOperationController {
                                                            @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
                                                            @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
         PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, detRowId, dto);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstPrearrivalActDetail created successfully", result);
     }
 
@@ -331,6 +332,7 @@ public class PortCallOperationController {
                                                            @Parameter(description = "Pre Activity Detail POID") @PathVariable Long preActivityDtlPoid,
                                                            @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
         PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, preActivityDtlPoid, dto);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstPrearrivalActDetail updated successfully", result);
     }
 
@@ -358,6 +360,7 @@ public class PortCallOperationController {
                                                            @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
                                                            @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, detRowId, dto);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetail created successfully", result);
     }
 
@@ -373,6 +376,7 @@ public class PortCallOperationController {
                                                            @Parameter(description = "Actuals Timing Detail POID") @PathVariable Long actualsTimingDtlPoid,
                                                            @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetail updated successfully", result);
     }
 
@@ -386,6 +390,7 @@ public class PortCallOperationController {
     public ResponseEntity<?> getDocsCopyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.getDocsCopyDetail(transactionPoid, detRowId);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("DocsCopyDetail retrieved successfully", result);
     }
 
@@ -399,6 +404,7 @@ public class PortCallOperationController {
     public ResponseEntity<?> createDocsCopyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                   @Valid @RequestBody PortCallOperationDocsCopyDetailDto dto) {
         PortCallOperationResponseDto result = portCallOperationService.createDocsCopyDetail(transactionPoid, dto);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("DocsCopyDetail created successfully", result);
     }
 
@@ -413,6 +419,7 @@ public class PortCallOperationController {
                                                   @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
                                                   @Valid @RequestBody PortCallOperationDocsCopyDetailDto dto) {
         PortCallOperationResponseDto result = portCallOperationService.updateDocsCopyDetail(transactionPoid, detRowId, dto);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("DocsCopyDetail updated successfully", result);
     }
 }
