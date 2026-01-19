@@ -4,9 +4,11 @@ import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
@@ -67,6 +69,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final PortCallOperationDocsMsgsDtl2Repository docsMsgsDtl2Repository;
     private final DocumentSearchService documentService;
     private final DocumentDeleteService documentDeleteService;
+    private final LoggingService loggingService;
     private final ShipVoyageHdrRepository shipVoyageHdrRepository;
     private final ShipPrincipalRepository shipPrincipalRepository;
     private final ShipPortMasterRepository shipPortMasterRepository;
@@ -493,6 +496,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         // Save all other detail tables
 //        saveAllDetailTables(hdr.getTransactionPoid(), dto, UserContext.getUserId());
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), hdr.getTransactionPoid().toString());
         return getOperationById(hdr.getTransactionPoid());
     }
 
@@ -842,6 +846,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         PortCallOperationHdr hdr = hdrRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", id));
 
+        PortCallOperationHdr oldHdr = new PortCallOperationHdr();
+        org.springframework.beans.BeanUtils.copyProperties(hdr, oldHdr);
+
         if (dto.getVesselVoyagePoid() != null) {
             if (!shipVoyageHdrRepository.existsByTransactionPoid(dto.getVesselVoyagePoid())) {
                 throw new ResourceNotFoundException("Vessel Voyage", "Vessel Voyage Poid", dto.getVesselVoyagePoid());
@@ -993,6 +1000,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         // Update all other detail tables with actionType
         updateAllDetailTables(id, dto, UserContext.getUserId());
 
+        loggingService.logChanges(oldHdr, hdr, PortCallOperationHdr.class, UserContext.getDocumentId(), id.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return getOperationById(id);
     }
 

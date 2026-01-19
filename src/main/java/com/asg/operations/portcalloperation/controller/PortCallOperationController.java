@@ -3,8 +3,10 @@ package com.asg.operations.portcalloperation.controller;
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.portcalloperation.dto.PortCallOperationCreateDto;
 import com.asg.operations.portcalloperation.dto.PortCallOperationDto;
 import com.asg.operations.portcalloperation.dto.PortCallOperationEstBertDetailDto;
@@ -46,6 +48,7 @@ import static com.asg.common.lib.dto.response.ApiResponse.success;
 public class PortCallOperationController {
 
     private final PortCallOperationService portCallOperationService;
+    private final LoggingService loggingService;
 
     /**
      * Retrieves paginated list of port call operations.
@@ -85,6 +88,7 @@ public class PortCallOperationController {
         if (operation == null) {
             return notFound("Operation not found");
         }
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), id.toString());
         return success("Operation retrieved successfully", operation);
     }
 
