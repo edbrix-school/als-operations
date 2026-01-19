@@ -1,10 +1,14 @@
 package com.asg.operations.portcalloperation.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
@@ -12,6 +16,7 @@ import com.asg.operations.finaldisbursementaccount.repository.PdaFdaHdrRepositor
 import com.asg.operations.finaldisbursementaccount.repository.ShipVoyageHdrRepository;
 import com.asg.operations.pdaentryform.repository.PdaEntryHdrRepository;
 import com.asg.operations.pdaporttariffmaster.repository.ShipPortMasterRepository;
+import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
 import com.asg.operations.portcalloperation.dto.*;
 import com.asg.operations.portcalloperation.entity.*;
 import com.asg.operations.portcalloperation.repository.*;
@@ -64,6 +69,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final PortCallOperationDocsMsgsDtl1Repository docsMsgsDtl1Repository;
     private final PortCallOperationDocsMsgsDtl2Repository docsMsgsDtl2Repository;
     private final DocumentSearchService documentService;
+    private final DocumentDeleteService documentDeleteService;
+    private final LoggingService loggingService;
     private final ShipVoyageHdrRepository shipVoyageHdrRepository;
     private final ShipPrincipalRepository shipPrincipalRepository;
     private final ShipPortMasterRepository shipPortMasterRepository;
@@ -73,6 +80,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final PortCallReportHdrRepository portCallReportHdrRepository;
     private final StockUnitMasterRepository stockUnitMasterRepository;
     private final GlobalUserRepository globalUserRepository;
+    private final PortActivityMasterRepository portActivityMasterRepository;
 
 
     @Override
@@ -153,9 +161,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .mailDetails(mapMailDetailsToResponse(mailDetails))
                 .estBertDetails(mapEstBertDetailsToResponse(estBertDetails))
                 .estPrearrivalDetails(mapEstPrearrivalDetailsToResponse(estPrearrivalDetails))
-//                .estPrearrivalActDetails(mapEstPrearrivalActDetailsToResponse(estPrearrivalActDetails))
                 .actTimingDetails(mapActTimingDetailsToResponse(actTimingDetails))
-//                .actTimingsActvtyDetails(mapActTimingsActvtyDetailsToResponse(actTimingsActvtyDetails))
                 .actCondDetails(mapActCondDetailsToResponse(actCondDetails))
                 .actRmksDetails(mapActRmksDetailsToResponse(actRmksDetails))
                 .actProgDetails(mapActProgDetailsToResponse(actProgDetails))
@@ -490,6 +496,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         // Save all other detail tables
 //        saveAllDetailTables(hdr.getTransactionPoid(), dto, UserContext.getUserId());
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), hdr.getTransactionPoid().toString());
         return getOperationById(hdr.getTransactionPoid());
     }
 
@@ -839,6 +846,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         PortCallOperationHdr hdr = hdrRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", id));
 
+        PortCallOperationHdr oldHdr = new PortCallOperationHdr();
+        org.springframework.beans.BeanUtils.copyProperties(hdr, oldHdr);
+
         if (dto.getVesselVoyagePoid() != null) {
             if (!shipVoyageHdrRepository.existsByTransactionPoid(dto.getVesselVoyagePoid())) {
                 throw new ResourceNotFoundException("Vessel Voyage", "Vessel Voyage Poid", dto.getVesselVoyagePoid());
@@ -990,6 +1000,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         // Update all other detail tables with actionType
         updateAllDetailTables(id, dto, UserContext.getUserId());
 
+        loggingService.logChanges(oldHdr, hdr, PortCallOperationHdr.class, UserContext.getDocumentId(), id.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return getOperationById(id);
     }
 
@@ -1597,16 +1608,19 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
     @Override
     @Transactional
-    public void deleteOperation(Long id) {
+    public void deleteOperation(Long id, DeleteReasonDto deleteReasonDto) {
         log.info("Deleting port call operation id: {}", id);
 
         PortCallOperationHdr hdr = hdrRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Port call operation"));
+                .orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", id));
 
-        hdr.setDeleted("Y");
-        hdr.setLastModifiedBy(UserContext.getUserName());
-        hdr.setLastModifiedDate(LocalDateTime.now());
-        hdrRepository.save(hdr);
+        documentDeleteService.deleteDocument(
+                id,
+                "OPS_PC_OPERATION_HDR",
+                "TRANSACTION_POID",
+                deleteReasonDto,
+                hdr.getTransactionDate()
+        );
     }
 
     // Stored Procedure Implementations
@@ -1832,10 +1846,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     @Override
     public PortCallOperationEstBertDetailResponseDto getEstBertDetail(Long transactionPoid, Long detRowId) {
         log.info("Fetching EstBertDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
-        
+
         PortCallOperationEstBertDtl entity = estBertDtlRepository.findById(new PortCallOperationEstBertDtlId(transactionPoid, detRowId))
                 .orElseThrow(() -> new ResourceNotFoundException("EstBertDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
-        
+
         return PortCallOperationEstBertDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
                 .detRowId(entity.getDetRowId())
@@ -1851,17 +1865,17 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     @Transactional
     public PortCallOperationResponseDto createEstBertDetail(Long transactionPoid, PortCallOperationEstBertDetailDto dto) {
         log.info("Creating EstBertDetail for transactionPoid: {}", transactionPoid);
-        
+
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
-        
+
         if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
-        
+
         Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-        
+
         PortCallOperationEstBertDtl entity = PortCallOperationEstBertDtl.builder()
                 .transactionPoid(transactionPoid)
                 .detRowId(nextDetRowId)
@@ -1874,7 +1888,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .lastModifiedBy(UserContext.getUserId())
                 .lastModifiedDate(LocalDateTime.now())
                 .build();
-        
+
         estBertDtlRepository.save(entity);
         return getOperationById(transactionPoid);
     }
@@ -1883,21 +1897,21 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     @Transactional
     public PortCallOperationResponseDto updateEstBertDetail(Long transactionPoid, Long detRowId, PortCallOperationEstBertDetailDto dto) {
         log.info("Updating EstBertDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
-        
+
         PortCallOperationEstBertDtl entity = estBertDtlRepository.findById(new PortCallOperationEstBertDtlId(transactionPoid, detRowId))
                 .orElseThrow(() -> new ResourceNotFoundException("EstBertDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
-        
+
         if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
-        
+
         entity.setEta(dto.getEta());
         entity.setEtb(dto.getEtb());
         entity.setBerthingAttachments(dto.getBerthingAttachments());
         entity.setEmailPoid(dto.getEmailPoid());
         entity.setLastModifiedBy(UserContext.getUserId());
         entity.setLastModifiedDate(LocalDateTime.now());
-        
+
         estBertDtlRepository.save(entity);
         return getOperationById(transactionPoid);
     }
@@ -1905,10 +1919,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     @Override
     public List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId) {
         log.info("Listing EstPrearrivalActDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
-        
+
         List<PortCallOperationEstPrearrivalActDtl> entities = estPrearrivalActDtlRepository
                 .findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
-        
+
         return entities.stream()
                 .map(e -> PortCallOperationEstPrearrivalActDetailResponseDto.builder()
                         .transactionPoid(e.getTransactionPoid())
@@ -1925,14 +1939,17 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     @Transactional
     public PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto) {
         log.info("Creating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
-        
+
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
-        
+        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
+            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        }
+
         Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository
                 .findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
-        
+
         PortCallOperationEstPrearrivalActDtl entity = PortCallOperationEstPrearrivalActDtl.builder()
                 .transactionPoid(transactionPoid)
                 .detRowId(detRowId)
@@ -1945,9 +1962,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .lastModifiedBy(UserContext.getUserId())
                 .lastModifiedDate(LocalDateTime.now())
                 .build();
-        
+
         entity = estPrearrivalActDtlRepository.save(entity);
-        
+
         return PortCallOperationEstPrearrivalActDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
                 .detRowId(entity.getDetRowId())
@@ -1962,19 +1979,23 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     @Transactional
     public PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto) {
         log.info("Updating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}, preActivityDtlPoid: {}", transactionPoid, detRowId, preActivityDtlPoid);
-        
+
         PortCallOperationEstPrearrivalActDtl entity = estPrearrivalActDtlRepository
                 .findById(new PortCallOperationEstPrearrivalActDtlId(transactionPoid, detRowId, preActivityDtlPoid))
                 .orElseThrow(() -> new ResourceNotFoundException("EstPrearrivalActDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", preActivityDtlPoid", preActivityDtlPoid));
-        
+
+        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
+            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        }
+
         entity.setActivityPoid(dto.getActivityPoid());
         entity.setOtherDescription(dto.getOtherDescription());
         entity.setEstimatedDatetime(dto.getEstimatedDatetime());
         entity.setLastModifiedBy(UserContext.getUserId());
         entity.setLastModifiedDate(LocalDateTime.now());
-        
+
         entity = estPrearrivalActDtlRepository.save(entity);
-        
+
         return PortCallOperationEstPrearrivalActDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
                 .detRowId(entity.getDetRowId())
@@ -1988,10 +2009,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     @Override
     public List<PortCallOperationActTimingsActvtyDetailResponseDto> listActTimingsActvtyDetails(Long transactionPoid, Long detRowId) {
         log.info("Listing ActTimingsActvtyDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
-        
+
         List<PortCallOperationActTimingsActvtyDtl> entities = actTimingsActvtyDtlRepository
                 .findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
-        
+
         return entities.stream()
                 .map(e -> PortCallOperationActTimingsActvtyDetailResponseDto.builder()
                         .transactionPoid(e.getTransactionPoid())
@@ -2008,14 +2029,17 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     @Transactional
     public PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActvtyDetailDto dto) {
         log.info("Creating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
-        
+
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
-        
+        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
+            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        }
+
         Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository
                 .findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
-        
+
         PortCallOperationActTimingsActvtyDtl entity = PortCallOperationActTimingsActvtyDtl.builder()
                 .transactionPoid(transactionPoid)
                 .detRowId(detRowId)
@@ -2028,9 +2052,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .lastModifiedBy(UserContext.getUserId())
                 .lastModifiedDate(LocalDateTime.now())
                 .build();
-        
+
         entity = actTimingsActvtyDtlRepository.save(entity);
-        
+
         return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
                 .detRowId(entity.getDetRowId())
@@ -2045,19 +2069,23 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     @Transactional
     public PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActvtyDetailDto dto) {
         log.info("Updating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}, actualsTimingDtlPoid: {}", transactionPoid, detRowId, actualsTimingDtlPoid);
-        
+
         PortCallOperationActTimingsActvtyDtl entity = actTimingsActvtyDtlRepository
                 .findById(new PortCallOperationActTimingsActvtyDtlId(transactionPoid, detRowId, actualsTimingDtlPoid))
                 .orElseThrow(() -> new ResourceNotFoundException("ActTimingsActvtyDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", actualsTimingDtlPoid", actualsTimingDtlPoid));
-        
+
+        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
+            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        }
+
         entity.setActivityPoid(dto.getActivityPoid());
         entity.setDetails(dto.getDetails());
         entity.setEstimatedDatetime(dto.getEstimatedDatetime());
         entity.setLastModifiedBy(UserContext.getUserId());
         entity.setLastModifiedDate(LocalDateTime.now());
-        
+
         entity = actTimingsActvtyDtlRepository.save(entity);
-        
+
         return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
                 .detRowId(entity.getDetRowId())

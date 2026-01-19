@@ -29,4 +29,5 @@ public interface PortActivityMasterRepository extends JpaRepository<PortActivity
             """, nativeQuery = true)
     Integer findMaxCodeSequence(@Param("prefix") String prefix, @Param("groupPoid") Long groupPoid);
 
+    boolean existsByPortActivityTypePoid(Long portActivityTypePoid);
 }

@@ -1,15 +1,26 @@
 package com.asg.operations.portcalloperation.service;
 
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.exceptions.ResourceNotFoundException;
+import com.asg.operations.finaldisbursementaccount.repository.PdaFdaHdrRepository;
+import com.asg.operations.finaldisbursementaccount.repository.ShipVoyageHdrRepository;
+import com.asg.operations.pdaentryform.repository.PdaEntryHdrRepository;
+import com.asg.operations.pdaporttariffmaster.repository.ShipPortMasterRepository;
 import com.asg.operations.portcalloperation.dto.*;
 import com.asg.operations.portcalloperation.entity.*;
 import com.asg.operations.portcalloperation.repository.*;
+import com.asg.operations.portcallreport.repository.PortCallReportHdrRepository;
+import com.asg.operations.shipprincipal.repository.ShipPrincipalRepository;
+import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -24,61 +35,69 @@ import static org.mockito.Mockito.*;
 class PortCallOperationServiceImplTest {
 
     @Mock
+    private JdbcTemplate jdbcTemplate;
+    @Mock
     private PortCallOperationHdrRepository hdrRepository;
-    
     @Mock
     private PortCallOperationCargoDtlRepository cargoDtlRepository;
-    
     @Mock
     private PortCallOperationMailDtlRepository mailDtlRepository;
-    
     @Mock
     private PortCallOperationEstBertDtlRepository estBertDtlRepository;
-    
     @Mock
     private PortCallOperationEstPrearrivalDtlRepository estPrearrivalDtlRepository;
-    
-    @Mock
-    private PortCallOperationActTimingDtlRepository actTimingDtlRepository;
-    
-    @Mock
-    private PortCallOperationActCondDtlRepository actCondDtlRepository;
-    
-    @Mock
-    private PortCallOperationActRmksDtlRepository actRmksDtlRepository;
-    
-    @Mock
-    private PortCallOperationActProgDtlRepository actProgDtlRepository;
-    
-    @Mock
-    private PortCallOperationActCargoFigDtlRepository actCargoFigDtlRepository;
-    
-    @Mock
-    private PortCallOperationActBunkerDtlRepository actBunkerDtlRepository;
-    
-    @Mock
-    private PortCallOperationHusbandryCrewDtlRepository husbandryCrewDtlRepository;
-    
-    @Mock
-    private PortCallOperationHusbandryOthDtlRepository husbandryOthDtlRepository;
-    
-    @Mock
-    private PortCallOperationDocsCopyDtlRepository docsCopyDtlRepository;
-    
-    @Mock
-    private PortCallOperationDocsMsgsDtl1Repository docsMsgsDtl1Repository;
-    
-    @Mock
-    private PortCallOperationDocsMsgsDtl2Repository docsMsgsDtl2Repository;
-    
     @Mock
     private PortCallOperationEstPrearrivalActDtlRepository estPrearrivalActDtlRepository;
-    
+    @Mock
+    private PortCallOperationActTimingDtlRepository actTimingDtlRepository;
     @Mock
     private PortCallOperationActTimingsActvtyDtlRepository actTimingsActvtyDtlRepository;
-    
+    @Mock
+    private PortCallOperationActCondDtlRepository actCondDtlRepository;
+    @Mock
+    private PortCallOperationActRmksDtlRepository actRmksDtlRepository;
+    @Mock
+    private PortCallOperationActProgDtlRepository actProgDtlRepository;
+    @Mock
+    private PortCallOperationActCargoFigDtlRepository actCargoFigDtlRepository;
+    @Mock
+    private PortCallOperationActBunkerDtlRepository actBunkerDtlRepository;
+    @Mock
+    private PortCallOperationHusbandryCrewDtlRepository husbandryCrewDtlRepository;
+    @Mock
+    private PortCallOperationHusbandryOthDtlRepository husbandryOthDtlRepository;
+    @Mock
+    private PortCallOperationDocsCopyDtlRepository docsCopyDtlRepository;
+    @Mock
+    private PortCallOperationDocsMsgsDtl1Repository docsMsgsDtl1Repository;
+    @Mock
+    private PortCallOperationDocsMsgsDtl2Repository docsMsgsDtl2Repository;
+    @Mock
+    private DocumentSearchService documentSearchService;
+    @Mock
+    private DocumentDeleteService documentDeleteService;
+    @Mock
+    private LoggingService loggingService;
+    @Mock
+    private ShipVoyageHdrRepository shipVoyageHdrRepository;
+    @Mock
+    private ShipPrincipalRepository shipPrincipalRepository;
+    @Mock
+    private ShipPortMasterRepository shipPortMasterRepository;
+    @Mock
+    private PdaEntryHdrRepository pdaEntryHdrRepository;
+    @Mock
+    private PdaFdaHdrRepository pdaFdaHdrRepository;
     @Mock
     private OpsPcDocsMsgsDtl1Repository msgsDtl1Repository;
+    @Mock
+    private PortCallReportHdrRepository portCallReportHdrRepository;
+    @Mock
+    private StockUnitMasterRepository stockUnitMasterRepository;
+    @Mock
+    private PortActivityMasterRepository portActivityMasterRepository;
+    @Mock
+    private GlobalUserRepository globalUserRepository;
 
     @InjectMocks
     private PortCallOperationServiceImpl service;
@@ -259,6 +278,7 @@ class PortCallOperationServiceImplTest {
                 .build();
 
         when(hdrRepository.existsById(transactionPoid)).thenReturn(true);
+        when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
         when(estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId))
                 .thenReturn(0L);
         when(estPrearrivalActDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -289,6 +309,7 @@ class PortCallOperationServiceImplTest {
                 .build();
 
         when(estPrearrivalActDtlRepository.findById(any())).thenReturn(Optional.of(entity));
+        when(portActivityMasterRepository.existsByPortActivityTypePoid(2L)).thenReturn(true);
         when(estPrearrivalActDtlRepository.save(any())).thenReturn(entity);
 
         PortCallOperationEstPrearrivalActDetailResponseDto result = 
@@ -331,6 +352,7 @@ class PortCallOperationServiceImplTest {
                 .build();
 
         when(hdrRepository.existsById(transactionPoid)).thenReturn(true);
+        when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
         when(actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId))
                 .thenReturn(0L);
         when(actTimingsActvtyDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -361,6 +383,7 @@ class PortCallOperationServiceImplTest {
                 .build();
 
         when(actTimingsActvtyDtlRepository.findById(any())).thenReturn(Optional.of(entity));
+        when(portActivityMasterRepository.existsByPortActivityTypePoid(2L)).thenReturn(true);
         when(actTimingsActvtyDtlRepository.save(any())).thenReturn(entity);
 
         PortCallOperationActTimingsActvtyDetailResponseDto result = 

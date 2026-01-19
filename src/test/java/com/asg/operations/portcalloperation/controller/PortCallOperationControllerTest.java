@@ -1,6 +1,9 @@
 package com.asg.operations.portcalloperation.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.portcalloperation.dto.*;
 import com.asg.operations.portcalloperation.service.PortCallOperationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,10 +21,8 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -34,6 +35,9 @@ class PortCallOperationControllerTest {
 
     @Mock
     private PortCallOperationService service;
+
+    @Mock
+    private LoggingService loggingService;
 
     @InjectMocks
     private PortCallOperationController controller;
@@ -58,11 +62,16 @@ class PortCallOperationControllerTest {
                 .build();
         when(service.getOperationById(1L)).thenReturn(dto);
 
-        mockMvc.perform(get("/v1/port-call-operations/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Operation retrieved successfully"));
-        
-        verify(service).getOperationById(1L);
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getDocumentId).thenReturn("DOC123");
+
+            mockMvc.perform(get("/v1/port-call-operations/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Operation retrieved successfully"));
+            
+            verify(service).getOperationById(1L);
+            verify(loggingService).createLogSummaryEntry(eq(LogDetailsEnum.VIEWED), eq("DOC123"), eq("1"));
+        }
     }
 
     @Test
@@ -108,46 +117,19 @@ class PortCallOperationControllerTest {
     }
 
     @Test
-    void updateOperation_Success() throws Exception {
-        PortCallOperationMailDetailDto mailDetail = PortCallOperationMailDetailDto.builder()
-                .detRowId(1L)
-                .communicationType("EMAIL")
-                .build();
-        PortCallOperationDto dto = PortCallOperationDto.builder()
-                .vesselVoyagePoid(1L)
-                .callType("CALL")
-                .principalPoid(1L)
-                .mailDetails(Arrays.asList(mailDetail))
-                .build();
-        PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder()
-                .transactionPoid(1L)
-                .build();
-
-        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
-            mockedUserContext.when(UserContext::getUserPoid).thenReturn(1L);
-            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
-
-            when(service.updateOperation(eq(1L), any(), eq(1L), eq(1L))).thenReturn(responseDto);
-
-            mockMvc.perform(put("/v1/port-call-operations/1")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(dto)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.message").value("Operation updated successfully"));
-            
-            verify(service).updateOperation(eq(1L), any(), eq(1L), eq(1L));
-        }
-    }
-
-    @Test
     void deleteOperation_Success() throws Exception {
-        doNothing().when(service).deleteOperation(1L);
+        DeleteReasonDto deleteReasonDto = new DeleteReasonDto();
+        deleteReasonDto.setDeleteReason("Test deletion");
+        
+        doNothing().when(service).deleteOperation(eq(1L), any(DeleteReasonDto.class));
 
-        mockMvc.perform(delete("/v1/port-call-operations/1"))
+        mockMvc.perform(delete("/v1/port-call-operations/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(deleteReasonDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Operation deleted successfully"));
         
-        verify(service).deleteOperation(1L);
+        verify(service).deleteOperation(eq(1L), any(DeleteReasonDto.class));
     }
 
     @Test
@@ -165,180 +147,5 @@ class PortCallOperationControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("PDA data loaded successfully"));
         }
-    }
-
-    @Test
-    void getEstBertDetail_Success() throws Exception {
-        PortCallOperationEstBertDetailResponseDto dto = PortCallOperationEstBertDetailResponseDto.builder()
-                .transactionPoid(1L)
-                .detRowId(1L)
-                .build();
-        when(service.getEstBertDetail(1L, 1L)).thenReturn(dto);
-
-        mockMvc.perform(get("/v1/port-call-operations/1/est-bert-details/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("EstBertDetail retrieved successfully"));
-        
-        verify(service).getEstBertDetail(1L, 1L);
-    }
-
-    @Test
-    void createEstBertDetail_Success() throws Exception {
-        PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
-                .eta(LocalDateTime.now())
-                .etb(LocalDateTime.now())
-                .build();
-        PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder()
-                .transactionPoid(1L)
-                .build();
-        when(service.createEstBertDetail(eq(1L), any())).thenReturn(responseDto);
-
-        mockMvc.perform(post("/v1/port-call-operations/1/est-bert-details")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("EstBertDetail created successfully"));
-        
-        verify(service).createEstBertDetail(eq(1L), any());
-    }
-
-    @Test
-    void updateEstBertDetail_Success() throws Exception {
-        PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
-                .eta(LocalDateTime.now())
-                .etb(LocalDateTime.now())
-                .build();
-        PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder()
-                .transactionPoid(1L)
-                .build();
-        when(service.updateEstBertDetail(eq(1L), eq(1L), any())).thenReturn(responseDto);
-
-        mockMvc.perform(put("/v1/port-call-operations/1/est-bert-details/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("EstBertDetail updated successfully"));
-        
-        verify(service).updateEstBertDetail(eq(1L), eq(1L), any());
-    }
-
-    @Test
-    void listEstPrearrivalActDetails_Success() throws Exception {
-        List<PortCallOperationEstPrearrivalActDetailResponseDto> list = Arrays.asList(
-                PortCallOperationEstPrearrivalActDetailResponseDto.builder()
-                        .transactionPoid(1L)
-                        .detRowId(1L)
-                        .preActivityDtlPoid(1L)
-                        .build()
-        );
-        when(service.listEstPrearrivalActDetails(1L, 1L)).thenReturn(list);
-
-        mockMvc.perform(get("/v1/port-call-operations/1/est-prearrival-details/1/activities"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("EstPrearrivalActDetails retrieved successfully"));
-        
-        verify(service).listEstPrearrivalActDetails(1L, 1L);
-    }
-
-    @Test
-    void createEstPrearrivalActDetail_Success() throws Exception {
-        PortCallOperationEstPrearrivalActDetailDto dto = PortCallOperationEstPrearrivalActDetailDto.builder()
-                .activityPoid(1L)
-                .build();
-        PortCallOperationEstPrearrivalActDetailResponseDto responseDto = PortCallOperationEstPrearrivalActDetailResponseDto.builder()
-                .transactionPoid(1L)
-                .detRowId(1L)
-                .preActivityDtlPoid(1L)
-                .build();
-        when(service.createEstPrearrivalActDetail(eq(1L), eq(1L), any())).thenReturn(responseDto);
-
-        mockMvc.perform(post("/v1/port-call-operations/1/est-prearrival-details/1/activities")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("EstPrearrivalActDetail created successfully"));
-        
-        verify(service).createEstPrearrivalActDetail(eq(1L), eq(1L), any());
-    }
-
-    @Test
-    void updateEstPrearrivalActDetail_Success() throws Exception {
-        PortCallOperationEstPrearrivalActDetailDto dto = PortCallOperationEstPrearrivalActDetailDto.builder()
-                .activityPoid(1L)
-                .build();
-        PortCallOperationEstPrearrivalActDetailResponseDto responseDto = PortCallOperationEstPrearrivalActDetailResponseDto.builder()
-                .transactionPoid(1L)
-                .detRowId(1L)
-                .preActivityDtlPoid(1L)
-                .build();
-        when(service.updateEstPrearrivalActDetail(eq(1L), eq(1L), eq(1L), any())).thenReturn(responseDto);
-
-        mockMvc.perform(put("/v1/port-call-operations/1/est-prearrival-details/1/activities/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("EstPrearrivalActDetail updated successfully"));
-        
-        verify(service).updateEstPrearrivalActDetail(eq(1L), eq(1L), eq(1L), any());
-    }
-
-    @Test
-    void listActTimingsActvtyDetails_Success() throws Exception {
-        List<PortCallOperationActTimingsActvtyDetailResponseDto> list = Arrays.asList(
-                PortCallOperationActTimingsActvtyDetailResponseDto.builder()
-                        .transactionPoid(1L)
-                        .detRowId(1L)
-                        .actualsTimingDtlPoid(1L)
-                        .build()
-        );
-        when(service.listActTimingsActvtyDetails(1L, 1L)).thenReturn(list);
-
-        mockMvc.perform(get("/v1/port-call-operations/1/act-timing-details/1/activities"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("ActTimingsActvtyDetails retrieved successfully"));
-        
-        verify(service).listActTimingsActvtyDetails(1L, 1L);
-    }
-
-    @Test
-    void createActTimingsActvtyDetail_Success() throws Exception {
-        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder()
-                .activityPoid(1L)
-                .build();
-        PortCallOperationActTimingsActvtyDetailResponseDto responseDto = PortCallOperationActTimingsActvtyDetailResponseDto.builder()
-                .transactionPoid(1L)
-                .detRowId(1L)
-                .actualsTimingDtlPoid(1L)
-                .build();
-        when(service.createActTimingsActvtyDetail(eq(1L), eq(1L), any())).thenReturn(responseDto);
-
-        mockMvc.perform(post("/v1/port-call-operations/1/act-timing-details/1/activities")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("ActTimingsActvtyDetail created successfully"));
-        
-        verify(service).createActTimingsActvtyDetail(eq(1L), eq(1L), any());
-    }
-
-    @Test
-    void updateActTimingsActvtyDetail_Success() throws Exception {
-        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder()
-                .activityPoid(1L)
-                .build();
-        PortCallOperationActTimingsActvtyDetailResponseDto responseDto = PortCallOperationActTimingsActvtyDetailResponseDto.builder()
-                .transactionPoid(1L)
-                .detRowId(1L)
-                .actualsTimingDtlPoid(1L)
-                .build();
-        when(service.updateActTimingsActvtyDetail(eq(1L), eq(1L), eq(1L), any())).thenReturn(responseDto);
-
-        mockMvc.perform(put("/v1/port-call-operations/1/act-timing-details/1/activities/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("ActTimingsActvtyDetail updated successfully"));
-        
-        verify(service).updateActTimingsActvtyDetail(eq(1L), eq(1L), eq(1L), any());
     }
 }

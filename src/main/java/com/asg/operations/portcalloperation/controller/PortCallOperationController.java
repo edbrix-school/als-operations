@@ -1,9 +1,12 @@
 package com.asg.operations.portcalloperation.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.portcalloperation.dto.PortCallOperationCreateDto;
 import com.asg.operations.portcalloperation.dto.PortCallOperationDto;
 import com.asg.operations.portcalloperation.dto.PortCallOperationEstBertDetailDto;
@@ -45,6 +48,7 @@ import static com.asg.common.lib.dto.response.ApiResponse.success;
 public class PortCallOperationController {
 
     private final PortCallOperationService portCallOperationService;
+    private final LoggingService loggingService;
 
     /**
      * Retrieves paginated list of port call operations.
@@ -84,6 +88,7 @@ public class PortCallOperationController {
         if (operation == null) {
             return notFound("Operation not found");
         }
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), id.toString());
         return success("Operation retrieved successfully", operation);
     }
 
@@ -129,6 +134,7 @@ public class PortCallOperationController {
      * Deletes a port call operation.
      *
      * @param id operation ID
+     * @param deleteReasonDto delete reason details
      * @return success response
      */
     @AllowedAction(UserRolesRightsEnum.DELETE)
@@ -138,8 +144,9 @@ public class PortCallOperationController {
             description = "Delete a port call operation",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<?> deleteOperation(@Parameter(description = "Operation ID") @PathVariable Long id) {
-        portCallOperationService.deleteOperation(id);
+    public ResponseEntity<?> deleteOperation(@Parameter(description = "Operation ID") @PathVariable Long id,
+                                             @Valid @RequestBody DeleteReasonDto deleteReasonDto) {
+        portCallOperationService.deleteOperation(id, deleteReasonDto);
         return success("Operation deleted successfully");
     }
 
