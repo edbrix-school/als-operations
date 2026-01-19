@@ -277,7 +277,14 @@ class PortCallOperationServiceImplTest {
                 .estimatedDatetime(LocalDateTime.now())
                 .build();
 
+        PortCallOperationHdr hdr = PortCallOperationHdr.builder()
+                .transactionPoid(transactionPoid)
+                .vesselVoyagePoid(1L)
+                .build();
+
         when(hdrRepository.existsById(transactionPoid)).thenReturn(true);
+        when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.of(hdr));
+        when(hdrRepository.findMaxTransactionPoidByVesselVoyagePoid(1L)).thenReturn(transactionPoid);
         when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
         when(estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId))
                 .thenReturn(0L);
@@ -308,7 +315,14 @@ class PortCallOperationServiceImplTest {
                 .preActivityDtlPoid(preActivityDtlPoid)
                 .build();
 
+        PortCallOperationHdr hdr = PortCallOperationHdr.builder()
+                .transactionPoid(transactionPoid)
+                .vesselVoyagePoid(1L)
+                .build();
+
         when(estPrearrivalActDtlRepository.findById(any())).thenReturn(Optional.of(entity));
+        when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.of(hdr));
+        when(hdrRepository.findMaxTransactionPoidByVesselVoyagePoid(1L)).thenReturn(transactionPoid);
         when(portActivityMasterRepository.existsByPortActivityTypePoid(2L)).thenReturn(true);
         when(estPrearrivalActDtlRepository.save(any())).thenReturn(entity);
 
@@ -351,7 +365,14 @@ class PortCallOperationServiceImplTest {
                 .estimatedDatetime(LocalDateTime.now())
                 .build();
 
+        PortCallOperationHdr hdr = PortCallOperationHdr.builder()
+                .transactionPoid(transactionPoid)
+                .vesselVoyagePoid(1L)
+                .build();
+
         when(hdrRepository.existsById(transactionPoid)).thenReturn(true);
+        when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.of(hdr));
+        when(hdrRepository.findMaxTransactionPoidByVesselVoyagePoid(1L)).thenReturn(transactionPoid);
         when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
         when(actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId))
                 .thenReturn(0L);
@@ -382,7 +403,14 @@ class PortCallOperationServiceImplTest {
                 .actualsTimingDtlPoid(actualsTimingDtlPoid)
                 .build();
 
+        PortCallOperationHdr hdr = PortCallOperationHdr.builder()
+                .transactionPoid(transactionPoid)
+                .vesselVoyagePoid(1L)
+                .build();
+
         when(actTimingsActvtyDtlRepository.findById(any())).thenReturn(Optional.of(entity));
+        when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.of(hdr));
+        when(hdrRepository.findMaxTransactionPoidByVesselVoyagePoid(1L)).thenReturn(transactionPoid);
         when(portActivityMasterRepository.existsByPortActivityTypePoid(2L)).thenReturn(true);
         when(actTimingsActvtyDtlRepository.save(any())).thenReturn(entity);
 
@@ -403,5 +431,144 @@ class PortCallOperationServiceImplTest {
 
         assertThrows(ResourceNotFoundException.class, 
             () -> service.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto));
+    }
+
+    @Test
+    void getDocsCopyDetail_Success() {
+        PortCallOperationDocsCopyDtl entity = PortCallOperationDocsCopyDtl.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(detRowId)
+                .documentFrom("source")
+                .documentList("list")
+                .documentSelect("Y")
+                .documentAttachments("attachment.pdf")
+                .build();
+
+        when(docsCopyDtlRepository.findById(any())).thenReturn(Optional.of(entity));
+
+        PortCallOperationDocsCopyDetailResponseDto result = service.getDocsCopyDetail(transactionPoid, detRowId);
+
+        assertNotNull(result);
+        assertEquals(transactionPoid, result.getTransactionPoid());
+        assertEquals(detRowId, result.getDetRowId());
+        assertEquals("source", result.getDocumentFrom());
+        verify(docsCopyDtlRepository).findById(any());
+    }
+
+    @Test
+    void getDocsCopyDetail_NotFound() {
+        when(docsCopyDtlRepository.findById(any())).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, 
+            () -> service.getDocsCopyDetail(transactionPoid, detRowId));
+    }
+
+    @Test
+    void createDocsCopyDetail_Success() {
+        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
+                .documentFrom("source")
+                .documentList("list")
+                .documentSelect("Y")
+                .documentAttachments("attachment.pdf")
+                .build();
+
+        PortCallOperationHdr hdr = PortCallOperationHdr.builder()
+                .transactionPoid(transactionPoid)
+                .vesselVoyagePoid(1L)
+                .build();
+
+        when(hdrRepository.existsById(transactionPoid)).thenReturn(true);
+        when(hdrRepository.findMaxTransactionPoidByVesselVoyagePoid(1L)).thenReturn(transactionPoid);
+        when(docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid)).thenReturn(0L);
+        when(docsCopyDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.of(hdr));
+        when(cargoDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(mailDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(estBertDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actTimingDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actCondDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actRmksDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actProgDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actCargoFigDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actBunkerDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(husbandryCrewDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(husbandryOthDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(docsCopyDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(docsMsgsDtl1Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(docsMsgsDtl2Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+
+        PortCallOperationResponseDto result = service.createDocsCopyDetail(transactionPoid, dto);
+
+        assertNotNull(result);
+        verify(hdrRepository).existsById(transactionPoid);
+        verify(docsCopyDtlRepository).findMaxDetRowIdByTransactionPoid(transactionPoid);
+        verify(docsCopyDtlRepository).save(any());
+    }
+
+    @Test
+    void createDocsCopyDetail_OperationNotFound() {
+        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder().build();
+
+        when(hdrRepository.existsById(transactionPoid)).thenReturn(false);
+
+        assertThrows(ResourceNotFoundException.class, 
+            () -> service.createDocsCopyDetail(transactionPoid, dto));
+    }
+
+    @Test
+    void updateDocsCopyDetail_Success() {
+        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
+                .documentFrom("updated source")
+                .documentList("updated list")
+                .documentSelect("N")
+                .documentAttachments("updated.pdf")
+                .build();
+
+        PortCallOperationDocsCopyDtl entity = PortCallOperationDocsCopyDtl.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(detRowId)
+                .build();
+
+        PortCallOperationHdr hdr = PortCallOperationHdr.builder()
+                .transactionPoid(transactionPoid)
+                .vesselVoyagePoid(1L)
+                .build();
+
+        when(docsCopyDtlRepository.findById(any())).thenReturn(Optional.of(entity));
+        when(hdrRepository.findMaxTransactionPoidByVesselVoyagePoid(1L)).thenReturn(transactionPoid);
+        when(docsCopyDtlRepository.save(any())).thenReturn(entity);
+        when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.of(hdr));
+        when(cargoDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(mailDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(estBertDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actTimingDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actCondDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actRmksDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actProgDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actCargoFigDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(actBunkerDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(husbandryCrewDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(husbandryOthDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(docsCopyDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(docsMsgsDtl1Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(docsMsgsDtl2Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+
+        PortCallOperationResponseDto result = service.updateDocsCopyDetail(transactionPoid, detRowId, dto);
+
+        assertNotNull(result);
+        verify(docsCopyDtlRepository).findById(any());
+        verify(docsCopyDtlRepository).save(any());
+    }
+
+    @Test
+    void updateDocsCopyDetail_NotFound() {
+        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder().build();
+
+        when(docsCopyDtlRepository.findById(any())).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, 
+            () -> service.updateDocsCopyDetail(transactionPoid, detRowId, dto));
     }
 }
