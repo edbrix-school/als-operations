@@ -16,6 +16,7 @@ import com.asg.operations.finaldisbursementaccount.repository.PdaFdaHdrRepositor
 import com.asg.operations.finaldisbursementaccount.repository.ShipVoyageHdrRepository;
 import com.asg.operations.pdaentryform.repository.PdaEntryHdrRepository;
 import com.asg.operations.pdaporttariffmaster.repository.ShipPortMasterRepository;
+import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
 import com.asg.operations.portcalloperation.dto.*;
 import com.asg.operations.portcalloperation.entity.*;
 import com.asg.operations.portcalloperation.repository.*;
@@ -79,6 +80,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final PortCallReportHdrRepository portCallReportHdrRepository;
     private final StockUnitMasterRepository stockUnitMasterRepository;
     private final GlobalUserRepository globalUserRepository;
+    private final PortActivityMasterRepository portActivityMasterRepository;
 
 
     @Override
@@ -159,9 +161,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .mailDetails(mapMailDetailsToResponse(mailDetails))
                 .estBertDetails(mapEstBertDetailsToResponse(estBertDetails))
                 .estPrearrivalDetails(mapEstPrearrivalDetailsToResponse(estPrearrivalDetails))
-//                .estPrearrivalActDetails(mapEstPrearrivalActDetailsToResponse(estPrearrivalActDetails))
                 .actTimingDetails(mapActTimingDetailsToResponse(actTimingDetails))
-//                .actTimingsActvtyDetails(mapActTimingsActvtyDetailsToResponse(actTimingsActvtyDetails))
                 .actCondDetails(mapActCondDetailsToResponse(actCondDetails))
                 .actRmksDetails(mapActRmksDetailsToResponse(actRmksDetails))
                 .actProgDetails(mapActProgDetailsToResponse(actProgDetails))
@@ -1943,6 +1943,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
+        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
+            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        }
 
         Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository
                 .findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
@@ -1980,6 +1983,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         PortCallOperationEstPrearrivalActDtl entity = estPrearrivalActDtlRepository
                 .findById(new PortCallOperationEstPrearrivalActDtlId(transactionPoid, detRowId, preActivityDtlPoid))
                 .orElseThrow(() -> new ResourceNotFoundException("EstPrearrivalActDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", preActivityDtlPoid", preActivityDtlPoid));
+
+        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
+            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        }
 
         entity.setActivityPoid(dto.getActivityPoid());
         entity.setOtherDescription(dto.getOtherDescription());
@@ -2026,6 +2033,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
+        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
+            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        }
 
         Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository
                 .findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
@@ -2063,6 +2073,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         PortCallOperationActTimingsActvtyDtl entity = actTimingsActvtyDtlRepository
                 .findById(new PortCallOperationActTimingsActvtyDtlId(transactionPoid, detRowId, actualsTimingDtlPoid))
                 .orElseThrow(() -> new ResourceNotFoundException("ActTimingsActvtyDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", actualsTimingDtlPoid", actualsTimingDtlPoid));
+
+        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
+            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        }
 
         entity.setActivityPoid(dto.getActivityPoid());
         entity.setDetails(dto.getDetails());

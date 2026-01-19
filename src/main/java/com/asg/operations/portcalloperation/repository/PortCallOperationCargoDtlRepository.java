@@ -14,7 +14,7 @@ public interface PortCallOperationCargoDtlRepository extends JpaRepository<PortC
     void deleteByTransactionPoid(Long transactionPoid);
 
     List<PortCallOperationCargoDtl> findByTransactionPoid(Long transactionPoid);
-    
+
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationCargoDtl d where d.transactionPoid = :transactionPoid")
     Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
 }

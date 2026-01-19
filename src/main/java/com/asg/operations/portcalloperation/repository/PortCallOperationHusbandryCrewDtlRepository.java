@@ -12,7 +12,9 @@ import java.util.List;
 @Repository
 public interface PortCallOperationHusbandryCrewDtlRepository extends JpaRepository<PortCallOperationHusbandryCrewDtl, PortCallOperationHusbandryCrewDtlId> {
     void deleteByTransactionPoid(Long transactionPoid);
+
     List<PortCallOperationHusbandryCrewDtl> findByTransactionPoid(Long transactionPoid);
+
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationHusbandryCrewDtl d where d.transactionPoid = :transactionPoid")
     Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
 }
