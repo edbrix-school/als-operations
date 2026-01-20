@@ -15,6 +15,8 @@ public interface PortCallOperationEstPrearrivalActDtlRepository extends JpaRepos
 
     List<PortCallOperationEstPrearrivalActDtl> findByTransactionPoid(Long transactionPoid);
 
+    List<PortCallOperationEstPrearrivalActDtl> findByTransactionPoidOrderByLastModifiedDateDesc(Long transactionPoid);
+
     List<PortCallOperationEstPrearrivalActDtl> findByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
 
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationEstPrearrivalActDtl d where d.transactionPoid = :transactionPoid")
