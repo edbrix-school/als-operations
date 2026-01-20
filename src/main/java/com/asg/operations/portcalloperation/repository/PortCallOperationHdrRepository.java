@@ -19,4 +19,7 @@ public interface PortCallOperationHdrRepository extends JpaRepository<PortCallOp
             "(:id IS NULL OR p.transactionPoid != :id)")
     boolean existsByDocRefAndNotDeleted(@Param("docRef") String docRef, @Param("id") Long id);
 
+    @Query("SELECT MAX(p.transactionPoid) FROM PortCallOperationHdr p WHERE p.vesselVoyagePoid = :vesselVoyagePoid AND (p.deleted IS NULL OR p.deleted != 'Y')")
+    Long findMaxTransactionPoidByVesselVoyagePoid(@Param("vesselVoyagePoid") Long vesselVoyagePoid);
+
 }

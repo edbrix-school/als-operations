@@ -42,6 +42,8 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -1980,12 +1982,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto) {
         log.info("Updating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}, preActivityDtlPoid: {}", transactionPoid, detRowId, preActivityDtlPoid);
 
-        PortCallOperationEstPrearrivalActDtl entity = estPrearrivalActDtlRepository
-                .findById(new PortCallOperationEstPrearrivalActDtlId(transactionPoid, detRowId, preActivityDtlPoid))
+        PortCallOperationEstPrearrivalActDtl entity = estPrearrivalActDtlRepository.findById(new PortCallOperationEstPrearrivalActDtlId(transactionPoid, detRowId, preActivityDtlPoid))
                 .orElseThrow(() -> new ResourceNotFoundException("EstPrearrivalActDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", preActivityDtlPoid", preActivityDtlPoid));
 
         if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
             throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        }
+
+        PortCallOperationEstPrearrivalActDtl latestRecord = estPrearrivalActDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
+        if (!latestRecord.getPreActivityDtlPoid().equals(preActivityDtlPoid)) {
+            throw new ValidationException("Cannot edit this record. Please select a latest one");
         }
 
         entity.setActivityPoid(dto.getActivityPoid());
@@ -2070,14 +2076,17 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActvtyDetailDto dto) {
         log.info("Updating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}, actualsTimingDtlPoid: {}", transactionPoid, detRowId, actualsTimingDtlPoid);
 
-        PortCallOperationActTimingsActvtyDtl entity = actTimingsActvtyDtlRepository
-                .findById(new PortCallOperationActTimingsActvtyDtlId(transactionPoid, detRowId, actualsTimingDtlPoid))
+        PortCallOperationActTimingsActvtyDtl entity = actTimingsActvtyDtlRepository.findById(new PortCallOperationActTimingsActvtyDtlId(transactionPoid, detRowId, actualsTimingDtlPoid))
                 .orElseThrow(() -> new ResourceNotFoundException("ActTimingsActvtyDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", actualsTimingDtlPoid", actualsTimingDtlPoid));
 
         if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
             throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
         }
 
+        PortCallOperationActTimingsActvtyDtl latestRecord = actTimingsActvtyDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
+        if (!latestRecord.getActualsTimingDtlPoid().equals(actualsTimingDtlPoid)) {
+            throw new ValidationException("Cannot edit this record. Please select a latest one");
+        }
         entity.setActivityPoid(dto.getActivityPoid());
         entity.setDetails(dto.getDetails());
         entity.setEstimatedDatetime(dto.getEstimatedDatetime());
@@ -2094,5 +2103,74 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .details(entity.getDetails())
                 .estimatedDatetime(entity.getEstimatedDatetime())
                 .build();
+    }
+
+    @Override
+    public PortCallOperationDocsCopyDetailResponseDto getDocsCopyDetail(Long transactionPoid, Long detRowId) {
+        log.info("Fetching DocsCopyDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+
+        PortCallOperationDocsCopyDtl entity = docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detRowId))
+                .orElseThrow(() -> new ResourceNotFoundException("DocsCopyDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
+
+        return PortCallOperationDocsCopyDetailResponseDto.builder()
+                .transactionPoid(entity.getTransactionPoid())
+                .detRowId(entity.getDetRowId())
+                .documentFrom(entity.getDocumentFrom())
+                .documentList(entity.getDocumentList())
+                .documentSelect(entity.getDocumentSelect())
+                .documentAttachments(entity.getDocumentAttachments())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public PortCallOperationResponseDto createDocsCopyDetail(Long transactionPoid, PortCallOperationDocsCopyDetailDto dto) {
+        log.info("Creating DocsCopyDetail for transactionPoid: {}", transactionPoid);
+
+        if (!hdrRepository.existsById(transactionPoid)) {
+            throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
+        }
+
+        Long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+
+        PortCallOperationDocsCopyDtl entity = PortCallOperationDocsCopyDtl.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(nextDetRowId)
+                .documentFrom(dto.getDocumentFrom())
+                .documentList(dto.getDocumentList())
+                .documentSelect(dto.getDocumentSelect())
+                .documentAttachments(dto.getDocumentAttachments())
+                .createdBy(UserContext.getUserId())
+                .createdDate(LocalDateTime.now())
+                .lastModifiedBy(UserContext.getUserId())
+                .lastModifiedDate(LocalDateTime.now())
+                .build();
+
+        docsCopyDtlRepository.save(entity);
+        return getOperationById(transactionPoid);
+    }
+
+    @Override
+    @Transactional
+    public PortCallOperationResponseDto updateDocsCopyDetail(Long transactionPoid, Long detRowId, PortCallOperationDocsCopyDetailDto dto) {
+        log.info("Updating DocsCopyDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+
+        PortCallOperationDocsCopyDtl entity = docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detRowId))
+                .orElseThrow(() -> new ResourceNotFoundException("DocsCopyDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
+
+        PortCallOperationDocsCopyDtl latestRecord = docsCopyDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
+        if (!latestRecord.getDetRowId().equals(detRowId)) {
+            throw new ValidationException("Cannot edit this record. Please select a latest one");
+        }
+
+        entity.setDocumentFrom(dto.getDocumentFrom());
+        entity.setDocumentList(dto.getDocumentList());
+        entity.setDocumentSelect(dto.getDocumentSelect());
+        entity.setDocumentAttachments(dto.getDocumentAttachments());
+        entity.setLastModifiedBy(UserContext.getUserId());
+        entity.setLastModifiedDate(LocalDateTime.now());
+
+        docsCopyDtlRepository.save(entity);
+        return getOperationById(transactionPoid);
     }
 }

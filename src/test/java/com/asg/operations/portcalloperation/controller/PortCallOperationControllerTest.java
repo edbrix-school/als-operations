@@ -148,4 +148,249 @@ class PortCallOperationControllerTest {
                     .andExpect(jsonPath("$.message").value("PDA data loaded successfully"));
         }
     }
+
+    @Test
+    void updateOperation_Success() throws Exception {
+        PortCallOperationMailDetailDto mailDetail = PortCallOperationMailDetailDto.builder()
+                .detRowId(1L)
+                .communicationType("EMAIL")
+                .build();
+        PortCallOperationDto dto = PortCallOperationDto.builder()
+                .vesselVoyagePoid(1L)
+                .callType("CALL")
+                .principalPoid(1L)
+                .mailDetails(Arrays.asList(mailDetail))
+                .build();
+        PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder().transactionPoid(1L).build();
+
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getUserPoid).thenReturn(1L);
+            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
+
+            when(service.updateOperation(eq(1L), any(), eq(1L), eq(1L))).thenReturn(responseDto);
+
+            mockMvc.perform(put("/v1/port-call-operations/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Operation updated successfully"));
+        }
+    }
+
+    @Test
+    void loadFda_Success() throws Exception {
+        Map<String, Object> result = new HashMap<>();
+
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
+            mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
+            mockedUserContext.when(UserContext::getUserPoid).thenReturn(1L);
+
+            when(service.loadFda(eq("123"), eq(1L), eq(100L), eq(1L))).thenReturn(result);
+
+            mockMvc.perform(get("/v1/port-call-operations/load-fda/123"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("FDA data loaded successfully"));
+        }
+    }
+
+    @Test
+    void loadVoyage_Success() throws Exception {
+        Map<String, Object> result = new HashMap<>();
+
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
+            mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
+            mockedUserContext.when(UserContext::getUserPoid).thenReturn(1L);
+
+            when(service.loadVoyage(eq(123L), eq(1L), eq(100L), eq(1L))).thenReturn(result);
+
+            mockMvc.perform(get("/v1/port-call-operations/load-voyage/123"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Voyage data loaded successfully"));
+        }
+    }
+
+    @Test
+    void getEstBertDetail_Success() throws Exception {
+        PortCallOperationEstBertDetailResponseDto dto = PortCallOperationEstBertDetailResponseDto.builder().build();
+        when(service.getEstBertDetail(1L, 1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/v1/port-call-operations/1/est-bert-details/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("EstBertDetail retrieved successfully"));
+    }
+
+    @Test
+    void createEstBertDetail_Success() throws Exception {
+        PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
+                .eta(java.time.LocalDateTime.now())
+                .etb(java.time.LocalDateTime.now().plusHours(2))
+                .build();
+        PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder().build();
+        when(service.createEstBertDetail(eq(1L), any())).thenReturn(responseDto);
+
+        mockMvc.perform(post("/v1/port-call-operations/1/est-bert-details")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("EstBertDetail created successfully"));
+    }
+
+    @Test
+    void updateEstBertDetail_Success() throws Exception {
+        PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
+                .eta(java.time.LocalDateTime.now())
+                .etb(java.time.LocalDateTime.now().plusHours(2))
+                .build();
+        PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder().build();
+        when(service.updateEstBertDetail(eq(1L), eq(1L), any())).thenReturn(responseDto);
+
+        mockMvc.perform(put("/v1/port-call-operations/1/est-bert-details/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("EstBertDetail updated successfully"));
+    }
+
+    @Test
+    void createEstPrearrivalActDetail_Success() throws Exception {
+        PortCallOperationEstPrearrivalActDetailDto dto = PortCallOperationEstPrearrivalActDetailDto.builder().build();
+        PortCallOperationEstPrearrivalActDetailResponseDto responseDto = PortCallOperationEstPrearrivalActDetailResponseDto.builder().build();
+        
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getDocumentId).thenReturn("DOC123");
+            
+            when(service.createEstPrearrivalActDetail(eq(1L), eq(1L), any())).thenReturn(responseDto);
+
+            mockMvc.perform(post("/v1/port-call-operations/1/est-prearrival-details/1/activities")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("EstPrearrivalActDetail created successfully"));
+            
+            verify(loggingService).createLogSummaryEntry(eq(LogDetailsEnum.CREATED), eq("DOC123"), eq("1"));
+        }
+    }
+
+    @Test
+    void updateEstPrearrivalActDetail_Success() throws Exception {
+        PortCallOperationEstPrearrivalActDetailDto dto = PortCallOperationEstPrearrivalActDetailDto.builder().build();
+        PortCallOperationEstPrearrivalActDetailResponseDto responseDto = PortCallOperationEstPrearrivalActDetailResponseDto.builder().build();
+        
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getDocumentId).thenReturn("DOC123");
+            
+            when(service.updateEstPrearrivalActDetail(eq(1L), eq(1L), eq(1L), any())).thenReturn(responseDto);
+
+            mockMvc.perform(put("/v1/port-call-operations/1/est-prearrival-details/1/activities/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("EstPrearrivalActDetail updated successfully"));
+            
+            verify(loggingService).createLogSummaryEntry(eq(LogDetailsEnum.MODIFIED), eq("DOC123"), eq("1"));
+        }
+    }
+
+    @Test
+    void createActTimingsActvtyDetail_Success() throws Exception {
+        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder().build();
+        PortCallOperationActTimingsActvtyDetailResponseDto responseDto = PortCallOperationActTimingsActvtyDetailResponseDto.builder().build();
+        
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getDocumentId).thenReturn("DOC123");
+            
+            when(service.createActTimingsActvtyDetail(eq(1L), eq(1L), any())).thenReturn(responseDto);
+
+            mockMvc.perform(post("/v1/port-call-operations/1/act-timing-details/1/activities")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("ActTimingsActvtyDetail created successfully"));
+            
+            verify(loggingService).createLogSummaryEntry(eq(LogDetailsEnum.CREATED), eq("DOC123"), eq("1"));
+        }
+    }
+
+    @Test
+    void updateActTimingsActvtyDetail_Success() throws Exception {
+        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder().build();
+        PortCallOperationActTimingsActvtyDetailResponseDto responseDto = PortCallOperationActTimingsActvtyDetailResponseDto.builder().build();
+        
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getDocumentId).thenReturn("DOC123");
+            
+            when(service.updateActTimingsActvtyDetail(eq(1L), eq(1L), eq(1L), any())).thenReturn(responseDto);
+
+            mockMvc.perform(put("/v1/port-call-operations/1/act-timing-details/1/activities/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("ActTimingsActvtyDetail updated successfully"));
+            
+            verify(loggingService).createLogSummaryEntry(eq(LogDetailsEnum.MODIFIED), eq("DOC123"), eq("1"));
+        }
+    }
+
+    @Test
+    void getDocsCopyDetail_Success() throws Exception {
+        PortCallOperationDocsCopyDetailResponseDto dto = PortCallOperationDocsCopyDetailResponseDto.builder().build();
+        
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getDocumentId).thenReturn("DOC123");
+            
+            when(service.getDocsCopyDetail(1L, 1L)).thenReturn(dto);
+
+            mockMvc.perform(get("/v1/port-call-operations/1/docs-copy-details/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("DocsCopyDetail retrieved successfully"));
+            
+            verify(loggingService).createLogSummaryEntry(eq(LogDetailsEnum.VIEWED), eq("DOC123"), eq("1"));
+        }
+    }
+
+    @Test
+    void createDocsCopyDetail_Success() throws Exception {
+        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
+                .documentAttachments("test-attachment.pdf")
+                .build();
+        PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder().build();
+        
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getDocumentId).thenReturn("DOC123");
+            
+            when(service.createDocsCopyDetail(eq(1L), any())).thenReturn(responseDto);
+
+            mockMvc.perform(post("/v1/port-call-operations/1/docs-copy-details")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("DocsCopyDetail created successfully"));
+            
+            verify(loggingService).createLogSummaryEntry(eq(LogDetailsEnum.CREATED), eq("DOC123"), eq("1"));
+        }
+    }
+
+    @Test
+    void updateDocsCopyDetail_Success() throws Exception {
+        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
+                .documentAttachments("updated-attachment.pdf")
+                .build();
+        PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder().build();
+        
+        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
+            mockedUserContext.when(UserContext::getDocumentId).thenReturn("DOC123");
+            
+            when(service.updateDocsCopyDetail(eq(1L), eq(1L), any())).thenReturn(responseDto);
+
+            mockMvc.perform(put("/v1/port-call-operations/1/docs-copy-details/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("DocsCopyDetail updated successfully"));
+            
+            verify(loggingService).createLogSummaryEntry(eq(LogDetailsEnum.MODIFIED), eq("DOC123"), eq("1"));
+        }
+    }
 }
