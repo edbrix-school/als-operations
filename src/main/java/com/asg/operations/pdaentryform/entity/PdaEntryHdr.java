@@ -1,5 +1,6 @@
 package com.asg.operations.pdaentryform.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -26,10 +27,10 @@ public class PdaEntryHdr {
     @Column(name = "TRANSACTION_DATE", nullable = false)
     @NotNull
     private LocalDate transactionDate;
-
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
-
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
@@ -311,22 +312,22 @@ public class PdaEntryHdr {
 
     @Column(name = "ACCTS_RETURNED_DATE")
     private LocalDate acctsReturnedDate;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     @Size(max = 1)
     private String deleted;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     @Size(max = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     @Size(max = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 

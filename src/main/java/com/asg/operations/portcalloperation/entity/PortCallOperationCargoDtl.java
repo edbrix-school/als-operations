@@ -1,5 +1,6 @@
 package com.asg.operations.portcalloperation.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -55,7 +56,7 @@ public class PortCallOperationCargoDtl {
 
     @Column(name = "RECEIVER", length = 300)
     private String receiver;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
 

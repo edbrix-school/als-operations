@@ -1,5 +1,6 @@
 package com.asg.operations.pdaporttariffmaster.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,7 +26,7 @@ public class ShipChargeMaster {
     @Id
     @Column(name = "CHARGE_POID", nullable = false)
     private BigDecimal chargePoid;  // Trigger will populate this, so no @GeneratedValue
-
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private BigDecimal groupPoid;
 
@@ -58,22 +59,22 @@ public class ShipChargeMaster {
 
     @Column(name = "SEQNO")
     private BigDecimal seqNo;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 
     @Column(name = "CHARGE_APPLICABLE_TYPE", length = 25)
     private String chargeApplicableType;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 

@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,10 +23,10 @@ public class ShipVoyageHdr {
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
-
+    @AuditIgnore
     @Column(name = "GROUP_POID", nullable = false)
     private Long groupPoid;
-
+    @AuditIgnore
     @Column(name = "COMPANY_POID", nullable = false)
     private Long companyPoid;
 
@@ -87,21 +88,21 @@ public class ShipVoyageHdr {
     @Column(name = "CUSTOM_REGDATE")
     @Temporal(TemporalType.DATE)
     private Date customRegDate;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastModifiedDate;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 

@@ -470,9 +470,14 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         ContractCrewDtlId id = new ContractCrewDtlId(crewPoid, detailRequest.getDetRowId());
         ContractCrewDtl detail = crewDtlRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
 
-        entityMapper.updateContractCrewDtlEntity(detail, detailRequest);
-        crewDtlRepository.save(detail);
+        ContractCrewDtl oldDetail = new ContractCrewDtl();
+        BeanUtils.copyProperties(detail, oldDetail);
 
+        entityMapper.updateContractCrewDtlEntity(detail, detailRequest);
+        detail = crewDtlRepository.save(detail);
+
+        String logDetail = String.format("KeyId = CREW_POID %s: DET_ROW_ID %s", detail.getId().getCrewPoid(), detail.getId().getDetRowId());
+        loggingService.createLog(oldDetail, detail, ContractCrewDtl.class, UserContext.getDocumentId(), crewPoid.toString(), logDetail);
     }
 
 
@@ -543,9 +548,13 @@ public class ContractCrewServiceImpl implements ContractCrewService {
                     Optional<ContractCrewDtl> existingDetail = crewDtlRepository.findById(id);
                     if (existingDetail.isPresent()) {
                         ContractCrewDtl detail = existingDetail.get();
+                        ContractCrewDtl oldDetail = new ContractCrewDtl();
+                        BeanUtils.copyProperties(detail, oldDetail);
                         entityMapper.updateContractCrewDtlEntity(detail, detailRequest);
                         detail = crewDtlRepository.save(detail);
                         savedDetails.add(detail);
+                        String logDetail = String.format("KeyId = CREW_POID %s: DET_ROW_ID %s", detail.getId().getCrewPoid(), detail.getId().getDetRowId());
+                        loggingService.createLog(oldDetail, detail, ContractCrewDtl.class, UserContext.getDocumentId(), crewPoid.toString(), logDetail);
                     }
                 } else if ("iscreated".equalsIgnoreCase(action)) {
                     // Insert new record

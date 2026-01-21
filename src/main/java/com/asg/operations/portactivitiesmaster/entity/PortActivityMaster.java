@@ -1,5 +1,6 @@
 package com.asg.operations.portactivitiesmaster.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedBy;
@@ -24,7 +25,7 @@ public class PortActivityMaster {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PORT_ACTIVITY_TYPE_POID")
     private Long portActivityTypePoid;
-
+    @AuditIgnore
     @Column(name = "GROUP_POID", nullable = false)
     private Long groupPoid;
 
@@ -43,23 +44,23 @@ public class PortActivityMaster {
 
     @Column(name = "SEQNO")
     private Long seqno;
-
+    @AuditIgnore
     @CreatedBy
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    @AuditIgnore
     @CreatedDate
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @LastModifiedBy
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @LastModifiedDate
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     @Builder.Default
     private String deleted = "N";

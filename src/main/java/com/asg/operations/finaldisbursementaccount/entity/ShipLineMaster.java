@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,7 +24,7 @@ public class ShipLineMaster {
     @SequenceGenerator(name = "ship_line_seq", sequenceName = "SHIP_LINE_MASTER_SEQ", allocationSize = 1)
     @Column(name = "LINE_POID")
     private Long linePoid;
-
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
 
@@ -64,21 +65,21 @@ public class ShipLineMaster {
 
     @Column(name = "SEQNO")
     private Integer seqNo;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastModifiedDate;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 

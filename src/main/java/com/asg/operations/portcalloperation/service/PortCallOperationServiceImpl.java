@@ -912,7 +912,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         hdr.setHusbandryCrewReqBy(dto.getHusbandryCrewReqBy());
 
-        hdrRepository.save(hdr);
+        hdr = hdrRepository.save(hdr);
 
         // Update cargo details with actionType
         if (dto.getCargoDetails() != null && !dto.getCargoDetails().isEmpty()) {
@@ -944,6 +944,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 } else if (action == ActionType.isUpdated) {
                     cargoDtlRepository.findById(new PortCallOperationCargoDtlId(id, cargoDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationCargoDtl oldDetail = new PortCallOperationCargoDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                
                                 existing.setProductName(cargoDto.getProductName());
                                 existing.setPortCargoName(cargoDto.getPortCargoName());
                                 existing.setQtyMt(cargoDto.getQtyMt());
@@ -956,7 +959,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setReceiver(cargoDto.getReceiver());
                                 existing.setLastModifiedBy(UserContext.getUserId());
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                cargoDtlRepository.save(existing);
+                                existing = cargoDtlRepository.save(existing);
+                                
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationCargoDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });
                 }
             }
@@ -987,6 +993,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 } else if (action == ActionType.isUpdated) {
                     mailDtlRepository.findById(new PortCallOperationMailDtlId(id, mailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationMailDtl oldDetail = new PortCallOperationMailDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                
                                 existing.setCommunicationType(mailDto.getCommunicationType());
                                 existing.setCommunicationMode(mailDto.getCommunicationMode());
                                 existing.setCompany(mailDto.getCompany());
@@ -994,7 +1003,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setEmailIds(mailDto.getEmailIds());
                                 existing.setLastModifiedBy(UserContext.getUserId());
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                mailDtlRepository.save(existing);
+                                existing = mailDtlRepository.save(existing);
+                                
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationMailDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });
                 }
             }

@@ -1,5 +1,6 @@
 package com.asg.operations.portcalloperation.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,21 +18,21 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class PortCallOperationHdr {
-
+    @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long transactionPoid;
-
+    @AuditIgnore
     @Column(name = "TRANSACTION_DATE", nullable = false)
     private LocalDate transactionDate;
-
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
-
+    @AuditIgnore
     @Column(name = "DOC_REF", length = 25, unique = true)
     private String docRef;
-
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
@@ -49,10 +50,8 @@ public class PortCallOperationHdr {
 
     @Column(name = "VESSEL_TYPE_POID")
     private Long vesselTypePoid;
-
     @Column(name = "OPERATOR_NAME", length = 300)
     private String operatorName;
-
     @Column(name = "CHARTERER_NAME", length = 300)
     private String chartererName;
 
@@ -97,7 +96,7 @@ public class PortCallOperationHdr {
 
     @Column(name = "PORT_CALL_ACTUAL_TIMING_REMARKS", length = 1000)
     private String portCallActualTimingRemarks;
-
+    @AuditIgnore
     @Column(name = "HUSBANDRY_CREW_REQ_BY", length = 100)
     private String husbandryCrewReqBy;
 
@@ -106,19 +105,19 @@ public class PortCallOperationHdr {
 
     @Column(name = "STATUS", length = 100)
     private String status;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
