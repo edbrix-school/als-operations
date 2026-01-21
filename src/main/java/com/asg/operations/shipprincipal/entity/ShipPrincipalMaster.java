@@ -1,5 +1,6 @@
 package com.asg.operations.shipprincipal.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,10 +28,10 @@ public class ShipPrincipalMaster {
 
     @Column(name = "PRINCIPAL_NAME2", length = 100)
     private String principalName2;
-
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
-
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
@@ -87,19 +88,19 @@ public class ShipPrincipalMaster {
 
     @Column(name = "PRINCIPAL_CODE_OLD", length = 20)
     private String principalCodeOld;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 

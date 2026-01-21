@@ -316,6 +316,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     @Override
     public List<PdaEntryChargeDetailResponse> bulkSaveChargeDetails(Long transactionPoid, BulkSaveChargeDetailsRequest request, Long groupPoid, Long companyPoid, String userId) {
+        logger.info("[AUDIT-LOG] bulkSaveChargeDetails called - transactionPoid: {}, chargeDetails count: {}", 
+            transactionPoid, request.getChargeDetails() != null ? request.getChargeDetails().size() : 0);
 
         // Validate transaction exists and is editable
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
@@ -336,11 +338,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Process creates and updates
         if (request.getChargeDetails() != null) {
             for (PdaEntryChargeDetailRequest detailRequest : request.getChargeDetails()) {
+                logger.info("[AUDIT-LOG] Processing charge detail - detRowId: {}, chargePoid: {}", 
+                    detailRequest.getDetRowId(), detailRequest.getChargePoid());
                 if (detailRequest.getDetRowId() == null) {
                     // Create new
+                    logger.info("[AUDIT-LOG] Creating new charge detail");
                     createChargeDetail(transactionPoid, detailRequest, userId, now, companyPoid);
                 } else {
                     // Update existing
+                    logger.info("[AUDIT-LOG] Updating existing charge detail with detRowId: {}", detailRequest.getDetRowId());
                     updateChargeDetail(transactionPoid, detailRequest, userId, now, companyPoid);
                 }
             }
@@ -358,6 +364,42 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Return updated list
         return getChargeDetails(transactionPoid, groupPoid, companyPoid);
+    }
+
+    @Override
+    public PdaEntryChargeDetailResponse updateChargeDetail(Long transactionPoid, Long detRowId, 
+                                                           PdaEntryChargeDetailRequest request, 
+                                                           Long groupPoid, Long companyPoid, String userId) {
+        // Validate transaction exists and is editable
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException(
+                "PDA Entry not found with id: " + transactionPoid
+        ));
+
+        if (!canEdit(entry)) {
+            throw new ValidationException(
+                    "Entry cannot be edited",
+                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
+            );
+        }
+
+        // Set detRowId from path parameter to prevent mismatch
+        request.setDetRowId(detRowId);
+        
+        // Update the charge detail
+        updateChargeDetail(transactionPoid, request, userId, LocalDateTime.now(), companyPoid);
+        
+        // Recalculate header total
+        recalculateHeaderTotalAmount(transactionPoid, userId);
+        
+        // Return updated detail
+        PdaEntryDtlId detailId = new PdaEntryDtlId(transactionPoid, detRowId);
+        PdaEntryDtl detail = entryDtlRepository.findById(detailId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Charge detail not found with id: " + detRowId
+                ));
+        return toChargeDetailResponse(detail);
     }
 
     @Override
@@ -1390,12 +1432,22 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private void updateChargeDetail(Long transactionPoid, PdaEntryChargeDetailRequest request,
                                     String userId, LocalDateTime now, Long companyPoid) {
+        logger.info("[AUDIT-LOG] Updating charge detail - transactionPoid: {}, detRowId: {}", transactionPoid, request.getDetRowId());
+        
         // Validate detail exists
         PdaEntryDtlId detailId = new PdaEntryDtlId(transactionPoid, request.getDetRowId());
         PdaEntryDtl detail = entryDtlRepository.findById(detailId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Charge detail not found with id: " + request.getDetRowId()
                 ));
+
+        // Create old detail copy with proper ID
+        PdaEntryDtl oldDetail = new PdaEntryDtl();
+        oldDetail.setTransactionPoid(detail.getTransactionPoid());
+        oldDetail.setDetRowId(detail.getDetRowId());
+        BeanUtils.copyProperties(detail, oldDetail);
+        logger.info("[AUDIT-LOG] Old detail copied - transactionPoid: {}, detRowId: {}, qty: {}, rate: {}", 
+            oldDetail.getTransactionPoid(), oldDetail.getDetRowId(), oldDetail.getQty(), oldDetail.getPdaRate());
 
         // Validate required fields
         validateChargeDetailRequest(request);
@@ -1442,8 +1494,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         detail.setLastModifiedBy(userId);
         detail.setLastModifiedDate(now);
 
-        // Save
-        entryDtlRepository.save(detail);
+        // Save and log
+        detail = entryDtlRepository.save(detail);
+        entityManager.flush();
+        logger.info("[AUDIT-LOG] Detail saved and flushed - qty: {}, rate: {}", detail.getQty(), detail.getPdaRate());
+
+        String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", detail.getTransactionPoid(), detail.getDetRowId());
+        logger.info("[AUDIT-LOG] Calling loggingService.createLog with logDetail: {}", logDetail);
+        loggingService.createLog(oldDetail, detail, PdaEntryDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+        logger.info("[AUDIT-LOG] Logging completed for detRowId: {}", detail.getDetRowId());
     }
 
     private void deleteChargeDetailRecord(Long transactionPoid, Long detRowId) {

@@ -1,5 +1,6 @@
 package com.asg.operations.portcalloperation.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,11 +17,11 @@ import java.time.LocalDateTime;
 @Builder
 @IdClass(PortCallOperationActTimingDtlId.class)
 public class PortCallOperationActTimingDtl {
-
+    @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
-
+    @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID")
     private Long detRowId;
@@ -34,16 +35,16 @@ public class PortCallOperationActTimingDtl {
 
     @Column(name = "EMAIL_POID")
     private Long emailPoid;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 

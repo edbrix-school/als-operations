@@ -43,6 +43,11 @@ public interface PdaEntryService {
     List<PdaEntryChargeDetailResponse> bulkSaveChargeDetails(Long transactionPoid, BulkSaveChargeDetailsRequest request, Long groupPoid, Long companyPoid, String userId);
 
     /**
+     * Update single charge detail
+     */
+    PdaEntryChargeDetailResponse updateChargeDetail(Long transactionPoid, Long detRowId, PdaEntryChargeDetailRequest request, Long groupPoid, Long companyPoid, String userId);
+
+    /**
      * Delete single charge detail
      */
     void deleteChargeDetail(Long transactionPoid, Long detRowId, Long groupPoid, Long companyPoid, String userId);

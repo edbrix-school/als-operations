@@ -1,5 +1,6 @@
 package com.asg.operations.crew.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -65,19 +66,19 @@ public class ContractCrewDtl {
     @Column(name = "REMARKS", length = 500)
     @Size(max = 500)
     private String remarks;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     @Size(max = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
 
-
+     @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     @Size(max = 20)
     private String lastModifiedBy;
-
+     @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 
