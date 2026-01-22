@@ -2,6 +2,7 @@ package com.asg.operations.shipprincipal.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -18,8 +19,16 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.Map;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @RestController
 @RequestMapping("/v1/principal-master")
@@ -38,35 +47,19 @@ public class PrincipalController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> getPrincipalList(
-            @RequestBody(required = false) GetAllPrincipalFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo
     ) {
-        if (filterRequest == null) {
-            filterRequest = new GetAllPrincipalFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+
+        try {
+            Map<String, Object> portActivityPage = principalMasterService.getAllPrincipalsWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            return success("Principals retrieved successfully", portActivityPage);
         }
-
-        org.springframework.data.domain.Page<PrincipalListResponse> principalPage = principalMasterService
-                .getAllPrincipalsWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
-
-        java.util.Map<String, String> displayFields = new java.util.HashMap<>();
-        displayFields.put("PRINCIPAL_CODE", "text");
-        displayFields.put("PRINCIPAL_NAME", "text");
-
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
-        response.put("content", principalPage.getContent());
-        response.put("pageNumber", principalPage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", principalPage.getSize());
-        response.put("totalElements", principalPage.getTotalElements());
-        response.put("totalPages", principalPage.getTotalPages());
-        response.put("last", principalPage.isLast());
-
-        return ApiResponse.success("Principals retrieved successfully", response);
+        catch (Exception ex){
+            return internalServerError("Unable to fetch Principals list: " + ex.getMessage());
+        }
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)

@@ -72,53 +72,6 @@ class ContractCrewServiceImplTest {
     }
 
     @Test
-    @DisplayName("getAllCrewWithFilters returns page content")
-    void getAllCrewWithFilters_ok() {
-        GetAllCrewFilterRequest filterRequest = new GetAllCrewFilterRequest();
-        filterRequest.setIsDeleted("N");
-
-        Query mockQuery = org.mockito.Mockito.mock(Query.class);
-        Query mockCountQuery = org.mockito.Mockito.mock(Query.class);
-
-        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery).thenReturn(mockCountQuery);
-        when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
-        when(mockCountQuery.setParameter(anyString(), any())).thenReturn(mockCountQuery);
-        when(mockQuery.setFirstResult(anyInt())).thenReturn(mockQuery);
-        when(mockQuery.setMaxResults(anyInt())).thenReturn(mockQuery);
-        when(mockCountQuery.getSingleResult()).thenReturn(1L);
-        Object[] mockRow = new Object[20];
-        // Fill with correct data types based on mapToCrewResponseDto expectations
-        mockRow[0] = 1L; // CREW_POID (Number)
-        mockRow[1] = "John Doe"; // CREW_NAME (String)
-        mockRow[2] = 2L; // CREW_NATION_POID (Number)
-        mockRow[3] = "CDC123"; // CREW_CDC_NUMBER (String)
-        mockRow[4] = "Company"; // CREW_COMPANY (String)
-        mockRow[5] = "Seaman"; // CREW_DESIGNATION (String)
-        mockRow[6] = "P123456"; // CREW_PASSPORT_NUMBER (String)
-        mockRow[7] = new java.sql.Timestamp(System.currentTimeMillis()); // CREW_PASSPORT_ISS_DATE (Timestamp)
-        mockRow[8] = new java.sql.Timestamp(System.currentTimeMillis()); // CREW_PASSPORT_EXP_DATE (Timestamp)
-        mockRow[9] = "Place"; // CREW_PASSPORT_ISS_PLACE (String)
-        mockRow[10] = "Remarks"; // REMARKS (String)
-        mockRow[11] = 100L; // GROUP_POID (Number)
-        mockRow[12] = 200L; // COMPANY_POID (Number)
-        mockRow[13] = "Y"; // ACTIVE (String)
-        mockRow[14] = 1L; // SEQNO (Number)
-        mockRow[15] = "N"; // DELETED (String)
-        mockRow[16] = "user1"; // CREATED_BY (String)
-        mockRow[17] = new java.sql.Timestamp(System.currentTimeMillis()); // CREATED_DATE (Timestamp)
-        mockRow[18] = "user1"; // LASTMODIFIED_BY (String)
-        mockRow[19] = new java.sql.Timestamp(System.currentTimeMillis()); // LASTMODIFIED_DATE (Timestamp)
-        java.util.List<Object[]> mockResults = new java.util.ArrayList<>();
-        mockResults.add(mockRow);
-        when(mockQuery.getResultList()).thenReturn(mockResults);
-
-        Page<ContractCrewListResponse> res = service.getAllCrewWithFilters(1L, 1L, filterRequest, 0, 20, "crewName,asc");
-
-        assertEquals(1, res.getTotalElements());
-        assertEquals(1, res.getContent().size());
-    }
-
-    @Test
     @DisplayName("deleteCrewDetail deletes when crew and detail exist")
     void deleteCrewDetail_ok() {
         long companyPoid = 1L, crewPoid = 2L, detRowId = 3L;

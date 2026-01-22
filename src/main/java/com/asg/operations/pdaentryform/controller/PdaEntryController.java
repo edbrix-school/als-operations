@@ -2,6 +2,7 @@ package com.asg.operations.pdaentryform.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
@@ -16,7 +17,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,10 +27,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.asg.operations.common.ApiResponse;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 /**
  * REST Controller for PDA Entry Form operations
@@ -79,42 +86,20 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     public ResponseEntity<?> getPdaEntryList(
-            @RequestBody(required = false) GetAllPdaFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort) {
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo) {
 
-        // If filterRequest is null, create a default one
-        if (filterRequest == null) {
-            filterRequest = new GetAllPdaFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+
+        try {
+            Map<String, Object> pdaPage = pdaEntryService.getAllPdaWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            return success("PDA entries retrieved successfully", pdaPage);
+        }
+        catch (Exception ex){
+            return internalServerError("Unable to fetch PDA entries list: " + ex.getMessage());
         }
 
-        org.springframework.data.domain.Page<PdaEntryListResponse> pdaPage = pdaEntryService
-                .getAllPdaWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
-
-        // Create displayFields
-        Map<String, String> displayFields = new HashMap<>();
-        displayFields.put("TRANSACTION_DATE", "date");
-        displayFields.put("DOC_REF", "text");
-        displayFields.put("FDA_REF", "text");
-        displayFields.put("PRINCIPAL_NAME", "text");
-        displayFields.put("VESSEL_NAME", "text");
-        displayFields.put("VOYAGE_NO", "text");
-
-        // Create paginated response with new structure
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", pdaPage.getContent());
-        response.put("pageNumber", pdaPage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", pdaPage.getSize());
-        response.put("totalElements", pdaPage.getTotalElements());
-        response.put("totalPages", pdaPage.getTotalPages());
-        response.put("last", pdaPage.isLast());
-
-        return ApiResponse.success("PDA entry list fetched successfully", response);
     }
 
     @Operation(

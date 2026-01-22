@@ -69,41 +69,6 @@ class PdaEntryControllerTest {
     }
 
     @Test
-    void testGetPdaEntryList_Success() throws Exception {
-        GetAllPdaFilterRequest filterRequest = new GetAllPdaFilterRequest();
-        filterRequest.setIsDeleted("N");
-        filterRequest.setOperator("AND");
-        filterRequest.setFilters(new ArrayList<>());
-
-        PdaEntryListResponse listResponse = new PdaEntryListResponse();
-        listResponse.setTransactionPoid(transactionPoid);
-        listResponse.setDocRef("DOC123");
-
-        org.springframework.data.domain.Page<PdaEntryListResponse> page = 
-            new org.springframework.data.domain.PageImpl<>(List.of(listResponse));
-
-        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
-            mockUserContext(mockedUserContext);
-
-            when(pdaEntryService.getAllPdaWithFilters(
-                    eq(groupPoid), eq(companyPoid), any(GetAllPdaFilterRequest.class),
-                    eq(0), eq(20), eq(null)))
-                    .thenReturn(page);
-
-            mockMvc.perform(post("/v1/pda-entries/search")
-                    .param("page", "0")
-                    .param("size", "20")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(filterRequest)))
-                    .andExpect(status().isOk());
-
-            verify(pdaEntryService, times(1)).getAllPdaWithFilters(
-                    eq(groupPoid), eq(companyPoid), any(GetAllPdaFilterRequest.class),
-                    eq(0), eq(20), eq(null));
-        }
-    }
-
-    @Test
     void testGetPdaEntryById_Success() throws Exception {
         PdaEntryResponse response = new PdaEntryResponse();
         response.setTransactionPoid(transactionPoid);

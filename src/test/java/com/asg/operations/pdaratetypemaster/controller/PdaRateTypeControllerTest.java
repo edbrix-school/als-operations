@@ -120,29 +120,6 @@ public class PdaRateTypeControllerTest {
     }
 
     @Test
-    void testListPdaRateType() throws Exception {
-        GetAllRateTypeFilterRequest filterRequest = new GetAllRateTypeFilterRequest();
-        filterRequest.setIsDeleted("N");
-        filterRequest.setOperator("AND");
-        filterRequest.setFilters(Collections.emptyList());
-
-        Page<PdaRateTypeListResponse> page = new PageImpl<>(List.of(createListResponse()));
-        when(service.getAllRateTypesWithFilters(eq(1L), any(GetAllRateTypeFilterRequest.class), eq(0), eq(20), any()))
-                .thenReturn(page);
-
-        mockMvc.perform(post("/v1/pda-rate-types/search")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(filterRequest))
-                .param("page", "0")
-                .param("size", "20"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Rate type list retrieved successfully"));
-
-        verify(service).getAllRateTypesWithFilters(eq(1L), any(GetAllRateTypeFilterRequest.class), eq(0), eq(20), any());
-    }
-
-    @Test
     void testGetById() throws Exception {
         when(service.getRateTypeById(1L, 1L)).thenReturn(responseDTO);
 

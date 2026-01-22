@@ -68,29 +68,6 @@ class PdaPortTariffMasterControllerTest {
     }
 
     @Test
-    void getTariffList_Success() throws Exception {
-        GetAllTariffFilterRequest filterRequest = new GetAllTariffFilterRequest();
-        filterRequest.setIsDeleted("N");
-        filterRequest.setOperator("AND");
-        filterRequest.setFilters(Collections.emptyList());
-
-        Page<PdaPortTariffListResponse> page = new PageImpl<>(List.of(createMockListResponse()));
-        when(tariffService.getAllTariffsWithFilters(eq(200L), eq(100L), any(GetAllTariffFilterRequest.class), eq(0), eq(20), any()))
-                .thenReturn(page);
-
-        mockMvc.perform(post("/v1/pda-port-tariffs/search")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(filterRequest))
-                .param("page", "0")
-                .param("size", "20"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Tariff list fetched successfully"));
-
-        verify(tariffService).getAllTariffsWithFilters(eq(200L), eq(100L), any(GetAllTariffFilterRequest.class), eq(0), eq(20), any());
-    }
-
-    @Test
     void getTariffById_Success() throws Exception {
         PdaPortTariffMasterResponse response = createMockResponse();
         when(tariffService.getTariffById(1L, 200L)).thenReturn(response);

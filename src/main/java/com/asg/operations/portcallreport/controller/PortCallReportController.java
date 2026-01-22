@@ -2,6 +2,7 @@ package com.asg.operations.portcallreport.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
@@ -20,13 +21,19 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 /**
  * Controller for managing port call reports.
@@ -58,35 +65,20 @@ public class PortCallReportController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> getReportList(
-            @RequestBody(required = false) GetAllPortCallReportFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo
     ) {
-        if (filterRequest == null) {
-            filterRequest = new GetAllPortCallReportFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+
+        try {
+            Map<String, Object> portActivityPage = portCallReportService.getAllPortCallReportsWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            return success("Reports retrieved successfully", portActivityPage);
+        }
+        catch (Exception ex){
+            return internalServerError("Unable to fetch Reports list: " + ex.getMessage());
         }
 
-        org.springframework.data.domain.Page<PortCallReportListResponse> reportPage = portCallReportService
-                .getAllPortCallReportsWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
-
-        Map<String, String> displayFields = new LinkedHashMap<>();
-        displayFields.put("PORT_CALL_REPORT_ID", "text");
-        displayFields.put("PORT_CALL_REPORT_NAME", "text");
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", reportPage.getContent());
-        response.put("pageNumber", reportPage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", reportPage.getSize());
-        response.put("totalElements", reportPage.getTotalElements());
-        response.put("totalPages", reportPage.getTotalPages());
-        response.put("last", reportPage.isLast());
-
-        return ApiResponse.success("Reports retrieved successfully", response);
     }
 
     /**

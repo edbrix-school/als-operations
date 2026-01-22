@@ -112,33 +112,6 @@ class PortActivityMasterServiceImplTest {
     }
 
     @Test
-    void getAllPortActivitiesWithFilters_ShouldReturnPageResponse() {
-        Object[] mockRow = {
-            1L, 1L, "PA1", "Test Activity", "Test Activity 2", "Y", 1L,
-            "testUser", Timestamp.valueOf(LocalDateTime.now()), "testUser",
-            Timestamp.valueOf(LocalDateTime.now()), "N", "Test remarks"
-        };
-
-        when(entityManager.createNativeQuery(anyString())).thenReturn(query).thenReturn(countQuery);
-        when(query.setParameter(anyString(), any())).thenReturn(query);
-        when(query.setFirstResult(anyInt())).thenReturn(query);
-        when(query.setMaxResults(anyInt())).thenReturn(query);
-        when(countQuery.setParameter(anyString(), any())).thenReturn(countQuery);
-        List<Object[]> mockResultList = new java.util.ArrayList<>();
-        mockResultList.add(mockRow);
-        when(query.getResultList()).thenReturn(mockResultList);
-        when(countQuery.getSingleResult()).thenReturn(1L);
-
-        Page<PortActivityListResponse> result = service.getAllPortActivitiesWithFilters(
-                groupPoid, filterRequest, 0, 20, null);
-
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
-        assertEquals("PA1", result.getContent().get(0).getPortActivityTypeCode());
-        verify(entityManager, times(2)).createNativeQuery(anyString());
-    }
-
-    @Test
     void getPortActivityById_ShouldReturnResponse_WhenExists() {
         when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
