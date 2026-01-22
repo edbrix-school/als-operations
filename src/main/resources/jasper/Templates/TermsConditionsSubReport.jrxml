@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="TermsConditions" language="groovy" pageWidth="555" pageHeight="842" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="03a3e423-bd57-472d-b572-349e6fce7122">
+    <property name="ireport.zoom" value="1.771561000000001"/>
+    <property name="ireport.x" value="0"/>
+    <property name="ireport.y" value="0"/>
+    <parameter name="LOGIN_COMPANY_POID" class="java.lang.String">
+        <defaultValueExpression><![CDATA["1"]]></defaultValueExpression>
+    </parameter>
+    <parameter name="DOC_ID" class="java.lang.String"/>
+    <parameter name="DOC_KEY_POID" class="java.lang.String"/>
+    <parameter name="TERMS_POID" class="java.lang.String"/>
+    <queryString language="plsql">
+        <![CDATA[{call PROC_GLOB_TERMS_RPT_LIST($P{LOGIN_COMPANY_POID}, $P{DOC_ID}, $P{DOC_KEY_POID}, $P{TERMS_POID}, $P{ORACLE_REF_CURSOR} )}]]>
+    </queryString>
+    <field name="CLAUSE_NO" class="java.lang.String"/>
+    <field name="CLAUSE_DETAILS" class="java.lang.String"/>
+    <columnHeader>
+        <band height="23">
+            <staticText>
+                <reportElement x="0" y="0" width="267" height="20" uuid="c6a614f1-f8d3-4c78-8bd8-1539d00a2229"/>
+                <textElement>
+                    <font size="12" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Terms & Conditions]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="23" splitType="Stretch">
+            <textField isStretchWithOverflow="true" isBlankWhenNull="true">
+                <reportElement stretchType="RelativeToTallestObject" x="24" y="0" width="521" height="20" isRemoveLineWhenBlank="true" uuid="49b13838-fc0f-4334-aabd-a1d7a891b781"/>
+                <textElement textAlignment="Justified">
+                    <font size="10" isBold="false" isItalic="false"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{CLAUSE_DETAILS}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="0" width="24" height="20" uuid="88b6d347-bd80-48f4-b6b1-c02b2158b1b9"/>
+                <textFieldExpression><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+</jasperReport>

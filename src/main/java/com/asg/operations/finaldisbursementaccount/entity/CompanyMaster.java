@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -16,10 +17,10 @@ import java.util.Date;
 @Getter
 @Setter
 public class CompanyMaster {
-
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
-
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "COMPANY_POID")
@@ -84,21 +85,21 @@ public class CompanyMaster {
 
     @Column(name = "SEQNO")
     private Integer seqNo;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY")
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY")
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastModifiedDate;
-
+    @AuditIgnore
     @Column(name = "DELETED")
     private String deleted;
 

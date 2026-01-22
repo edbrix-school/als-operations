@@ -376,10 +376,14 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 } else if (action == ActionType.isUpdated) {
                     dtlRepository.findById(new PortCallReportDtlId(id, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallReportDtl oldDetail = new PortCallReportDtl();
+                                BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setPortActivityTypePoid(detailDto.getPortActivityTypePoid());
                                 existing.setActivityMandatory(detailDto.getActivityMandatory());
                                 existing.setLastModifiedBy(user.getUserId());
-                                dtlRepository.save(existing);
+                                existing = dtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = PORT_CALL_REPORT_POID %s: DET_ROW_ID %s", existing.getPortCallReportPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallReportDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });
                 } else if (action == ActionType.isDeleted) {
                     dtlRepository.deleteById(new PortCallReportDtlId(id, detailDto.getDetRowId()));

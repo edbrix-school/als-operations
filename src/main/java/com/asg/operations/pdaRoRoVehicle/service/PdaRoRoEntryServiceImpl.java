@@ -35,6 +35,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.sql.Date;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
@@ -47,11 +49,15 @@ import java.util.stream.Collectors;
 
 public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PdaRoRoEntryServiceImpl.class);
+
     private final PdaRoRoEntryHdrRepository hdrRepository;
     private final PdaRoroEntryDtlRepository dtlRepository;
     private final JdbcTemplate jdbcTemplate;
     private final EntityManager entityManager;
-    private final LovService lovService;
+    private final com.asg.operations.commonlov.service.LovService lovService;
+    private final com.asg.common.lib.service.PrintService printService;
+    private final javax.sql.DataSource dataSource;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
@@ -117,7 +123,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         entity.setDeleted("N");
         entity.setLastModifiedBy(getCurrentUser());
         entity.setLastModifiedDate(LocalDateTime.now());
-        hdrRepository.save(entity);
+        entity = hdrRepository.save(entity);
         loggingService.logChanges(oldEntity, entity, PdaRoRoEntryHdr.class, UserContext.getDocumentId(), entity.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return mapToResponse(entity);
     }
@@ -314,34 +320,49 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     }
 
     private List<PdaRoRoVehicleDtlResponseDto> saveVehicleDetailsToTable(Long transactionPoid, List<PdaRoRoVehicleDtlResponseDto> vehicleDetails) {
-        String sql = """
-            INSERT INTO PDA_RORO_ENTRY_DTL 
-            (TRANSACTION_POID, DET_ROW_ID, BL_NUMBER, SHIPPER, CONSIGNEE, 
-             VIN_NUMBER, DESCRIPTION, BL_GWT, BL_CBM, PORT_OF_LOAD, AGENT,
-             CREATED_BY, CREATED_DATE, LASTMODIFIED_BY, LASTMODIFIED_DATE)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, ?, SYSDATE)
-            """;
-
-        List<Object[]> batchArgs = new ArrayList<>();
         List<PdaRoRoVehicleDtlResponseDto> savedDetails = new ArrayList<>();
         int detRowId = 1;
 
         for (PdaRoRoVehicleDtlResponseDto detail : vehicleDetails) {
-            batchArgs.add(new Object[]{
-                    transactionPoid,
-                    detRowId,
-                    detail.getBlNumber(),
-                    detail.getShipper(),
-                    detail.getConsignee(),
-                    detail.getVinNumber(),
-                    detail.getDescription(),
-                    detail.getBlGwt(),
-                    detail.getBlCbm(),
-                    detail.getPortOfLoad(),
-                    detail.getAgent(),
-                    getCurrentUser(),
-                    getCurrentUser()
-            });
+            com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtlId id = 
+                new com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtlId(transactionPoid, (long) detRowId);
+            
+            com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl entity = 
+                dtlRepository.findById(id).orElse(null);
+            
+            boolean isUpdate = entity != null;
+            com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl oldEntity = null;
+            
+            if (isUpdate) {
+                oldEntity = new com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl();
+                BeanUtils.copyProperties(entity, oldEntity);
+            } else {
+                entity = new com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl();
+                entity.setId(id);
+                entity.setCreatedBy(getCurrentUser());
+                entity.setCreatedDate(LocalDateTime.now());
+            }
+            
+            entity.setBlNumber(detail.getBlNumber());
+            entity.setShipper(detail.getShipper());
+            entity.setConsignee(detail.getConsignee());
+            entity.setVinNumber(detail.getVinNumber());
+            entity.setDescription(detail.getDescription());
+            entity.setBlGwt(detail.getBlGwt());
+            entity.setBlCbm(detail.getBlCbm());
+            entity.setPortOfLoad(detail.getPortOfLoad());
+            entity.setAgent(detail.getAgent());
+            entity.setLastModifiedBy(getCurrentUser());
+            entity.setLastModifiedDate(LocalDateTime.now());
+            
+            entity = dtlRepository.save(entity);
+            
+            if (isUpdate && oldEntity != null) {
+                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", 
+                    entity.getId().getTransactionPoid(), entity.getId().getDetRowId());
+                loggingService.createLog(oldEntity, entity, com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl.class, 
+                    UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+            }
 
             savedDetails.add(PdaRoRoVehicleDtlResponseDto.builder()
                     .detRowId((long) detRowId++)
@@ -357,7 +378,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                     .build());
         }
 
-        jdbcTemplate.batchUpdate(sql, batchArgs);
         return savedDetails;
     }
 
@@ -514,5 +534,22 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
 
     public static String getCurrentUser() {
         return UserContext.getUserId() != null ? String.valueOf(UserContext.getUserId()) : "SYSTEM";
+    }
+
+    @Override
+    public byte[] printTallySheet(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) throws Exception {
+        logger.info("Generating Tally Sheet PDF for RoRo Entry: {}", transactionPoid);
+        
+        try {
+            Map<String, Object> params = printService.buildBaseParams(transactionPoid, "110-162");
+            params.put("SUB_RORO_DETAIL", printService.load("PDA/PDARoRoEntryTallySheetSubreport.jrxml"));
+
+            net.sf.jasperreports.engine.JasperReport mainReport = printService.load("RORO/PDARoRoEntryTallySheetReport.jrxml");
+            return printService.fillReportToPdf(mainReport, params, dataSource);
+            
+        } catch (RuntimeException e) {
+            logger.error("Error generating Tally Sheet PDF for RoRo Entry: {}", transactionPoid, e);
+            throw new RuntimeException("Tally Sheet PDF generation failed: " + e.getMessage(), e);
+        }
     }
 }

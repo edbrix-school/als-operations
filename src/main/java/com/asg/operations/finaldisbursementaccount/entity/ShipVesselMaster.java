@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +20,7 @@ public class ShipVesselMaster {
     @Id
     @Column(name = "VESSEL_POID")
     private Long vesselPoid;
-
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
 
@@ -85,16 +86,16 @@ public class ShipVesselMaster {
 
     @Column(name = "SEQNO")
     private Integer seqNo;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY")
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY")
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 
@@ -106,7 +107,7 @@ public class ShipVesselMaster {
 
     @Column(name = "LINE_NAME")
     private String lineName;
-
+    @AuditIgnore
     @Column(name = "DELETED")
     private String deleted;
 

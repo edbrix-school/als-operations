@@ -1,9 +1,12 @@
 package com.asg.operations.portcallreport.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.portcallreport.dto.PortCallReportDto;
 import com.asg.operations.portcallreport.dto.PortCallReportResponseDto;
 import com.asg.operations.portcallreport.service.PortCallReportService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -34,6 +38,9 @@ class PortCallReportControllerTest {
     @Mock
     private PortCallReportService portCallReportService;
     
+    @Mock
+    private LoggingService loggingService;
+    
     @InjectMocks
     private PortCallReportController controller;
     
@@ -44,8 +51,15 @@ class PortCallReportControllerTest {
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getGroupPoid).thenReturn(200L);
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getUserPoid).thenReturn(1L);
         
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        
+        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+        converter.setObjectMapper(objectMapper);
+        
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setMessageConverters(converter)
+                .build();
     }
     
     @org.junit.jupiter.api.AfterEach
@@ -132,12 +146,12 @@ class PortCallReportControllerTest {
 
     @Test
     void deleteReport_ShouldReturnSuccess() throws Exception {
-        doNothing().when(portCallReportService).deleteReport(1L, deleteReasonDto);
+        doNothing().when(portCallReportService).deleteReport(eq(1L), any());
 
         mockMvc.perform(delete("/v1/port-call-reports/1"))
                 .andExpect(status().isOk());
 
-        verify(portCallReportService).deleteReport(1L, deleteReasonDto);
+        verify(portCallReportService).deleteReport(eq(1L), any());
     }
 
     @Test

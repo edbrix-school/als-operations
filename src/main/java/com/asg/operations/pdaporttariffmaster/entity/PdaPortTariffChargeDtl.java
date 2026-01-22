@@ -1,5 +1,6 @@
 package com.asg.operations.pdaporttariffmaster.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import com.asg.operations.pdaporttariffmaster.key.PdaPortTariffChargeDtlId;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
@@ -48,18 +49,18 @@ public class PdaPortTariffChargeDtl {
 
     @Column(name = "SEQNO")
     private Integer seqNo;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     @Size(max = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     @Size(max = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 

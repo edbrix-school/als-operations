@@ -57,4 +57,6 @@ public interface FdaService {
 
     Map<String, Object> getAllFdaWithFilters(String documentId, FilterRequestDto filters, Pageable pageable, LocalDate periodFrom, LocalDate periodTo);
 
+    byte[] printFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String currency) throws Exception;
+
 }

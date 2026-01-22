@@ -1,9 +1,11 @@
 package com.asg.operations.pdaentryform.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -30,6 +33,9 @@ class PdaEntryControllerTest {
     @Mock
     private PdaEntryService pdaEntryService;
 
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
     @InjectMocks
     private PdaEntryController pdaEntryController;
 
@@ -43,8 +49,11 @@ class PdaEntryControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(pdaEntryController).build();
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        mockMvc = MockMvcBuilders.standaloneSetup(pdaEntryController)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
         groupPoid = 1L;
         companyPoid = 100L;
         userId = "USER123";
@@ -169,13 +178,13 @@ class PdaEntryControllerTest {
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
 
-            doNothing().when(pdaEntryService).deletePdaEntry(transactionPoid, groupPoid, companyPoid, userPoid, deleteReasonDto);
+            doNothing().when(pdaEntryService).deletePdaEntry(eq(transactionPoid), eq(groupPoid), eq(companyPoid), eq(userPoid), any());
 
             mockMvc.perform(delete("/v1/pda-entries/{transactionPoid}", transactionPoid)
                     .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
-            verify(pdaEntryService, times(1)).deletePdaEntry(transactionPoid, groupPoid, companyPoid, userPoid, deleteReasonDto);
+            verify(pdaEntryService, times(1)).deletePdaEntry(eq(transactionPoid), eq(groupPoid), eq(companyPoid), eq(userPoid), any());
         }
     }
 

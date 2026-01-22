@@ -513,11 +513,15 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 } else if (action == ActionType.isUpdated) {
                     chargeRepository.findById(new ShipPrincipalMasterDtlId(id, charge.getDetRowId()))
                             .ifPresent(existing -> {
+                                ShipPrincipalMasterDtl oldCharge = new ShipPrincipalMasterDtl();
+                                BeanUtils.copyProperties(existing, oldCharge);
                                 existing.setChargePoid(charge.getChargePoid());
                                 existing.setRate(charge.getRate());
                                 existing.setRemarks(charge.getRemarks());
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                chargeRepository.save(existing);
+                                existing = chargeRepository.save(existing);
+                                String logDetail = String.format("KeyId = PRINCIPAL_POID %s: DET_ROW_ID %s", existing.getPrincipalPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldCharge, existing, ShipPrincipalMasterDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });
                 } else if (action == ActionType.isDeleted) {
                     chargeRepository.deleteById(new ShipPrincipalMasterDtlId(id, charge.getDetRowId()));
@@ -540,9 +544,13 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 } else if (action == ActionType.isUpdated) {
                     paymentRepository.findById(new ShipPrincipalMasterDtlId(id, payment.getDetRowId()))
                             .ifPresent(existing -> {
+                                ShipPrincipalMasterPymtDtl oldPayment = new ShipPrincipalMasterPymtDtl();
+                                BeanUtils.copyProperties(existing, oldPayment);
                                 mapper.mapPaymentDTOToEntity(payment, existing);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                paymentRepository.save(existing);
+                                existing = paymentRepository.save(existing);
+                                String logDetail = String.format("KeyId = PRINCIPAL_POID %s: DET_ROW_ID %s", existing.getPrincipalPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldPayment, existing, ShipPrincipalMasterPymtDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });
                 } else if (action == ActionType.isDeleted) {
                     paymentRepository.deleteById(new ShipPrincipalMasterDtlId(id, payment.getDetRowId()));
@@ -591,6 +599,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 } else if (action == ActionType.isUpdated) {
                     paRptDtlRepository.findById(new ShipPrincipalPaRptDtlId(id, paRptDetail.getDetRowId()))
                             .ifPresent(existing -> {
+                                ShipPrincipalPaRptDtl oldPaRpt = new ShipPrincipalPaRptDtl();
+                                BeanUtils.copyProperties(existing, oldPaRpt);
                                 existing.setPortCallReportType(paRptDetail.getPortCallReportType());
                                 existing.setPdfTemplatePoid(paRptDetail.getPdfTemplatePoid());
                                 existing.setEmailTemplatePoid(paRptDetail.getEmailTemplatePoid());
@@ -603,7 +613,9 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                                 existing.setRemarks(paRptDetail.getRemarks());
                                 existing.setLastModifiedBy(user.getUserName());
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                paRptDtlRepository.save(existing);
+                                existing = paRptDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = PRINCIPAL_POID %s: DET_ROW_ID %s", existing.getPrincipalPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldPaRpt, existing, ShipPrincipalPaRptDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });
                 } else if (action == ActionType.isDeleted) {
                     paRptDtlRepository.deleteById(new ShipPrincipalPaRptDtlId(id, paRptDetail.getDetRowId()));

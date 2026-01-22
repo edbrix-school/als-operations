@@ -1,6 +1,8 @@
 package com.asg.operations.finaldisbursementaccount.util;
 
 import com.asg.common.lib.repository.GroupRepository;
+import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.finaldisbursementaccount.dto.FdaChargeDto;
@@ -16,6 +18,7 @@ import com.asg.operations.shipprincipal.repository.AddressMasterRepository;
 import com.asg.operations.shipprincipal.repository.ShipPrincipalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -42,6 +45,7 @@ public class ValidationUtils {
     private final CostCenterRepository costCenterRepository;
     private final CompanyRepository companyRepository;
     private final GroupRepository groupRepository;
+    private final LoggingService loggingService;
 
     public void validateHeaderBeforeSave(FdaHeaderDto dto) {
         if (dto.getPrincipalPoid() != null) {
@@ -168,6 +172,13 @@ public class ValidationUtils {
         PdaFdaDtlId id = new PdaFdaDtlId(transactionPoid, dto.getDetRowId());
 
         PdaFdaDtl entity = pdaFdaDtlRepository.findById(id).orElseGet(() -> ChargesMapper.createNewCharge(id, dto, userId));
+        
+        PdaFdaDtl oldEntity = null;
+        boolean isUpdate = entity.getId() != null && entity.getId().getTransactionPoid() != null;
+        if (isUpdate) {
+            oldEntity = new PdaFdaDtl();
+            BeanUtils.copyProperties(entity, oldEntity);
+        }
 
         if (entity.getManual() != null && "N".equalsIgnoreCase(entity.getManual()) && !"iscreated".equalsIgnoreCase(dto.getActionType() != null ? dto.getActionType().toLowerCase() : "")) {
             throw new CustomException("System-generated charge lines cannot be modified", 403);
@@ -177,6 +188,12 @@ public class ValidationUtils {
         CalculationUtils.recalculateAmounts(entity);
 
         toSave.add(entity);
+        
+        if (isUpdate && oldEntity != null) {
+            entity = pdaFdaDtlRepository.save(entity);
+            String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", entity.getId().getTransactionPoid(), entity.getId().getDetRowId());
+            loggingService.createLog(oldEntity, entity, PdaFdaDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+        }
     }
 
     private Long generateNextDetRowId(Long transactionPoid) {

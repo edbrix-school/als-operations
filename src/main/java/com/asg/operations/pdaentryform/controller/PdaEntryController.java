@@ -383,6 +383,46 @@ public class PdaEntryController {
             },
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PutMapping("/{transactionPoid}/charge-details/{detRowId}")
+    public ResponseEntity<?> updateChargeDetail(
+            @PathVariable Long transactionPoid,
+            @PathVariable Long detRowId,
+            @Valid @RequestBody PdaEntryChargeDetailRequest request
+    ) {
+        PdaEntryChargeDetailResponse response = pdaEntryService.updateChargeDetail(
+                transactionPoid, detRowId, request, UserContext.getGroupPoid(), 
+                UserContext.getCompanyPoid(), UserContext.getUserId());
+        return ApiResponse.success("Charge detail updated successfully", response);
+    }
+
+    @Operation(
+            summary = "Delete charge detail",
+            description = "Deletes a single charge detail and recalculates the header total amount.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully deleted charge detail",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "403",
+                            description = "Forbidden - Entry cannot be edited",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "PDA entry or charge detail not found",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}/charge-details/{detRowId}")
     public ResponseEntity<?> deleteChargeDetail(
@@ -1275,6 +1315,35 @@ public class PdaEntryController {
         SubmissionLogResponse response = pdaEntryService.getSubmissionLogInfo(
                 transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
         return ApiResponse.success("Submission log info retrieved successfully", response);
+    }
+
+    @Operation(
+            summary = "Print PDA",
+            description = "Generates PDF report for PDA entry with optional principal-wise printing"
+    )
+    @AllowedAction(UserRolesRightsEnum.PRINT)
+    @GetMapping("/{transactionPoid}/print")
+    public ResponseEntity<byte[]> printPda(
+            @PathVariable Long transactionPoid,
+            @RequestParam(required = false) BigDecimal otherPrincipalPoid
+    ) {
+        try {
+            byte[] pdf = pdaEntryService.printPda(transactionPoid, UserContext.getGroupPoid(), 
+                    UserContext.getCompanyPoid(), UserContext.getUserPoid(), otherPrincipalPoid);
+            
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(
+                org.springframework.http.ContentDisposition.builder("inline")
+                    .filename("PDA_" + transactionPoid + ".pdf")
+                    .build()
+            );
+            
+            return ResponseEntity.ok().headers(headers).body(pdf);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     // ==================== Helper Methods ====================

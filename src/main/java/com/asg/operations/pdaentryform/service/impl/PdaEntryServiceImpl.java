@@ -38,6 +38,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -64,6 +66,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     private final JdbcTemplate jdbcTemplate;
     private final EntityManager entityManager;
     private final LovService lovService;
+    private final com.asg.common.lib.service.PrintService printService;
+    private final javax.sql.DataSource dataSource;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
@@ -127,7 +131,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             VesselDetailsResponse vesselDetails = getVesselDetails(request.getVesselPoid(), groupPoid, companyPoid, userPoid);
             if (vesselDetails != null) {
                 entry.setVesselTypePoid(vesselDetails.getVesselTypePoid());
-                entry.setImoNumber(vesselDetails.getImoNumber());
+                // Only set IMO number if not provided in request
+                if (request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) {
+                    entry.setImoNumber(vesselDetails.getImoNumber());
+                }
                 entry.setGrt(vesselDetails.getGrt());
                 entry.setNrt(vesselDetails.getNrt());
                 entry.setDwt(vesselDetails.getDwt());
@@ -148,6 +155,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Save entity
         entry = entryHdrRepository.save(entry);
+        logger.info("After initial save - salesmanPoid: {}", entry.getSalesmanPoid());
 
         // Call before save validation stored procedure
         String validationStatus = callBeforeSaveValidation(
@@ -222,7 +230,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             VesselDetailsResponse vesselDetails = getVesselDetails(request.getVesselPoid(), groupPoid, companyPoid, userPoid);
             if (vesselDetails != null) {
                 entry.setVesselTypePoid(vesselDetails.getVesselTypePoid());
-                entry.setImoNumber(vesselDetails.getImoNumber());
+                // Only set IMO number if not provided in request
+                if (request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) {
+                    entry.setImoNumber(vesselDetails.getImoNumber());
+                }
                 entry.setGrt(vesselDetails.getGrt());
                 entry.setNrt(vesselDetails.getNrt());
                 entry.setDwt(vesselDetails.getDwt());
@@ -263,6 +274,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 entry.getPrincipalPoid(), entry.getLinePoid(), entry.getVesselPoid(),
                 entry.getVoyageNo(), entry.getVoyagePoid()
         );
+        
+        // Reload entity from database to get any changes made by stored procedures
+        entry = entryHdrRepository.findById(entry.getTransactionPoid())
+                .orElse(entry);
 
         loggingService.logChanges(oldEntry, entry, PdaEntryHdr.class, UserContext.getDocumentId(), entry.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return toResponse(entry);
@@ -310,6 +325,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     @Override
     public List<PdaEntryChargeDetailResponse> bulkSaveChargeDetails(Long transactionPoid, BulkSaveChargeDetailsRequest request, Long groupPoid, Long companyPoid, String userId) {
+        logger.info("[AUDIT-LOG] bulkSaveChargeDetails called - transactionPoid: {}, chargeDetails count: {}", 
+            transactionPoid, request.getChargeDetails() != null ? request.getChargeDetails().size() : 0);
 
         // Validate transaction exists and is editable
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
@@ -330,11 +347,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Process creates and updates
         if (request.getChargeDetails() != null) {
             for (PdaEntryChargeDetailRequest detailRequest : request.getChargeDetails()) {
+                logger.info("[AUDIT-LOG] Processing charge detail - detRowId: {}, chargePoid: {}", 
+                    detailRequest.getDetRowId(), detailRequest.getChargePoid());
                 if (detailRequest.getDetRowId() == null) {
                     // Create new
+                    logger.info("[AUDIT-LOG] Creating new charge detail");
                     createChargeDetail(transactionPoid, detailRequest, userId, now, companyPoid);
                 } else {
                     // Update existing
+                    logger.info("[AUDIT-LOG] Updating existing charge detail with detRowId: {}", detailRequest.getDetRowId());
                     updateChargeDetail(transactionPoid, detailRequest, userId, now, companyPoid);
                 }
             }
@@ -352,6 +373,42 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Return updated list
         return getChargeDetails(transactionPoid, groupPoid, companyPoid);
+    }
+
+    @Override
+    public PdaEntryChargeDetailResponse updateChargeDetail(Long transactionPoid, Long detRowId, 
+                                                           PdaEntryChargeDetailRequest request, 
+                                                           Long groupPoid, Long companyPoid, String userId) {
+        // Validate transaction exists and is editable
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
+                transactionPoid, groupPoid, companyPoid
+        ).orElseThrow(() -> new ResourceNotFoundException(
+                "PDA Entry not found with id: " + transactionPoid
+        ));
+
+        if (!canEdit(entry)) {
+            throw new ValidationException(
+                    "Entry cannot be edited",
+                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
+            );
+        }
+
+        // Set detRowId from path parameter to prevent mismatch
+        request.setDetRowId(detRowId);
+        
+        // Update the charge detail
+        updateChargeDetail(transactionPoid, request, userId, LocalDateTime.now(), companyPoid);
+        
+        // Recalculate header total
+        recalculateHeaderTotalAmount(transactionPoid, userId);
+        
+        // Return updated detail
+        PdaEntryDtlId detailId = new PdaEntryDtlId(transactionPoid, detRowId);
+        PdaEntryDtl detail = entryDtlRepository.findById(detailId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Charge detail not found with id: " + detRowId
+                ));
+        return toChargeDetailResponse(detail);
     }
 
     @Override
@@ -1384,12 +1441,22 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private void updateChargeDetail(Long transactionPoid, PdaEntryChargeDetailRequest request,
                                     String userId, LocalDateTime now, Long companyPoid) {
+        logger.info("[AUDIT-LOG] Updating charge detail - transactionPoid: {}, detRowId: {}", transactionPoid, request.getDetRowId());
+        
         // Validate detail exists
         PdaEntryDtlId detailId = new PdaEntryDtlId(transactionPoid, request.getDetRowId());
         PdaEntryDtl detail = entryDtlRepository.findById(detailId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Charge detail not found with id: " + request.getDetRowId()
                 ));
+
+        // Create old detail copy with proper ID
+        PdaEntryDtl oldDetail = new PdaEntryDtl();
+        oldDetail.setTransactionPoid(detail.getTransactionPoid());
+        oldDetail.setDetRowId(detail.getDetRowId());
+        BeanUtils.copyProperties(detail, oldDetail);
+        logger.info("[AUDIT-LOG] Old detail copied - transactionPoid: {}, detRowId: {}, qty: {}, rate: {}", 
+            oldDetail.getTransactionPoid(), oldDetail.getDetRowId(), oldDetail.getQty(), oldDetail.getPdaRate());
 
         // Validate required fields
         validateChargeDetailRequest(request);
@@ -1436,8 +1503,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         detail.setLastModifiedBy(userId);
         detail.setLastModifiedDate(now);
 
-        // Save
-        entryDtlRepository.save(detail);
+        // Save and log
+        detail = entryDtlRepository.save(detail);
+        entityManager.flush();
+        logger.info("[AUDIT-LOG] Detail saved and flushed - qty: {}, rate: {}", detail.getQty(), detail.getPdaRate());
+
+        String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", detail.getTransactionPoid(), detail.getDetRowId());
+        logger.info("[AUDIT-LOG] Calling loggingService.createLog with logDetail: {}", logDetail);
+        loggingService.createLog(oldDetail, detail, PdaEntryDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+        logger.info("[AUDIT-LOG] Logging completed for detRowId: {}", detail.getDetRowId());
     }
 
     private void deleteChargeDetailRecord(Long transactionPoid, Long detRowId) {
@@ -3211,6 +3285,31 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         int startColNumber;
         int endColNumber;
         String tempTableName;
+    }
+
+    @Override
+    public byte[] printPda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, BigDecimal otherPrincipalPoid) throws Exception {
+        logger.info("Generating PDF for PDA Entry: {}", transactionPoid);
+        
+        try {
+            Map<String, Object> params = printService.buildBaseParams(transactionPoid, "110-160");
+            
+            if (otherPrincipalPoid != null) {
+                params.put("P_PRINCIPAL_POID", otherPrincipalPoid.toString());
+            }
+            
+            params.put("SUB_HEADER", printService.load("Templates/DocHeaderSubReport.jrxml"));
+            params.put("SUB_FOOTER", printService.load("Templates/DocFooterSubReport.jrxml"));
+            params.put("SUB_TERMS", printService.load("Templates/TermsConditionsSubReport.jrxml"));
+
+            
+            net.sf.jasperreports.engine.JasperReport mainReport = printService.load("PDA/PdaEntryReport.jrxml");
+            return printService.fillReportToPdf(mainReport, params, dataSource);
+            
+        } catch (RuntimeException e) {
+            logger.error("Error generating PDF for PDA Entry: {}", transactionPoid, e);
+            throw new RuntimeException("PDF generation failed: " + e.getMessage(), e);
+        }
     }
 
     // New FDA Document Methods

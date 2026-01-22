@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="FDAsubreportUSD" language="groovy" pageWidth="540" pageHeight="802" columnWidth="540" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="a47f7453-c872-4be2-8dcb-562c2a90f531">
+    <property name="ireport.zoom" value="1.771561000000014"/>
+    <property name="ireport.x" value="0"/>
+    <property name="ireport.y" value="0"/>
+    <subDataset name="dataset1" uuid="b3af35eb-e542-4a0a-9210-8faad38328b5"/>
+    <parameter name="TRANSACTION_POID" class="java.lang.String">
+        <defaultValueExpression><![CDATA[]]></defaultValueExpression>
+    </parameter>
+    <queryString>
+        <![CDATA[SELECT PFH.CURRENCY_RATE,SUPPLIER_INV_DTL,SUM(FDA_AMOUNT) AS FDA_AMOUNT,ROUND(SUM(FDA_AMOUNT)/PFH.CURRENCY_RATE,2) AS FDA_AMOUNT_USD,DN_DOC_POID
+FROM(
+SELECT CASE WHEN PFD.FDA_REMARKS LIKE '.' THEN DNH.DOC_REF ELSE DNH.DOC_REF ||' ,'||NVL(PFD.FDA_REMARKS,NVL(ASM.SUPPLIER_NAME,SPM.PRINCIPAL_NAME)||' / Inv# '||PIH.SUPPLIER_INV_NO) END AS SUPPLIER_INV_DTL,
+SUM(NVL(PFD.DN_TOTAL_AMOUNT,PFD.DN_AMOUNT)) AS FDA_AMOUNT,PFD.TRANSACTION_POID,PFD.DN_DOC_POID,DNH.DOC_REF,PFD.PRINT_SEQ_NO
+FROM PDA_FDA_DTL PFD
+INNER JOIN AR_DEBIT_NOTE_HDR DNH ON DNH.TRANSACTION_POID=PFD.DN_DOC_POID
+LEFT JOIN AP_PURCHASE_INVOICE_HDR PIH ON (PIH.TRANSACTION_POID=PFD.BOOKED_DOC_POID OR PIH.TRANSACTION_POID=PFD.REF_DOC_POID)
+AND PFD.REF_DOC_ID='200-103'
+LEFT JOIN AP_SUPPLIER_MASTER ASM ON ASM.SUPPLIER_POID=PIH.SUPPLIER_POID AND PIH.PARTY_TYPE='SUPPLIER'
+LEFT JOIN SHIP_PRINCIPAL_MASTER SPM ON SPM.PRINCIPAL_POID=PIH.SUPPLIER_POID AND PIH.PARTY_TYPE='PRINCIPAL'
+WHERE PFD.TRANSACTION_POID=$P{TRANSACTION_POID}
+AND PFD.REF_DOC_ID='200-103' AND PFD.DN_FROM!='FDA_DIRECT'
+GROUP BY DNH.DOC_REF,PFD.DN_DOC_POID,ASM.SUPPLIER_NAME,SPM.PRINCIPAL_NAME,PIH.SUPPLIER_INV_NO,PFD.TRANSACTION_POID,PFD.FDA_REMARKS,DNH.DOC_REF,PFD.PRINT_SEQ_NO
+UNION ALL
+SELECT CASE WHEN PFD.FDA_REMARKS LIKE '.' THEN DNH.DOC_REF ELSE DNH.DOC_REF ||' ,'||PFD.FDA_REMARKS END AS SUPPLIER_INV_DTL,
+SUM(NVL(PFD.DN_TOTAL_AMOUNT,PFD.DN_AMOUNT)) AS FDA_AMOUNT ,PFD.TRANSACTION_POID,PFD.DN_DOC_POID,DNH.DOC_REF,PFD.PRINT_SEQ_NO
+FROM PDA_FDA_DTL PFD
+INNER JOIN AR_DEBIT_NOTE_HDR DNH ON DNH.TRANSACTION_POID=PFD.DN_DOC_POID
+WHERE PFD.TRANSACTION_POID=$P{TRANSACTION_POID}
+AND (PFD.REF_DOC_ID!='200-103' OR PFD.REF_DOC_ID IS NULL)
+and DNH.TRANSACTION_POID=PFD.DN_DOC_POID AND PFD.DN_FROM!='FDA_DIRECT'
+GROUP BY DNH.DOC_REF,PFD.FDA_REMARKS,PFD.TRANSACTION_POID,PFD.DN_DOC_POID,PFD.PRINT_SEQ_NO
+UNION ALL
+SELECT CNH.DOC_REF AS SUPPLIER_INV_DTL,SUM(NVL(PFD.CN_TOTAL_AMOUNT,PFD.CN_AMOUNT)) AS FDA_AMOUNT,PFD.TRANSACTION_POID,PFD.CN_DOC_POID, NULL AS DOC_REF,PFD.PRINT_SEQ_NO
+FROM PDA_FDA_DTL PFD
+INNER JOIN AR_CREDIT_NOTE_HDR CNH ON CNH.TRANSACTION_POID=PFD.CN_DOC_POID
+WHERE PFD.TRANSACTION_POID=$P{TRANSACTION_POID}
+AND PFD.REF_DOC_ID='200-103' AND NVL(CNH.FDA_DIRECT,'N')!='Y'
+GROUP BY CNH.DOC_REF,PFD.CN_DOC_POID,PFD.TRANSACTION_POID,PFD.FDA_REMARKS,PFD.PRINT_SEQ_NO
+UNION ALL
+SELECT CNH.DOC_REF AS SUPPLIER_INV_DTL,SUM(NVL(PFD.CN_TOTAL_AMOUNT,PFD.CN_AMOUNT)) AS FDA_AMOUNT ,PFD.TRANSACTION_POID,PFD.CN_DOC_POID, NULL AS DOC_REF,PFD.PRINT_SEQ_NO
+FROM PDA_FDA_DTL PFD
+INNER JOIN AR_CREDIT_NOTE_HDR CNH ON CNH.TRANSACTION_POID=PFD.CN_DOC_POID
+WHERE PFD.TRANSACTION_POID=$P{TRANSACTION_POID}
+AND (PFD.REF_DOC_ID!='200-103' OR PFD.REF_DOC_ID IS NULL)
+and CNH.TRANSACTION_POID=PFD.CN_DOC_POID AND NVL(CNH.FDA_DIRECT,'N')!='Y'
+GROUP BY CNH.DOC_REF,PFD.TRANSACTION_POID,PFD.CN_DOC_POID,PFD.PRINT_SEQ_NO
+)T
+INNER JOIN PDA_FDA_HDR PFH ON PFH.TRANSACTION_POID=T.TRANSACTION_POID
+GROUP BY T.SUPPLIER_INV_DTL,T.TRANSACTION_POID,T.DN_DOC_POID,PFH.CURRENCY_RATE,T.DOC_REF,T.PRINT_SEQ_NO
+ORDER BY T.PRINT_SEQ_NO,T.DOC_REF]]>
+    </queryString>
+    <field name="CURRENCY_RATE" class="java.math.BigDecimal"/>
+    <field name="SUPPLIER_INV_DTL" class="java.lang.String"/>
+    <field name="FDA_AMOUNT" class="java.math.BigDecimal"/>
+    <field name="FDA_AMOUNT_USD" class="java.math.BigDecimal"/>
+    <field name="DN_DOC_POID" class="java.lang.String"/>
+    <variable name="TOTAL" class="java.math.BigDecimal" calculation="Sum">
+        <variableExpression><![CDATA[$F{FDA_AMOUNT}]]></variableExpression>
+    </variable>
+    <variable name="TOTAL_USD" class="java.math.BigDecimal" calculation="Sum">
+        <variableExpression><![CDATA[$F{FDA_AMOUNT_USD}]]></variableExpression>
+    </variable>
+    <background>
+        <band splitType="Stretch"/>
+    </background>
+    <columnHeader>
+        <band height="17" splitType="Stretch">
+            <staticText>
+                <reportElement x="364" y="1" width="85" height="15" uuid="8a32fa39-c36b-4cc6-a0d2-a8a5184ba29d"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font isBold="true"/>
+                </textElement>
+                <text><![CDATA[Amount (BHD)]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="40" y="1" width="324" height="15" uuid="9bccb239-baa7-49c2-836e-e871b512ab48"/>
+                <textElement verticalAlignment="Middle">
+                    <font isBold="true"/>
+                </textElement>
+                <text><![CDATA[Particulars]]></text>
+            </staticText>
+            <line>
+                <reportElement x="0" y="16" width="540" height="1" forecolor="#999999" uuid="4b94fe3c-5957-469b-a2ab-fc3018760b49"/>
+                <graphicElement>
+                    <pen lineStyle="Double"/>
+                </graphicElement>
+            </line>
+            <staticText>
+                <reportElement x="0" y="1" width="30" height="15" uuid="a8f58927-40e5-4d8a-9848-d6b0207e368c"/>
+                <textElement verticalAlignment="Middle">
+                    <font isBold="true"/>
+                </textElement>
+                <text><![CDATA[Sl No]]></text>
+            </staticText>
+            <line>
+                <reportElement x="0" y="1" width="540" height="1" forecolor="#999999" uuid="d71cfb3c-190b-4789-9773-346357bc4e0b"/>
+                <graphicElement>
+                    <pen lineStyle="Double"/>
+                </graphicElement>
+            </line>
+            <staticText>
+                <reportElement x="455" y="1" width="85" height="15" uuid="17e140be-d0fc-4a20-ad3c-e47227d4f556"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font isBold="true"/>
+                </textElement>
+                <text><![CDATA[Amount (USD)]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="19" splitType="Stretch">
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="0" width="30" height="18" uuid="d5334fa4-f03f-4baa-ad4f-80830d2ef9dd"/>
+                <textElement textAlignment="Left" verticalAlignment="Middle"/>
+                <textFieldExpression><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="40" y="0" width="324" height="18" uuid="06a2653d-173f-4603-9948-c59c4b022e2c"/>
+                <textElement verticalAlignment="Middle">
+                    <font size="9"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{SUPPLIER_INV_DTL}]]></textFieldExpression>
+            </textField>
+            <textField pattern="#,##0.000" isBlankWhenNull="true">
+                <reportElement x="364" y="0" width="85" height="18" uuid="889805c7-9a6e-40aa-8f07-5dff0dc82789"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="9"/>
+                    <paragraph rightIndent="1"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{FDA_AMOUNT}]]></textFieldExpression>
+            </textField>
+            <textField pattern="#,##0.00" isBlankWhenNull="true">
+                <reportElement x="455" y="0" width="85" height="18" uuid="429a71ee-8e6a-451e-bfd1-928f2c002c69"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="9" isBold="false"/>
+                    <paragraph rightIndent="1"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{FDA_AMOUNT_USD}]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement x="0" y="18" width="540" height="1" forecolor="#999999" uuid="5343705b-a705-4b18-8f7c-27b81da712d1"/>
+                <graphicElement>
+                    <pen lineWidth="0.5" lineStyle="Dashed"/>
+                </graphicElement>
+            </line>
+        </band>
+    </detail>
+    <columnFooter>
+        <band height="3"/>
+    </columnFooter>
+</jasperReport>

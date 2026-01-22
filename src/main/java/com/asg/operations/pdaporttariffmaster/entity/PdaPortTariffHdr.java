@@ -1,5 +1,6 @@
 package com.asg.operations.pdaporttariffmaster.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -29,14 +30,14 @@ public class PdaPortTariffHdr {
 
     @Column(name = "TRANSACTION_DATE")
     private LocalDate transactionDate;
-
+    @AuditIgnore
     @Column(name = "GROUP_POID", nullable = false)
     @NotNull
     private Long groupPoid;
-
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
-
+    @AuditIgnore
     @Column(name = "DOC_REF", unique = true, length = 25)
     @Size(max = 25)
     private String docRef;
@@ -60,22 +61,22 @@ public class PdaPortTariffHdr {
     @Column(name = "REMARKS", length = 500)
     @Size(max = 500)
     private String remarks;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     @Size(max = 1)
     private String deleted;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     @Size(max = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     @Size(max = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 

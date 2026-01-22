@@ -282,7 +282,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     @Override
-    public void deleteTariff(Long transactionPoid, Long groupPoid, String userId, boolean hardDelete, @Valid DeleteReasonDto deleteReasonDto) {
+    public void deleteTariff(Long transactionPoid, Long groupPoid, String userId, @Valid DeleteReasonDto deleteReasonDto) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
         PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
@@ -371,6 +371,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 chargeId.setDetRowId(chargeRequest.getDetRowId());
 
                 chargeDtlRepository.findById(chargeId).ifPresent(existing -> {
+                    PdaPortTariffChargeDtl oldCharge = new PdaPortTariffChargeDtl();
+                    BeanUtils.copyProperties(existing, oldCharge);
                     existing.setChargePoid(chargeRequest.getChargePoid().longValue());
                     existing.setRateTypePoid(chargeRequest.getRateTypePoid().longValue());
                     existing.setTariffSlab(chargeRequest.getTariffSlab());
@@ -381,7 +383,9 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                     existing.setSeqNo(chargeRequest.getSeqNo());
                     existing.setLastModifiedBy(currentUser);
                     existing.setLastModifiedDate(LocalDateTime.now());
-                    chargeDtlRepository.save(existing);
+                    existing = chargeDtlRepository.save(existing);
+                    String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getDetRowId());
+                    loggingService.createLog(oldCharge, existing, PdaPortTariffChargeDtl.class, UserContext.getDocumentId(), tariffHdr.getTransactionPoid().toString(), logDetail);
 
                     if (chargeRequest.getSlabDetails() != null) {
                         updateSlabDetails(tariffHdr.getTransactionPoid(), chargeRequest.getDetRowId(), chargeRequest.getSlabDetails(), currentUser);
@@ -414,6 +418,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 slabId.setDetRowId(slabRequest.getDetRowId());
 
                 slabDtlRepository.findById(slabId).ifPresent(existing -> {
+                    PdaPortTariffSlabDtl oldSlab = new PdaPortTariffSlabDtl();
+                    BeanUtils.copyProperties(existing, oldSlab);
                     existing.setQuantityFrom(slabRequest.getQuantityFrom());
                     existing.setQuantityTo(slabRequest.getQuantityTo());
                     existing.setDays1(slabRequest.getDays1());
@@ -428,7 +434,9 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                     existing.setRemarks(slabRequest.getRemarks());
                     existing.setLastModifiedBy(currentUser);
                     existing.setLastModifiedDate(LocalDateTime.now());
-                    slabDtlRepository.save(existing);
+                    existing = slabDtlRepository.save(existing);
+                    String logDetail = String.format("KeyId = TRANSACTION_POID %s: CHARGE_DET_ROW_ID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getChargeDetRowId(), existing.getId().getDetRowId());
+                    loggingService.createLog(oldSlab, existing, PdaPortTariffSlabDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 });
             } else if (action == ActionType.isDeleted) {
                 PdaPortTariffSlabDtlId slabId = new PdaPortTariffSlabDtlId();

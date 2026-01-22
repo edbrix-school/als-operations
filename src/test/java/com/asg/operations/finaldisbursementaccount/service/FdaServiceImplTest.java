@@ -1,5 +1,8 @@
 package com.asg.operations.finaldisbursementaccount.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.common.PageResponse;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.service.LovService;
@@ -51,6 +54,12 @@ class FdaServiceImplTest {
     @Mock
     private LovService lovService;
 
+    @Mock
+    private DocumentDeleteService documentDeleteService;
+
+    @Mock
+    private LoggingService loggingService;
+
     @InjectMocks
     private FdaServiceImpl fdaService;
 
@@ -94,12 +103,12 @@ class FdaServiceImplTest {
         PdaFdaHdr entity = createMockFdaHdr();
 
         when(pdaFdaHdrRepository.findById(1L)).thenReturn(Optional.of(entity));
-        when(pdaFdaDtlRepository.findByIdTransactionPoid(1L)).thenReturn(Arrays.asList());
+        when(documentDeleteService.deleteDocument(eq(1L), anyString(), anyString(), any(), any())).thenReturn("Success");
 
-        fdaService.softDeleteFda(1L, "user1", deleteReasonDto);
+        fdaService.softDeleteFda(1L, "user1", new DeleteReasonDto());
 
-        assertEquals("Y", entity.getDeleted());
-        verify(pdaFdaHdrRepository).save(entity);
+        verify(pdaFdaHdrRepository).findById(1L);
+        verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }
 
     @Test

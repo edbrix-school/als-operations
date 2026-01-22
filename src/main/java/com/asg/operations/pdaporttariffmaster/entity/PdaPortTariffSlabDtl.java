@@ -1,5 +1,6 @@
 package com.asg.operations.pdaporttariffmaster.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import com.asg.operations.pdaporttariffmaster.key.PdaPortTariffSlabDtlId;
 import lombok.*;
@@ -65,16 +66,16 @@ public class PdaPortTariffSlabDtl {
 
     @Column(name = "REMARKS", length = 200)
     private String remarks;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 }
