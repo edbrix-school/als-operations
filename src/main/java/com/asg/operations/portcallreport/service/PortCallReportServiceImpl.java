@@ -78,8 +78,8 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
-                "DOC_REF",
-                "TRANSACTION_POID");
+                "PORT_CALL_REPORT_POID",
+                "PORT_CALL_REPORT_NAME");
 
         Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 

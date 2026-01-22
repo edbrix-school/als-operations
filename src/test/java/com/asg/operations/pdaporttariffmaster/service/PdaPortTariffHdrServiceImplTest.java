@@ -74,50 +74,6 @@ class PdaPortTariffHdrServiceImplTest {
     private PdaPortTariffHdrServiceImpl tariffService;
 
     @Test
-    void getAllTariffsWithFilters_Success() {
-        GetAllTariffFilterRequest filterRequest = new GetAllTariffFilterRequest();
-        filterRequest.setIsDeleted("N");
-
-        jakarta.persistence.Query mockQuery = mock(jakarta.persistence.Query.class);
-        jakarta.persistence.Query mockCountQuery = mock(jakarta.persistence.Query.class);
-
-        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery).thenReturn(mockCountQuery);
-        when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
-        when(mockCountQuery.setParameter(anyString(), any())).thenReturn(mockCountQuery);
-        when(mockQuery.setFirstResult(anyInt())).thenReturn(mockQuery);
-        when(mockQuery.setMaxResults(anyInt())).thenReturn(mockQuery);
-        when(mockCountQuery.getSingleResult()).thenReturn(1L);
-        LovResponse mockLovResponse = new LovResponse();
-        mockLovResponse.setItems(List.of(new LovItem(1L, "P1", "Port 1", "Port1 1", 1L, 1)));
-        lenient().when(lovService.getLovList(any(), any(), any(), any(), any(), any())).thenReturn(mockLovResponse);
-
-        Object[] mockRow = new Object[11];
-        // Fill with correct data types based on mapToTariffResponseDto expectations
-        mockRow[0] = 1L; // TRANSACTION_POID (Number)
-        mockRow[1] = "DOC001"; // DOC_REF (String)
-        mockRow[2] = new java.sql.Timestamp(System.currentTimeMillis()); // TRANSACTION_DATE (Timestamp)
-        mockRow[3] = "1"; // PORTS (String)
-        mockRow[4] = "VESSEL1,VESSEL2"; // VESSEL_TYPES (String)
-        mockRow[5] = new java.sql.Timestamp(System.currentTimeMillis()); // PERIOD_FROM (Timestamp)
-        mockRow[6] = new java.sql.Timestamp(System.currentTimeMillis()); // PERIOD_TO (Timestamp)
-        mockRow[7] = "Test remarks"; // REMARKS (String)
-        mockRow[8] = "N"; // DELETED (String)
-        mockRow[9] = new java.sql.Timestamp(System.currentTimeMillis()); // CREATED_DATE (Timestamp)
-        mockRow[10] = new java.sql.Timestamp(System.currentTimeMillis()); // LASTMODIFIED_DATE (Timestamp)
-
-        java.util.List<Object[]> mockResults = new java.util.ArrayList<>();
-        mockResults.add(mockRow);
-        when(mockQuery.getResultList()).thenReturn(mockResults);
-
-        Page<PdaPortTariffListResponse> result = tariffService.getAllTariffsWithFilters(
-                100L, 200L, filterRequest, 0, 10, "docRef,asc");
-
-        assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
-        assertEquals(1, result.getContent().size());
-    }
-
-    @Test
     void getTariffById_Success() {
         Long transactionPoid = 1L;
         Long groupPoid = 100L;

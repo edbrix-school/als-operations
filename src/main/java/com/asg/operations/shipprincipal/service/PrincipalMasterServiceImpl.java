@@ -77,8 +77,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
-                "DOC_REF",
-                "TRANSACTION_POID");
+                "PRINCIPAL_NAME",
+                "PRINCIPAL_POID");
 
         Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 

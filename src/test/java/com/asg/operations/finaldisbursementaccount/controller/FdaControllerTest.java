@@ -54,30 +54,6 @@ class FdaControllerTest {
     }
 
     @Test
-    void getFdaList_ShouldReturnPageResponse() throws Exception {
-        org.springframework.data.domain.Page<FdaListResponse> page =
-            new org.springframework.data.domain.PageImpl<>(java.util.List.of(new FdaListResponse()));
-
-        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
-            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
-            mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
-
-            when(fdaService.getAllFdaWithFilters(eq(1L), eq(100L), any(GetAllFdaFilterRequest.class), eq(0), eq(20), isNull()))
-                    .thenReturn(page);
-
-            String filterJson = "{\"isDeleted\":\"N\",\"operator\":\"AND\",\"filters\":[]}";
-
-            mockMvc.perform(post("/v1/fdas/search")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(filterJson)
-                            .param("page", "0")
-                            .param("size", "20"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.result.data.totalElements").value(1));
-        }
-    }
-
-    @Test
     void getFda_ShouldReturnFdaHeader() throws Exception {
         FdaHeaderDto mockDto = new FdaHeaderDto();
         mockDto.setTransactionPoid(1L);

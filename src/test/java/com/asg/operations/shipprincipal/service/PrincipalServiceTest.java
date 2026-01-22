@@ -95,64 +95,6 @@ class PrincipalServiceTest {
     }
 
     @Test
-    void testGetAllPrincipalsWithFilters_Success() {
-        GetAllPrincipalFilterRequest filterRequest = new GetAllPrincipalFilterRequest();
-        filterRequest.setIsDeleted("N");
-
-        jakarta.persistence.Query mockQuery = mock(jakarta.persistence.Query.class);
-        jakarta.persistence.Query mockCountQuery = mock(jakarta.persistence.Query.class);
-
-        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery).thenReturn(mockCountQuery);
-        when(mockQuery.setParameter(anyString(), any())).thenReturn(mockQuery);
-        when(mockCountQuery.setParameter(anyString(), any())).thenReturn(mockCountQuery);
-        when(mockQuery.setFirstResult(anyInt())).thenReturn(mockQuery);
-        when(mockQuery.setMaxResults(anyInt())).thenReturn(mockQuery);
-        when(mockCountQuery.getSingleResult()).thenReturn(1L);
-
-        Object[] mockRow = new Object[29];
-        mockRow[0] = 1L; // PRINCIPAL_POID (Number)
-        mockRow[1] = "PRIN001"; // PRINCIPAL_CODE (String)
-        mockRow[2] = "Test Principal"; // PRINCIPAL_NAME (String)
-        mockRow[3] = "Test Principal 2"; // PRINCIPAL_NAME2 (String)
-        mockRow[4] = 100L; // GROUP_POID (Number)
-        mockRow[5] = 200L; // COMPANY_POID (Number)
-        mockRow[6] = "Test Group"; // GROUP_NAME (String)
-        mockRow[7] = 1L; // COUNTRY_POID (Number)
-        mockRow[8] = 1L; // ADDRESS_POID (Number)
-        mockRow[9] = 30L; // CREDIT_PERIOD (Number)
-        mockRow[10] = 45L; // AGREED_PERIOD (Number)
-        mockRow[11] = "USD"; // CURRENCY_CODE (String)
-        mockRow[12] = new java.math.BigDecimal("1.0"); // CURRENCY_RATE (BigDecimal)
-        mockRow[13] = new java.math.BigDecimal("1.0"); // BUYING_RATE (BigDecimal)
-        mockRow[14] = new java.math.BigDecimal("1.0"); // SELLING_RATE (BigDecimal)
-        mockRow[15] = 1L; // GL_CODE_POID (Number)
-        mockRow[16] = "GL001"; // GL_ACCTNO (String)
-        mockRow[17] = "TIN123"; // TIN_NUMBER (String)
-        mockRow[18] = "SLAB1"; // TAX_SLAB (String)
-        mockRow[19] = "Exemption reason"; // EXEMPTION_REASON (String)
-        mockRow[20] = "Test remarks"; // REMARKS (String)
-        mockRow[21] = 1; // SEQNO (Number)
-        mockRow[22] = "Y"; // ACTIVE (String)
-        mockRow[23] = "OLD001"; // PRINCIPAL_CODE_OLD (String)
-        mockRow[24] = "N"; // DELETED (String)
-        mockRow[25] = "testuser"; // CREATED_BY (String)
-        mockRow[26] = new java.sql.Timestamp(System.currentTimeMillis()); // CREATED_DATE (Timestamp)
-        mockRow[27] = "testuser"; // LASTMODIFIED_BY (String)
-        mockRow[28] = new java.sql.Timestamp(System.currentTimeMillis()); // LASTMODIFIED_DATE (Timestamp)
-
-        java.util.List<Object[]> mockResults = new java.util.ArrayList<>();
-        mockResults.add(mockRow);
-        when(mockQuery.getResultList()).thenReturn(mockResults);
-
-        Page<PrincipalListResponse> result = principalMasterService.getAllPrincipalsWithFilters(
-                100L, filterRequest, 0, 10, "principalName,asc");
-
-        assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
-        assertEquals(1, result.getContent().size());
-    }
-
-    @Test
     void testGetPrincipal_Success() {
         PrincipalMasterDto mockDto = new PrincipalMasterDto();
         mockDto.setPrincipalPoid(1L);

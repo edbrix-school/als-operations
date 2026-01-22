@@ -70,8 +70,8 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequest,"TRANSACTION_DATE", periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
-                "DOC_REF",
-                "TRANSACTION_POID");
+                "CREW_NAME",
+                "COMPANY_POID");
 
         Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 

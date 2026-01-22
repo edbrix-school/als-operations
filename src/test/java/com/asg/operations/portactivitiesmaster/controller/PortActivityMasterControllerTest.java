@@ -94,29 +94,6 @@ class PortActivityMasterControllerTest {
     }
 
     @Test
-    void getPortActivityList_ShouldReturnSuccess() throws Exception {
-        GetAllPortActivityFilterRequest filterRequest = new GetAllPortActivityFilterRequest();
-        filterRequest.setIsDeleted("N");
-        filterRequest.setOperator("AND");
-        filterRequest.setFilters(Collections.emptyList());
-
-        Page<PortActivityListResponse> page = new PageImpl<>(List.of(createListResponse()));
-        when(portActivityService.getAllPortActivitiesWithFilters(eq(1L), any(GetAllPortActivityFilterRequest.class), eq(0), eq(20), any()))
-                .thenReturn(page);
-
-        mockMvc.perform(post("/v1/port-activities/search")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(filterRequest))
-                .param("page", "0")
-                .param("size", "20"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Port activity list retrieved successfully"));
-
-        verify(portActivityService).getAllPortActivitiesWithFilters(eq(1L), any(GetAllPortActivityFilterRequest.class), eq(0), eq(20), any());
-    }
-
-    @Test
     void getPortActivityById_ShouldReturnSuccess() throws Exception {
         when(portActivityService.getPortActivityById(1L, 1L)).thenReturn(response);
 

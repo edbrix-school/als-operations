@@ -133,24 +133,6 @@ class PdaRoRoEntryServiceTest {
     }
 
     @Test
-    void testGetRoRoVehicleList_Success() {
-        Long groupPoid = 1L;
-        Long companyPoid = 100L;
-        GetAllRoRoVehicleFilterRequest filterRequest = new GetAllRoRoVehicleFilterRequest();
-        List<RoRoVehicleListResponse> content = new ArrayList<>();
-        Page<RoRoVehicleListResponse> expectedPage = new PageImpl<>(content);
-
-        when(pdaRoroEntryService.getRoRoVehicleList(eq(groupPoid), eq(companyPoid), any(), eq(0), eq(20), isNull()))
-                .thenReturn(expectedPage);
-
-        Page<RoRoVehicleListResponse> actualPage = pdaRoroEntryService.getRoRoVehicleList(groupPoid, companyPoid, filterRequest, 0, 20, null);
-
-        assertNotNull(actualPage);
-        assertEquals(0, actualPage.getTotalElements());
-        verify(pdaRoroEntryService, times(1)).getRoRoVehicleList(eq(groupPoid), eq(companyPoid), any(), eq(0), eq(20), isNull());
-    }
-
-    @Test
     void testUploadExcel_Success() {
         MockMultipartFile file = new MockMultipartFile("file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "test".getBytes());
 

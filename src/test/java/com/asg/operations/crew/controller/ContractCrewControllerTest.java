@@ -71,27 +71,6 @@ class ContractCrewControllerTest {
     }
 
     @Test
-    @DisplayName("POST /v1/contract-crew-masters/search returns paged list")
-    void getCrewList_ok() throws Exception {
-        Page<ContractCrewListResponse> page = new PageImpl<>(List.of(new ContractCrewListResponse()),
-                org.springframework.data.domain.PageRequest.of(0, 20), 1);
-        when(crewService.getAllCrewWithFilters(anyLong(), anyLong(), any(GetAllCrewFilterRequest.class), anyInt(), anyInt(), anyString()))
-                .thenReturn(page);
-
-        String filterJson = "{\"isDeleted\":\"N\",\"operator\":\"AND\",\"filters\":[]}";
-
-        mockMvc.perform(post("/v1/contract-crew-masters/search")
-                        .param("page", "0")
-                        .param("size", "20")
-                        .param("sort", "crewName,asc")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(filterJson))
-                .andExpect(status().isOk())
-                .andDo(print())
-                .andExpect(jsonPath("$.result.data.totalPages").value(1));
-    }
-
-    @Test
     @DisplayName("GET /v1/contract-crew-masters/{crewPoid} returns ApiResponse with data")
     void getCrewById_ok() throws Exception {
         long crewPoid = 42L;

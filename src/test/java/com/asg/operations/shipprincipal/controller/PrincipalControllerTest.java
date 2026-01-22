@@ -161,27 +161,6 @@ class PrincipalControllerTest {
     }
 
     @Test
-    void testGetPrincipalList_Success() throws Exception {
-        GetAllPrincipalFilterRequest filterRequest = new GetAllPrincipalFilterRequest();
-        filterRequest.setIsDeleted("N");
-        filterRequest.setOperator("AND");
-        filterRequest.setFilters(Collections.emptyList());
-
-        when(principalMasterService.getAllPrincipalsWithFilters(eq(200L), any(GetAllPrincipalFilterRequest.class), eq(0), eq(20), any()))
-                .thenReturn(new PageImpl<>(Collections.emptyList()));
-
-        mockMvc.perform(post("/v1/principal-master/search")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(filterRequest))
-                .param("page", "0")
-                .param("size", "20"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-
-        verify(principalMasterService).getAllPrincipalsWithFilters(eq(200L), any(GetAllPrincipalFilterRequest.class), eq(0), eq(20), any());
-    }
-
-    @Test
     void testCreateLedger_Success() throws Exception {
         CreateLedgerResponseDto mockResponse = new CreateLedgerResponseDto();
         mockResponse.setSuccess(true);

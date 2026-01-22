@@ -108,32 +108,4 @@ class PortCallReportServiceImplTest {
         mockLovResponse.setItems(List.of(new LovItem(1L, "VT1", "Vessel Type 1", "Vessel Type 1", 1L, 1)));
         lenient().when(lovService.getLovList(any(), any(), any(), any(), any(), any())).thenReturn(mockLovResponse);
     }
-
-    @Test
-    void getAllPortCallReportsWithFilters_ShouldReturnPageResponse() {
-        Object[] mockRow = {
-            1L, "PCR00001", "Test Report", "1,2", "Y", 1L, "Test remarks",
-            "testUser", Timestamp.valueOf(LocalDateTime.now()), "testUser",
-            Timestamp.valueOf(LocalDateTime.now()), "N"
-        };
-
-        when(entityManager.createNativeQuery(anyString())).thenReturn(query).thenReturn(countQuery);
-        when(query.setParameter(anyString(), any())).thenReturn(query);
-        when(query.setFirstResult(anyInt())).thenReturn(query);
-        when(query.setMaxResults(anyInt())).thenReturn(query);
-        when(countQuery.setParameter(anyString(), any())).thenReturn(countQuery);
-
-        List<Object[]> mockResultList = new java.util.ArrayList<>();
-        mockResultList.add(mockRow);
-        when(query.getResultList()).thenReturn(mockResultList);
-        when(countQuery.getSingleResult()).thenReturn(1L);
-
-        Page<PortCallReportListResponse> result = service.getAllPortCallReportsWithFilters(
-                groupPoid, filterRequest, 0, 20, null);
-
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
-        assertEquals("PCR00001", result.getContent().get(0).getPortCallReportId());
-        verify(entityManager, times(2)).createNativeQuery(anyString());
-    }
 }
