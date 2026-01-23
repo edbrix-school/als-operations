@@ -76,9 +76,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     @Transactional(readOnly = true)
     public PdaEntryResponse getPdaEntryById(Long transactionPoid, Long groupPoid, Long companyPoid) {
 
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -187,9 +185,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public PdaEntryResponse updatePdaEntry(Long transactionPoid, PdaEntryRequest request, Long groupPoid, Long companyPoid, Long userPoid) {
 
         // Find existing entry
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -286,9 +282,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     @Override
     public void deletePdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, @Valid DeleteReasonDto deleteReasonDto) {
 
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -307,9 +301,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public List<PdaEntryChargeDetailResponse> getChargeDetails(Long transactionPoid, Long groupPoid, Long companyPoid) {
 
         // Validate transaction exists
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -329,9 +321,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             transactionPoid, request.getChargeDetails() != null ? request.getChargeDetails().size() : 0);
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -380,9 +370,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                                                            PdaEntryChargeDetailRequest request, 
                                                            Long groupPoid, Long companyPoid, String userId) {
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -415,9 +403,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public void deleteChargeDetail(Long transactionPoid, Long detRowId, Long groupPoid, Long companyPoid, String userId) {
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -446,9 +432,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public void clearChargeDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -488,9 +472,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public List<PdaEntryChargeDetailResponse> recalculateChargeDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -525,9 +507,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public List<PdaEntryChargeDetailResponse> loadDefaultCharges(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -564,9 +544,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public List<PdaEntryVehicleDetailResponse> getVehicleDetails(Long transactionPoid, Long groupPoid, Long companyPoid) {
 
         // Validate transaction exists
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -584,9 +562,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public List<PdaEntryVehicleDetailResponse> bulkSaveVehicleDetails(Long transactionPoid, BulkSaveVehicleDetailsRequest request, Long groupPoid, Long companyPoid, String userId) {
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -627,9 +603,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public void importVehicleDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -648,9 +622,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public void clearVehicleDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -666,9 +638,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     public String importTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -710,9 +680,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public void publishVehicleDetailsForImport(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -733,9 +701,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public List<PdaEntryTdrDetailResponse> getTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid) {
 
         // Validate transaction exists
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -753,9 +719,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public List<PdaEntryTdrDetailResponse> bulkSaveTdrDetails(Long transactionPoid, BulkSaveTdrDetailsRequest request, Long groupPoid, Long companyPoid, String userId) {
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -801,9 +765,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public List<PdaEntryAcknowledgmentDetailResponse> getAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid) {
 
         // Validate transaction exists
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -821,9 +783,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public List<PdaEntryAcknowledgmentDetailResponse> bulkSaveAcknowledgmentDetails(Long transactionPoid, BulkSaveAcknowledgmentDetailsRequest request, Long groupPoid, Long companyPoid, String userId) {
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -929,9 +889,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     public ValidationResponse validateAfterSave(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
 
         // Validate transaction exists
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -3315,9 +3273,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     // New FDA Document Methods
     @Override
     public FdaDocumentViewResponse getFdaDocumentInfo(Long transactionPoid, Long groupPoid, Long companyPoid) {
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
 
         if (entry.getFdaPoid() == null) {
             throw new ValidationException("No FDA document found for this PDA entry",
@@ -3366,9 +3322,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
 
         entry.setVerificationAcceptedDate(LocalDate.now());
         entry.setVerificationAcceptedBy(UserContext.getUserId());
@@ -3382,9 +3336,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     @Override
     public SubmissionLogResponse getSubmissionLogInfo(Long transactionPoid, Long groupPoid, Long companyPoid) {
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
 
         String reportUrl = "/reports/pda-fda-submission-log?" +
                 "docRef=" + entry.getDocRef() +
@@ -3435,9 +3387,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     public String cancelPdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String cancelRemark) {
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
 
         String result = callCancelPdaEntry(groupPoid, companyPoid, userPoid, transactionPoid, cancelRemark);
 
@@ -3465,9 +3415,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
 
         // Validate transaction exists and is editable
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
 
         if (!canEdit(entry)) {
             throw new ValidationException(
@@ -3610,9 +3558,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     @Override
     public String uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -3650,9 +3596,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
 
         if (!canEdit(entry)) {
             throw new ValidationException(
@@ -3706,9 +3650,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     @Override
     public String clearTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
@@ -3724,9 +3666,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     @Override
     public String processTdrCharges(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoidAndFilters(
-                transactionPoid, groupPoid, companyPoid
-        ).orElseThrow(() -> new ResourceNotFoundException(
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
