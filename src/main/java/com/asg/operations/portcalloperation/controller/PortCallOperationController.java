@@ -135,7 +135,7 @@ public class PortCallOperationController {
     /**
      * Deletes a port call operation.
      *
-     * @param id operation ID
+     * @param id              operation ID
      * @param deleteReasonDto delete reason details
      * @return success response
      */
@@ -273,7 +273,7 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> createEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                  @Valid @RequestBody PortCallOperationEstBertDetailDto dto) {
+                                                 @Valid @RequestBody PortCallOperationEstBertDetailDto dto) {
         PortCallOperationResponseDto result = portCallOperationService.createEstBertDetail(transactionPoid, dto);
         return success("EstBertDetail created successfully", result);
     }
@@ -286,8 +286,8 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> updateEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                  @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
-                                                  @Valid @RequestBody PortCallOperationEstBertDetailDto dto) {
+                                                 @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                 @Valid @RequestBody PortCallOperationEstBertDetailDto dto) {
         PortCallOperationResponseDto result = portCallOperationService.updateEstBertDetail(transactionPoid, detRowId, dto);
         return success("EstBertDetail updated successfully", result);
     }
@@ -300,7 +300,7 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> listEstPrearrivalActDetails(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
+                                                         @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         List<PortCallOperationEstPrearrivalActDetailResponseDto> result = portCallOperationService.listEstPrearrivalActDetails(transactionPoid, detRowId);
         return success("EstPrearrivalActDetails retrieved successfully", result);
     }
@@ -313,8 +313,8 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> createEstPrearrivalActDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
-                                                           @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
+                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                          @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
         PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, detRowId, dto);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstPrearrivalActDetail created successfully", result);
@@ -328,9 +328,9 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> updateEstPrearrivalActDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
-                                                           @Parameter(description = "Pre Activity Detail POID") @PathVariable Long preActivityDtlPoid,
-                                                           @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
+                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                          @Parameter(description = "Pre Activity Detail POID") @PathVariable Long preActivityDtlPoid,
+                                                          @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
         PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, preActivityDtlPoid, dto);
         loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstPrearrivalActDetail updated successfully", result);
@@ -344,7 +344,7 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> listActTimingsActvtyDetails(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
+                                                         @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         List<PortCallOperationActTimingsActvtyDetailResponseDto> result = portCallOperationService.listActTimingsActvtyDetails(transactionPoid, detRowId);
         return success("ActTimingsActvtyDetails retrieved successfully", result);
     }
@@ -357,8 +357,8 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> createActTimingsActvtyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
-                                                           @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
+                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                          @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, detRowId, dto);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetail created successfully", result);
@@ -372,9 +372,9 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> updateActTimingsActvtyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
-                                                           @Parameter(description = "Actuals Timing Detail POID") @PathVariable Long actualsTimingDtlPoid,
-                                                           @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
+                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
+                                                          @Parameter(description = "Actuals Timing Detail POID") @PathVariable Long actualsTimingDtlPoid,
+                                                          @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto);
         loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetail updated successfully", result);

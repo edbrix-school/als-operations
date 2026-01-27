@@ -1,5 +1,6 @@
 package com.asg.operations.portcalloperation.service;
 
+import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.dto.RawSearchResult;
@@ -105,6 +106,8 @@ class PortCallOperationServiceImplTest {
     private StockUnitMasterRepository stockUnitMasterRepository;
     @Mock
     private PortActivityMasterRepository portActivityMasterRepository;
+    @Mock
+    private LovDataService lovDataService;
     @Mock
     private GlobalUserRepository globalUserRepository;
 

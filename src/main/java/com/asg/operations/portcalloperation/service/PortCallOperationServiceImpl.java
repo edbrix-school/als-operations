@@ -9,6 +9,7 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
@@ -42,8 +43,6 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,6 +72,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final DocumentSearchService documentService;
     private final DocumentDeleteService documentDeleteService;
     private final LoggingService loggingService;
+    private final LovDataService lovDataService;
     private final ShipVoyageHdrRepository shipVoyageHdrRepository;
     private final ShipPrincipalRepository shipPrincipalRepository;
     private final ShipPortMasterRepository shipPortMasterRepository;
@@ -130,23 +130,31 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .transactionPoid(hdr.getTransactionPoid())
                 .transactionDate(hdr.getTransactionDate())
                 .groupPoid(hdr.getGroupPoid())
+                .groupDet(lovDataService.getDetailsByPoidAndLovName(hdr.getGroupPoid(), "GROUP"))
                 .docRef(hdr.getDocRef())
                 .companyPoid(hdr.getCompanyPoid())
+                .companyDet(lovDataService.getDetailsByPoidAndLovName(hdr.getCompanyPoid(), "COMPANY"))
                 .vesselVoyagePoid(hdr.getVesselVoyagePoid())
+                .vesselVoyageDet(lovDataService.getDetailsByPoidAndLovName(hdr.getVesselVoyagePoid(), "OPS_PC_VESSEL_VOYAGE"))
                 .callSign(hdr.getCallSign())
                 .callType(hdr.getCallType())
                 .principalPoid(hdr.getPrincipalPoid())
+                .principalDet(lovDataService.getDetailsByPoidAndLovName(hdr.getPrincipalPoid(), "OPS_PC_PRNCPL_MAST_PDA"))
                 .vesselTypePoid(hdr.getVesselTypePoid())
+                .vesselTypeDet(lovDataService.getDetailsByPoidAndLovName(hdr.getVesselTypePoid(), "VESSEL_TYPE"))
                 .operatorName(hdr.getOperatorName())
                 .chartererName(hdr.getChartererName())
                 .berth(hdr.getBerth())
                 .portOfCallPoid(hdr.getPortOfCallPoid())
+                .portOfCallDet(lovDataService.getDetailsByPoidAndLovName(hdr.getPortOfCallPoid(), "OPS_PC_PORT_MASTER"))
                 .agencyType(hdr.getAgencyType())
                 .specialInstructions(hdr.getSpecialInstructions())
                 .termsConditions(hdr.getTermsConditions())
                 .pcInfoAttachments(hdr.getPcInfoAttachments())
                 .pdaRefPoid(hdr.getPdaRefPoid())
+                .pdaRefDet(lovDataService.getDetailsByPoidAndLovName(hdr.getPdaRefPoid(), "OPS_PC_PDA_REF"))
                 .fdaRefPoid(hdr.getFdaRefPoid())
+                .fdaRefDet(lovDataService.getDetailsByPoidAndLovName(hdr.getFdaRefPoid(), "OPS_PC_FDA_REF"))
                 .pdaAnchorageStayDays(hdr.getPdaAnchorageStayDays())
                 .pdaBerthStayDays(hdr.getPdaBerthStayDays())
                 .pdaPortStayDays(hdr.getPdaPortStayDays())
@@ -155,6 +163,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .portCallActualTimingRemarks(hdr.getPortCallActualTimingRemarks())
                 .husbandryCrewReqBy(hdr.getHusbandryCrewReqBy())
                 .docsCopyEmailPoid(hdr.getDocsCopyEmailPoid())
+                .docsCopyEmailDet(lovDataService.getDetailsByPoidAndLovName(hdr.getDocsCopyEmailPoid(), ""))
                 .status(hdr.getStatus())
                 .grt(hdr.getGrt())
                 .nrt(hdr.getNrt())
@@ -427,6 +436,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .nrt(dto.getNrt())
                 .dwt(dto.getDwt())
                 .portOfCallPoid(dto.getPortOfCallPoid())
+                .specialInstructions(dto.getSpecialInstructions())
+                .termsConditions(dto.getTermsConditions())
+                .pcInfoAttachments(dto.getPcInfoAttachments())
                 .createdBy(UserContext.getUserId())
                 .createdDate(LocalDateTime.now())
                 .lastModifiedBy(UserContext.getUserId())
@@ -946,7 +958,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .ifPresent(existing -> {
                                 PortCallOperationCargoDtl oldDetail = new PortCallOperationCargoDtl();
                                 org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
-                                
+
                                 existing.setProductName(cargoDto.getProductName());
                                 existing.setPortCargoName(cargoDto.getPortCargoName());
                                 existing.setQtyMt(cargoDto.getQtyMt());
@@ -960,7 +972,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setLastModifiedBy(UserContext.getUserId());
                                 existing.setLastModifiedDate(LocalDateTime.now());
                                 existing = cargoDtlRepository.save(existing);
-                                
+
                                 String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
                                 loggingService.createLog(oldDetail, existing, PortCallOperationCargoDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });
@@ -995,7 +1007,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .ifPresent(existing -> {
                                 PortCallOperationMailDtl oldDetail = new PortCallOperationMailDtl();
                                 org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
-                                
+
                                 existing.setCommunicationType(mailDto.getCommunicationType());
                                 existing.setCommunicationMode(mailDto.getCommunicationMode());
                                 existing.setCompany(mailDto.getCompany());
@@ -1004,7 +1016,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setLastModifiedBy(UserContext.getUserId());
                                 existing.setLastModifiedDate(LocalDateTime.now());
                                 existing = mailDtlRepository.save(existing);
-                                
+
                                 String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
                                 loggingService.createLog(oldDetail, existing, PortCallOperationMailDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });
