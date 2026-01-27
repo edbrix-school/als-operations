@@ -11,6 +11,7 @@ import com.asg.operations.finaldisbursementaccount.repository.GLBankMasterReposi
 import com.asg.operations.finaldisbursementaccount.repository.SalesSalesmanMasterRepository;
 import com.asg.operations.finaldisbursementaccount.repository.ShipLineMasterRepository;
 import com.asg.operations.finaldisbursementaccount.repository.TermsTemplateRepository;
+import com.asg.operations.pdaporttariffmaster.repository.ShipChargeMasterRepository;
 import com.asg.operations.salesquotationprojects.dto.*;
 import com.asg.operations.salesquotationprojects.entity.SalesQuoteProjectsHdr;
 import com.asg.operations.salesquotationprojects.key.ShipCommodityMasterId;
@@ -67,6 +68,9 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     private final GLBankMasterRepository glBankMasterRepository;
     private final ProjectsHdrRepository projectsHdrRepository;
     private final GlobalCurrencyMasterRepository globalCurrencyMasterRepository;
+    private final ShipChargeMasterRepository shipChargeMasterRepository;
+    private final GlobalTaxMasterRepository globalTaxMasterRepository;
+
 
     @Override
     @Transactional(readOnly = true)
@@ -129,11 +133,11 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 throw new ResourceNotFoundException("Bank", "Bank Poid", request.getBankAccountPoid());
             }
         }
-        if (StringUtils.isNotBlank(request.getProjectReferenceNumber())) {
-            if (!projectsHdrRepository.existsByProjectReferenceIgnoreCase(request.getProjectReferenceNumber())) {
-                throw new ResourceNotFoundException("Project", "Project Reference Number", request.getProjectReferenceNumber());
-            }
-        }
+//        if (StringUtils.isNotBlank(request.getProjectReferenceNumber())) {
+//            if (!projectsHdrRepository.existsByProjectReferenceIgnoreCase(request.getProjectReferenceNumber())) {
+//                throw new ResourceNotFoundException("Project", "Project Reference Number", request.getProjectReferenceNumber());
+//            }
+//        }
         if (StringUtils.isNotBlank(request.getBillingCurrencyCode())) {
             if (!globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(request.getBillingCurrencyCode())) {
                 throw new ResourceNotFoundException("Currency", "Currency Code", request.getBillingCurrencyCode());
@@ -160,6 +164,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         entity.setCreatedDate(LocalDateTime.now());
         entity.setLastModifiedBy(UserContext.getUserId());
         entity.setLastModifiedDate(LocalDateTime.now());
+        entity.setTransactionDate(LocalDate.now());
 
         SalesQuoteProjectsHdr savedEntity = repository.save(entity);
 
@@ -217,11 +222,11 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 throw new ResourceNotFoundException("Bank", "Bank Poid", request.getBankAccountPoid());
             }
         }
-        if (StringUtils.isNotBlank(request.getProjectReferenceNumber())) {
-            if (!projectsHdrRepository.existsByProjectReferenceIgnoreCase(request.getProjectReferenceNumber())) {
-                throw new ResourceNotFoundException("Project", "Project Reference Number", request.getProjectReferenceNumber());
-            }
-        }
+//        if (StringUtils.isNotBlank(request.getProjectReferenceNumber())) {
+//            if (!projectsHdrRepository.existsByProjectReferenceIgnoreCase(request.getProjectReferenceNumber())) {
+//                throw new ResourceNotFoundException("Project", "Project Reference Number", request.getProjectReferenceNumber());
+//            }
+//        }
         if (StringUtils.isNotBlank(request.getBillingCurrencyCode())) {
             if (!globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(request.getBillingCurrencyCode())) {
                 throw new ResourceNotFoundException("Currency", "Currency Code", request.getBillingCurrencyCode());
@@ -244,6 +249,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         updateEntityFromRequest(existingEntity, request);
         existingEntity.setLastModifiedBy(UserContext.getUserId());
         existingEntity.setLastModifiedDate(LocalDateTime.now());
+        existingEntity.setTransactionDate(LocalDate.now());
 
         SalesQuoteProjectsHdr savedEntity = repository.save(existingEntity);
 
@@ -327,9 +333,9 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setLastModifiedDate(entity.getLastModifiedDate());
 
         // Fetch and set child entities
-        response.setChargeDetails(chargeDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapToObject).toList());
-        response.setNotesDetails(notesDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapToObject).toList());
-        response.setTcDetails(tcDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapToObject).toList());
+        response.setChargeDetails(chargeDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapChargeDetailToResponse).toList());
+        response.setNotesDetails(notesDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapNotesDetailToResponse).toList());
+        response.setTcDetails(tcDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapTcDetailToResponse).toList());
 
         return response;
     }
@@ -382,12 +388,78 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         entity.setBankAccountPoid(request.getBankAccountPoid());
     }
 
-    private Object mapToObject(Object entity) {
-        return entity;
+    private SalesQuoteProjectsChargeDetailResponse mapChargeDetailToResponse(SalesQuoteProjectsChargeDtl entity) {
+        SalesQuoteProjectsChargeDetailResponse response = new SalesQuoteProjectsChargeDetailResponse();
+        response.setTransactionPoid(entity.getId().getTransactionPoid());
+        response.setDetRowId(entity.getId().getDetRowId());
+        response.setChargePoid(entity.getChargePoid());
+        response.setPrintableChargeDesc(entity.getPrintableChargeDesc());
+        response.setQuantity(entity.getQuantity());
+        response.setUnitPoid(entity.getUnitPoid());
+        response.setBuyCurrencyCode(entity.getBuyCurrencyCode());
+        response.setBuyCurrencyRate(entity.getBuyCurrencyRate());
+        response.setBuyUnitRate(entity.getBuyUnitRate());
+        response.setBuyTotalLc(entity.getBuyTotalLc());
+        response.setSellUnitRateFc(entity.getSellUnitRateFc());
+        response.setSellTotalFc(entity.getSellTotalFc());
+        response.setTaxPoid(entity.getTaxPoid());
+        response.setTaxPercentage(entity.getTaxPercentage());
+        response.setTaxAmountFc(entity.getTaxAmountFc());
+        response.setSellGrandTotalFc(entity.getSellGrandTotalFc());
+        response.setTaxAmountLc(entity.getTaxAmountLc());
+        response.setSellGrandTotalLc(entity.getSellGrandTotalLc());
+        response.setRemarks(entity.getRemarks());
+        response.setCreatedBy(entity.getCreatedBy());
+        response.setCreatedDate(entity.getCreatedDate());
+        response.setLastModifiedBy(entity.getLastModifiedBy());
+        response.setLastModifiedDate(entity.getLastModifiedDate());
+        return response;
+    }
+
+    private SalesQuoteProjectsNotesDetailResponse mapNotesDetailToResponse(SalesQuoteProjectsNotesDtl entity) {
+        SalesQuoteProjectsNotesDetailResponse response = new SalesQuoteProjectsNotesDetailResponse();
+        response.setTransactionPoid(entity.getId().getTransactionPoid());
+        response.setDetRowId(entity.getId().getDetRowId());
+        response.setNotes(entity.getNotes());
+        response.setCreatedBy(entity.getCreatedBy());
+        response.setCreatedDate(entity.getCreatedDate());
+        response.setLastModifiedBy(entity.getLastModifiedBy());
+        response.setLastModifiedDate(entity.getLastModifiedDate());
+        return response;
+    }
+
+    private SalesQuoteProjectsTcDetailResponse mapTcDetailToResponse(SalesQuoteProjectsTcDtl entity) {
+        SalesQuoteProjectsTcDetailResponse response = new SalesQuoteProjectsTcDetailResponse();
+        response.setTransactionPoid(entity.getId().getTransactionPoid());
+        response.setDetRowId(entity.getId().getDetRowId());
+        response.setClauseRef(entity.getClauseRef());
+        response.setTermsDescription(entity.getTermsDescription());
+        response.setCreatedBy(entity.getCreatedBy());
+        response.setCreatedDate(entity.getCreatedDate());
+        response.setLastModifiedBy(entity.getLastModifiedBy());
+        response.setLastModifiedDate(entity.getLastModifiedDate());
+        return response;
     }
 
     private void updateChargeDetails(Long transactionPoid, List<SalesQuoteProjectsChargeDetailRequest> chargeDetails) {
         for (SalesQuoteProjectsChargeDetailRequest request : chargeDetails) {
+
+            if (request.getChargePoid() != null) {
+                if (!shipChargeMasterRepository.existsByChargePoid(BigDecimal.valueOf(request.getChargePoid()))) {
+                    throw new ResourceNotFoundException("Charge", "Charge Poid", request.getChargePoid());
+                }
+            }
+            if (request.getTaxPoid() != null) {
+                if (!globalTaxMasterRepository.existsByTaxPoid(request.getTaxPoid())) {
+                    throw new ResourceNotFoundException("Tax", "Tax Poid", request.getTaxPoid());
+                }
+            }
+            if (StringUtils.isNotBlank(request.getBuyCurrencyCode())) {
+                if (!globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(request.getBuyCurrencyCode())) {
+                    throw new ResourceNotFoundException("Currency", "Currency Code", request.getBuyCurrencyCode());
+                }
+            }
+
             ActionType action = request.getActionType();
             if (action == null) continue;
 
@@ -565,6 +637,23 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
 
     private void saveChargeDetails(SalesQuoteProjectsHdr savedEntity, List<SalesQuoteProjectsChargeDetailRequest> chargeDetails) {
         for (SalesQuoteProjectsChargeDetailRequest request : chargeDetails) {
+
+            if (request.getChargePoid() != null) {
+                if (!shipChargeMasterRepository.existsByChargePoid(BigDecimal.valueOf(request.getChargePoid()))) {
+                    throw new ResourceNotFoundException("Charge", "Charge Poid", request.getChargePoid());
+                }
+            }
+            if (request.getTaxPoid() != null) {
+                if (!globalTaxMasterRepository.existsByTaxPoid(request.getTaxPoid())) {
+                    throw new ResourceNotFoundException("Tax", "Tax Poid", request.getTaxPoid());
+                }
+            }
+            if (StringUtils.isNotBlank(request.getBuyCurrencyCode())) {
+                if (!globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(request.getBuyCurrencyCode())) {
+                    throw new ResourceNotFoundException("Currency", "Currency Code", request.getBuyCurrencyCode());
+                }
+            }
+
             Long nextDetRowId = chargeDtlRepository.findMaxDetRowIdByTransactionPoid(savedEntity.getTransactionPoid()) + 1;
             SalesQuoteProjectsChargeDtl entity = new SalesQuoteProjectsChargeDtl();
             SalesQuoteProjectsChargeDtlId id = new SalesQuoteProjectsChargeDtlId(savedEntity.getTransactionPoid(), nextDetRowId);

@@ -19,12 +19,6 @@ public class SalesQuoteProjectsNotesDtl {
     @EmbeddedId
     private SalesQuoteProjectsNotesDtlId id;
 
-    // FK to header
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("transactionPoid")
-    @JoinColumn(name = "TRANSACTION_POID", nullable = false, updatable = false, insertable = false)
-    private SalesQuoteProjectsHdr header;
-
     @Column(name = "NOTES", length = 300)
     private String notes;
 

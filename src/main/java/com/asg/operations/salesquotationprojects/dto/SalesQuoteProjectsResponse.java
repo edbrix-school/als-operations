@@ -61,7 +61,7 @@ public class SalesQuoteProjectsResponse {
     private String lastModifiedBy;
     private LocalDateTime lastModifiedDate;
 
-    private List<Object> chargeDetails;
-    private List<Object> notesDetails;
-    private List<Object> tcDetails;
+    private List<SalesQuoteProjectsChargeDetailResponse> chargeDetails;
+    private List<SalesQuoteProjectsNotesDetailResponse> notesDetails;
+    private List<SalesQuoteProjectsTcDetailResponse> tcDetails;
 }
