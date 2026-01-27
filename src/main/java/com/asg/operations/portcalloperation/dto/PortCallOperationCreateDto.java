@@ -43,6 +43,14 @@ public class PortCallOperationCreateDto {
     @NotNull(message = "Port of Call Poid is required")
     private Long portOfCallPoid;
 
+    @Size(max = 4000, message = "Special Instructions should not exceed 4000 characters")
+    private String specialInstructions;
+
+    @Size(max = 4000, message = "Terms and Conditions should not exceed 4000 characters")
+    private String termsConditions;
+
+    @Size(max = 4000, message = "PC Info Attachments should not exceed 4000 characters")
+    private String pcInfoAttachments;
 
     @Valid
     private List<PortCallOperationCargoDetailDto> cargoDetails;

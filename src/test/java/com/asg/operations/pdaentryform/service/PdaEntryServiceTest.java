@@ -68,7 +68,7 @@ class PdaEntryServiceTest {
         entry.setTransactionPoid(transactionPoid);
         entry.setStatus("PROPOSAL");
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
         when(entryHdrRepository.findById(transactionPoid))
                 .thenReturn(Optional.of(entry));
@@ -102,7 +102,7 @@ class PdaEntryServiceTest {
         entry.setTransactionPoid(transactionPoid);
         entry.setStatus("PROPOSAL");
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
         when(vehicleDtlRepository.save(any(PdaEntryVehicleDtl.class)))
                 .thenReturn(new PdaEntryVehicleDtl());
@@ -132,7 +132,7 @@ class PdaEntryServiceTest {
         existingDetail.setTransactionPoid(transactionPoid);
         existingDetail.setDetRowId(100L);
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
         when(entryHdrRepository.findById(transactionPoid))
                 .thenReturn(Optional.of(entry));
@@ -163,7 +163,7 @@ class PdaEntryServiceTest {
         detail.setChargePoid(new BigDecimal(100));
         detail.setQty(new BigDecimal(5));
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
         when(entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid))
                 .thenReturn(List.of(detail));
@@ -185,7 +185,7 @@ class PdaEntryServiceTest {
         vehicleDetail.setDetRowId(1L);
         vehicleDetail.setVesselName("MAERSK");
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
         when(vehicleDtlRepository.findByTransactionPoidOrderByDetRowIdAsc(transactionPoid))
                 .thenReturn(List.of(vehicleDetail));
@@ -205,7 +205,7 @@ class PdaEntryServiceTest {
         entry.setStatus("PROPOSAL");
         entry.setRefType("GENERAL");
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
 
         pdaEntryService.clearChargeDetails(transactionPoid, groupPoid, companyPoid, userId);
@@ -219,7 +219,7 @@ class PdaEntryServiceTest {
         entry.setTransactionPoid(transactionPoid);
         entry.setStatus("PROPOSAL");
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
 
         pdaEntryService.clearVehicleDetails(transactionPoid, groupPoid, companyPoid, userId);
@@ -234,7 +234,7 @@ class PdaEntryServiceTest {
         entry.setTransactionPoid(transactionPoid);
         entry.setStatus("PROPOSAL");
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
 
         pdaEntryService.publishVehicleDetailsForImport(transactionPoid, groupPoid, companyPoid, userId);
@@ -247,7 +247,7 @@ class PdaEntryServiceTest {
         PdaEntryHdr entry = new PdaEntryHdr();
         entry.setTransactionPoid(transactionPoid);
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
         when(tdrDetailRepository.findByTransactionPoidOrderByDetRowIdAsc(transactionPoid))
                 .thenReturn(new ArrayList<>());
@@ -263,7 +263,7 @@ class PdaEntryServiceTest {
         PdaEntryHdr entry = new PdaEntryHdr();
         entry.setTransactionPoid(transactionPoid);
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
         when(acknowledgmentDtlRepository.findByTransactionPoidOrderByDetRowIdAsc(transactionPoid))
                 .thenReturn(new ArrayList<>());
@@ -289,7 +289,7 @@ class PdaEntryServiceTest {
         entry.setHarbourCallType("PORT");
         entry.setTotalQuantity(new BigDecimal(100));
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
         when(entryHdrRepository.findById(transactionPoid))
                 .thenReturn(Optional.of(entry));
@@ -319,7 +319,7 @@ class PdaEntryServiceTest {
         entry.setHarbourCallType("PORT");
         entry.setTotalQuantity(new BigDecimal(100));
 
-        when(entryHdrRepository.findByTransactionPoidAndFilters(transactionPoid, groupPoid, companyPoid))
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
         when(entryHdrRepository.findById(transactionPoid))
                 .thenReturn(Optional.of(entry));
