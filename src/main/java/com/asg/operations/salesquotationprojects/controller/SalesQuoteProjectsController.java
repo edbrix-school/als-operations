@@ -20,16 +20,15 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Page;
 
 import java.time.LocalDate;
 import java.util.Map;
 
-import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
 import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @RestController
@@ -87,5 +86,42 @@ public class SalesQuoteProjectsController {
     ) {
         salesQuoteProjectsService.deleteSalesQuoteProject(transactionPoid, deleteReasonDto);
         return ApiResponse.success("Sales Quote Project deleted successfully");
+    }
+
+    // Stored Procedure Endpoints
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/customer-address/{customerPoid}")
+    @Operation(
+            summary = "Get Customer Address",
+            description = "Retrieve customer address details for quotation",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getCustomerAddress(@PathVariable Long customerPoid) {
+        Map<String, Object> result = salesQuoteProjectsService.getCustomerAddress(customerPoid);
+        return success("Customer address retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/terms-conditions/{termsPoid}")
+    @Operation(
+            summary = "Get Terms and Conditions",
+            description = "Retrieve terms and conditions template details",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getTermsAndConditions(@PathVariable Long termsPoid) {
+        Map<String, Object> result = salesQuoteProjectsService.getTermsAndConditions(termsPoid);
+        return success("Terms and conditions retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/charge-tax-details/{chargePoid}")
+    @Operation(
+            summary = "Get Charge Tax Details",
+            description = "Retrieve tax details for a specific charge",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getChargeTaxDetails(@PathVariable Long chargePoid) {
+        Map<String, Object> result = salesQuoteProjectsService.getChargeTaxDetails(chargePoid);
+        return success("Charge tax details retrieved successfully", result);
     }
 }

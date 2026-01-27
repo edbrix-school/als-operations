@@ -20,4 +20,11 @@ public interface SalesQuoteProjectsService {
     SalesQuoteProjectsResponse updateSalesQuoteProject(Long transactionPoid, SalesQuoteProjectsRequest request);
 
     void deleteSalesQuoteProject(Long transactionPoid, DeleteReasonDto deleteReasonDto);
+    
+    // Stored Procedure Methods
+    Map<String, Object> getCustomerAddress(Long customerPoid);
+    
+    Map<String, Object> getTermsAndConditions(Long templatePoid);
+    
+    Map<String, Object> getChargeTaxDetails(Long chargePoid);
 }

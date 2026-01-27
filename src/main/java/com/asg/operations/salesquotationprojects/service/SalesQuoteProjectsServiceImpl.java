@@ -1,15 +1,16 @@
 package com.asg.operations.salesquotationprojects.service;
 
-import com.asg.common.lib.dto.DeleteReasonDto;
-import com.asg.common.lib.dto.FilterDto;
-import com.asg.common.lib.dto.FilterRequestDto;
-import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.dto.*;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.exceptions.ResourceNotFoundException;
+import com.asg.operations.exceptions.CustomException;
+import com.asg.operations.finaldisbursementaccount.repository.GLBankMasterRepository;
 import com.asg.operations.finaldisbursementaccount.repository.SalesSalesmanMasterRepository;
+import com.asg.operations.finaldisbursementaccount.repository.ShipLineMasterRepository;
+import com.asg.operations.finaldisbursementaccount.repository.TermsTemplateRepository;
 import com.asg.operations.salesquotationprojects.dto.*;
 import com.asg.operations.salesquotationprojects.entity.SalesQuoteProjectsHdr;
 import com.asg.operations.salesquotationprojects.key.ShipCommodityMasterId;
@@ -27,12 +28,20 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.simple.SimpleJdbcCall;
+import org.springframework.jdbc.core.SqlParameter;
+import org.springframework.jdbc.core.SqlOutParameter;
+import oracle.jdbc.OracleTypes;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +50,7 @@ import java.util.Map;
 @Transactional
 public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService {
 
+    private final JdbcTemplate jdbcTemplate;
     private final SalesQuoteProjectsHdrRepository repository;
     private final SalesQuoteProjectsChargeDtlRepository chargeDtlRepository;
     private final SalesQuoteProjectsNotesDtlRepository notesDtlRepository;
@@ -51,6 +61,12 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     private final ApSupplierMasterRepository apSupplierMasterRepository;
     private final SalesSalesmanMasterRepository salesSalesmanMasterRepository;
     private final ShipCommodityMasterRepository shipCommodityMasterRepository;
+    private final ShipLineMasterRepository shipLineMasterRepository;
+    private final AirLineMasterRepository airLineMasterRepository;
+    private final TermsTemplateRepository termsTemplateRepository;
+    private final GLBankMasterRepository glBankMasterRepository;
+    private final ProjectsHdrRepository projectsHdrRepository;
+    private final GlobalCurrencyMasterRepository globalCurrencyMasterRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -91,6 +107,36 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         if (request.getSalesmanPoid() != null) {
             if (!salesSalesmanMasterRepository.existsBySalesmanPoid(request.getSalesmanPoid())) {
                 throw new ResourceNotFoundException("Salesman", "Salesman Poid", request.getSalesmanPoid());
+            }
+        }
+        if (request.getLinePoid() != null) {
+            if (!shipLineMasterRepository.existsByLinePoid(request.getLinePoid())) {
+                throw new ResourceNotFoundException("Line", "Line Poid", request.getLinePoid());
+            }
+        }
+        if (request.getCarrierPoid() != null) {
+            if (!airLineMasterRepository.existsByAirlinePoid(request.getCarrierPoid())) {
+                throw new ResourceNotFoundException("Carrier", "Carrier Poid", request.getCarrierPoid());
+            }
+        }
+        if (request.getTermsPoid() != null) {
+            if (!termsTemplateRepository.existsByTermsPoid(request.getTermsPoid())) {
+                throw new ResourceNotFoundException("Terms & Template", "Terms Poid", request.getTermsPoid());
+            }
+        }
+        if (request.getBankAccountPoid() != null) {
+            if (!glBankMasterRepository.existsByBankPoid(request.getBankAccountPoid())) {
+                throw new ResourceNotFoundException("Bank", "Bank Poid", request.getBankAccountPoid());
+            }
+        }
+        if (StringUtils.isNotBlank(request.getProjectReferenceNumber())) {
+            if (!projectsHdrRepository.existsByProjectReferenceIgnoreCase(request.getProjectReferenceNumber())) {
+                throw new ResourceNotFoundException("Project", "Project Reference Number", request.getProjectReferenceNumber());
+            }
+        }
+        if (StringUtils.isNotBlank(request.getBillingCurrencyCode())) {
+            if (!globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(request.getBillingCurrencyCode())) {
+                throw new ResourceNotFoundException("Currency", "Currency Code", request.getBillingCurrencyCode());
             }
         }
         if (request.getCommodity() != null && !request.getCommodity().isEmpty()) {
@@ -151,6 +197,36 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 throw new ResourceNotFoundException("Salesman", "Salesman Poid", request.getSalesmanPoid());
             }
         }
+        if (request.getLinePoid() != null) {
+            if (!shipLineMasterRepository.existsByLinePoid(request.getLinePoid())) {
+                throw new ResourceNotFoundException("Line", "Line Poid", request.getLinePoid());
+            }
+        }
+        if (request.getCarrierPoid() != null) {
+            if (!airLineMasterRepository.existsByAirlinePoid(request.getCarrierPoid())) {
+                throw new ResourceNotFoundException("Carrier", "Carrier Poid", request.getCarrierPoid());
+            }
+        }
+        if (request.getTermsPoid() != null) {
+            if (!termsTemplateRepository.existsByTermsPoid(request.getTermsPoid())) {
+                throw new ResourceNotFoundException("Terms & Template", "Terms Poid", request.getTermsPoid());
+            }
+        }
+        if (request.getBankAccountPoid() != null) {
+            if (!glBankMasterRepository.existsByBankPoid(request.getBankAccountPoid())) {
+                throw new ResourceNotFoundException("Bank", "Bank Poid", request.getBankAccountPoid());
+            }
+        }
+        if (StringUtils.isNotBlank(request.getProjectReferenceNumber())) {
+            if (!projectsHdrRepository.existsByProjectReferenceIgnoreCase(request.getProjectReferenceNumber())) {
+                throw new ResourceNotFoundException("Project", "Project Reference Number", request.getProjectReferenceNumber());
+            }
+        }
+        if (StringUtils.isNotBlank(request.getBillingCurrencyCode())) {
+            if (!globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(request.getBillingCurrencyCode())) {
+                throw new ResourceNotFoundException("Currency", "Currency Code", request.getBillingCurrencyCode());
+            }
+        }
         if (request.getCommodity() != null && !request.getCommodity().isEmpty()) {
             for (String commodity : request.getCommodity()) {
                 long commodityPoid;
@@ -192,7 +268,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
 
         documentDeleteService.deleteDocument(
                 transactionPoid,
-                "PDA_PORT_TARIFF_HDR",
+                "SALES_QUOTE_PROJECTS_HDR",
                 "TRANSACTION_POID",
                 deleteReasonDto,
                 entity.getTransactionDate()
@@ -417,6 +493,74 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         entity.setTaxAmountLc(request.getTaxAmountLc());
         entity.setSellGrandTotalLc(request.getSellGrandTotalLc());
         entity.setRemarks(request.getRemarks());
+    }
+
+    // Stored Procedure Implementations
+    public Map<String, Object> getCustomerAddress(Long customerPoid) {
+        try {
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_GET_QTN_CUST_ADDRESS_V2")
+                    .declareParameters(
+                            new SqlParameter("P_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_ADDRESS_MASTER_POID", Types.NUMERIC),
+                            new SqlParameter("P_ADDRESS_TYPE", Types.VARCHAR),
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
+                    );
+            Map<String, Object> params = new HashMap<>();
+            params.put("P_USER_POID", UserContext.getUserPoid());
+            params.put("P_ADDRESS_MASTER_POID", customerPoid);
+            params.put("P_ADDRESS_TYPE", "SALES");
+            return jdbcCall.execute(params);
+        } catch (Exception e) {
+            throw new CustomException("Error retrieving customer address: " + e.getMessage(), 500);
+        }
+    }
+
+    public Map<String, Object> getTermsAndConditions(Long termsPoid) {
+        try {
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_GLOB_TERMS_LOADLIST")
+                    .declareParameters(
+                            new SqlParameter("P_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_DOC_ID", Types.VARCHAR),
+                            new SqlParameter("P_DOC_KEY_POID", Types.NUMERIC),
+                            new SqlParameter("P_TERMS_POID", Types.NUMERIC),
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR),
+                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                    );
+            Map<String, Object> params = new HashMap<>();
+            params.put("P_GROUP_POID", UserContext.getGroupPoid());
+            params.put("P_COMPANY_POID", UserContext.getCompanyPoid());
+            params.put("P_DOC_ID", UserContext.getDocumentId());
+            params.put("P_DOC_KEY_POID", 0);
+            params.put("P_TERMS_POID", termsPoid);
+            return jdbcCall.execute(params);
+        } catch (Exception e) {
+            throw new CustomException("Error retrieving terms and conditions: " + e.getMessage(), 500);
+        }
+    }
+
+    public Map<String, Object> getChargeTaxDetails(Long chargePoid) {
+        try {
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_GET_CHARGE_TAX_PER_V2")
+                    .declareParameters(
+                            new SqlParameter("P_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_PARTY_TYPE", Types.VARCHAR),
+                            new SqlParameter("P_PARTY_POID", Types.NUMERIC),
+                            new SqlParameter("P_CHARGE_POID", Types.NUMERIC),
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
+                    );
+            Map<String, Object> params = new HashMap<>();
+            params.put("P_COMPANY_POID", UserContext.getCompanyPoid());
+            params.put("P_PARTY_TYPE", UserContext.getUserRole());
+            params.put("P_PARTY_POID", UserContext.getUserPoid());
+            params.put("P_CHARGE_POID", chargePoid);
+            return jdbcCall.execute(params);
+        } catch (Exception e) {
+            throw new CustomException("Error retrieving charge tax details: " + e.getMessage(), 500);
+        }
     }
 
     private void saveChargeDetails(SalesQuoteProjectsHdr savedEntity, List<SalesQuoteProjectsChargeDetailRequest> chargeDetails) {
