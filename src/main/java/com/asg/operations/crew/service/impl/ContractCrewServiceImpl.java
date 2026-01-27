@@ -350,7 +350,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         documentDeleteService.deleteDocument(
                 crewPoid,
-                "GL_ADVANCE_PETTY_CASH_HDR",
+                "CONTRACT_CREW_MASTER",
                 "CREW_POID",
                 deleteReasonDto,
                 LocalDate.now()
