@@ -1402,7 +1402,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         detail.setLastModifiedDate(now);
 
         // Save
-        entryDtlRepository.save(detail);
+        PdaEntryDtl saved = entryDtlRepository.save(detail);
+        String logDetail = String.format("Row Created on [PDA Entry Charge Details] with detRowId: %s", saved.getDetRowId());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
     }
 
     private void updateChargeDetail(Long transactionPoid, PdaEntryChargeDetailRequest request,
@@ -1486,6 +1488,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Charge detail not found with id: " + detRowId
                 ));
+        loggingService.logDelete(detail, UserContext.getDocumentId(), transactionPoid.toString());
         entryDtlRepository.delete(detail);
     }
 
@@ -1851,7 +1854,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         detail.setLastModifiedDate(now);
 
         // Save
-        vehicleDtlRepository.save(detail);
+        PdaEntryVehicleDtl saved = vehicleDtlRepository.save(detail);
+        String logDetail = String.format("Row Created on [PDA Entry Vehicle Details] with detRowId: %s", saved.getDetRowId());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
     }
 
     private void updateVehicleDetail(Long transactionPoid, PdaEntryVehicleDetailRequest request,
@@ -1880,6 +1885,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Vehicle detail not found with id: " + detRowId
                 ));
+        loggingService.logDelete(detail, UserContext.getDocumentId(), transactionPoid.toString());
         vehicleDtlRepository.delete(detail);
     }
 
@@ -2041,7 +2047,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         detail.setLastModifiedDate(now);
 
         // Save
-        tdrDetailRepository.save(detail);
+        PdaEntryTdrDetail saved = tdrDetailRepository.save(detail);
+        String logDetail = String.format("Row Created on [PDA Entry TDR Details] with detRowId: %s", saved.getDetRowId());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
     }
 
     private void updateTdrDetail(Long transactionPoid, PdaEntryTdrDetailRequest request,
@@ -2070,6 +2078,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "TDR detail not found with id: " + detRowId
                 ));
+        loggingService.logDelete(detail, UserContext.getDocumentId(), transactionPoid.toString());
         tdrDetailRepository.delete(detail);
     }
 
@@ -2228,7 +2237,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         detail.setLastModifiedDate(now);
 
         // Save
-        acknowledgmentDtlRepository.save(detail);
+        PdaEntryAcknowledgmentDtl saved = acknowledgmentDtlRepository.save(detail);
+        String logDetail = String.format("Row Created on [PDA Entry Acknowledgment Details] with detRowId: %s", saved.getDetRowId());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
     }
 
     private void updateAcknowledgmentDetail(Long transactionPoid, PdaEntryAcknowledgmentDetailRequest request,
@@ -2257,6 +2268,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Acknowledgment detail not found with id: " + detRowId
                 ));
+        loggingService.logDelete(detail, UserContext.getDocumentId(), transactionPoid.toString());
         acknowledgmentDtlRepository.delete(detail);
     }
 

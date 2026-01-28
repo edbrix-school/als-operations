@@ -35,23 +35,17 @@ public class CalculationUtils {
         }
     }
 
-    public static void computeProfitLossRuntime(List<FdaChargeDto> charges, FdaHeaderDto headerDto) {
 
+    public static void computeProfitLossRuntime(List<FdaChargeDto> charges, FdaHeaderDto headerDto) {
         BigDecimal profitTotal = BigDecimal.ZERO;
-        BigDecimal lossTotal = BigDecimal.ZERO;
+        BigDecimal lossTotal = BigDecimal.ZERO;  // negative or zero
         BigDecimal totalCost = BigDecimal.ZERO;
 
         for (FdaChargeDto d : charges) {
             BigDecimal fdaAmt = zero(d.getFdaAmount() != null ? d.getFdaAmount() : d.getAmount());
             BigDecimal costAmt = zero(d.getCostAmount());
-            BigDecimal dnAmt = zero(d.getDnAmount());
-            BigDecimal cnAmt = zero(d.getCnAmount());
 
-            BigDecimal pl = fdaAmt
-                    .subtract(costAmt)
-                    .subtract(dnAmt)
-                    .add(cnAmt);
-
+            BigDecimal pl = fdaAmt.subtract(costAmt);
             d.setProfitLoss(pl);
 
             if (costAmt.compareTo(BigDecimal.ZERO) > 0) {
@@ -67,7 +61,7 @@ public class CalculationUtils {
                 if (pl.compareTo(BigDecimal.ZERO) > 0) {
                     profitTotal = profitTotal.add(pl);
                 } else if (pl.compareTo(BigDecimal.ZERO) < 0) {
-                    lossTotal = lossTotal.add(pl.abs());
+                    lossTotal = lossTotal.add(pl);  // keep negative
                 }
                 totalCost = totalCost.add(costAmt);
             }
@@ -77,7 +71,7 @@ public class CalculationUtils {
             headerDto.setProfitTotal(profitTotal);
             headerDto.setLossTotal(lossTotal);
 
-            BigDecimal headerPl = profitTotal.subtract(lossTotal);
+            BigDecimal headerPl = profitTotal.add(lossTotal);  // lossTotal already negative
             headerDto.setProfitLossAmount(headerPl);
 
             if (totalCost.compareTo(BigDecimal.ZERO) > 0) {
@@ -90,13 +84,4 @@ public class CalculationUtils {
             }
         }
     }
-
-    public static String getReportFileName(String reportType) {
-        return switch (reportType.toLowerCase()) {
-            case "usd" -> "PDA/FDAreportUSD.jrxml";
-            case "default", "standard" -> "PDA/FDAreport1.jrxml";
-            default -> "PDA/FDAreport1.jrxml";
-        };
-    }
-
 }
