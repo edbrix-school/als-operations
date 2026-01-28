@@ -32,6 +32,7 @@ public class PortCallOperationResponseDto {
     private String operatorName;
     private String chartererName;
     private String berth;
+    private LovGetListDto berthDet;
     private Long portOfCallPoid;
     private LovGetListDto portOfCallDet;
     private String agencyType;

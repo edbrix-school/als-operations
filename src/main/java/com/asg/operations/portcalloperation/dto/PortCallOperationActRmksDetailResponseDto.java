@@ -1,5 +1,6 @@
 package com.asg.operations.portcalloperation.dto;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,4 +23,5 @@ public class PortCallOperationActRmksDetailResponseDto {
     private String cargoDetails;
     private String reason;
     private Long pcReportPoid;
+    private LovGetListDto pcReportDet;
 }
