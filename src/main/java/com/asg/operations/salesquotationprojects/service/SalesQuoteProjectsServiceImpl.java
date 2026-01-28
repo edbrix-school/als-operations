@@ -1,9 +1,11 @@
 package com.asg.operations.salesquotationprojects.service;
 
 import com.asg.common.lib.dto.*;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.exceptions.ResourceNotFoundException;
@@ -26,7 +28,9 @@ import com.asg.operations.salesquotationprojects.key.SalesQuoteProjectsNotesDtlI
 import com.asg.operations.salesquotationprojects.key.SalesQuoteProjectsTcDtlId;
 import com.asg.operations.shipprincipal.repository.AddressMasterRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -49,6 +53,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional
 public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService {
 
@@ -72,6 +77,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     private final ShipChargeMasterRepository shipChargeMasterRepository;
     private final GlobalTaxMasterRepository globalTaxMasterRepository;
     private final LovDataService lovDataService;
+    private final LoggingService loggingService;
 
 
     @Override
@@ -92,6 +98,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     @Override
     @Transactional(readOnly = true)
     public SalesQuoteProjectsResponse getSalesQuoteProjectById(Long transactionPoid) {
+        log.info("Fetching sales quote project by id: {}", transactionPoid);
         SalesQuoteProjectsHdr entity = repository.findById(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Sales Quote Project not found with ID: " + transactionPoid));
 
@@ -100,6 +107,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
 
     @Override
     public SalesQuoteProjectsResponse createSalesQuoteProject(SalesQuoteProjectsRequest request) {
+        log.info("Creating sales quote project");
         if (request.getCustomerPoid() != null) {
             if (!addressMasterRepository.existsByAddressMasterPoid(request.getCustomerPoid())) {
                 throw new ResourceNotFoundException("Customer", "Customer Poid", request.getCustomerPoid());
@@ -181,13 +189,18 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             saveTcDetails(savedEntity, request.getTcDetails());
         }
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString());
         return mapToResponse(savedEntity);
     }
 
     @Override
     public SalesQuoteProjectsResponse updateSalesQuoteProject(Long transactionPoid, SalesQuoteProjectsRequest request) {
+        log.info("Updating sales quote project id: {}", transactionPoid);
         SalesQuoteProjectsHdr existingEntity = repository.findById(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Sales Quote Project not found with ID: " + transactionPoid));
+
+        SalesQuoteProjectsHdr oldHeader = new SalesQuoteProjectsHdr();
+        BeanUtils.copyProperties(existingEntity, oldHeader);
 
         if (request.getCustomerPoid() != null) {
             if (!addressMasterRepository.existsByAddressMasterPoid(request.getCustomerPoid())) {
@@ -266,11 +279,13 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             updateTcDetails(existingEntity.getTransactionPoid(), request.getTcDetails());
         }
 
+        loggingService.logChanges(oldHeader, existingEntity, SalesQuoteProjectsHdr.class, UserContext.getDocumentId(), transactionPoid.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return mapToResponse(savedEntity);
     }
 
     @Override
     public void deleteSalesQuoteProject(Long transactionPoid, DeleteReasonDto deleteReasonDto) {
+        log.info("Deleting sales quote project id: {}", transactionPoid);
         SalesQuoteProjectsHdr entity = repository.findById(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Sales Quote Project not found with ID: " + transactionPoid));
 
@@ -492,18 +507,25 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 mapChargeRequestToEntity(request, entity);
                 entity.setCreatedBy(UserContext.getUserId());
                 entity.setCreatedDate(java.time.LocalDate.now());
-                chargeDtlRepository.save(entity);
+                SalesQuoteProjectsChargeDtl saved = chargeDtlRepository.save(entity);
+                String logDetail = String.format("Row Created on [Sales Quote Projects Charge Details] with detRowId: %s", saved.getId().getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
             } else if (action == ActionType.isUpdated) {
                 SalesQuoteProjectsChargeDtlId id = new SalesQuoteProjectsChargeDtlId(transactionPoid, request.getDetRowId());
                 chargeDtlRepository.findById(id).ifPresent(existing -> {
+                    SalesQuoteProjectsChargeDtl oldDetail = new SalesQuoteProjectsChargeDtl();
+                    BeanUtils.copyProperties(existing, oldDetail);
                     mapChargeRequestToEntity(request, existing);
                     existing.setLastModifiedBy(UserContext.getUserId());
                     existing.setLastModifiedDate(java.time.LocalDate.now());
                     chargeDtlRepository.save(existing);
+                    String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getDetRowId());
+                    loggingService.createLog(oldDetail, existing, SalesQuoteProjectsChargeDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 });
             } else if (action == ActionType.isDeleted) {
                 SalesQuoteProjectsChargeDtlId id = new SalesQuoteProjectsChargeDtlId(transactionPoid, request.getDetRowId());
                 chargeDtlRepository.deleteById(id);
+                loggingService.logDelete(request, UserContext.getDocumentId(), transactionPoid.toString());
             }
         }
     }
@@ -521,18 +543,25 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 entity.setNotes(request.getNotes());
                 entity.setCreatedBy(UserContext.getUserId());
                 entity.setCreatedDate(java.time.LocalDate.now());
-                notesDtlRepository.save(entity);
+                SalesQuoteProjectsNotesDtl saved = notesDtlRepository.save(entity);
+                String logDetail = String.format("Row Created on [Sales Quote Projects Notes Details] with detRowId: %s", saved.getId().getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
             } else if (action == ActionType.isUpdated) {
                 SalesQuoteProjectsNotesDtlId id = new SalesQuoteProjectsNotesDtlId(transactionPoid, request.getDetRowId());
                 notesDtlRepository.findById(id).ifPresent(existing -> {
+                    SalesQuoteProjectsNotesDtl oldDetail = new SalesQuoteProjectsNotesDtl();
+                    BeanUtils.copyProperties(existing, oldDetail);
                     existing.setNotes(request.getNotes());
                     existing.setLastModifiedBy(UserContext.getUserId());
                     existing.setLastModifiedDate(java.time.LocalDate.now());
                     notesDtlRepository.save(existing);
+                    String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getDetRowId());
+                    loggingService.createLog(oldDetail, existing, SalesQuoteProjectsNotesDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 });
             } else if (action == ActionType.isDeleted) {
                 SalesQuoteProjectsNotesDtlId id = new SalesQuoteProjectsNotesDtlId(transactionPoid, request.getDetRowId());
                 notesDtlRepository.deleteById(id);
+                loggingService.logDelete(request, UserContext.getDocumentId(), transactionPoid.toString());
             }
         }
     }
@@ -551,19 +580,26 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 entity.setTermsDescription(request.getTermsDescription());
                 entity.setCreatedBy(UserContext.getUserId());
                 entity.setCreatedDate(java.time.LocalDate.now());
-                tcDtlRepository.save(entity);
+                SalesQuoteProjectsTcDtl saved = tcDtlRepository.save(entity);
+                String logDetail = String.format("Row Created on [Sales Quote Projects TC Details] with detRowId: %s", saved.getId().getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
             } else if (action == ActionType.isUpdated) {
                 SalesQuoteProjectsTcDtlId id = new SalesQuoteProjectsTcDtlId(transactionPoid, request.getDetRowId());
                 tcDtlRepository.findById(id).ifPresent(existing -> {
+                    SalesQuoteProjectsTcDtl oldDetail = new SalesQuoteProjectsTcDtl();
+                    BeanUtils.copyProperties(existing, oldDetail);
                     existing.setClauseRef(request.getClauseRef());
                     existing.setTermsDescription(request.getTermsDescription());
                     existing.setLastModifiedBy(UserContext.getUserId());
                     existing.setLastModifiedDate(java.time.LocalDate.now());
                     tcDtlRepository.save(existing);
+                    String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getDetRowId());
+                    loggingService.createLog(oldDetail, existing, SalesQuoteProjectsTcDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 });
             } else if (action == ActionType.isDeleted) {
                 SalesQuoteProjectsTcDtlId id = new SalesQuoteProjectsTcDtlId(transactionPoid, request.getDetRowId());
                 tcDtlRepository.deleteById(id);
+                loggingService.logDelete(request, UserContext.getDocumentId(), transactionPoid.toString());
             }
         }
     }
@@ -685,6 +721,8 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             entity.setLastModifiedBy(UserContext.getUserId());
             entity.setLastModifiedDate(java.time.LocalDate.now());
             chargeDtlRepository.save(entity);
+            String logDetail = String.format("Row Created on [Sales Quote Projects Charge Details] with detRowId: %s", entity.getId().getDetRowId());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
         }
     }
 
@@ -700,6 +738,8 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             entity.setLastModifiedBy(UserContext.getUserId());
             entity.setLastModifiedDate(java.time.LocalDate.now());
             notesDtlRepository.save(entity);
+            String logDetail = String.format("Row Created on [Sales Quote Projects Notes Details] with detRowId: %s", entity.getId().getDetRowId());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
         }
     }
 
@@ -716,6 +756,8 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             entity.setLastModifiedBy(UserContext.getUserId());
             entity.setLastModifiedDate(java.time.LocalDate.now());
             tcDtlRepository.save(entity);
+            String logDetail = String.format("Row Created on [Sales Quote Projects TC Details] with detRowId: %s", entity.getId().getDetRowId());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
         }
     }
 }

@@ -32,7 +32,7 @@ import java.util.Map;
 import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @RestController
-@RequestMapping("/v1/sales-quote-projects")
+@RequestMapping("/v1/sales-quotation-projects")
 @Tag(name = "Sales Quotation Projects", description = "APIs for managing Sales Quotation Projects records")
 @RequiredArgsConstructor
 public class SalesQuoteProjectsController {
@@ -67,6 +67,7 @@ public class SalesQuoteProjectsController {
     public ResponseEntity<?> createSalesQuoteProject(@Valid @RequestBody SalesQuoteProjectsRequest request
     ) {
         SalesQuoteProjectsResponse response = salesQuoteProjectsService.createSalesQuoteProject(request);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), response.getTransactionPoid().toString());
         return ApiResponse.success("Sales Quote Project created successfully", response);
     }
 
@@ -76,6 +77,7 @@ public class SalesQuoteProjectsController {
                                                      @Valid @RequestBody SalesQuoteProjectsRequest request
     ) {
         SalesQuoteProjectsResponse response = salesQuoteProjectsService.updateSalesQuoteProject(transactionPoid, request);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
         return ApiResponse.success("Sales Quote Project updated successfully", response);
     }
 
