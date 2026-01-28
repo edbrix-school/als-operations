@@ -321,7 +321,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setSalesmanDet(lovDataService.getDetailsByPoidAndLovName(entity.getSalesmanPoid(), "SALESMAN"));
         response.setShippingTerms(entity.getShippingTerms());
         response.setTermsDet(lovDataService.getDetailsByPoidAndLovName(entity.getTermsPoid(), "TERMS_TEMPLATE_MASTER"));
-        response.setCommodity(StringUtils.isBlank(entity.getCommodity()) ? null : Arrays.asList(entity.getCommodity().split(", ")));
         response.setQuotationStatus(entity.getQuotationStatus());
         response.setProjectDetails(entity.getProjectDetails());
         response.setIsSupplementaryQuote(entity.getIsSupplementaryQuote());
@@ -343,6 +342,12 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setCreatedDate(entity.getCreatedDate());
         response.setLastModifiedBy(entity.getLastModifiedBy());
         response.setLastModifiedDate(entity.getLastModifiedDate());
+
+        if (StringUtils.isNotBlank(entity.getCommodity())) {
+            List<String> commodities = Arrays.asList(entity.getCommodity().split(", "));
+            response.setCommodity(commodities);
+            response.setCommodityDet(commodities.stream().map(commodity -> lovDataService.getDetailsByPoidAndLovName(Long.valueOf(commodity), "COMMODITY_MASTER")).toList());
+        }
 
         // Fetch and set child entities
         response.setChargeDetails(chargeDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapChargeDetailToResponse).toList());

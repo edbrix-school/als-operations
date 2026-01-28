@@ -49,6 +49,7 @@ public class SalesQuoteProjectsResponse {
     private LovGetListDto salesmanDet;
     private String shippingTerms;
     private List<String> commodity;
+    private List<LovGetListDto> commodityDet;
     private String quotationStatus;
     private String projectDetails;
     private String isSupplementaryQuote;
