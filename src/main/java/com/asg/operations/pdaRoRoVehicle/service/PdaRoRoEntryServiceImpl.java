@@ -362,6 +362,9 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                     entity.getId().getTransactionPoid(), entity.getId().getDetRowId());
                 loggingService.createLog(oldEntity, entity, com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl.class, 
                     UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+            } else if (!isUpdate) {
+                String logDetail = String.format("Row Created on [PDA RoRo Vehicle Details] with detRowId: %s", entity.getId().getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
             }
 
             savedDetails.add(PdaRoRoVehicleDtlResponseDto.builder()

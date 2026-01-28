@@ -287,15 +287,24 @@ public class PortCallReportServiceImpl implements PortCallReportService {
             Long nextDetRowId = dtlRepository.findMaxDetRowIdByPortCallReportPoid(reportPoid) + 1;
             List<PortCallReportDtl> details = new ArrayList<>();
             for (PortCallReportDetailDto detailDto : dto.getDetails()) {
-                details.add(PortCallReportDtl.builder()
-                        .portCallReportPoid(reportPoid)
-                        .detRowId(nextDetRowId++)
-                        .portActivityTypePoid(detailDto.getPortActivityTypePoid())
-                        .activityMandatory(detailDto.getActivityMandatory())
-                        .createdBy(user.getUserId())
-                        .build());
+                if (detailDto.getActionType() == null || detailDto.getActionType() == ActionType.isCreated) {
+                    PortCallReportDtl detail = PortCallReportDtl.builder()
+                            .portCallReportPoid(reportPoid)
+                            .detRowId(nextDetRowId++)
+                            .portActivityTypePoid(detailDto.getPortActivityTypePoid())
+                            .activityMandatory(detailDto.getActivityMandatory())
+                            .createdBy(user.getUserId())
+                            .build();
+                    details.add(detail);
+                }
             }
-            dtlRepository.saveAll(details);
+            if (!details.isEmpty()) {
+                List<PortCallReportDtl> savedDetails = dtlRepository.saveAll(details);
+                for (PortCallReportDtl saved : savedDetails) {
+                    String logDetail = String.format("Row Created on [Port Call Report Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), reportPoid.toString(), logDetail);
+                }
+            }
         }
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), hdr.getPortCallReportId());
         return getReportById(hdr.getPortCallReportPoid());
@@ -372,7 +381,9 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                             .activityMandatory(detailDto.getActivityMandatory())
                             .createdBy(user.getUserId())
                             .build();
-                    dtlRepository.save(newDetail);
+                    PortCallReportDtl saved = dtlRepository.save(newDetail);
+                    String logDetail = String.format("Row Created on [Port Call Report Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     dtlRepository.findById(new PortCallReportDtlId(id, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
@@ -387,6 +398,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                             });
                 } else if (action == ActionType.isDeleted) {
                     dtlRepository.deleteById(new PortCallReportDtlId(id, detailDto.getDetRowId()));
+                    loggingService.logDelete(detailDto, UserContext.getDocumentId(), id.toString());
                 }
             }
         }
