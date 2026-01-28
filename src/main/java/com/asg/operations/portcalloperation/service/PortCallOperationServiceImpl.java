@@ -165,6 +165,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .docsCopyEmailPoid(hdr.getDocsCopyEmailPoid())
                 .docsCopyEmailDet(lovDataService.getDetailsByPoidAndLovName(hdr.getDocsCopyEmailPoid(), ""))
                 .status(hdr.getStatus())
+                .lastModifiedBy(hdr.getLastModifiedBy())
+                .lastModifiedDate(hdr.getLastModifiedDate())
                 .grt(hdr.getGrt())
                 .nrt(hdr.getNrt())
                 .dwt(hdr.getDwt())
