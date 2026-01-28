@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -54,6 +55,8 @@ public class PortCallOperationResponseDto {
     private Long nrt;
     private Long dwt;
     private String status;
+    private String lastModifiedBy;
+    private LocalDateTime lastModifiedDate;
     private List<PortCallOperationCargoDetailResponseDto> cargoDetails;
     private List<PortCallOperationMailDetailResponseDto> mailDetails;
     private List<PortCallOperationEstBertDetailResponseDto> estBertDetails;
