@@ -1,5 +1,6 @@
 package com.asg.operations.portcalloperation.dto;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,8 +21,10 @@ public class PortCallOperationHusbandryOthDetailResponseDto {
     private BigDecimal noOfDays;
     private BigDecimal qty;
     private Long unitPoid;
+    private LovGetListDto unitDet;
     private BigDecimal unitPrice;
     private String currencyCode;
+    private LovGetListDto currencyCodeDet;
     private BigDecimal totalPrice;
     private BigDecimal adjustedPrice;
     private String arrngmntAttachments;
