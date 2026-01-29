@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PortCallOperationEstBertDetailDto {
+public class PortCallOperationEstBertDetailRequestDto {
     private Long transactionPoid;
     private Long detRowId;
 
@@ -29,6 +29,9 @@ public class PortCallOperationEstBertDetailDto {
     private String berthingAttachments;
 
     private Long emailPoid;
+
+    @NotNull(message = "Send Email is required")
+    private Boolean sendEmail;
 
     private ActionType actionType;
 }

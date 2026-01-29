@@ -2,8 +2,6 @@ package com.asg.operations.portcalloperation.service;
 
 import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.dto.DeleteReasonDto;
-import com.asg.common.lib.dto.FilterRequestDto;
-import com.asg.common.lib.dto.RawSearchResult;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
@@ -24,14 +22,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import com.asg.operations.portcallreport.enums.ActionType;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -155,7 +149,7 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void createEstBertDetail_Success() {
-        PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
+        PortCallOperationEstBertDetailRequestDto dto = PortCallOperationEstBertDetailRequestDto.builder()
                 .eta(LocalDateTime.now())
                 .etb(LocalDateTime.now())
                 .berthingAttachments("attachment")
@@ -198,7 +192,7 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void createEstBertDetail_OperationNotFound() {
-        PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
+        PortCallOperationEstBertDetailRequestDto dto = PortCallOperationEstBertDetailRequestDto.builder()
                 .sendEmail(false)
                 .build();
 
@@ -210,7 +204,7 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void updateEstBertDetail_Success() {
-        PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
+        PortCallOperationEstBertDetailRequestDto dto = PortCallOperationEstBertDetailRequestDto.builder()
                 .eta(LocalDateTime.now())
                 .etb(LocalDateTime.now())
                 .berthingAttachments("updated attachment")
@@ -458,7 +452,7 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void createDocsCopyDetail_Success() {
-        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
+        PortCallOperationDocsCopyDetailRequestDto dto = PortCallOperationDocsCopyDetailRequestDto.builder()
                 .documentFrom("from")
                 .documentList("list")
                 .documentSelect("select")
@@ -500,7 +494,7 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void createDocsCopyDetail_OperationNotFound() {
-        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
+        PortCallOperationDocsCopyDetailRequestDto dto = PortCallOperationDocsCopyDetailRequestDto.builder()
                 .sendEmail(false)
                 .build();
 
@@ -512,7 +506,7 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void updateDocsCopyDetail_Success() {
-        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
+        PortCallOperationDocsCopyDetailRequestDto dto = PortCallOperationDocsCopyDetailRequestDto.builder()
                 .documentFrom("updated from")
                 .documentList("updated list")
                 .documentSelect("updated select")

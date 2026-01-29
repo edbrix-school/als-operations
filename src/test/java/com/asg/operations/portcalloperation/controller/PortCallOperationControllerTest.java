@@ -222,7 +222,7 @@ class PortCallOperationControllerTest {
 
     @Test
     void createEstBertDetail_Success() throws Exception {
-        PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
+        PortCallOperationEstBertDetailRequestDto dto = PortCallOperationEstBertDetailRequestDto.builder()
                 .eta(java.time.LocalDateTime.now())
                 .etb(java.time.LocalDateTime.now().plusHours(2))
                 .sendEmail(false)
@@ -239,7 +239,7 @@ class PortCallOperationControllerTest {
 
     @Test
     void updateEstBertDetail_Success() throws Exception {
-        PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
+        PortCallOperationEstBertDetailRequestDto dto = PortCallOperationEstBertDetailRequestDto.builder()
                 .eta(java.time.LocalDateTime.now())
                 .etb(java.time.LocalDateTime.now().plusHours(2))
                 .sendEmail(false)
@@ -361,7 +361,7 @@ class PortCallOperationControllerTest {
 
     @Test
     void createDocsCopyDetail_Success() throws Exception {
-        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
+        PortCallOperationDocsCopyDetailRequestDto dto = PortCallOperationDocsCopyDetailRequestDto.builder()
                 .documentAttachments("test-attachment.pdf")
                 .sendEmail(false)
                 .build();
@@ -384,7 +384,7 @@ class PortCallOperationControllerTest {
 
     @Test
     void updateDocsCopyDetail_Success() throws Exception {
-        PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
+        PortCallOperationDocsCopyDetailRequestDto dto = PortCallOperationDocsCopyDetailRequestDto.builder()
                 .documentAttachments("updated-attachment.pdf")
                 .sendEmail(false)
                 .build();
