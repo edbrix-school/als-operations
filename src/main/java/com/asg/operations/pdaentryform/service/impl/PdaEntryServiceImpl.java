@@ -1567,7 +1567,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         detail.setAmount(totalAmount);
     }
 
-    private TaxInfo getChargeTaxInfo(Long companyPoid, Date transactionDate, String partyType, BigDecimal partyPoid, BigDecimal chargePoid) {
+    public TaxInfo getChargeTaxInfo(Long companyPoid, Date transactionDate, String partyType, BigDecimal partyPoid, BigDecimal chargePoid) {
         try {
             logger.info("[SP-7] PROC_GET_CHARGE_TAX_PER_V3 - chargePoid: {}, partyPoid: {}", chargePoid, partyPoid);
 
@@ -1583,7 +1583,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     )
                     .returningResultSet("OUTDATA", (rs, rowNum) -> new TaxInfo(
                             rs.getBigDecimal("TAX_POID"),
-                            rs.getBigDecimal("TAX_PERCENTAGE")
+                            rs.getBigDecimal("PERCENTAGE")
                     ));
 
             Map<String, Object> params = new HashMap<>();
@@ -3239,7 +3239,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     // Inner class for tax information
-    private static class TaxInfo {
+    public static class TaxInfo {
         private BigDecimal taxPoid;
         private BigDecimal taxPercentage;
 
