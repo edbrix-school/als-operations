@@ -2,6 +2,7 @@ package com.asg.operations.portcalloperation.dto;
 
 import com.asg.operations.portcallreport.enums.ActionType;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -10,7 +11,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PortCallOperationDocsCopyDetailDto {
+public class PortCallOperationDocsCopyDetailRequestDto {
     private Long transactionPoid;
     private Long detRowId;
 
@@ -26,6 +27,9 @@ public class PortCallOperationDocsCopyDetailDto {
     @Size(max = 4000)
     @NotBlank(message = "Document Attachments cannot be empty")
     private String documentAttachments;
+
+    @NotNull(message = "Send Email is required")
+    private Boolean sendEmail;
 
     private ActionType actionType;
 }
