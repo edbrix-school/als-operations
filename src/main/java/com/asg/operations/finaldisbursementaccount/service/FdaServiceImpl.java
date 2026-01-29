@@ -181,7 +181,7 @@ public class FdaServiceImpl implements FdaService {
 
         String operator = documentSearchService.resolveOperator(filterRequest);
         String isDeleted = documentSearchService.resolveIsDeleted(filterRequest);
-        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequest,"TRANSACTION_DATE", periodFrom, periodTo);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequest, "TRANSACTION_DATE", periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
                 "DOC_REF",
@@ -848,7 +848,7 @@ public class FdaServiceImpl implements FdaService {
         fdaHeaderDto.setAddressDet(lovService.getLovItemByPoid(fdaHeaderDto.getAddressPoid(), "ADDRESS_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         fdaHeaderDto.setSalesmanDet(lovService.getLovItemByPoid(fdaHeaderDto.getSalesmanPoid(), "SALESMAN", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         fdaHeaderDto.setTermsDet(lovService.getLovItemByPoid(fdaHeaderDto.getTermsPoid(), "TERMS_TEMPLATE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-        fdaHeaderDto.setVesselTypeDet(lovService.getLovItemByPoid(Long.valueOf(fdaHeaderDto.getVesselTypePoid()), "VESSEL_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setVesselTypeDet(lovService.getLovItemByPoid(StringUtils.isNotBlank(fdaHeaderDto.getVesselTypePoid()) ? Long.valueOf(fdaHeaderDto.getVesselTypePoid()) : null, "VESSEL_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         fdaHeaderDto.setLineDet(lovService.getLovItemByPoid(fdaHeaderDto.getLinePoid(), "LINE_MASTER_ALL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         fdaHeaderDto.setPrintBankDet(lovService.getLovItemByPoid(fdaHeaderDto.getPrintBankPoid(), "BANK_MASTER_COMPANYWISE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         fdaHeaderDto.setVesselHandledByDet(lovService.getLovItemByPoid(fdaHeaderDto.getVesselHandledBy(), "PDA_USER_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
@@ -877,10 +877,10 @@ public class FdaServiceImpl implements FdaService {
     public byte[] printFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String currency) throws Exception {
         try {
             Map<String, Object> params = printService.buildBaseParams(transactionPoid, "110-161");
-            
+
             params.put("SUB_HEADER", printService.load("Templates/DocHeaderSubReport.jrxml"));
             params.put("SUB_FOOTER", printService.load("Templates/DocFooterSubReport.jrxml"));
-            
+
             String reportName;
             if ("USD".equalsIgnoreCase(currency)) {
                 params.put("SUB_FDA_DETAIL", printService.load("PDA/FDA_Subreport_USD_ProcCall.jrxml"));
@@ -889,10 +889,10 @@ public class FdaServiceImpl implements FdaService {
                 params.put("SUB_FDA_DETAIL", printService.load("PDA/FDA_Subreport_ProcCall.jrxml"));
                 reportName = "PDA/FDAreport1.jrxml";
             }
-            
+
             net.sf.jasperreports.engine.JasperReport mainReport = printService.load(reportName);
             return printService.fillReportToPdf(mainReport, params, dataSource);
-            
+
         } catch (RuntimeException e) {
             throw new RuntimeException("FDA PDF generation failed: " + e.getMessage(), e);
         }

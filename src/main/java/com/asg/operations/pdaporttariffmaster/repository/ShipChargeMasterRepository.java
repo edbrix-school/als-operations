@@ -7,5 +7,6 @@ import java.math.BigDecimal;
 
 public interface ShipChargeMasterRepository extends JpaRepository<ShipChargeMaster, BigDecimal> {
     boolean existsByChargePoidAndActiveIgnoreCaseAndDeletedIgnoreCase(BigDecimal chargePoid, String active, String deleted);
+    boolean existsByChargePoid(BigDecimal chargePoid);
 }
 

@@ -9,6 +9,7 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
@@ -42,8 +43,6 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -73,6 +72,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final DocumentSearchService documentService;
     private final DocumentDeleteService documentDeleteService;
     private final LoggingService loggingService;
+    private final LovDataService lovDataService;
     private final ShipVoyageHdrRepository shipVoyageHdrRepository;
     private final ShipPrincipalRepository shipPrincipalRepository;
     private final ShipPortMasterRepository shipPortMasterRepository;
@@ -156,6 +156,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .husbandryCrewReqBy(hdr.getHusbandryCrewReqBy())
                 .docsCopyEmailPoid(hdr.getDocsCopyEmailPoid())
                 .status(hdr.getStatus())
+                .lastModifiedBy(hdr.getLastModifiedBy())
+                .lastModifiedDate(hdr.getLastModifiedDate())
                 .grt(hdr.getGrt())
                 .nrt(hdr.getNrt())
                 .dwt(hdr.getDwt())
@@ -427,6 +429,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .nrt(dto.getNrt())
                 .dwt(dto.getDwt())
                 .portOfCallPoid(dto.getPortOfCallPoid())
+                .specialInstructions(dto.getSpecialInstructions())
+                .termsConditions(dto.getTermsConditions())
+                .pcInfoAttachments(dto.getPcInfoAttachments())
                 .createdBy(UserContext.getUserId())
                 .createdDate(LocalDateTime.now())
                 .lastModifiedBy(UserContext.getUserId())
@@ -438,7 +443,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         // Save cargo details
         if (dto.getCargoDetails() != null && !dto.getCargoDetails().isEmpty()) {
             Long transactionPoid = hdr.getTransactionPoid();
-            Long nextDetRowId = cargoDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = cargoDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationCargoDtl> cargoDetails = new ArrayList<>();
             for (PortCallOperationCargoDetailDto cargoDto : dto.getCargoDetails()) {
                 if (cargoDto.getActionType() == ActionType.isCreated || cargoDto.getActionType() == null) {
@@ -463,14 +468,18 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 }
             }
             if (!cargoDetails.isEmpty()) {
-                cargoDtlRepository.saveAll(cargoDetails);
+                List<PortCallOperationCargoDtl> savedCargoDetails = cargoDtlRepository.saveAll(cargoDetails);
+                for (PortCallOperationCargoDtl saved : savedCargoDetails) {
+                    String logDetail = String.format("Row Created on [Port Call Operation Cargo Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), hdr.getTransactionPoid().toString(), logDetail);
+                }
             }
         }
 
         // Save mail details
         if (dto.getMailDetails() != null && !dto.getMailDetails().isEmpty()) {
             Long transactionPoid = hdr.getTransactionPoid();
-            Long nextDetRowId = mailDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = mailDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationMailDtl> mailDetails = new ArrayList<>();
             for (PortCallOperationMailDetailDto mailDto : dto.getMailDetails()) {
                 if (mailDto.getActionType() == ActionType.isCreated || mailDto.getActionType() == null) {
@@ -490,7 +499,11 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 }
             }
             if (!mailDetails.isEmpty()) {
-                mailDtlRepository.saveAll(mailDetails);
+                List<PortCallOperationMailDtl> savedMailDetails = mailDtlRepository.saveAll(mailDetails);
+                for (PortCallOperationMailDtl saved : savedMailDetails) {
+                    String logDetail = String.format("Row Created on [Port Call Operation Mail Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), hdr.getTransactionPoid().toString(), logDetail);
+                }
             }
         }
 
@@ -505,7 +518,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private void saveAllDetailTables(Long transactionPoid, PortCallOperationDto dto) {
         // Save Est Bert Details
         if (dto.getEstBertDetails() != null && !dto.getEstBertDetails().isEmpty()) {
-            Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationEstBertDtl> details = new ArrayList<>();
             for (PortCallOperationEstBertDetailDto detailDto : dto.getEstBertDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -528,7 +541,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Est Prearrival Details
         if (dto.getEstPrearrivalDetails() != null && !dto.getEstPrearrivalDetails().isEmpty()) {
-            Long nextDetRowId = estPrearrivalDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = estPrearrivalDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationEstPrearrivalDtl> details = new ArrayList<>();
             for (PortCallOperationEstPrearrivalDetailDto detailDto : dto.getEstPrearrivalDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -552,7 +565,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Timing Details
         if (dto.getActTimingDetails() != null && !dto.getActTimingDetails().isEmpty()) {
-            Long nextDetRowId = actTimingDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actTimingDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActTimingDtl> details = new ArrayList<>();
             for (PortCallOperationActTimingDetailDto detailDto : dto.getActTimingDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -574,7 +587,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Cond Details
         if (dto.getActCondDetails() != null && !dto.getActCondDetails().isEmpty()) {
-            Long nextDetRowId = actCondDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actCondDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActCondDtl> details = new ArrayList<>();
             for (PortCallOperationActCondDetailDto detailDto : dto.getActCondDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -601,7 +614,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Rmks Details
         if (dto.getActRmksDetails() != null && !dto.getActRmksDetails().isEmpty()) {
-            Long nextDetRowId = actRmksDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actRmksDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActRmksDtl> details = new ArrayList<>();
             for (PortCallOperationActRmksDetailDto detailDto : dto.getActRmksDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -626,7 +639,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Prog Details
         if (dto.getActProgDetails() != null && !dto.getActProgDetails().isEmpty()) {
-            Long nextDetRowId = actProgDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actProgDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActProgDtl> details = new ArrayList<>();
             for (PortCallOperationActProgDetailDto detailDto : dto.getActProgDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -655,7 +668,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Cargo Fig Details
         if (dto.getActCargoFigDetails() != null && !dto.getActCargoFigDetails().isEmpty()) {
-            Long nextDetRowId = actCargoFigDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actCargoFigDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActCargoFigDtl> details = new ArrayList<>();
             for (PortCallOperationActCargoFigDetailDto detailDto : dto.getActCargoFigDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -686,7 +699,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Bunker Details
         if (dto.getActBunkerDetails() != null && !dto.getActBunkerDetails().isEmpty()) {
-            Long nextDetRowId = actBunkerDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actBunkerDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActBunkerDtl> details = new ArrayList<>();
             for (PortCallOperationActBunkerDetailDto detailDto : dto.getActBunkerDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -709,7 +722,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Husbandry Crew Details
         if (dto.getHusbandryCrewDetails() != null && !dto.getHusbandryCrewDetails().isEmpty()) {
-            Long nextDetRowId = husbandryCrewDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = husbandryCrewDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationHusbandryCrewDtl> details = new ArrayList<>();
             for (PortCallOperationHusbandryCrewDetailDto detailDto : dto.getHusbandryCrewDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -735,7 +748,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Husbandry Oth Details
         if (dto.getHusbandryOthDetails() != null && !dto.getHusbandryOthDetails().isEmpty()) {
-            Long nextDetRowId = husbandryOthDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = husbandryOthDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationHusbandryOthDtl> details = new ArrayList<>();
             for (PortCallOperationHusbandryOthDetailDto detailDto : dto.getHusbandryOthDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -767,7 +780,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Docs Copy Details
         if (dto.getDocsCopyDetails() != null && !dto.getDocsCopyDetails().isEmpty()) {
-            Long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationDocsCopyDtl> details = new ArrayList<>();
             for (PortCallOperationDocsCopyDetailDto detailDto : dto.getDocsCopyDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -790,7 +803,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Docs Msgs Dtl1 Details
         if (dto.getDocsMsgsDtl1Details() != null && !dto.getDocsMsgsDtl1Details().isEmpty()) {
-            Long nextDetRowId = docsMsgsDtl1Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = docsMsgsDtl1Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationDocsMsgsDtl1> details = new ArrayList<>();
             for (PortCallOperationDocsMsgsDtl1DetailDto detailDto : dto.getDocsMsgsDtl1Details()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -815,7 +828,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Docs Msgs Dtl2 Details
         if (dto.getDocsMsgsDtl2Details() != null && !dto.getDocsMsgsDtl2Details().isEmpty()) {
-            Long nextDetRowId = docsMsgsDtl2Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = docsMsgsDtl2Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationDocsMsgsDtl2> details = new ArrayList<>();
             for (PortCallOperationDocsMsgsDtl2DetailDto detailDto : dto.getDocsMsgsDtl2Details()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -940,13 +953,20 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build();
-                    cargoDtlRepository.save(newDetail);
-                } else if (action == ActionType.isUpdated) {
+                    PortCallOperationCargoDtl saved = cargoDtlRepository.save(newDetail);
+                    String logDetail = String.format("Row Created on [Port Call Operation Cargo Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
+                }
+//                else if (action == ActionType.isDeleted) {
+//                    cargoDtlRepository.deleteById(new PortCallOperationCargoDtlId(id, cargoDto.getDetRowId()));
+//                    loggingService.logDelete(cargoDto, UserContext.getDocumentId(), id.toString());
+//                }
+                else if (action == ActionType.isUpdated) {
                     cargoDtlRepository.findById(new PortCallOperationCargoDtlId(id, cargoDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationCargoDtl oldDetail = new PortCallOperationCargoDtl();
                                 org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
-                                
+
                                 existing.setProductName(cargoDto.getProductName());
                                 existing.setPortCargoName(cargoDto.getPortCargoName());
                                 existing.setQtyMt(cargoDto.getQtyMt());
@@ -960,7 +980,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setLastModifiedBy(UserContext.getUserId());
                                 existing.setLastModifiedDate(LocalDateTime.now());
                                 existing = cargoDtlRepository.save(existing);
-                                
+
                                 String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
                                 loggingService.createLog(oldDetail, existing, PortCallOperationCargoDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });
@@ -989,13 +1009,20 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build();
-                    mailDtlRepository.save(newDetail);
-                } else if (action == ActionType.isUpdated) {
+                    PortCallOperationMailDtl saved = mailDtlRepository.save(newDetail);
+                    String logDetail = String.format("Row Created on [Port Call Operation Mail Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
+                }
+//                else if (action == ActionType.isDeleted) {
+//                    mailDtlRepository.deleteById(new PortCallOperationMailDtlId(id, mailDto.getDetRowId()));
+//                    loggingService.logDelete(mailDto, UserContext.getDocumentId(), id.toString());
+//                }
+                else if (action == ActionType.isUpdated) {
                     mailDtlRepository.findById(new PortCallOperationMailDtlId(id, mailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationMailDtl oldDetail = new PortCallOperationMailDtl();
                                 org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
-                                
+
                                 existing.setCommunicationType(mailDto.getCommunicationType());
                                 existing.setCommunicationMode(mailDto.getCommunicationMode());
                                 existing.setCompany(mailDto.getCompany());
@@ -1004,7 +1031,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setLastModifiedBy(UserContext.getUserId());
                                 existing.setLastModifiedDate(LocalDateTime.now());
                                 existing = mailDtlRepository.save(existing);
-                                
+
                                 String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
                                 loggingService.createLog(oldDetail, existing, PortCallOperationMailDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });
@@ -1054,7 +1081,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    estBertDtlRepository.save(PortCallOperationEstBertDtl.builder()
+                    PortCallOperationEstBertDtl saved = estBertDtlRepository.save(PortCallOperationEstBertDtl.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .eta(detailDto.getEta())
@@ -1066,16 +1093,22 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Est Bert Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     estBertDtlRepository.findById(new PortCallOperationEstBertDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationEstBertDtl oldDetail = new PortCallOperationEstBertDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setEta(detailDto.getEta());
                                 existing.setEtb(detailDto.getEtb());
                                 existing.setBerthingAttachments(detailDto.getBerthingAttachments());
                                 existing.setEmailPoid(detailDto.getEmailPoid());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                estBertDtlRepository.save(existing);
+                                existing = estBertDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationEstBertDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1096,7 +1129,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = estPrearrivalDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    estPrearrivalDtlRepository.save(PortCallOperationEstPrearrivalDtl.builder()
+                    PortCallOperationEstPrearrivalDtl saved = estPrearrivalDtlRepository.save(PortCallOperationEstPrearrivalDtl.builder()
                             .transactionPoid(transactionPoid).detRowId(nextDetRowId)
                             .preActivityDtlPoid(detailDto.getPreActivityDtlPoid())
                             .eta(detailDto.getEta())
@@ -1104,9 +1137,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .preArrivalAttachments(detailDto.getPreArrivalAttachments())
                             .emailPoid(detailDto.getEmailPoid())
                             .createdBy(userId).build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Est Prearrival Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     estPrearrivalDtlRepository.findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationEstPrearrivalDtl oldDetail = new PortCallOperationEstPrearrivalDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setPreActivityDtlPoid(detailDto.getPreActivityDtlPoid());
                                 existing.setEta(detailDto.getEta());
                                 existing.setEtb(detailDto.getEtb());
@@ -1114,7 +1151,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setEmailPoid(detailDto.getEmailPoid());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                estPrearrivalDtlRepository.save(existing);
+                                existing = estPrearrivalDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationEstPrearrivalDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1137,7 +1176,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = actTimingDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    actTimingDtlRepository.save(PortCallOperationActTimingDtl.builder()
+                    PortCallOperationActTimingDtl saved = actTimingDtlRepository.save(PortCallOperationActTimingDtl.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .portReportPoid(detailDto.getPortReportPoid())
@@ -1148,15 +1187,21 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Act Timing Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     actTimingDtlRepository.findById(new PortCallOperationActTimingDtlId(
                                     transactionPoid, detailDto.getDetRowId(), detailDto.getPortReportPoid()))
                             .ifPresent(existing -> {
+                                PortCallOperationActTimingDtl oldDetail = new PortCallOperationActTimingDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setActualsTimingDtlPoid(detailDto.getActualsTimingDtlPoid());
                                 existing.setEmailPoid(detailDto.getEmailPoid());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                actTimingDtlRepository.save(existing);
+                                existing = actTimingDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationActTimingDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1170,7 +1215,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = actCondDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    actCondDtlRepository.save(PortCallOperationActCondDtl.builder()
+                    PortCallOperationActCondDtl saved = actCondDtlRepository.save(PortCallOperationActCondDtl.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .conditionType(detailDto.getConditionType())
@@ -1186,9 +1231,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Act Cond Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     actCondDtlRepository.findById(new PortCallOperationActCondDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationActCondDtl oldDetail = new PortCallOperationActCondDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setConditionType(detailDto.getConditionType());
                                 existing.setDraftForward(detailDto.getDraftForward());
                                 existing.setDraftMid(detailDto.getDraftMid());
@@ -1199,7 +1248,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setTugsService(detailDto.getTugsService());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                actCondDtlRepository.save(existing);
+                                existing = actCondDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationActCondDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1217,7 +1268,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = actRmksDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    actRmksDtlRepository.save(PortCallOperationActRmksDtl.builder()
+                    PortCallOperationActRmksDtl saved = actRmksDtlRepository.save(PortCallOperationActRmksDtl.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .remarksType(detailDto.getRemarksType())
@@ -1231,9 +1282,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Act Rmks Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     actRmksDtlRepository.findById(new PortCallOperationActRmksDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationActRmksDtl oldDetail = new PortCallOperationActRmksDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setRemarksType(detailDto.getRemarksType());
                                 existing.setRemarksFrom(detailDto.getRemarksFrom());
                                 existing.setRemarksTo(detailDto.getRemarksTo());
@@ -1242,7 +1297,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setPcReportPoid(detailDto.getPcReportPoid());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                actRmksDtlRepository.save(existing);
+                                existing = actRmksDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationActRmksDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1265,7 +1322,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = actProgDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    actProgDtlRepository.save(PortCallOperationActProgDtl.builder()
+                    PortCallOperationActProgDtl saved = actProgDtlRepository.save(PortCallOperationActProgDtl.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .emailPoid(detailDto.getEmailPoid())
@@ -1283,9 +1340,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Act Prog Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     actProgDtlRepository.findById(new PortCallOperationActProgDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationActProgDtl oldDetail = new PortCallOperationActProgDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setEmailPoid(detailDto.getEmailPoid());
                                 existing.setCargo(detailDto.getCargo());
                                 existing.setProgressDateTime(detailDto.getProgressDateTime());
@@ -1298,7 +1359,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setEstBlDate(detailDto.getEstBlDate());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                actProgDtlRepository.save(existing);
+                                existing = actProgDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationActProgDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1316,7 +1379,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = actCargoFigDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    actCargoFigDtlRepository.save(PortCallOperationActCargoFigDtl.builder()
+                    PortCallOperationActCargoFigDtl saved = actCargoFigDtlRepository.save(PortCallOperationActCargoFigDtl.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .cargo(detailDto.getCargo())
@@ -1336,9 +1399,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Act Cargo Fig Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     actCargoFigDtlRepository.findById(new PortCallOperationActCargoFigDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationActCargoFigDtl oldDetail = new PortCallOperationActCargoFigDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setCargo(detailDto.getCargo());
                                 existing.setCallType(detailDto.getCallType());
                                 existing.setQty(detailDto.getQty());
@@ -1353,7 +1420,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setHoseSize(detailDto.getHoseSize());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                actCargoFigDtlRepository.save(existing);
+                                existing = actCargoFigDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationActCargoFigDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1366,7 +1435,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = actBunkerDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    actBunkerDtlRepository.save(PortCallOperationActBunkerDtl.builder()
+                    PortCallOperationActBunkerDtl saved = actBunkerDtlRepository.save(PortCallOperationActBunkerDtl.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .grade(detailDto.getGrade())
@@ -1378,16 +1447,22 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Act Bunker Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     actBunkerDtlRepository.findById(new PortCallOperationActBunkerDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationActBunkerDtl oldDetail = new PortCallOperationActBunkerDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setGrade(detailDto.getGrade());
                                 existing.setNominatedQtyMt(detailDto.getNominatedQtyMt());
                                 existing.setSuppliedQtyMt(detailDto.getSuppliedQtyMt());
                                 existing.setShipQtyMt(detailDto.getShipQtyMt());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                actBunkerDtlRepository.save(existing);
+                                existing = actBunkerDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationActBunkerDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1400,7 +1475,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = husbandryCrewDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    husbandryCrewDtlRepository.save(PortCallOperationHusbandryCrewDtl.builder()
+                    PortCallOperationHusbandryCrewDtl saved = husbandryCrewDtlRepository.save(PortCallOperationHusbandryCrewDtl.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .crewName(detailDto.getCrewName())
@@ -1415,9 +1490,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Husbandry Crew Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     husbandryCrewDtlRepository.findById(new PortCallOperationHusbandryCrewDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationHusbandryCrewDtl oldDetail = new PortCallOperationHusbandryCrewDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setCrewName(detailDto.getCrewName());
                                 existing.setCrewGenderPoid(detailDto.getCrewGenderPoid());
                                 existing.setCrewNationalityPoid(detailDto.getCrewNationalityPoid());
@@ -1427,7 +1506,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setCrewAttachments(detailDto.getCrewAttachments());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                husbandryCrewDtlRepository.save(existing);
+                                existing = husbandryCrewDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationHusbandryCrewDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1445,7 +1526,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = husbandryOthDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    husbandryOthDtlRepository.save(PortCallOperationHusbandryOthDtl.builder()
+                    PortCallOperationHusbandryOthDtl saved = husbandryOthDtlRepository.save(PortCallOperationHusbandryOthDtl.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .arrangement(detailDto.getArrangement())
@@ -1466,9 +1547,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Husbandry Other Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     husbandryOthDtlRepository.findById(new PortCallOperationHusbandryOthDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationHusbandryOthDtl oldDetail = new PortCallOperationHusbandryOthDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setArrangement(detailDto.getArrangement());
                                 existing.setDescriptionText(detailDto.getDescriptionText());
                                 existing.setMeetGreet(detailDto.getMeetGreet());
@@ -1484,7 +1569,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setPaymentMode(detailDto.getPaymentMode());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                husbandryOthDtlRepository.save(existing);
+                                existing = husbandryOthDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationHusbandryOthDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1497,7 +1584,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    docsCopyDtlRepository.save(PortCallOperationDocsCopyDtl.builder()
+                    PortCallOperationDocsCopyDtl saved = docsCopyDtlRepository.save(PortCallOperationDocsCopyDtl.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .documentFrom(detailDto.getDocumentFrom())
@@ -1509,16 +1596,22 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Docs Copy Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationDocsCopyDtl oldDetail = new PortCallOperationDocsCopyDtl();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setDocumentFrom(detailDto.getDocumentFrom());
                                 existing.setDocumentList(detailDto.getDocumentList());
                                 existing.setDocumentSelect(detailDto.getDocumentSelect());
                                 existing.setDocumentAttachments(detailDto.getDocumentAttachments());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
-                                docsCopyDtlRepository.save(existing);
+                                existing = docsCopyDtlRepository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationDocsCopyDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
@@ -1542,7 +1635,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = docsMsgsDtl1Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
                     // EMAIL_POID will be auto-generated by the sequence trigger
-                    docsMsgsDtl1Repository.save(PortCallOperationDocsMsgsDtl1.builder()
+                    PortCallOperationDocsMsgsDtl1 saved = docsMsgsDtl1Repository.save(PortCallOperationDocsMsgsDtl1.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .sendByPoid(detailDto.getSendByPoid())
@@ -1556,11 +1649,15 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Docs Msgs Dtl1 Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     if (detailDto.getEmailPoid() != null) {
                         docsMsgsDtl1Repository.findById(new PortCallOperationDocsMsgsDtl1Id(
                                         transactionPoid, detailDto.getDetRowId(), detailDto.getEmailPoid()))
                                 .ifPresent(existing -> {
+                                    PortCallOperationDocsMsgsDtl1 oldDetail = new PortCallOperationDocsMsgsDtl1();
+                                    org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                     existing.setSendByPoid(detailDto.getSendByPoid());
                                     existing.setEmailSubject(detailDto.getEmailSubject());
                                     existing.setEmailDocuments(detailDto.getEmailDocuments());
@@ -1569,7 +1666,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                     existing.setEmailRemarks(detailDto.getEmailRemarks());
                                     existing.setLastModifiedBy(userId);
                                     existing.setLastModifiedDate(LocalDateTime.now());
-                                    docsMsgsDtl1Repository.save(existing);
+                                    existing = docsMsgsDtl1Repository.save(existing);
+                                    String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                    loggingService.createLog(oldDetail, existing, PortCallOperationDocsMsgsDtl1.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                                 });
                     }
                 }
@@ -1588,7 +1687,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 if (action == null || action == ActionType.noChange) continue;
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = docsMsgsDtl2Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    docsMsgsDtl2Repository.save(PortCallOperationDocsMsgsDtl2.builder()
+                    PortCallOperationDocsMsgsDtl2 saved = docsMsgsDtl2Repository.save(PortCallOperationDocsMsgsDtl2.builder()
                             .transactionPoid(transactionPoid)
                             .detRowId(nextDetRowId)
                             .emailPoid(detailDto.getEmailPoid())
@@ -1602,9 +1701,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .lastModifiedBy(UserContext.getUserId())
                             .lastModifiedDate(LocalDateTime.now())
                             .build());
+                    String logDetail = String.format("Row Created on [Port Call Operation Docs Msgs Dtl2 Details] with detRowId: %s", saved.getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     docsMsgsDtl2Repository.findById(new PortCallOperationDocsMsgsDtl2Id(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
+                                PortCallOperationDocsMsgsDtl2 oldDetail = new PortCallOperationDocsMsgsDtl2();
+                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setEmailPoid(detailDto.getEmailPoid());
                                 existing.setEmailType(detailDto.getEmailType());
                                 existing.setCompany(detailDto.getCompany());
@@ -1612,7 +1715,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setToEmailId(detailDto.getToEmailId());
                                 existing.setCcEmailId(detailDto.getCcEmailId());
                                 existing.setLastModifiedBy(userId);
-                                docsMsgsDtl2Repository.save(existing);
+                                existing.setLastModifiedDate(LocalDateTime.now());
+                                existing = docsMsgsDtl2Repository.save(existing);
+                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+                                loggingService.createLog(oldDetail, existing, PortCallOperationDocsMsgsDtl2.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                             });
                 }
             }
