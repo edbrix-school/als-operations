@@ -389,6 +389,9 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         Long next = (max == null ? 0L : max) + 1L;
         newDetail.getId().setDetRowId(next);
         crewDtlRepository.save(newDetail);
+        String logDetail = String.format("Row Created on Contract Crew details with detRowId: %s", newDetail.getId().getDetRowId());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), crewPoid.toString() , logDetail);
+
     }
 
     public void updateCrewDetail(Long companyPoid, String userId, Long crewPoid, ContractCrewDtlRequest detailRequest) {
