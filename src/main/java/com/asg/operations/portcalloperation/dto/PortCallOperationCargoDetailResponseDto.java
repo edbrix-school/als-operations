@@ -1,6 +1,5 @@
 package com.asg.operations.portcalloperation.dto;
 
-import com.asg.common.lib.dto.LovGetListDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,9 +21,7 @@ public class PortCallOperationCargoDetailResponseDto {
     private BigDecimal noOfQty;
     private String callType;
     private Long portOfCallPoid;
-    private LovGetListDto portOfCallDet;
     private String berth;
-    private LovGetListDto berthDet;
     private String shipper;
     private String receiver;
 }

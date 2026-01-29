@@ -1,6 +1,5 @@
 package com.asg.operations.portcalloperation.dto;
 
-import com.asg.common.lib.dto.LovGetListDto;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -17,32 +16,23 @@ public class PortCallOperationResponseDto {
     private Long transactionPoid;
     private LocalDate transactionDate;
     private Long groupPoid;
-    private LovGetListDto groupDet;
     private String docRef;
     private Long companyPoid;
-    private LovGetListDto companyDet;
     private Long vesselVoyagePoid;
-    private LovGetListDto vesselVoyageDet;
     private String callSign;
     private String callType;
     private Long principalPoid;
-    private LovGetListDto principalDet;
     private Long vesselTypePoid;
-    private LovGetListDto vesselTypeDet;
     private String operatorName;
     private String chartererName;
     private String berth;
-    private LovGetListDto berthDet;
     private Long portOfCallPoid;
-    private LovGetListDto portOfCallDet;
     private String agencyType;
     private String specialInstructions;
     private String termsConditions;
     private String pcInfoAttachments;
     private Long pdaRefPoid;
-    private LovGetListDto pdaRefDet;
     private Long fdaRefPoid;
-    private LovGetListDto fdaRefDet;
     private BigDecimal pdaAnchorageStayDays;
     private BigDecimal pdaBerthStayDays;
     private BigDecimal pdaPortStayDays;
@@ -51,7 +41,6 @@ public class PortCallOperationResponseDto {
     private String portCallActualTimingRemarks;
     private String husbandryCrewReqBy;
     private Long docsCopyEmailPoid;
-    private LovGetListDto docsCopyEmailDet;
     private Long grt;
     private Long nrt;
     private Long dwt;

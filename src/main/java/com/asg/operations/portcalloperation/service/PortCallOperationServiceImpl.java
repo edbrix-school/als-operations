@@ -130,32 +130,23 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .transactionPoid(hdr.getTransactionPoid())
                 .transactionDate(hdr.getTransactionDate())
                 .groupPoid(hdr.getGroupPoid())
-                .groupDet(lovDataService.getDetailsByPoidAndLovName(hdr.getGroupPoid(), "GROUP"))
                 .docRef(hdr.getDocRef())
                 .companyPoid(hdr.getCompanyPoid())
-                .companyDet(lovDataService.getDetailsByPoidAndLovName(hdr.getCompanyPoid(), "COMPANY"))
                 .vesselVoyagePoid(hdr.getVesselVoyagePoid())
-                .vesselVoyageDet(lovDataService.getDetailsByPoidAndLovName(hdr.getVesselVoyagePoid(), "OPS_PC_VESSEL_VOYAGE"))
                 .callSign(hdr.getCallSign())
                 .callType(hdr.getCallType())
                 .principalPoid(hdr.getPrincipalPoid())
-                .principalDet(lovDataService.getDetailsByPoidAndLovName(hdr.getPrincipalPoid(), "OPS_PC_PRNCPL_MAST_PDA"))
                 .vesselTypePoid(hdr.getVesselTypePoid())
-                .vesselTypeDet(lovDataService.getDetailsByPoidAndLovName(hdr.getVesselTypePoid(), "VESSEL_TYPE"))
                 .operatorName(hdr.getOperatorName())
                 .chartererName(hdr.getChartererName())
                 .berth(hdr.getBerth())
-                .berthDet(lovDataService.getDetailsByCodeAndLovName(hdr.getBerth(), "OPS_PC_BERTH_LIST"))
                 .portOfCallPoid(hdr.getPortOfCallPoid())
-                .portOfCallDet(lovDataService.getDetailsByPoidAndLovName(hdr.getPortOfCallPoid(), "OPS_PC_PORT_MASTER"))
                 .agencyType(hdr.getAgencyType())
                 .specialInstructions(hdr.getSpecialInstructions())
                 .termsConditions(hdr.getTermsConditions())
                 .pcInfoAttachments(hdr.getPcInfoAttachments())
                 .pdaRefPoid(hdr.getPdaRefPoid())
-                .pdaRefDet(lovDataService.getDetailsByPoidAndLovName(hdr.getPdaRefPoid(), "OPS_PC_PDA_REF"))
                 .fdaRefPoid(hdr.getFdaRefPoid())
-                .fdaRefDet(lovDataService.getDetailsByPoidAndLovName(hdr.getFdaRefPoid(), "OPS_PC_FDA_REF"))
                 .pdaAnchorageStayDays(hdr.getPdaAnchorageStayDays())
                 .pdaBerthStayDays(hdr.getPdaBerthStayDays())
                 .pdaPortStayDays(hdr.getPdaPortStayDays())
@@ -164,7 +155,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .portCallActualTimingRemarks(hdr.getPortCallActualTimingRemarks())
                 .husbandryCrewReqBy(hdr.getHusbandryCrewReqBy())
                 .docsCopyEmailPoid(hdr.getDocsCopyEmailPoid())
-                .docsCopyEmailDet(lovDataService.getDetailsByPoidAndLovName(hdr.getDocsCopyEmailPoid(), ""))
                 .status(hdr.getStatus())
                 .lastModifiedBy(hdr.getLastModifiedBy())
                 .lastModifiedDate(hdr.getLastModifiedDate())
@@ -196,14 +186,12 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .detRowId(dtl.getDetRowId())
                 .productName(dtl.getProductName())
                 .portCargoName(dtl.getPortCargoName())
-                .portOfCallDet(lovDataService.getDetailsByPoidAndLovName(dtl.getPortOfCallPoid(), "OPS_PC_PORT_MASTER"))
                 .qtyMt(dtl.getQtyMt())
                 .qtyCbm(dtl.getQtyCbm())
                 .noOfQty(dtl.getNoOfQty())
                 .callType(dtl.getCallType())
                 .portOfCallPoid(dtl.getPortOfCallPoid())
                 .berth(dtl.getBerth())
-                .berthDet(lovDataService.getDetailsByCodeAndLovName(dtl.getBerth(), "OPS_PC_BERTH_LIST"))
                 .shipper(dtl.getShipper())
                 .receiver(dtl.getReceiver())
                 .build()).collect(Collectors.toList());
@@ -250,7 +238,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .transactionPoid(dtl.getTransactionPoid())
                 .detRowId(dtl.getDetRowId())
                 .portReportPoid(dtl.getPortReportPoid())
-                .portReportDet(lovDataService.getDetailsByPoidAndLovName(dtl.getPortReportPoid(), "OPS_PC_REPORTS"))
                 .actualsTimingDtlPoid(dtl.getActualsTimingDtlPoid())
                 .emailPoid(dtl.getEmailPoid())
                 .build()).collect(Collectors.toList());
@@ -281,7 +268,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .cargoDetails(dtl.getCargoDetails())
                 .reason(dtl.getReason())
                 .pcReportPoid(dtl.getPcReportPoid())
-                .pcReportDet(lovDataService.getDetailsByPoidAndLovName(dtl.getPcReportPoid(), "OPS_PC_REPORTS"))
                 .build()).collect(Collectors.toList());
     }
 
@@ -296,7 +282,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .progressStatus(dtl.getProgressStatus())
                 .balanceQty(dtl.getBalanceQty())
                 .unitPoid(dtl.getUnitPoid())
-                .unitDet(lovDataService.getDetailsByPoidAndLovName(dtl.getUnitPoid(), "OPS_PC_UNIT_MASTER"))
                 .ratePerHr(dtl.getRatePerHr())
                 .etc(dtl.getEtc())
                 .estBlDate(dtl.getEstBlDate())
@@ -311,7 +296,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .callType(dtl.getCallType())
                 .qty(dtl.getQty())
                 .unitPoid(dtl.getUnitPoid())
-                .unitDet(lovDataService.getDetailsByPoidAndLovName(dtl.getUnitPoid(), "OPS_PC_UNIT_MASTER"))
                 .vesselReq(dtl.getVesselReq())
                 .terminalNom(dtl.getTerminalNom())
                 .shipFigureMt(dtl.getShipFigureMt())
@@ -341,7 +325,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .crewName(dtl.getCrewName())
                 .crewGenderPoid(dtl.getCrewGenderPoid())
                 .crewNationalityPoid(dtl.getCrewNationalityPoid())
-                .crewNationalityDet(lovDataService.getDetailsByPoidAndLovName(dtl.getCrewNationalityPoid(), "NATIONALITY"))
                 .crewPptNumber(dtl.getCrewPptNumber())
                 .crewSeamanNo(dtl.getCrewSeamanNo())
                 .crewRank(dtl.getCrewRank())
@@ -359,10 +342,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .noOfDays(dtl.getNoOfDays())
                 .qty(dtl.getQty())
                 .unitPoid(dtl.getUnitPoid())
-                .unitDet(lovDataService.getDetailsByPoidAndLovName(dtl.getUnitPoid(), "OPS_PC_UNIT_MASTER"))
                 .unitPrice(dtl.getUnitPrice())
                 .currencyCode(dtl.getCurrencyCode())
-                .currencyCodeDet(lovDataService.getDetailsByCodeAndLovName(dtl.getCurrencyCode(), "CURRENCY"))
                 .totalPrice(dtl.getTotalPrice())
                 .adjustedPrice(dtl.getAdjustedPrice())
                 .arrngmntAttachments(dtl.getArrngmntAttachments())
@@ -388,7 +369,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .detRowId(dtl.getDetRowId())
                 .emailPoid(dtl.getEmailPoid())
                 .sendByPoid(dtl.getSendByPoid())
-                .sendByDet(lovDataService.getDetailsByPoidAndLovName(dtl.getSendByPoid(), "OPS_PC_USER_MASTER"))
                 .emailSubject(dtl.getEmailSubject())
                 .emailDocuments(dtl.getEmailDocuments())
                 .emailSendOn(dtl.getEmailSendOn())
@@ -463,7 +443,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         // Save cargo details
         if (dto.getCargoDetails() != null && !dto.getCargoDetails().isEmpty()) {
             Long transactionPoid = hdr.getTransactionPoid();
-            Long nextDetRowId = cargoDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = cargoDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationCargoDtl> cargoDetails = new ArrayList<>();
             for (PortCallOperationCargoDetailDto cargoDto : dto.getCargoDetails()) {
                 if (cargoDto.getActionType() == ActionType.isCreated || cargoDto.getActionType() == null) {
@@ -499,7 +479,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         // Save mail details
         if (dto.getMailDetails() != null && !dto.getMailDetails().isEmpty()) {
             Long transactionPoid = hdr.getTransactionPoid();
-            Long nextDetRowId = mailDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = mailDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationMailDtl> mailDetails = new ArrayList<>();
             for (PortCallOperationMailDetailDto mailDto : dto.getMailDetails()) {
                 if (mailDto.getActionType() == ActionType.isCreated || mailDto.getActionType() == null) {
@@ -538,7 +518,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private void saveAllDetailTables(Long transactionPoid, PortCallOperationDto dto) {
         // Save Est Bert Details
         if (dto.getEstBertDetails() != null && !dto.getEstBertDetails().isEmpty()) {
-            Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationEstBertDtl> details = new ArrayList<>();
             for (PortCallOperationEstBertDetailDto detailDto : dto.getEstBertDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -561,7 +541,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Est Prearrival Details
         if (dto.getEstPrearrivalDetails() != null && !dto.getEstPrearrivalDetails().isEmpty()) {
-            Long nextDetRowId = estPrearrivalDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = estPrearrivalDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationEstPrearrivalDtl> details = new ArrayList<>();
             for (PortCallOperationEstPrearrivalDetailDto detailDto : dto.getEstPrearrivalDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -585,7 +565,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Timing Details
         if (dto.getActTimingDetails() != null && !dto.getActTimingDetails().isEmpty()) {
-            Long nextDetRowId = actTimingDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actTimingDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActTimingDtl> details = new ArrayList<>();
             for (PortCallOperationActTimingDetailDto detailDto : dto.getActTimingDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -607,7 +587,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Cond Details
         if (dto.getActCondDetails() != null && !dto.getActCondDetails().isEmpty()) {
-            Long nextDetRowId = actCondDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actCondDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActCondDtl> details = new ArrayList<>();
             for (PortCallOperationActCondDetailDto detailDto : dto.getActCondDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -634,7 +614,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Rmks Details
         if (dto.getActRmksDetails() != null && !dto.getActRmksDetails().isEmpty()) {
-            Long nextDetRowId = actRmksDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actRmksDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActRmksDtl> details = new ArrayList<>();
             for (PortCallOperationActRmksDetailDto detailDto : dto.getActRmksDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -659,7 +639,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Prog Details
         if (dto.getActProgDetails() != null && !dto.getActProgDetails().isEmpty()) {
-            Long nextDetRowId = actProgDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actProgDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActProgDtl> details = new ArrayList<>();
             for (PortCallOperationActProgDetailDto detailDto : dto.getActProgDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -688,7 +668,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Cargo Fig Details
         if (dto.getActCargoFigDetails() != null && !dto.getActCargoFigDetails().isEmpty()) {
-            Long nextDetRowId = actCargoFigDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actCargoFigDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActCargoFigDtl> details = new ArrayList<>();
             for (PortCallOperationActCargoFigDetailDto detailDto : dto.getActCargoFigDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -719,7 +699,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Act Bunker Details
         if (dto.getActBunkerDetails() != null && !dto.getActBunkerDetails().isEmpty()) {
-            Long nextDetRowId = actBunkerDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = actBunkerDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationActBunkerDtl> details = new ArrayList<>();
             for (PortCallOperationActBunkerDetailDto detailDto : dto.getActBunkerDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -742,7 +722,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Husbandry Crew Details
         if (dto.getHusbandryCrewDetails() != null && !dto.getHusbandryCrewDetails().isEmpty()) {
-            Long nextDetRowId = husbandryCrewDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = husbandryCrewDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationHusbandryCrewDtl> details = new ArrayList<>();
             for (PortCallOperationHusbandryCrewDetailDto detailDto : dto.getHusbandryCrewDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -768,7 +748,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Husbandry Oth Details
         if (dto.getHusbandryOthDetails() != null && !dto.getHusbandryOthDetails().isEmpty()) {
-            Long nextDetRowId = husbandryOthDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = husbandryOthDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationHusbandryOthDtl> details = new ArrayList<>();
             for (PortCallOperationHusbandryOthDetailDto detailDto : dto.getHusbandryOthDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -800,7 +780,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Docs Copy Details
         if (dto.getDocsCopyDetails() != null && !dto.getDocsCopyDetails().isEmpty()) {
-            Long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationDocsCopyDtl> details = new ArrayList<>();
             for (PortCallOperationDocsCopyDetailDto detailDto : dto.getDocsCopyDetails()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -823,7 +803,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Docs Msgs Dtl1 Details
         if (dto.getDocsMsgsDtl1Details() != null && !dto.getDocsMsgsDtl1Details().isEmpty()) {
-            Long nextDetRowId = docsMsgsDtl1Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = docsMsgsDtl1Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationDocsMsgsDtl1> details = new ArrayList<>();
             for (PortCallOperationDocsMsgsDtl1DetailDto detailDto : dto.getDocsMsgsDtl1Details()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
@@ -848,7 +828,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Save Docs Msgs Dtl2 Details
         if (dto.getDocsMsgsDtl2Details() != null && !dto.getDocsMsgsDtl2Details().isEmpty()) {
-            Long nextDetRowId = docsMsgsDtl2Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+            long nextDetRowId = docsMsgsDtl2Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
             List<PortCallOperationDocsMsgsDtl2> details = new ArrayList<>();
             for (PortCallOperationDocsMsgsDtl2DetailDto detailDto : dto.getDocsMsgsDtl2Details()) {
                 if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
