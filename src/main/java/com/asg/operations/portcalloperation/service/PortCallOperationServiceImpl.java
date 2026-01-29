@@ -215,7 +215,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .detRowId(dtl.getDetRowId())
                 .eta(dtl.getEta())
                 .etb(dtl.getEtb())
-                .updatedBy(dtl.getLastModifiedBy())
+                .updatedOn(dtl.getLastModifiedDate())
                 .berthingAttachments(dtl.getBerthingAttachments())
                 .emailPoid(dtl.getEmailPoid())
                 .build()).collect(Collectors.toList());
@@ -1977,7 +1977,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .etb(entity.getEtb())
                 .berthingAttachments(entity.getBerthingAttachments())
                 .emailPoid(entity.getEmailPoid())
-                .updatedBy(entity.getLastModifiedBy())
+                .updatedOn(entity.getLastModifiedDate())
                 .build();
     }
 
@@ -1992,6 +1992,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
+        }
+
+        if (dto.getSendEmail()) {
+            // Logic to send email
         }
 
         Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
@@ -2023,6 +2027,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
+        }
+
+        if (dto.getSendEmail()) {
+            // Logic to send email
         }
 
         entity.setEta(dto.getEta());
@@ -2065,6 +2073,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
         if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
             throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        }
+
+        if (dto.getSendEmail()) {
+            // Logic to send email
         }
 
         Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository
@@ -2110,6 +2122,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         PortCallOperationEstPrearrivalActDtl latestRecord = estPrearrivalActDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
         if (!latestRecord.getPreActivityDtlPoid().equals(preActivityDtlPoid)) {
             throw new ValidationException("Cannot edit this record. Please select a latest one");
+        }
+
+        if (dto.getSendEmail()) {
+            // Logic to send email
         }
 
         entity.setActivityPoid(dto.getActivityPoid());
@@ -2161,6 +2177,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
         }
 
+        if (dto.getSendEmail()) {
+            // Logic to send email
+        }
+
         Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository
                 .findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
@@ -2205,6 +2225,11 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (!latestRecord.getActualsTimingDtlPoid().equals(actualsTimingDtlPoid)) {
             throw new ValidationException("Cannot edit this record. Please select a latest one");
         }
+
+        if (dto.getSendEmail()) {
+            // Logic to send email
+        }
+
         entity.setActivityPoid(dto.getActivityPoid());
         entity.setDetails(dto.getDetails());
         entity.setEstimatedDatetime(dto.getEstimatedDatetime());
@@ -2249,6 +2274,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
 
+        if (dto.getSendEmail()) {
+            // Logic to send email
+        }
+
         Long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
 
         PortCallOperationDocsCopyDtl entity = PortCallOperationDocsCopyDtl.builder()
@@ -2279,6 +2308,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         PortCallOperationDocsCopyDtl latestRecord = docsCopyDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
         if (!latestRecord.getDetRowId().equals(detRowId)) {
             throw new ValidationException("Cannot edit this record. Please select a latest one");
+        }
+
+        if (dto.getSendEmail()) {
+            // Logic to send email
         }
 
         entity.setDocumentFrom(dto.getDocumentFrom());

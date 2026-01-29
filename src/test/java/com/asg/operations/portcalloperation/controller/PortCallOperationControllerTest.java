@@ -119,7 +119,6 @@ class PortCallOperationControllerTest {
     @Test
     void deleteOperation_Success() throws Exception {
         DeleteReasonDto deleteReasonDto = new DeleteReasonDto();
-        deleteReasonDto.setDeleteReason("Test deletion");
         
         doNothing().when(service).deleteOperation(eq(1L), any(DeleteReasonDto.class));
 
@@ -226,6 +225,7 @@ class PortCallOperationControllerTest {
         PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
                 .eta(java.time.LocalDateTime.now())
                 .etb(java.time.LocalDateTime.now().plusHours(2))
+                .sendEmail(false)
                 .build();
         PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder().build();
         when(service.createEstBertDetail(eq(1L), any())).thenReturn(responseDto);
@@ -242,6 +242,7 @@ class PortCallOperationControllerTest {
         PortCallOperationEstBertDetailDto dto = PortCallOperationEstBertDetailDto.builder()
                 .eta(java.time.LocalDateTime.now())
                 .etb(java.time.LocalDateTime.now().plusHours(2))
+                .sendEmail(false)
                 .build();
         PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder().build();
         when(service.updateEstBertDetail(eq(1L), eq(1L), any())).thenReturn(responseDto);
@@ -255,7 +256,9 @@ class PortCallOperationControllerTest {
 
     @Test
     void createEstPrearrivalActDetail_Success() throws Exception {
-        PortCallOperationEstPrearrivalActDetailDto dto = PortCallOperationEstPrearrivalActDetailDto.builder().build();
+        PortCallOperationEstPrearrivalActDetailDto dto = PortCallOperationEstPrearrivalActDetailDto.builder()
+                .sendEmail(false)
+                .build();
         PortCallOperationEstPrearrivalActDetailResponseDto responseDto = PortCallOperationEstPrearrivalActDetailResponseDto.builder().build();
         
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
@@ -275,7 +278,9 @@ class PortCallOperationControllerTest {
 
     @Test
     void updateEstPrearrivalActDetail_Success() throws Exception {
-        PortCallOperationEstPrearrivalActDetailDto dto = PortCallOperationEstPrearrivalActDetailDto.builder().build();
+        PortCallOperationEstPrearrivalActDetailDto dto = PortCallOperationEstPrearrivalActDetailDto.builder()
+                .sendEmail(false)
+                .build();
         PortCallOperationEstPrearrivalActDetailResponseDto responseDto = PortCallOperationEstPrearrivalActDetailResponseDto.builder().build();
         
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
@@ -295,7 +300,9 @@ class PortCallOperationControllerTest {
 
     @Test
     void createActTimingsActvtyDetail_Success() throws Exception {
-        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder().build();
+        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder()
+                .sendEmail(false)
+                .build();
         PortCallOperationActTimingsActvtyDetailResponseDto responseDto = PortCallOperationActTimingsActvtyDetailResponseDto.builder().build();
         
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
@@ -315,7 +322,9 @@ class PortCallOperationControllerTest {
 
     @Test
     void updateActTimingsActvtyDetail_Success() throws Exception {
-        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder().build();
+        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder()
+                .sendEmail(false)
+                .build();
         PortCallOperationActTimingsActvtyDetailResponseDto responseDto = PortCallOperationActTimingsActvtyDetailResponseDto.builder().build();
         
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
@@ -354,6 +363,7 @@ class PortCallOperationControllerTest {
     void createDocsCopyDetail_Success() throws Exception {
         PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
                 .documentAttachments("test-attachment.pdf")
+                .sendEmail(false)
                 .build();
         PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder().build();
         
@@ -376,6 +386,7 @@ class PortCallOperationControllerTest {
     void updateDocsCopyDetail_Success() throws Exception {
         PortCallOperationDocsCopyDetailDto dto = PortCallOperationDocsCopyDetailDto.builder()
                 .documentAttachments("updated-attachment.pdf")
+                .sendEmail(false)
                 .build();
         PortCallOperationResponseDto responseDto = PortCallOperationResponseDto.builder().build();
         
