@@ -116,14 +116,14 @@ public class SalesQuoteProjectsController {
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/charge-tax-details/{chargePoid}")
+    @GetMapping("/charge-tax-details/{companyPoid}/{partyType}/{partyPoid}/{chargePoid}")
     @Operation(
             summary = "Get Charge Tax Details",
             description = "Retrieve tax details for a specific charge",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<?> getChargeTaxDetails(@PathVariable Long chargePoid) {
-        Map<String, Object> result = salesQuoteProjectsService.getChargeTaxDetails(chargePoid);
+    public ResponseEntity<?> getChargeTaxDetails(@PathVariable Long companyPoid, @PathVariable String partyType, @PathVariable Long partyPoid, @PathVariable Long chargePoid) {
+        Map<String, Object> result = salesQuoteProjectsService.getChargeTaxDetails(companyPoid, partyType, partyPoid, chargePoid);
         return success("Charge tax details retrieved successfully", result);
     }
 }

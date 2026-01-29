@@ -655,7 +655,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         }
     }
 
-    public Map<String, Object> getChargeTaxDetails(Long chargePoid) {
+    public Map<String, Object> getChargeTaxDetails(Long companyPoid, String partyType, Long partyPoid, Long chargePoid) {
         try {
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_GET_CHARGE_TAX_PER_V2")
@@ -667,9 +667,9 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                             new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
                     );
             Map<String, Object> params = new HashMap<>();
-            params.put("P_COMPANY_POID", UserContext.getCompanyPoid());
-            params.put("P_PARTY_TYPE", UserContext.getUserRole());
-            params.put("P_PARTY_POID", UserContext.getUserPoid());
+            params.put("P_COMPANY_POID", companyPoid);
+            params.put("P_PARTY_TYPE", partyType);
+            params.put("P_PARTY_POID", partyPoid);
             params.put("P_CHARGE_POID", chargePoid);
             return jdbcCall.execute(params);
         } catch (Exception e) {
