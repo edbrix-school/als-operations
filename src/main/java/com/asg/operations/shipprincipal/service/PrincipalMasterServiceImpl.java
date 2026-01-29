@@ -377,6 +377,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 entity.setRemarks(charge.getRemarks());
                 entity.setCreatedDate(LocalDateTime.now());
                 chargeRepository.save(entity);
+                String logDetail = String.format("Row Created on Principal Charge with detRowId: %s", entity.getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), principalId.toString() , logDetail);
             }
         }
 
@@ -389,6 +391,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 mapper.mapPaymentDTOToEntity(payment, entity);
                 entity.setCreatedDate(LocalDateTime.now());
                 paymentRepository.save(entity);
+                String logDetail = String.format("Row Created on Principal Payment with detRowId: %s", entity.getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), principalId.toString() , logDetail);
             }
         }
 
@@ -423,6 +427,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 entity.setCreatedBy(user.getUserName());
                 entity.setCreatedDate(LocalDateTime.now());
                 paRptDtlRepository.save(entity);
+                String logDetail = String.format("Row Created on Principal Port Report Activity with detRowId: %s", entity.getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), principalId.toString() , logDetail);
             }
         }
 
