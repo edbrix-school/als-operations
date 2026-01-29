@@ -10,6 +10,7 @@ import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
+import com.asg.operations.pdaentryform.service.impl.PdaEntryServiceImpl.TaxInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -1217,6 +1218,58 @@ public class PdaEntryController {
     ) {
         VesselDetailsResponse response = pdaEntryService.getVesselDetails(vesselPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Vessel details retrieved successfully", response);
+    }
+
+    @Operation(
+            summary = "Get charge tax information",
+            description = "Gets tax percentage and tax POID for a specific charge and party combination. " +
+                    "Used by frontend to calculate tax amounts in charge details. " +
+                    "Calls PROC_GET_CHARGE_TAX_PER_V3 stored procedure.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved tax information",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid input parameters",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/charge-tax-info")
+    public ResponseEntity<?> getChargeTaxInfo(
+            @Parameter(description = "Charge POID", required = true)
+            @RequestParam BigDecimal chargePoid,
+            @Parameter(description = "Party POID (Principal POID)", required = true)
+            @RequestParam BigDecimal partyPoid,
+            @Parameter(description = "Party Type (default: PRINCIPAL)")
+            @RequestParam(defaultValue = "PRINCIPAL") String partyType,
+            @Parameter(description = "Transaction Date (default: current date)")
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate transactionDate
+    ) {
+        java.util.Date date = transactionDate != null ? 
+            java.sql.Date.valueOf(transactionDate) : new java.util.Date();
+            
+        TaxInfo taxInfo = ((com.asg.operations.pdaentryform.service.impl.PdaEntryServiceImpl) pdaEntryService)
+            .getChargeTaxInfo(UserContext.getCompanyPoid(), date, partyType, partyPoid, chargePoid);
+        
+        if (taxInfo != null) {
+            return ApiResponse.success("Tax information retrieved successfully", Map.of(
+                "taxPoid", taxInfo.getTaxPoid(),
+                "taxPercentage", taxInfo.getTaxPercentage()
+            ));
+        }
+        
+        return ApiResponse.success("No tax information found", Map.of());
     }
 
     @Operation(
