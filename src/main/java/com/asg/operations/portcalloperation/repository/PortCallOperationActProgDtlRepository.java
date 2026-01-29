@@ -17,4 +17,7 @@ public interface PortCallOperationActProgDtlRepository extends JpaRepository<Por
 
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationActProgDtl d where d.transactionPoid = :transactionPoid")
     Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
+
+    @Query("select count(d) > 0 from PortCallOperationActProgDtl d where d.transactionPoid = :transactionPoid and d.cargo = :cargoName")
+    boolean existsByTransactionPoidAndCargo(@Param("transactionPoid") Long transactionPoid, @Param("cargoName") String cargoName);
 }

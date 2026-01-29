@@ -956,12 +956,18 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     PortCallOperationCargoDtl saved = cargoDtlRepository.save(newDetail);
                     String logDetail = String.format("Row Created on [Port Call Operation Cargo Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
-                }
-//                else if (action == ActionType.isDeleted) {
-//                    cargoDtlRepository.deleteById(new PortCallOperationCargoDtlId(id, cargoDto.getDetRowId()));
-//                    loggingService.logDelete(cargoDto, UserContext.getDocumentId(), id.toString());
-//                }
-                else if (action == ActionType.isUpdated) {
+                } else if (action == ActionType.isDeleted) {
+                    // Validate that no ActProgDtl has cargo matching the portCargoName of the cargo being deleted
+                    cargoDtlRepository.findById(new PortCallOperationCargoDtlId(id, cargoDto.getDetRowId()))
+                            .ifPresent(existingCargo -> {
+                                String portCargoName = existingCargo.getPortCargoName();
+                                if (portCargoName != null && actProgDtlRepository.existsByTransactionPoidAndCargo(id, portCargoName)) {
+                                    throw new ValidationException(String.format("Cannot delete cargo detail with portCargoName '%s' as it is referenced in Act Progress Details", portCargoName));
+                                }
+                            });
+                    cargoDtlRepository.deleteById(new PortCallOperationCargoDtlId(id, cargoDto.getDetRowId()));
+                    loggingService.logDelete(cargoDto, UserContext.getDocumentId(), id.toString());
+                } else if (action == ActionType.isUpdated) {
                     cargoDtlRepository.findById(new PortCallOperationCargoDtlId(id, cargoDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationCargoDtl oldDetail = new PortCallOperationCargoDtl();
@@ -2048,8 +2054,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId) {
         log.info("Listing EstPrearrivalActDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
-        List<PortCallOperationEstPrearrivalActDtl> entities = estPrearrivalActDtlRepository
-                .findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        List<PortCallOperationEstPrearrivalActDtl> entities = estPrearrivalActDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
 
         return entities.stream()
                 .map(e -> PortCallOperationEstPrearrivalActDetailResponseDto.builder()
@@ -2076,11 +2081,24 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         if (dto.getSendEmail()) {
-            // Logic to send email
+            // Validate that email can only be sent at least 1 day before ETA/ETB
+            PortCallOperationEstPrearrivalDtl estPrearrivalDtl = estPrearrivalDtlRepository
+                    .findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
+                    .orElseThrow(() -> new ResourceNotFoundException("Est Prearrival Detail not found with transactionPoid: " + transactionPoid + ", detRowId: " + detRowId));
+
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime oneDayFromNow = now.plusDays(1);
+
+            if (estPrearrivalDtl.getEta() != null && estPrearrivalDtl.getEta().isBefore(oneDayFromNow)) {
+                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETA. ETA is %s, current time is %s", estPrearrivalDtl.getEta(), now));
+            }
+
+            if (estPrearrivalDtl.getEtb() != null && estPrearrivalDtl.getEtb().isBefore(oneDayFromNow)) {
+                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETB. ETB is %s, current time is %s", estPrearrivalDtl.getEtb(), now));
+            }
         }
 
-        Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository
-                .findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+        Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
         PortCallOperationEstPrearrivalActDtl entity = PortCallOperationEstPrearrivalActDtl.builder()
                 .transactionPoid(transactionPoid)
@@ -2125,7 +2143,21 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         if (dto.getSendEmail()) {
-            // Logic to send email
+            // Validate that email can only be sent at least 1 day before ETA/ETB
+            PortCallOperationEstPrearrivalDtl estPrearrivalDtl = estPrearrivalDtlRepository
+                    .findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
+                    .orElseThrow(() -> new ResourceNotFoundException("Est Prearrival Detail not found with transactionPoid: " + transactionPoid + ", detRowId: " + detRowId));
+
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime oneDayFromNow = now.plusDays(1);
+
+            if (estPrearrivalDtl.getEta() != null && estPrearrivalDtl.getEta().isBefore(oneDayFromNow)) {
+                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETA. ETA is %s, current time is %s", estPrearrivalDtl.getEta(), now));
+            }
+
+            if (estPrearrivalDtl.getEtb() != null && estPrearrivalDtl.getEtb().isBefore(oneDayFromNow)) {
+                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETB. ETB is %s, current time is %s", estPrearrivalDtl.getEtb(), now));
+            }
         }
 
         entity.setActivityPoid(dto.getActivityPoid());
@@ -2150,8 +2182,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public List<PortCallOperationActTimingsActvtyDetailResponseDto> listActTimingsActvtyDetails(Long transactionPoid, Long detRowId) {
         log.info("Listing ActTimingsActvtyDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
-        List<PortCallOperationActTimingsActvtyDtl> entities = actTimingsActvtyDtlRepository
-                .findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        List<PortCallOperationActTimingsActvtyDtl> entities = actTimingsActvtyDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
 
         return entities.stream()
                 .map(e -> PortCallOperationActTimingsActvtyDetailResponseDto.builder()
@@ -2181,8 +2212,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             // Logic to send email
         }
 
-        Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository
-                .findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+        Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
         PortCallOperationActTimingsActvtyDtl entity = PortCallOperationActTimingsActvtyDtl.builder()
                 .transactionPoid(transactionPoid)
