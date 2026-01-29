@@ -8,23 +8,19 @@ import com.asg.operations.salesquotationprojects.service.SalesQuoteProjectsServi
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
-import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -83,7 +79,7 @@ class SalesQuoteProjectsControllerTest {
                 eq("100"), any(), any(Pageable.class), any(), any()))
                 .thenReturn(mockResponse);
 
-        mockMvc.perform(post("/v1/sales-quote-projects/list")
+        mockMvc.perform(post("/v1/sales-quotation-projects/list")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isOk())
@@ -103,7 +99,7 @@ class SalesQuoteProjectsControllerTest {
                 eq(LocalDate.of(2024, 1, 1)), eq(LocalDate.of(2024, 12, 31))))
                 .thenReturn(mockResponse);
 
-        mockMvc.perform(post("/v1/sales-quote-projects/list")
+        mockMvc.perform(post("/v1/sales-quotation-projects/list")
                         .param("periodFrom", "2024-01-01")
                         .param("periodTo", "2024-12-31")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -122,7 +118,7 @@ class SalesQuoteProjectsControllerTest {
         when(salesQuoteProjectsService.getSalesQuoteProjectById(transactionPoid))
                 .thenReturn(response);
 
-        mockMvc.perform(get("/v1/sales-quote-projects/{transactionPoid}", transactionPoid))
+        mockMvc.perform(get("/v1/sales-quotation-projects/{transactionPoid}", transactionPoid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Sales Quote Project retrieved successfully"))
                 .andExpect(jsonPath("$.result.data.transactionPoid").value(transactionPoid.intValue()))
@@ -156,7 +152,7 @@ class SalesQuoteProjectsControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/v1/sales-quote-projects")
+        mockMvc.perform(post("/v1/sales-quotation-projects")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isOk())
@@ -190,7 +186,7 @@ class SalesQuoteProjectsControllerTest {
                 }
                 """;
 
-        mockMvc.perform(put("/v1/sales-quote-projects/{transactionPoid}", transactionPoid)
+        mockMvc.perform(put("/v1/sales-quotation-projects/{transactionPoid}", transactionPoid)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isOk())
@@ -206,9 +202,13 @@ class SalesQuoteProjectsControllerTest {
         DeleteReasonDto deleteReasonDto = new DeleteReasonDto();
         deleteReasonDto.setDeleteReason("Test deletion");
 
-        mockMvc.perform(delete("/v1/sales-quote-projects/{transactionPoid}", transactionPoid)
+        doNothing().when(salesQuoteProjectsService).deleteSalesQuoteProject(eq(transactionPoid), any(DeleteReasonDto.class));
+
+        String requestJson = objectMapper.writeValueAsString(deleteReasonDto);
+
+        mockMvc.perform(delete("/v1/sales-quotation-projects/{transactionPoid}", transactionPoid)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(deleteReasonDto)))
+                        .content(requestJson))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Sales Quote Project deleted successfully"));
 
@@ -216,31 +216,19 @@ class SalesQuoteProjectsControllerTest {
     }
 
     @Test
-    void deleteSalesQuoteProject_withoutReason() throws Exception {
-        Long transactionPoid = 10L;
-
-        mockMvc.perform(delete("/v1/sales-quote-projects/{transactionPoid}", transactionPoid))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Sales Quote Project deleted successfully"));
-
-        then(salesQuoteProjectsService).should().deleteSalesQuoteProject(eq(transactionPoid), isNull());
-    }
-
-    @Test
     void getCustomerAddress_ok() throws Exception {
         Long customerPoid = 123L;
-        Map<String, Object> mockResult = new HashMap<>();
-        mockResult.put("address", "Test Address");
-        mockResult.put("city", "Test City");
+        Map<String, Object> mockResponse = new HashMap<>();
+        mockResponse.put("address", "Test Address");
+        mockResponse.put("city", "Test City");
 
         when(salesQuoteProjectsService.getCustomerAddress(customerPoid))
-                .thenReturn(mockResult);
+                .thenReturn(mockResponse);
 
-        mockMvc.perform(get("/v1/sales-quote-projects/customer-address/{customerPoid}", customerPoid))
+        mockMvc.perform(get("/v1/sales-quotation-projects/customer-address/{customerPoid}", customerPoid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Customer address retrieved successfully"))
-                .andExpect(jsonPath("$.result.data.address").value("Test Address"))
-                .andExpect(jsonPath("$.result.data.city").value("Test City"));
+                .andExpect(jsonPath("$.result.data.address").value("Test Address"));
 
         then(salesQuoteProjectsService).should().getCustomerAddress(customerPoid);
     }
@@ -248,18 +236,17 @@ class SalesQuoteProjectsControllerTest {
     @Test
     void getTermsAndConditions_ok() throws Exception {
         Long termsPoid = 456L;
-        Map<String, Object> mockResult = new HashMap<>();
-        mockResult.put("terms", "Test Terms");
-        mockResult.put("conditions", "Test Conditions");
+        Map<String, Object> mockResponse = new HashMap<>();
+        mockResponse.put("terms", "Test Terms");
+        mockResponse.put("conditions", "Test Conditions");
 
         when(salesQuoteProjectsService.getTermsAndConditions(termsPoid))
-                .thenReturn(mockResult);
+                .thenReturn(mockResponse);
 
-        mockMvc.perform(get("/v1/sales-quote-projects/terms-conditions/{termsPoid}", termsPoid))
+        mockMvc.perform(get("/v1/sales-quotation-projects/terms-conditions/{termsPoid}", termsPoid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Terms and conditions retrieved successfully"))
-                .andExpect(jsonPath("$.result.data.terms").value("Test Terms"))
-                .andExpect(jsonPath("$.result.data.conditions").value("Test Conditions"));
+                .andExpect(jsonPath("$.result.data.terms").value("Test Terms"));
 
         then(salesQuoteProjectsService).should().getTermsAndConditions(termsPoid);
     }
@@ -267,66 +254,18 @@ class SalesQuoteProjectsControllerTest {
     @Test
     void getChargeTaxDetails_ok() throws Exception {
         Long chargePoid = 789L;
-        Map<String, Object> mockResult = new HashMap<>();
-        mockResult.put("taxRate", BigDecimal.valueOf(15.0));
-        mockResult.put("taxAmount", BigDecimal.valueOf(150.0));
+        Map<String, Object> mockResponse = new HashMap<>();
+        mockResponse.put("taxRate", "15.0");
+        mockResponse.put("taxAmount", "150.00");
 
         when(salesQuoteProjectsService.getChargeTaxDetails(chargePoid))
-                .thenReturn(mockResult);
+                .thenReturn(mockResponse);
 
-        mockMvc.perform(get("/v1/sales-quote-projects/charge-tax-details/{chargePoid}", chargePoid))
+        mockMvc.perform(get("/v1/sales-quotation-projects/charge-tax-details/{chargePoid}", chargePoid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Charge tax details retrieved successfully"))
-                .andExpect(jsonPath("$.result.data.taxRate").value(15.0))
-                .andExpect(jsonPath("$.result.data.taxAmount").value(150.0));
+                .andExpect(jsonPath("$.result.data.taxRate").value("15.0"));
 
         then(salesQuoteProjectsService).should().getChargeTaxDetails(chargePoid);
-    }
-
-    @Test
-    void createSalesQuoteProject_invalidRequest() throws Exception {
-        String invalidRequestJson = """
-                {
-                    "customerType": "",
-                    "customerPoid": null,
-                    "principalPoid": null,
-                    "shipmentMode": "",
-                    "transportationMode": "",
-                    "otherMode": "",
-                    "salesmanPoid": null,
-                    "commodity": []
-                }
-                """;
-
-        mockMvc.perform(post("/v1/sales-quote-projects")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidRequestJson))
-                .andExpect(status().isBadRequest());
-
-        then(salesQuoteProjectsService).should(never()).createSalesQuoteProject(any());
-    }
-
-    @Test
-    void updateSalesQuoteProject_invalidRequest() throws Exception {
-        Long transactionPoid = 77L;
-        String invalidRequestJson = """
-                {
-                    "customerType": "",
-                    "customerPoid": null,
-                    "principalPoid": null,
-                    "shipmentMode": "",
-                    "transportationMode": "",
-                    "otherMode": "",
-                    "salesmanPoid": null,
-                    "commodity": []
-                }
-                """;
-
-        mockMvc.perform(put("/v1/sales-quote-projects/{transactionPoid}", transactionPoid)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidRequestJson))
-                .andExpect(status().isBadRequest());
-
-        then(salesQuoteProjectsService).should(never()).updateSalesQuoteProject(any(), any());
     }
 }

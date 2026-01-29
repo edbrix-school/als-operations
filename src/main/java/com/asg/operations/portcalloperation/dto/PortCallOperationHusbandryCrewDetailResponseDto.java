@@ -1,6 +1,5 @@
 package com.asg.operations.portcalloperation.dto;
 
-import com.asg.common.lib.dto.LovGetListDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +15,6 @@ public class PortCallOperationHusbandryCrewDetailResponseDto {
     private String crewName;
     private Long crewGenderPoid;
     private Long crewNationalityPoid;
-    private LovGetListDto crewNationalityDet;
     private String crewPptNumber;
     private String crewSeamanNo;
     private String crewRank;

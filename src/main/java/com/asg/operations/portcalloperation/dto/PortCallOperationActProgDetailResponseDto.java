@@ -1,7 +1,5 @@
 package com.asg.operations.portcalloperation.dto;
 
-import com.asg.common.lib.dto.LovGetListDto;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,7 +23,6 @@ public class PortCallOperationActProgDetailResponseDto {
     private String progressStatus;
     private BigDecimal balanceQty;
     private Long unitPoid;
-    private LovGetListDto unitDet;
     private BigDecimal ratePerHr;
     private LocalDateTime etc;
     private LocalDate estBlDate;

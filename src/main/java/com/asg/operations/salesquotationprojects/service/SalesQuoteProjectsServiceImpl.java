@@ -303,25 +303,20 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setTransactionPoid(entity.getTransactionPoid());
         response.setTransactionDate(entity.getTransactionDate());
         response.setCompanyPoid(entity.getCompanyPoid());
-        response.setCompanyDet(lovDataService.getDetailsByPoidAndLovName(entity.getCompanyPoid(), "ADDRESS_MASTER"));
         response.setDocRef(entity.getDocRef());
         response.setCustomerType(entity.getCustomerType());
         response.setCustomerPoid(entity.getCustomerPoid());
-        response.setCustomerDet(lovDataService.getDetailsByPoidAndLovName(entity.getCustomerPoid(), "ADDRESS_MASTER"));
         response.setCustomerName(entity.getCustomerName());
         response.setCustomerContact(entity.getCustomerContact());
         response.setCustomerEmail(entity.getCustomerEmail());
         response.setCustomerTelephone(entity.getCustomerTelephone());
         response.setCustomerMobile(entity.getCustomerMobile());
         response.setPrincipalPoid(entity.getPrincipalPoid());
-        response.setPrincipalDet(lovDataService.getDetailsByPoidAndLovName(entity.getPrincipalPoid(), "PRINCIPAL_MASTER_FF_QTN"));
         response.setShipmentMode(entity.getShipmentMode());
         response.setTransportationMode(entity.getTransportationMode());
         response.setOtherMode(entity.getOtherMode());
         response.setLinePoid(entity.getLinePoid());
-        response.setLineDet(lovDataService.getDetailsByPoidAndLovName(entity.getLinePoid(), "LINE_MASTER"));
         response.setCarrierPoid(entity.getCarrierPoid());
-        response.setCarrierDet(lovDataService.getDetailsByPoidAndLovName(entity.getCarrierPoid(), "AIRLINE"));
         response.setQuoteReference(entity.getQuoteReference());
         response.setUnits(entity.getUnits());
         response.setWeight(entity.getWeight());
@@ -330,17 +325,13 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setFreightTons(entity.getFreightTons());
         response.setAutoRate(entity.getAutoRate());
         response.setBillingCurrencyCode(entity.getBillingCurrencyCode());
-        response.setBillingCurrencyDet(lovDataService.getDetailsByCodeAndLovName(entity.getBillingCurrencyCode(), "CURRENCY"));
         response.setAgreedRate(entity.getAgreedRate());
         response.setSalesmanPoid(entity.getSalesmanPoid());
-        response.setSalesmanDet(lovDataService.getDetailsByPoidAndLovName(entity.getSalesmanPoid(), "SALESMAN"));
         response.setShippingTerms(entity.getShippingTerms());
-        response.setTermsDet(lovDataService.getDetailsByPoidAndLovName(entity.getTermsPoid(), "TERMS_TEMPLATE_MASTER"));
         response.setQuotationStatus(entity.getQuotationStatus());
         response.setProjectDetails(entity.getProjectDetails());
         response.setIsSupplementaryQuote(entity.getIsSupplementaryQuote());
         response.setProjectReferenceNumber(entity.getProjectReferenceNumber());
-        response.setProjectDet(lovDataService.getDetailsByCodeAndLovName(entity.getProjectReferenceNumber(), "PROJECTS_REF_QUOTE"));
         response.setValidityToDate(entity.getValidityToDate());
         response.setTermsPoid(entity.getTermsPoid());
         response.setTotalBuyingAmountLc(entity.getTotalBuyingAmountLc());
@@ -351,7 +342,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setActionStatus(entity.getActionStatus());
         response.setActionDueDate(entity.getActionDueDate());
         response.setBankAccountPoid(entity.getBankAccountPoid());
-        response.setBankAccountDet(lovDataService.getDetailsByPoidAndLovName(entity.getBankAccountPoid(), "BANK_MASTER"));
         response.setDeleted(entity.getDeleted());
         response.setCreatedBy(entity.getCreatedBy());
         response.setCreatedDate(entity.getCreatedDate());
@@ -359,9 +349,8 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setLastModifiedDate(entity.getLastModifiedDate());
 
         if (StringUtils.isNotBlank(entity.getCommodity())) {
-            List<String> commodities = Arrays.asList(entity.getCommodity().split(", "));
+            List<String> commodities = Arrays.asList(entity.getCommodity().split(","));
             response.setCommodity(commodities);
-            response.setCommodityDet(commodities.stream().map(commodity -> lovDataService.getDetailsByPoidAndLovName(Long.valueOf(commodity), "COMMODITY_MASTER")).toList());
         }
 
         // Fetch and set child entities
@@ -425,20 +414,16 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setTransactionPoid(entity.getId().getTransactionPoid());
         response.setDetRowId(entity.getId().getDetRowId());
         response.setChargePoid(entity.getChargePoid());
-        response.setChargeDet(lovDataService.getDetailsByPoidAndLovName(entity.getChargePoid(), "CHARGE_MASTER_FF"));
         response.setPrintableChargeDesc(entity.getPrintableChargeDesc());
         response.setQuantity(entity.getQuantity());
         response.setUnitPoid(entity.getUnitPoid());
-        response.setChargeDet(lovDataService.getDetailsByPoidAndLovName(entity.getUnitPoid(), "PROJECTS_CHARGES_UNIT"));
         response.setBuyCurrencyCode(entity.getBuyCurrencyCode());
-        response.setBuyCurrencyDet(lovDataService.getDetailsByCodeAndLovName(entity.getBuyCurrencyCode(), "CURRENCY"));
         response.setBuyCurrencyRate(entity.getBuyCurrencyRate());
         response.setBuyUnitRate(entity.getBuyUnitRate());
         response.setBuyTotalLc(entity.getBuyTotalLc());
         response.setSellUnitRateFc(entity.getSellUnitRateFc());
         response.setSellTotalFc(entity.getSellTotalFc());
         response.setTaxPoid(entity.getTaxPoid());
-        response.setChargeDet(lovDataService.getDetailsByPoidAndLovName(entity.getTaxPoid(), "TAX_MASTER"));
         response.setTaxPercentage(entity.getTaxPercentage());
         response.setTaxAmountFc(entity.getTaxAmountFc());
         response.setSellGrandTotalFc(entity.getSellGrandTotalFc());

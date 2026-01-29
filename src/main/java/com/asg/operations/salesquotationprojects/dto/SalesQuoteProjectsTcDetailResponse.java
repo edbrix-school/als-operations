@@ -1,10 +1,12 @@
 package com.asg.operations.salesquotationprojects.dto;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
-@Data
+@Getter
+@Setter
 public class SalesQuoteProjectsTcDetailResponse {
     private Long transactionPoid;
     private Long detRowId;

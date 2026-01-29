@@ -1,7 +1,5 @@
 package com.asg.operations.portcalloperation.dto;
 
-import com.asg.common.lib.dto.LovGetListDto;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +16,6 @@ public class PortCallOperationDocsMsgsDtl1DetailResponseDto {
     private Long detRowId;
     private Long emailPoid;
     private Long sendByPoid;
-    private LovGetListDto sendByDet;
     private String emailSubject;
     private String emailDocuments;
     private LocalDate emailSendOn;
