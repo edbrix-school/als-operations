@@ -253,19 +253,23 @@ class SalesQuoteProjectsControllerTest {
 
     @Test
     void getChargeTaxDetails_ok() throws Exception {
+        Long companyPoid = 1L;
+        String partyType = "CUSTOMER";
+        Long partyPoid = 123L;
         Long chargePoid = 789L;
         Map<String, Object> mockResponse = new HashMap<>();
         mockResponse.put("taxRate", "15.0");
         mockResponse.put("taxAmount", "150.00");
 
-        when(salesQuoteProjectsService.getChargeTaxDetails(chargePoid))
+        when(salesQuoteProjectsService.getChargeTaxDetails(companyPoid, partyType, partyPoid, chargePoid))
                 .thenReturn(mockResponse);
 
-        mockMvc.perform(get("/v1/sales-quotation-projects/charge-tax-details/{chargePoid}", chargePoid))
+        mockMvc.perform(get("/v1/sales-quotation-projects/charge-tax-details/{companyPoid}/{partyType}/{partyPoid}/{chargePoid}", 
+                        companyPoid, partyType, partyPoid, chargePoid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Charge tax details retrieved successfully"))
                 .andExpect(jsonPath("$.result.data.taxRate").value("15.0"));
 
-        then(salesQuoteProjectsService).should().getChargeTaxDetails(chargePoid);
+        then(salesQuoteProjectsService).should().getChargeTaxDetails(companyPoid, partyType, partyPoid, chargePoid);
     }
 }

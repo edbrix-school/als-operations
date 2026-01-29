@@ -26,5 +26,5 @@ public interface SalesQuoteProjectsService {
     
     Map<String, Object> getTermsAndConditions(Long templatePoid);
     
-    Map<String, Object> getChargeTaxDetails(Long chargePoid);
+    Map<String, Object> getChargeTaxDetails(Long companyPoid, String partyType, Long partyPoid, Long chargePoid);
 }
