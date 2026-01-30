@@ -8,6 +8,8 @@ import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.portcalloperation.dto.*;
+import com.asg.operations.portcalloperation.service.PortCallOperationDrawerAttachmentService;
+import com.asg.operations.portcalloperation.service.PortCallOperationPcInfoAttachmentService;
 import com.asg.operations.portcalloperation.service.PortCallOperationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,13 +20,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import static com.asg.common.lib.dto.response.ApiResponse.badRequest;
 import static com.asg.common.lib.dto.response.ApiResponse.notFound;
 import static com.asg.common.lib.dto.response.ApiResponse.success;
 
@@ -41,6 +46,8 @@ public class PortCallOperationController {
 
     private final PortCallOperationService portCallOperationService;
     private final LoggingService loggingService;
+    private final PortCallOperationPcInfoAttachmentService pcInfoAttachmentService;
+    private final PortCallOperationDrawerAttachmentService drawerAttachmentService;
 
     /**
      * Retrieves paginated list of port call operations.
@@ -411,5 +418,157 @@ public class PortCallOperationController {
         PortCallOperationResponseDto result = portCallOperationService.updateDocsCopyDetail(transactionPoid, detRowId, dto);
         loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("DocsCopyDetail updated successfully", result);
+    }
+
+    // ------------------- PC Info Attachments (via common attachment service) -------------------
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/pc-info-attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Upload PC Info attachments",
+            description = "Upload multiple files as PC Info attachments using the common attachment service. Stored file names are appended to PC_INFO_ATTACHMENTS on the port call operation header (comma-separated).",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> uploadPcInfoAttachments(
+            @Parameter(description = "Transaction POID (port call operation id)") @PathVariable Long transactionPoid,
+            @RequestParam(value = "files", required = false) MultipartFile[] files,
+            @RequestParam(value = "remarks", required = false) String[] remarks,
+            @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        if (!pcInfoAttachmentService.isAttachmentServiceAvailable()) {
+            return badRequest("Attachment service is not configured. Set common.service.attachment.base-url.");
+        }
+        if (files == null || files.length == 0) {
+            return badRequest("No files provided for upload.");
+        }
+        PcInfoAttachmentUploadResponseDto response = pcInfoAttachmentService.uploadPcInfoAttachments(transactionPoid, files, remarks, checklistNames);
+        String message = response.isHasErrors()
+                ? "Files uploaded with some errors. Check 'errors' in response."
+                : "PC Info attachments uploaded successfully.";
+        return success(message, response);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/pc-info-attachments")
+    @Operation(
+            summary = "List PC Info attachments",
+            description = "Retrieve paginated list of PC Info attachments for the port call operation from the common attachment service.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> listPcInfoAttachments(
+            @Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (!pcInfoAttachmentService.isAttachmentServiceAvailable()) {
+            return badRequest("Attachment service is not configured. Set common.service.attachment.base-url.");
+        }
+        Map<String, Object> result = pcInfoAttachmentService.listPcInfoAttachments(transactionPoid, page, size);
+        return success("PC Info attachments fetched successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/pc-info-attachments/summary")
+    @Operation(
+            summary = "Get PC Info attachments summary",
+            description = "Get comma-separated attachment names stored in PC_INFO_ATTACHMENTS for the port call operation.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getPcInfoAttachmentsSummary(
+            @Parameter(description = "Transaction POID") @PathVariable Long transactionPoid) {
+        String summary = pcInfoAttachmentService.getPcInfoAttachmentsSummary(transactionPoid);
+        return success("PC Info attachments summary", Map.of("pcInfoAttachments", summary != null ? summary : ""));
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/pc-info-attachments/{storedFileName}/download")
+    @Operation(
+            summary = "Download PC Info attachment",
+            description = "Download a PC Info attachment file by its stored filename. Use the storedFileName from the list attachments response.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<org.springframework.core.io.Resource> downloadPcInfoAttachment(
+            @Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+            @Parameter(description = "Stored filename (fileNameMapped) from attachment list response") @PathVariable String storedFileName) {
+        if (!pcInfoAttachmentService.isAttachmentServiceAvailable()) {
+            throw new IllegalStateException("Attachment service is not configured. Set common.service.attachment.base-url.");
+        }
+        return pcInfoAttachmentService.downloadAttachment(transactionPoid, storedFileName);
+    }
+
+    // ------------------- Side drawer attachments (Docs Msgs Dtl1 / EMAIL_DOCUMENTS) -------------------
+
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/docs-drawer/{emailPoid}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Upload drawer attachments",
+            description = "Upload multiple files as side drawer attachments. Stored file names are appended to EMAIL_DOCUMENTS on the Docs Msgs Dtl1 row (comma-separated). Isolated from main screen and list area.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> uploadDrawerAttachments(
+            @Parameter(description = "Transaction POID (port call operation id)") @PathVariable Long transactionPoid,
+            @Parameter(description = "Email POID (Docs Msgs Dtl1 row id)") @PathVariable Long emailPoid,
+            @RequestParam(value = "files", required = false) MultipartFile[] files,
+            @RequestParam(value = "remarks", required = false) String[] remarks,
+            @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        if (!drawerAttachmentService.isAttachmentServiceAvailable()) {
+            return badRequest("Attachment service is not configured. Set common.service.attachment.base-url.");
+        }
+        if (files == null || files.length == 0) {
+            return badRequest("No files provided for upload.");
+        }
+        PcInfoAttachmentUploadResponseDto response = drawerAttachmentService.uploadDrawerAttachments(transactionPoid, emailPoid, files, remarks, checklistNames);
+        String message = response.isHasErrors()
+                ? "Files uploaded with some errors. Check 'errors' in response."
+                : "Drawer attachments uploaded successfully.";
+        return success(message, response);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/docs-drawer/{emailPoid}/attachments")
+    @Operation(
+            summary = "List drawer attachments",
+            description = "Retrieve paginated list of side drawer attachments for the given Docs Msgs Dtl1 row from the common attachment service.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> listDrawerAttachments(
+            @Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+            @Parameter(description = "Email POID (Docs Msgs Dtl1 row id)") @PathVariable Long emailPoid,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (!drawerAttachmentService.isAttachmentServiceAvailable()) {
+            return badRequest("Attachment service is not configured. Set common.service.attachment.base-url.");
+        }
+        Map<String, Object> result = drawerAttachmentService.listDrawerAttachments(transactionPoid, emailPoid, page, size);
+        return success("Drawer attachments fetched successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/docs-drawer/{emailPoid}/attachments/summary")
+    @Operation(
+            summary = "Get drawer attachments summary",
+            description = "Get comma-separated attachment names stored in EMAIL_DOCUMENTS for the Docs Msgs Dtl1 row.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getDrawerAttachmentsSummary(
+            @Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+            @Parameter(description = "Email POID (Docs Msgs Dtl1 row id)") @PathVariable Long emailPoid) {
+        String summary = drawerAttachmentService.getDrawerAttachmentsSummary(transactionPoid, emailPoid);
+        return success("Drawer attachments summary", Map.of("emailDocuments", summary != null ? summary : ""));
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/docs-drawer/{emailPoid}/attachments/{storedFileName}/download")
+    @Operation(
+            summary = "Download drawer attachment",
+            description = "Download a drawer attachment file by its stored filename. Use the storedFileName from the list attachments response.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<org.springframework.core.io.Resource> downloadDrawerAttachment(
+            @Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+            @Parameter(description = "Email POID (Docs Msgs Dtl1 row id)") @PathVariable Long emailPoid,
+            @Parameter(description = "Stored filename (fileNameMapped) from attachment list response") @PathVariable String storedFileName) {
+        if (!drawerAttachmentService.isAttachmentServiceAvailable()) {
+            throw new IllegalStateException("Attachment service is not configured. Set common.service.attachment.base-url.");
+        }
+        return drawerAttachmentService.downloadAttachment(transactionPoid, emailPoid, storedFileName);
     }
 }
