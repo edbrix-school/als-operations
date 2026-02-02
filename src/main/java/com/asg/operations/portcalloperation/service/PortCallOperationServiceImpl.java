@@ -2034,7 +2034,11 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         if (dto.getSendEmail()) {
-            // Logic to send email
+            if (dto.getEmailPoid() == null) {
+                // Logic to send email
+            } else {
+                throw new CustomException("Email already sent", 400);
+            }
         }
 
         Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
@@ -2069,7 +2073,11 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         if (dto.getSendEmail()) {
-            // Logic to send email
+            if (dto.getEmailPoid() == null) {
+                // Logic to send email
+            } else {
+                throw new CustomException("Email already sent", 400);
+            }
         }
 
         entity.setEta(dto.getEta());
