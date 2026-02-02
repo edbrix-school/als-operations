@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -124,10 +125,11 @@ public class PortCallOperationDrawerAttachmentServiceImpl implements PortCallOpe
      * Resolve Docs Msgs Dtl1 row by emailPoid and ensure it belongs to the given transactionPoid.
      */
     private PortCallOperationDocsMsgsDtl1 resolveDetail(Long transactionPoid, Long emailPoid) {
-        PortCallOperationDocsMsgsDtl1 detail = docsMsgsDtl1Repository.findByEmailPoid(emailPoid);
-        if (detail == null) {
+        Optional<PortCallOperationDocsMsgsDtl1> detailOptional = docsMsgsDtl1Repository.findByEmailPoid(emailPoid);
+        if (detailOptional.isEmpty()) {
             throw new ResourceNotFoundException("Docs Msgs Dtl1 (drawer)", "Email Poid", emailPoid);
         }
+        PortCallOperationDocsMsgsDtl1 detail = detailOptional.get();
         if (!detail.getTransactionPoid().equals(transactionPoid)) {
             throw new ResourceNotFoundException("Docs Msgs Dtl1 (drawer)", "Email Poid", emailPoid);
         }

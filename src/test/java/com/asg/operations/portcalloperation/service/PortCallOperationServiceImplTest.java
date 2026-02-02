@@ -127,6 +127,43 @@ class PortCallOperationServiceImplTest {
                 .berthingAttachments("attachment")
                 .emailPoid(1L)
                 .lastModifiedBy("user")
+                .lastModifiedDate(LocalDateTime.now())
+                .build();
+
+        PortCallOperationDocsMsgsDtl1 emailEntity = PortCallOperationDocsMsgsDtl1.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(detRowId)
+                .emailPoid(1L)
+                .emailSendOn(LocalDate.now())
+                .emailRemarks("test remarks")
+                .build();
+
+        when(estBertDtlRepository.findById(any())).thenReturn(Optional.of(entity));
+        when(docsMsgsDtl1Repository.findByEmailPoid(1L))
+                .thenReturn(Optional.of(emailEntity));
+
+        PortCallOperationEstBertDetailResponseDto result = service.getEstBertDetail(transactionPoid, detRowId);
+
+        assertNotNull(result);
+        assertEquals(transactionPoid, result.getTransactionPoid());
+        assertEquals(detRowId, result.getDetRowId());
+        assertEquals("test remarks", result.getRemarks());
+        assertNotNull(result.getEmailSentOn());
+        verify(estBertDtlRepository).findById(any());
+        verify(docsMsgsDtl1Repository).findByEmailPoid(1L);
+    }
+
+    @Test
+    void getEstBertDetail_Success_NoEmailRecord() {
+        PortCallOperationEstBertDtl entity = PortCallOperationEstBertDtl.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(detRowId)
+                .eta(LocalDateTime.now())
+                .etb(LocalDateTime.now())
+                .berthingAttachments("attachment")
+                .emailPoid(null)
+                .lastModifiedBy("user")
+                .lastModifiedDate(LocalDateTime.now())
                 .build();
 
         when(estBertDtlRepository.findById(any())).thenReturn(Optional.of(entity));
@@ -136,15 +173,18 @@ class PortCallOperationServiceImplTest {
         assertNotNull(result);
         assertEquals(transactionPoid, result.getTransactionPoid());
         assertEquals(detRowId, result.getDetRowId());
+        assertNull(result.getRemarks());
+        assertNull(result.getEmailSentOn());
         verify(estBertDtlRepository).findById(any());
+        verify(docsMsgsDtl1Repository, never()).findByEmailPoid(any());
     }
 
     @Test
     void getEstBertDetail_NotFound() {
         when(estBertDtlRepository.findById(any())).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, 
-            () -> service.getEstBertDetail(transactionPoid, detRowId));
+        assertThrows(ResourceNotFoundException.class,
+                () -> service.getEstBertDetail(transactionPoid, detRowId));
     }
 
     @Test
@@ -166,21 +206,21 @@ class PortCallOperationServiceImplTest {
         when(estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid)).thenReturn(0L);
         when(estBertDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.of(hdr));
-        when(cargoDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(mailDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(estBertDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actTimingDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actCondDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actRmksDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actProgDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actCargoFigDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actBunkerDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(husbandryCrewDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(husbandryOthDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsCopyDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsMsgsDtl1Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsMsgsDtl2Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(cargoDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(mailDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(estBertDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actTimingDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actCondDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actRmksDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actProgDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actCargoFigDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actBunkerDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(husbandryCrewDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(husbandryOthDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsCopyDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsMsgsDtl1Repository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsMsgsDtl2Repository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
 
         PortCallOperationResponseDto result = service.createEstBertDetail(transactionPoid, dto);
 
@@ -198,8 +238,8 @@ class PortCallOperationServiceImplTest {
 
         when(hdrRepository.existsById(transactionPoid)).thenReturn(false);
 
-        assertThrows(ResourceNotFoundException.class, 
-            () -> service.createEstBertDetail(transactionPoid, dto));
+        assertThrows(ResourceNotFoundException.class,
+                () -> service.createEstBertDetail(transactionPoid, dto));
     }
 
     @Test
@@ -230,21 +270,21 @@ class PortCallOperationServiceImplTest {
         when(msgsDtl1Repository.existsByIdEmailPoid(1L)).thenReturn(true);
         when(estBertDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.of(hdr));
-        when(cargoDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(mailDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(estBertDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actTimingDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actCondDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actRmksDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actProgDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actCargoFigDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actBunkerDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(husbandryCrewDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(husbandryOthDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsCopyDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsMsgsDtl1Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsMsgsDtl2Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(cargoDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(mailDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(estBertDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actTimingDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actCondDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actRmksDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actProgDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actCargoFigDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actBunkerDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(husbandryCrewDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(husbandryOthDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsCopyDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsMsgsDtl1Repository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsMsgsDtl2Repository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
 
         PortCallOperationResponseDto result = service.updateEstBertDetail(transactionPoid, detRowId, dto);
 
@@ -255,7 +295,7 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void listEstPrearrivalActDetails_Success() {
-        List<PortCallOperationEstPrearrivalActDtl> entities = Arrays.asList(
+        List<PortCallOperationEstPrearrivalActDtl> entities = Collections.singletonList(
                 PortCallOperationEstPrearrivalActDtl.builder()
                         .transactionPoid(transactionPoid)
                         .detRowId(detRowId)
@@ -269,13 +309,13 @@ class PortCallOperationServiceImplTest {
         when(estPrearrivalActDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId))
                 .thenReturn(entities);
 
-        List<PortCallOperationEstPrearrivalActDetailResponseDto> result = 
+        List<PortCallOperationEstPrearrivalActDetailResponseDto> result =
                 service.listEstPrearrivalActDetails(transactionPoid, detRowId);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(transactionPoid, result.get(0).getTransactionPoid());
-        assertEquals(detRowId, result.get(0).getDetRowId());
+        assertEquals(transactionPoid, result.getFirst().getTransactionPoid());
+        assertEquals(detRowId, result.getFirst().getDetRowId());
     }
 
     @Test
@@ -293,7 +333,7 @@ class PortCallOperationServiceImplTest {
                 .thenReturn(0L);
         when(estPrearrivalActDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        PortCallOperationEstPrearrivalActDetailResponseDto result = 
+        PortCallOperationEstPrearrivalActDetailResponseDto result =
                 service.createEstPrearrivalActDetail(transactionPoid, detRowId, dto);
 
         assertNotNull(result);
@@ -320,7 +360,7 @@ class PortCallOperationServiceImplTest {
                 .estimatedDatetime(LocalDateTime.now())
                 .build();
 
-        List<PortCallOperationEstPrearrivalActDtl> latestRecords = Arrays.asList(entity);
+        List<PortCallOperationEstPrearrivalActDtl> latestRecords = Collections.singletonList(entity);
 
         when(estPrearrivalActDtlRepository.findById(any())).thenReturn(Optional.of(entity));
         when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
@@ -328,7 +368,7 @@ class PortCallOperationServiceImplTest {
                 .thenReturn(latestRecords);
         when(estPrearrivalActDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        PortCallOperationEstPrearrivalActDetailResponseDto result = 
+        PortCallOperationEstPrearrivalActDetailResponseDto result =
                 service.updateEstPrearrivalActDetail(transactionPoid, detRowId, 1L, dto);
 
         assertNotNull(result);
@@ -339,7 +379,7 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void listActTimingsActvtyDetails_Success() {
-        List<PortCallOperationActTimingsActvtyDtl> entities = Arrays.asList(
+        List<PortCallOperationActTimingsActvtyDtl> entities = Collections.singletonList(
                 PortCallOperationActTimingsActvtyDtl.builder()
                         .transactionPoid(transactionPoid)
                         .detRowId(detRowId)
@@ -353,13 +393,13 @@ class PortCallOperationServiceImplTest {
         when(actTimingsActvtyDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId))
                 .thenReturn(entities);
 
-        List<PortCallOperationActTimingsActvtyDetailResponseDto> result = 
+        List<PortCallOperationActTimingsActvtyDetailResponseDto> result =
                 service.listActTimingsActvtyDetails(transactionPoid, detRowId);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(transactionPoid, result.get(0).getTransactionPoid());
-        assertEquals(detRowId, result.get(0).getDetRowId());
+        assertEquals(transactionPoid, result.getFirst().getTransactionPoid());
+        assertEquals(detRowId, result.getFirst().getDetRowId());
     }
 
     @Test
@@ -377,7 +417,7 @@ class PortCallOperationServiceImplTest {
                 .thenReturn(0L);
         when(actTimingsActvtyDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        PortCallOperationActTimingsActvtyDetailResponseDto result = 
+        PortCallOperationActTimingsActvtyDetailResponseDto result =
                 service.createActTimingsActvtyDetail(transactionPoid, detRowId, dto);
 
         assertNotNull(result);
@@ -404,7 +444,7 @@ class PortCallOperationServiceImplTest {
                 .estimatedDatetime(LocalDateTime.now())
                 .build();
 
-        List<PortCallOperationActTimingsActvtyDtl> latestRecords = Arrays.asList(entity);
+        List<PortCallOperationActTimingsActvtyDtl> latestRecords = Collections.singletonList(entity);
 
         when(actTimingsActvtyDtlRepository.findById(any())).thenReturn(Optional.of(entity));
         when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
@@ -412,7 +452,7 @@ class PortCallOperationServiceImplTest {
                 .thenReturn(latestRecords);
         when(actTimingsActvtyDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        PortCallOperationActTimingsActvtyDetailResponseDto result = 
+        PortCallOperationActTimingsActvtyDetailResponseDto result =
                 service.updateActTimingsActvtyDetail(transactionPoid, detRowId, 1L, dto);
 
         assertNotNull(result);
@@ -446,8 +486,8 @@ class PortCallOperationServiceImplTest {
     void getDocsCopyDetail_NotFound() {
         when(docsCopyDtlRepository.findById(any())).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, 
-            () -> service.getDocsCopyDetail(transactionPoid, detRowId));
+        assertThrows(ResourceNotFoundException.class,
+                () -> service.getDocsCopyDetail(transactionPoid, detRowId));
     }
 
     @Test
@@ -468,21 +508,21 @@ class PortCallOperationServiceImplTest {
         when(docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid)).thenReturn(0L);
         when(docsCopyDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.of(hdr));
-        when(cargoDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(mailDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(estBertDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actTimingDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actCondDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actRmksDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actProgDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actCargoFigDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actBunkerDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(husbandryCrewDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(husbandryOthDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsCopyDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsMsgsDtl1Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsMsgsDtl2Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(cargoDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(mailDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(estBertDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actTimingDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actCondDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actRmksDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actProgDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actCargoFigDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actBunkerDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(husbandryCrewDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(husbandryOthDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsCopyDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsMsgsDtl1Repository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsMsgsDtl2Repository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
 
         PortCallOperationResponseDto result = service.createDocsCopyDetail(transactionPoid, dto);
 
@@ -500,8 +540,8 @@ class PortCallOperationServiceImplTest {
 
         when(hdrRepository.existsById(transactionPoid)).thenReturn(false);
 
-        assertThrows(ResourceNotFoundException.class, 
-            () -> service.createDocsCopyDetail(transactionPoid, dto));
+        assertThrows(ResourceNotFoundException.class,
+                () -> service.createDocsCopyDetail(transactionPoid, dto));
     }
 
     @Test
@@ -523,7 +563,7 @@ class PortCallOperationServiceImplTest {
                 .documentAttachments("attachments")
                 .build();
 
-        List<PortCallOperationDocsCopyDtl> latestRecords = Arrays.asList(entity);
+        List<PortCallOperationDocsCopyDtl> latestRecords = Collections.singletonList(entity);
         PortCallOperationHdr hdr = PortCallOperationHdr.builder()
                 .transactionPoid(transactionPoid)
                 .build();
@@ -533,21 +573,21 @@ class PortCallOperationServiceImplTest {
                 .thenReturn(latestRecords);
         when(docsCopyDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.of(hdr));
-        when(cargoDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(mailDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(estBertDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actTimingDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actCondDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actRmksDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actProgDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actCargoFigDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(actBunkerDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(husbandryCrewDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(husbandryOthDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsCopyDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsMsgsDtl1Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
-        when(docsMsgsDtl2Repository.findByTransactionPoid(transactionPoid)).thenReturn(Arrays.asList());
+        when(cargoDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(mailDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(estBertDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actTimingDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actCondDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actRmksDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actProgDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actCargoFigDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(actBunkerDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(husbandryCrewDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(husbandryOthDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsCopyDtlRepository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsMsgsDtl1Repository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
+        when(docsMsgsDtl2Repository.findByTransactionPoid(transactionPoid)).thenReturn(List.of());
 
         PortCallOperationResponseDto result = service.updateDocsCopyDetail(transactionPoid, detRowId, dto);
 
@@ -579,7 +619,7 @@ class PortCallOperationServiceImplTest {
 
         when(hdrRepository.findById(transactionPoid)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, 
-            () -> service.deleteOperation(transactionPoid, deleteReasonDto));
+        assertThrows(ResourceNotFoundException.class,
+                () -> service.deleteOperation(transactionPoid, deleteReasonDto));
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PortCallOperationDocsMsgsDtl1Repository extends JpaRepository<PortCallOperationDocsMsgsDtl1, PortCallOperationDocsMsgsDtl1Id> {
@@ -18,5 +19,5 @@ public interface PortCallOperationDocsMsgsDtl1Repository extends JpaRepository<P
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationDocsMsgsDtl1 d where d.transactionPoid = :transactionPoid")
     Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
 
-    PortCallOperationDocsMsgsDtl1 findByEmailPoid(Long emailPoid);
+    Optional<PortCallOperationDocsMsgsDtl1> findByEmailPoid(Long emailPoid);
 }

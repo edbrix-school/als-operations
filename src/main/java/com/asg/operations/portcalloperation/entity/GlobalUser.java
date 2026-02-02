@@ -1,8 +1,9 @@
 package com.asg.operations.portcalloperation.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -15,7 +16,8 @@ import java.util.Date;
         @UniqueConstraint(name = "GLOBAL_USERS_UK_USERID", columnNames = "USER_ID")
     }
 )
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 public class GlobalUser {
 

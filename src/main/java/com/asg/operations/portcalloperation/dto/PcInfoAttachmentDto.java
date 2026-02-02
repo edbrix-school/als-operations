@@ -1,14 +1,12 @@
 package com.asg.operations.portcalloperation.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * DTO for attachment info returned from common attachment service or stored in PC_INFO_ATTACHMENTS.
  */
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
