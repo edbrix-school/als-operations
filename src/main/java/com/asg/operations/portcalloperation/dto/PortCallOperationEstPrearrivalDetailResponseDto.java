@@ -17,6 +17,10 @@ public class PortCallOperationEstPrearrivalDetailResponseDto {
     private Long preActivityDtlPoid;
     private LocalDateTime eta;
     private LocalDateTime etb;
+    private LocalDateTime updatedOn;
+    private String updatedBy;
+    private LocalDateTime emailSentOn;
+    private String remarks;
     private String preArrivalAttachments;
     private Long emailPoid;
 }

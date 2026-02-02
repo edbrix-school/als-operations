@@ -9,7 +9,6 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
-import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
@@ -72,7 +71,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final DocumentSearchService documentService;
     private final DocumentDeleteService documentDeleteService;
     private final LoggingService loggingService;
-    private final LovDataService lovDataService;
     private final ShipVoyageHdrRepository shipVoyageHdrRepository;
     private final ShipPrincipalRepository shipPrincipalRepository;
     private final ShipPortMasterRepository shipPortMasterRepository;
@@ -210,27 +208,52 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     }
 
     private List<PortCallOperationEstBertDetailResponseDto> mapEstBertDetailsToResponse(List<PortCallOperationEstBertDtl> details) {
-        return details.stream().map(dtl -> PortCallOperationEstBertDetailResponseDto.builder()
-                .transactionPoid(dtl.getTransactionPoid())
-                .detRowId(dtl.getDetRowId())
-                .eta(dtl.getEta())
-                .etb(dtl.getEtb())
-                .updatedOn(dtl.getLastModifiedDate())
-                .berthingAttachments(dtl.getBerthingAttachments())
-                .emailPoid(dtl.getEmailPoid())
-                .build()).collect(Collectors.toList());
+        return details.stream().map(dtl -> {
+            PortCallOperationEstBertDetailResponseDto.PortCallOperationEstBertDetailResponseDtoBuilder builder = PortCallOperationEstBertDetailResponseDto.builder()
+                    .transactionPoid(dtl.getTransactionPoid())
+                    .detRowId(dtl.getDetRowId())
+                    .eta(dtl.getEta())
+                    .etb(dtl.getEtb())
+                    .updatedOn(dtl.getLastModifiedDate())
+                    .updatedBy(dtl.getLastModifiedBy())
+                    .berthingAttachments(dtl.getBerthingAttachments())
+                    .emailPoid(dtl.getEmailPoid());
+
+            // Fetch email details from PortCallOperationDocsMsgsDtl1 if emailPoid exists
+            if (dtl.getEmailPoid() != null) {
+                docsMsgsDtl1Repository.findByEmailPoid(dtl.getEmailPoid())
+                        .ifPresent(emailRecord -> {
+                            builder.emailSentOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).remarks(emailRecord.getEmailRemarks());
+                        });
+            }
+
+            return builder.build();
+        }).collect(Collectors.toList());
     }
 
     private List<PortCallOperationEstPrearrivalDetailResponseDto> mapEstPrearrivalDetailsToResponse(List<PortCallOperationEstPrearrivalDtl> details) {
-        return details.stream().map(dtl -> PortCallOperationEstPrearrivalDetailResponseDto.builder()
-                .transactionPoid(dtl.getTransactionPoid())
-                .detRowId(dtl.getDetRowId())
-                .preActivityDtlPoid(dtl.getPreActivityDtlPoid())
-                .eta(dtl.getEta())
-                .etb(dtl.getEtb())
-                .preArrivalAttachments(dtl.getPreArrivalAttachments())
-                .emailPoid(dtl.getEmailPoid())
-                .build()).collect(Collectors.toList());
+        return details.stream().map(dtl -> {
+            PortCallOperationEstPrearrivalDetailResponseDto.PortCallOperationEstPrearrivalDetailResponseDtoBuilder builder = PortCallOperationEstPrearrivalDetailResponseDto.builder()
+                    .transactionPoid(dtl.getTransactionPoid())
+                    .detRowId(dtl.getDetRowId())
+                    .preActivityDtlPoid(dtl.getPreActivityDtlPoid())
+                    .eta(dtl.getEta())
+                    .etb(dtl.getEtb())
+                    .updatedOn(dtl.getLastModifiedDate())
+                    .updatedBy(dtl.getLastModifiedBy())
+                    .preArrivalAttachments(dtl.getPreArrivalAttachments())
+                    .emailPoid(dtl.getEmailPoid());
+
+            // Fetch email details from PortCallOperationDocsMsgsDtl1 if emailPoid exists
+            if (dtl.getEmailPoid() != null) {
+                docsMsgsDtl1Repository.findByEmailPoid(dtl.getEmailPoid())
+                        .ifPresent(emailRecord -> {
+                            builder.emailSentOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).remarks(emailRecord.getEmailRemarks());
+                        });
+            }
+
+            return builder.build();
+        }).collect(Collectors.toList());
     }
 
     private List<PortCallOperationActTimingDetailResponseDto> mapActTimingDetailsToResponse(List<PortCallOperationActTimingDtl> details) {
@@ -1976,7 +1999,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         PortCallOperationEstBertDtl entity = estBertDtlRepository.findById(new PortCallOperationEstBertDtlId(transactionPoid, detRowId))
                 .orElseThrow(() -> new ResourceNotFoundException("EstBertDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
 
-        return PortCallOperationEstBertDetailResponseDto.builder()
+        PortCallOperationEstBertDetailResponseDto.PortCallOperationEstBertDetailResponseDtoBuilder builder = PortCallOperationEstBertDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
                 .detRowId(entity.getDetRowId())
                 .eta(entity.getEta())
@@ -1984,7 +2007,17 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .berthingAttachments(entity.getBerthingAttachments())
                 .emailPoid(entity.getEmailPoid())
                 .updatedOn(entity.getLastModifiedDate())
-                .build();
+                .updatedBy(entity.getLastModifiedBy());
+
+        // Fetch email details from PortCallOperationDocsMsgsDtl1 if emailPoid exists
+        if (entity.getEmailPoid() != null) {
+            docsMsgsDtl1Repository.findByEmailPoid(entity.getEmailPoid())
+                    .ifPresent(emailRecord -> {
+                        builder.emailSentOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).remarks(emailRecord.getEmailRemarks());
+                    });
+        }
+
+        return builder.build();
     }
 
     @Override
