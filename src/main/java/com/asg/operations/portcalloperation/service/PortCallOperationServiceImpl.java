@@ -257,13 +257,24 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     }
 
     private List<PortCallOperationActTimingDetailResponseDto> mapActTimingDetailsToResponse(List<PortCallOperationActTimingDtl> details) {
-        return details.stream().map(dtl -> PortCallOperationActTimingDetailResponseDto.builder()
-                .transactionPoid(dtl.getTransactionPoid())
-                .detRowId(dtl.getDetRowId())
-                .portReportPoid(dtl.getPortReportPoid())
-                .actualsTimingDtlPoid(dtl.getActualsTimingDtlPoid())
-                .emailPoid(dtl.getEmailPoid())
-                .build()).collect(Collectors.toList());
+        return details.stream().map(dtl -> {
+            PortCallOperationActTimingDetailResponseDto.PortCallOperationActTimingDetailResponseDtoBuilder builder = PortCallOperationActTimingDetailResponseDto.builder()
+                    .transactionPoid(dtl.getTransactionPoid())
+                    .detRowId(dtl.getDetRowId())
+                    .portReportPoid(dtl.getPortReportPoid())
+                    .actualsTimingDtlPoid(dtl.getActualsTimingDtlPoid())
+                    .emailPoid(dtl.getEmailPoid());
+
+            // Fetch email details from PortCallOperationDocsMsgsDtl1 if emailPoid exists
+            if (dtl.getEmailPoid() != null) {
+                docsMsgsDtl1Repository.findByEmailPoid(dtl.getEmailPoid())
+                        .ifPresent(emailRecord -> {
+                            builder.sentStatus(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).typeOfRemarks(emailRecord.getEmailRemarks()).details(emailRecord.getEmailContent());
+                        });
+            }
+
+            return builder.build();
+        }).collect(Collectors.toList());
     }
 
     private List<PortCallOperationActCondDetailResponseDto> mapActCondDetailsToResponse(List<PortCallOperationActCondDtl> details) {
@@ -295,20 +306,31 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     }
 
     private List<PortCallOperationActProgDetailResponseDto> mapActProgDetailsToResponse(List<PortCallOperationActProgDtl> details) {
-        return details.stream().map(dtl -> PortCallOperationActProgDetailResponseDto.builder()
-                .transactionPoid(dtl.getTransactionPoid())
-                .detRowId(dtl.getDetRowId())
-                .emailPoid(dtl.getEmailPoid())
-                .cargo(dtl.getCargo())
-                .progressDateTime(dtl.getProgressDateTime())
-                .progressQty(dtl.getProgressQty())
-                .progressStatus(dtl.getProgressStatus())
-                .balanceQty(dtl.getBalanceQty())
-                .unitPoid(dtl.getUnitPoid())
-                .ratePerHr(dtl.getRatePerHr())
-                .etc(dtl.getEtc())
-                .estBlDate(dtl.getEstBlDate())
-                .build()).collect(Collectors.toList());
+        return details.stream().map(dtl -> {
+            PortCallOperationActProgDetailResponseDto.PortCallOperationActProgDetailResponseDtoBuilder builder = PortCallOperationActProgDetailResponseDto.builder()
+                    .transactionPoid(dtl.getTransactionPoid())
+                    .detRowId(dtl.getDetRowId())
+                    .emailPoid(dtl.getEmailPoid())
+                    .cargo(dtl.getCargo())
+                    .progressDateTime(dtl.getProgressDateTime())
+                    .progressQty(dtl.getProgressQty())
+                    .progressStatus(dtl.getProgressStatus())
+                    .balanceQty(dtl.getBalanceQty())
+                    .unitPoid(dtl.getUnitPoid())
+                    .ratePerHr(dtl.getRatePerHr())
+                    .etc(dtl.getEtc())
+                    .estBlDate(dtl.getEstBlDate());
+
+            // Fetch email details from PortCallOperationDocsMsgsDtl1 if emailPoid exists
+            if (dtl.getEmailPoid() != null) {
+                docsMsgsDtl1Repository.findByEmailPoid(dtl.getEmailPoid())
+                        .ifPresent(emailRecord -> {
+                            builder.emailSendOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null);
+                        });
+            }
+
+            return builder.build();
+        }).collect(Collectors.toList());
     }
 
     private List<PortCallOperationActCargoFigDetailResponseDto> mapActCargoFigDetailsToResponse(List<PortCallOperationActCargoFigDtl> details) {
