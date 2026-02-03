@@ -20,11 +20,6 @@ public class PdaRoRoEntryDtl {
     @EmbeddedId
     private PdaRoRoEntryDtlId id;
 
-    @MapsId("transactionPoid")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "TRANSACTION_POID", nullable = false, updatable = false)
-    private PdaRoRoEntryHdr header;
-
     @Column(name = "BL_NUMBER", length = 300)
     private String blNumber;
 
