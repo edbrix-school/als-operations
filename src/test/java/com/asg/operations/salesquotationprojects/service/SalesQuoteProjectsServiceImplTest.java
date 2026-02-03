@@ -4,15 +4,17 @@ import com.asg.common.lib.dto.*;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
-import com.asg.common.lib.service.LovDataService;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.exceptions.ResourceNotFoundException;
+import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.finaldisbursementaccount.repository.*;
 import com.asg.operations.pdaporttariffmaster.repository.ShipChargeMasterRepository;
 import com.asg.operations.salesquotationprojects.dto.*;
 import com.asg.operations.salesquotationprojects.entity.SalesQuoteProjectsHdr;
 import com.asg.operations.salesquotationprojects.key.ShipCommodityMasterId;
 import com.asg.operations.salesquotationprojects.repository.*;
-import com.asg.operations.shipprincipal.repository.AddressMasterRepository;
+import com.asg.operations.shipprincipal.repository.AddressDetailsRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -37,12 +40,13 @@ class SalesQuoteProjectsServiceImplTest {
 
     @Mock private JdbcTemplate jdbcTemplate;
     @Mock private SalesQuoteProjectsHdrRepository repository;
+    @Mock private SalesQuoteProjectsStoredProcRepository salesQuoteProjectsStoredProcRepository;
     @Mock private SalesQuoteProjectsChargeDtlRepository chargeDtlRepository;
     @Mock private SalesQuoteProjectsNotesDtlRepository notesDtlRepository;
     @Mock private SalesQuoteProjectsTcDtlRepository tcDtlRepository;
     @Mock private DocumentSearchService documentSearchService;
     @Mock private DocumentDeleteService documentDeleteService;
-    @Mock private AddressMasterRepository addressMasterRepository;
+    @Mock private AddressDetailsRepository addressDetailsRepository;
     @Mock private ApSupplierMasterRepository apSupplierMasterRepository;
     @Mock private SalesSalesmanMasterRepository salesSalesmanMasterRepository;
     @Mock private ShipCommodityMasterRepository shipCommodityMasterRepository;
@@ -54,8 +58,8 @@ class SalesQuoteProjectsServiceImplTest {
     @Mock private GlobalCurrencyMasterRepository globalCurrencyMasterRepository;
     @Mock private ShipChargeMasterRepository shipChargeMasterRepository;
     @Mock private GlobalTaxMasterRepository globalTaxMasterRepository;
-    @Mock private LovDataService lovDataService;
-    @Mock private com.asg.common.lib.service.LoggingService loggingService;
+    @Mock private LoggingService loggingService;
+    @Mock private EntityManager entityManager;
 
     @InjectMocks
     private SalesQuoteProjectsServiceImpl service;
@@ -104,14 +108,23 @@ class SalesQuoteProjectsServiceImplTest {
         when(chargeDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
         when(notesDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
         when(tcDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
+        when(salesQuoteProjectsStoredProcRepository.callNewTempAddressLoadListProc(any(), any(), any(), any(), any()))
+            .thenReturn(new ArrayList<>());
 
-        // Act
-        SalesQuoteProjectsResponse result = service.getSalesQuoteProjectById(transactionPoid);
+        try (MockedStatic<UserContext> userContextMock = mockStatic(UserContext.class)) {
+            userContextMock.when(UserContext::getGroupPoid).thenReturn(1L);
+            userContextMock.when(UserContext::getCompanyPoid).thenReturn(1L);
+            userContextMock.when(UserContext::getUserPoid).thenReturn(1L);
+            userContextMock.when(UserContext::getDocumentId).thenReturn("100");
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(transactionPoid, result.getTransactionPoid());
-        verify(repository).findById(transactionPoid);
+            // Act
+            SalesQuoteProjectsResponse result = service.getSalesQuoteProjectById(transactionPoid);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(transactionPoid, result.getTransactionPoid());
+            verify(repository).findById(transactionPoid);
+        }
     }
 
     @Test
@@ -135,13 +148,15 @@ class SalesQuoteProjectsServiceImplTest {
             userContextMock.when(UserContext::getUserId).thenReturn("testUser");
             userContextMock.when(UserContext::getGroupPoid).thenReturn(1L);
             userContextMock.when(UserContext::getDocumentId).thenReturn("100");
+            userContextMock.when(UserContext::getUserPoid).thenReturn(1L);
 
-            when(addressMasterRepository.existsByAddressMasterPoid(any())).thenReturn(true);
+            when(addressDetailsRepository.existsByAddressPoid(any())).thenReturn(true);
             when(globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(any())).thenReturn(true);
-            when(repository.save(any(SalesQuoteProjectsHdr.class))).thenReturn(mockEntity);
+            when(repository.saveAndFlush(any(SalesQuoteProjectsHdr.class))).thenReturn(mockEntity);
             when(chargeDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
             when(notesDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
             when(tcDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
+            doNothing().when(entityManager).refresh(any());
             doNothing().when(loggingService).createLogSummaryEntry(any(com.asg.common.lib.enums.LogDetailsEnum.class), any(String.class), any(String.class));
 
             // Act
@@ -149,14 +164,14 @@ class SalesQuoteProjectsServiceImplTest {
 
             // Assert
             assertNotNull(result);
-            verify(repository).save(any(SalesQuoteProjectsHdr.class));
+            verify(repository).saveAndFlush(any(SalesQuoteProjectsHdr.class));
         }
     }
 
     @Test
     void createSalesQuoteProject_CustomerNotFound() {
         // Arrange
-        when(addressMasterRepository.existsByAddressMasterPoid(any())).thenReturn(false);
+        when(addressDetailsRepository.existsByAddressPoid(any())).thenReturn(false);
 
         // Act & Assert
         ResourceNotFoundException exception = assertThrows(
@@ -172,15 +187,17 @@ class SalesQuoteProjectsServiceImplTest {
             // Arrange
             userContextMock.when(UserContext::getUserId).thenReturn("testUser");
             userContextMock.when(UserContext::getDocumentId).thenReturn("100");
+            userContextMock.when(UserContext::getUserPoid).thenReturn(1L);
+            userContextMock.when(UserContext::getGroupPoid).thenReturn(1L);
             
             when(repository.findById(transactionPoid)).thenReturn(Optional.of(mockEntity));
-            when(addressMasterRepository.existsByAddressMasterPoid(any())).thenReturn(true);
+            when(addressDetailsRepository.existsByAddressPoid(any())).thenReturn(true);
             when(globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(any())).thenReturn(true);
             when(repository.save(any(SalesQuoteProjectsHdr.class))).thenReturn(mockEntity);
             when(chargeDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
             when(notesDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
             when(tcDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
-            doNothing().when(loggingService).logChanges(any(), any(), any(Class.class), any(String.class), any(String.class), any(com.asg.common.lib.enums.LogDetailsEnum.class), any(String.class));
+            doNothing().when(loggingService).logChanges(any(), any(), any(), any(), any(), any(), any());
 
             // Act
             SalesQuoteProjectsResponse result = service.updateSalesQuoteProject(transactionPoid, mockRequest);
@@ -192,11 +209,23 @@ class SalesQuoteProjectsServiceImplTest {
     }
 
     @Test
+    void updateSalesQuoteProject_NotFound() {
+        // Arrange
+        when(repository.findById(transactionPoid)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
+            () -> service.updateSalesQuoteProject(transactionPoid, mockRequest)
+        );
+        assertTrue(exception.getMessage().contains("Sales Quote Project not found with ID: " + transactionPoid));
+    }
+
+    @Test
     void deleteSalesQuoteProject_Success() {
         // Arrange
         DeleteReasonDto deleteReasonDto = new DeleteReasonDto();
         deleteReasonDto.setDeleteReason("Test deletion");
-        
         when(repository.findById(transactionPoid)).thenReturn(Optional.of(mockEntity));
 
         // Act
@@ -204,16 +233,76 @@ class SalesQuoteProjectsServiceImplTest {
 
         // Assert
         verify(documentDeleteService).deleteDocument(
-            eq(transactionPoid),
-            eq("SALES_QUOTE_PROJECTS_HDR"),
-            eq("TRANSACTION_POID"),
-            eq(deleteReasonDto),
-            any(LocalDate.class)
+            transactionPoid,
+            "SALES_QUOTE_PROJECTS_HDR",
+            "TRANSACTION_POID",
+            deleteReasonDto,
+            mockEntity.getTransactionDate()
         );
     }
 
-    // Note: Stored procedure tests removed due to complex database setup requirements
-    // These would require proper DataSource configuration in test environment
+    @Test
+    void deleteSalesQuoteProject_NotFound() {
+        // Arrange
+        DeleteReasonDto deleteReasonDto = new DeleteReasonDto();
+        when(repository.findById(transactionPoid)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
+            () -> service.deleteSalesQuoteProject(transactionPoid, deleteReasonDto)
+        );
+        assertTrue(exception.getMessage().contains("Sales Quote Project not found with ID: " + transactionPoid));
+    }
+
+    @Test
+    void createSalesQuoteProject_InvalidCustomerType() {
+        // Arrange
+        mockRequest.setCustomerType("invalid");
+
+        // Act & Assert
+        CustomException exception = assertThrows(
+            CustomException.class,
+            () -> service.createSalesQuoteProject(mockRequest)
+        );
+        assertTrue(exception.getMessage().contains("Customer Type should be either Existing or New"));
+    }
+
+    @Test
+    void getCustomerDetailsById_Success() {
+        // Arrange
+        BigDecimal addressPoid = BigDecimal.valueOf(1L);
+        Object[] mockResult = {addressPoid, "Test Customer", "John Doe", "test@example.com", "123456789", "987654321", "PO Box 123", "555-0123"};
+        when(addressDetailsRepository.findAddressDetailsWithNameByAddressPoid(addressPoid))
+            .thenReturn(Optional.of(mockResult));
+
+        // Act
+        AddressDetailsDto result = service.getCustomerDetailsById(addressPoid);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(addressPoid, result.getAddressPoid());
+        assertEquals("Test Customer", result.getAddressName());
+        assertEquals("John Doe", result.getContactPerson());
+        assertEquals("test@example.com", result.getEmail());
+        assertEquals("123456789", result.getTelephone());
+        assertEquals("987654321", result.getMobile());
+    }
+
+    @Test
+    void getCustomerDetailsById_NotFound() {
+        // Arrange
+        BigDecimal addressPoid = BigDecimal.valueOf(1L);
+        when(addressDetailsRepository.findAddressDetailsWithNameByAddressPoid(addressPoid))
+            .thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
+            () -> service.getCustomerDetailsById(addressPoid)
+        );
+        assertTrue(exception.getMessage().contains("Address"));
+    }
 
     private SalesQuoteProjectsHdr createMockEntity() {
         SalesQuoteProjectsHdr entity = new SalesQuoteProjectsHdr();
@@ -221,11 +310,11 @@ class SalesQuoteProjectsServiceImplTest {
         entity.setTransactionDate(LocalDate.now());
         entity.setCompanyPoid(1L);
         entity.setDocRef("DOC123");
-        entity.setCustomerType("INDIVIDUAL");
-        entity.setCustomerPoid(1L);
+        entity.setCustomerType("existing");
+        entity.setCustomerPoid(BigDecimal.valueOf(1L));
         entity.setCustomerName("Test Customer");
         entity.setCustomerContact("John Doe");
-        entity.setCustomerEmail("john@test.com");
+        entity.setCustomerEmail("test@example.com");
         entity.setCustomerTelephone("123456789");
         entity.setCustomerMobile("987654321");
         entity.setBillingCurrencyCode("USD");
@@ -239,14 +328,17 @@ class SalesQuoteProjectsServiceImplTest {
 
     private SalesQuoteProjectsRequest createMockRequest() {
         SalesQuoteProjectsRequest request = new SalesQuoteProjectsRequest();
-        request.setCustomerType("INDIVIDUAL");
-        request.setCustomerPoid(1L);
+        request.setCustomerType("existing");
+        request.setCustomerPoid(BigDecimal.valueOf(1L));
         request.setCustomerName("Test Customer");
         request.setCustomerContact("John Doe");
-        request.setCustomerEmail("john@test.com");
+        request.setCustomerEmail("test@example.com");
         request.setCustomerTelephone("123456789");
         request.setCustomerMobile("987654321");
         request.setBillingCurrencyCode("USD");
+        request.setChargeDetails(new ArrayList<>());
+        request.setNotesDetails(new ArrayList<>());
+        request.setTcDetails(new ArrayList<>());
         return request;
     }
 }

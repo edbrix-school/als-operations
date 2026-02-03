@@ -38,7 +38,7 @@ public class SalesQuoteProjectsHdr {
     private String customerType;
 
     @Column(name = "CUSTOMER_POID")
-    private Long customerPoid;
+    private BigDecimal customerPoid;
 
     @Column(name = "CUSTOMER_NAME", length = 300)
     private String customerName;

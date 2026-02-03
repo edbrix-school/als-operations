@@ -8,10 +8,12 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
+import com.asg.operations.salesquotationprojects.dto.AddressDetailsDto;
 import com.asg.operations.salesquotationprojects.dto.SalesQuoteProjectsRequest;
 import com.asg.operations.salesquotationprojects.dto.SalesQuoteProjectsResponse;
 import com.asg.operations.salesquotationprojects.service.SalesQuoteProjectsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -26,11 +28,13 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 
 import static com.asg.common.lib.dto.response.ApiResponse.success;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1/sales-quotation-projects")
 @Tag(name = "Sales Quotation Projects", description = "APIs for managing Sales Quotation Projects records")
@@ -123,5 +127,19 @@ public class SalesQuoteProjectsController {
     public ResponseEntity<?> getChargeTaxDetails(@PathVariable Long companyPoid, @PathVariable String partyType, @PathVariable Long partyPoid, @PathVariable Long chargePoid) {
         Map<String, Object> result = salesQuoteProjectsService.getChargeTaxDetails(companyPoid, partyType, partyPoid, chargePoid);
         return success("Charge tax details retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/customer-details/{addressPoid}")
+    public ResponseEntity<?> getCustomerDetailsById(@PathVariable @NotNull BigDecimal addressPoid) {
+        if (addressPoid == null) {
+            return ApiResponse.badRequest("Address POID is required");
+        }
+        log.info("Fetching customer details for addressPoid: {}", addressPoid);
+
+        AddressDetailsDto response = salesQuoteProjectsService.getCustomerDetailsById(addressPoid);
+
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), addressPoid.toString());
+        return ApiResponse.success("Sales Quote Project retrieved successfully", response);
     }
 }
