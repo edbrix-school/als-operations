@@ -966,9 +966,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         hdr.setPdaBerthStayDays(dto.getPdaBerthStayDays());
         hdr.setPdaPortStayDays(dto.getPdaPortStayDays());
         hdr.setPdaFdaRemarks(dto.getPdaFdaRemarks());
-        hdr.setPdaFdaAttachments(dto.getPdaFdaAttachments());
 
-        hdr.setHusbandryCrewReqBy(dto.getHusbandryCrewReqBy());
+        hdr.setHusbandryCrewReqBy(UserContext.getUserId());
 
         hdr = hdrRepository.save(hdr);
 
