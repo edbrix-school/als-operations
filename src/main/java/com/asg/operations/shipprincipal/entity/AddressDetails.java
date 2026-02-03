@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 public class AddressDetails {
     @Id
     @Column(name = "ADDRESS_POID", nullable = false)
+    @AuditIgnore
     private BigDecimal addressPoid;
 
     @Column(name = "ADDRESS_MASTER_POID", nullable = false)
