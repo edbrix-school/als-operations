@@ -10,6 +10,7 @@ import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.portcalloperation.dto.*;
 import com.asg.operations.portcalloperation.service.PortCallOperationDrawerAttachmentService;
 import com.asg.operations.portcalloperation.service.PortCallOperationPcInfoAttachmentService;
+import com.asg.operations.portcalloperation.service.PortCallOperationScreenAttachmentService;
 import com.asg.operations.portcalloperation.service.PortCallOperationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -48,6 +49,7 @@ public class PortCallOperationController {
     private final LoggingService loggingService;
     private final PortCallOperationPcInfoAttachmentService pcInfoAttachmentService;
     private final PortCallOperationDrawerAttachmentService drawerAttachmentService;
+    private final PortCallOperationScreenAttachmentService screenAttachmentService;
 
     /**
      * Retrieves paginated list of port call operations.
@@ -570,5 +572,230 @@ public class PortCallOperationController {
             throw new IllegalStateException("Attachment service is not configured. Set common.service.attachment.base-url.");
         }
         return drawerAttachmentService.downloadAttachment(transactionPoid, emailPoid, storedFileName);
+    }
+
+    // ------------------- Screen-specific attachments (isolated per screen) -------------------
+
+    private ResponseEntity<?> requireAttachmentService() {
+        if (!screenAttachmentService.isAttachmentServiceAvailable()) {
+            return badRequest("Attachment service is not configured. Set common.service.attachment.base-url.");
+        }
+        return null;
+    }
+
+    // ----- Berthing (OPS_PC_EST_BERT_DTL.BERTHING_ATTACHMENTS) -----
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/berthing/{detRowId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload berthing attachments", description = "Upload attachments for berthing screen; stored in BERTHING_ATTACHMENTS.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> uploadBerthingAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+            @RequestParam(value = "files", required = false) MultipartFile[] files,
+            @RequestParam(value = "remarks", required = false) String[] remarks,
+            @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        ResponseEntity<?> err = requireAttachmentService();
+        if (err != null) return err;
+        if (files == null || files.length == 0) return badRequest("No files provided for upload.");
+        PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadBerthingAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
+        return success(response.isHasErrors() ? "Files uploaded with some errors." : "Berthing attachments uploaded successfully.", response);
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/berthing/{detRowId}/attachments")
+    @Operation(summary = "List berthing attachments", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> listBerthingAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        return success("Berthing attachments", screenAttachmentService.listBerthingAttachments(transactionPoid, detRowId, page, size));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/berthing/{detRowId}/attachments/summary")
+    @Operation(summary = "Berthing attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> getBerthingAttachmentsSummary(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        String summary = screenAttachmentService.getBerthingAttachmentsSummary(transactionPoid, detRowId);
+        return success("Berthing attachments summary", Map.of("berthingAttachments", summary != null ? summary : ""));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/berthing/{detRowId}/attachments/{storedFileName}/download")
+    @Operation(summary = "Download berthing attachment", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadBerthingAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable()) throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadBerthingAttachment(transactionPoid, detRowId, storedFileName);
+    }
+
+    // ----- Pre-arrival (OPS_PC_EST_PREARRIVAL_DTL.PRE_ARRIVAL_ATTACHMENTS) -----
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/pre-arrival/{detRowId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload pre-arrival attachments", description = "Stored in PRE_ARRIVAL_ATTACHMENTS.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> uploadPreArrivalAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+            @RequestParam(value = "files", required = false) MultipartFile[] files,
+            @RequestParam(value = "remarks", required = false) String[] remarks,
+            @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        if (files == null || files.length == 0) return badRequest("No files provided for upload.");
+        PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadPreArrivalAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
+        return success(response.isHasErrors() ? "Files uploaded with some errors." : "Pre-arrival attachments uploaded successfully.", response);
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments")
+    @Operation(summary = "List pre-arrival attachments", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> listPreArrivalAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        return success("Pre-arrival attachments", screenAttachmentService.listPreArrivalAttachments(transactionPoid, detRowId, page, size));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments/summary")
+    @Operation(summary = "Pre-arrival attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> getPreArrivalAttachmentsSummary(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        String summary = screenAttachmentService.getPreArrivalAttachmentsSummary(transactionPoid, detRowId);
+        return success("Pre-arrival attachments summary", Map.of("preArrivalAttachments", summary != null ? summary : ""));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments/{storedFileName}/download")
+    @Operation(summary = "Download pre-arrival attachment", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadPreArrivalAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable()) throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadPreArrivalAttachment(transactionPoid, detRowId, storedFileName);
+    }
+
+    // ----- Other details / PDA-FDA (OPS_PC_OPERATION_HDR.PDA_FDA_ATTACHMENTS) -----
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/other-details/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload other details (PDA/FDA) attachments", description = "Stored in PDA_FDA_ATTACHMENTS on header.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> uploadPdaFdaAttachments(@PathVariable Long transactionPoid,
+            @RequestParam(value = "files", required = false) MultipartFile[] files,
+            @RequestParam(value = "remarks", required = false) String[] remarks,
+            @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        if (files == null || files.length == 0) return badRequest("No files provided for upload.");
+        PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadPdaFdaAttachments(transactionPoid, files, remarks, checklistNames);
+        return success(response.isHasErrors() ? "Files uploaded with some errors." : "Other details attachments uploaded successfully.", response);
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/other-details/attachments")
+    @Operation(summary = "List other details attachments", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> listPdaFdaAttachments(@PathVariable Long transactionPoid, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        return success("Other details attachments", screenAttachmentService.listPdaFdaAttachments(transactionPoid, page, size));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/other-details/attachments/summary")
+    @Operation(summary = "Other details attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> getPdaFdaAttachmentsSummary(@PathVariable Long transactionPoid) {
+        String summary = screenAttachmentService.getPdaFdaAttachmentsSummary(transactionPoid);
+        return success("Other details attachments summary", Map.of("pdaFdaAttachments", summary != null ? summary : ""));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/other-details/attachments/{storedFileName}/download")
+    @Operation(summary = "Download other details attachment", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadPdaFdaAttachment(@PathVariable Long transactionPoid, @PathVariable String storedFileName) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable()) throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadPdaFdaAttachment(transactionPoid, storedFileName);
+    }
+
+    // ----- Husbandry crew (OPS_PC_HUSBANDRY_CREW_DTL.CREW_ATTACHMENTS) -----
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/husbandry-crew/{detRowId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload husbandry crew attachments", description = "Stored in CREW_ATTACHMENTS.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> uploadHusbandryCrewAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+            @RequestParam(value = "files", required = false) MultipartFile[] files,
+            @RequestParam(value = "remarks", required = false) String[] remarks,
+            @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        if (files == null || files.length == 0) return badRequest("No files provided for upload.");
+        PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadHusbandryCrewAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
+        return success(response.isHasErrors() ? "Files uploaded with some errors." : "Husbandry crew attachments uploaded successfully.", response);
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments")
+    @Operation(summary = "List husbandry crew attachments", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> listHusbandryCrewAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        return success("Husbandry crew attachments", screenAttachmentService.listHusbandryCrewAttachments(transactionPoid, detRowId, page, size));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments/summary")
+    @Operation(summary = "Husbandry crew attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> getHusbandryCrewAttachmentsSummary(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        String summary = screenAttachmentService.getHusbandryCrewAttachmentsSummary(transactionPoid, detRowId);
+        return success("Husbandry crew attachments summary", Map.of("crewAttachments", summary != null ? summary : ""));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments/{storedFileName}/download")
+    @Operation(summary = "Download husbandry crew attachment", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadHusbandryCrewAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable()) throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadHusbandryCrewAttachment(transactionPoid, detRowId, storedFileName);
+    }
+
+    // ----- Husbandry other (OPS_PC_HUSBANDRY_OTH_DTL.ARRNGMNT_ATTACHMENTS) -----
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/husbandry-other/{detRowId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload husbandry other details attachments", description = "Stored in ARRNGMNT_ATTACHMENTS.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> uploadHusbandryOthAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+            @RequestParam(value = "files", required = false) MultipartFile[] files,
+            @RequestParam(value = "remarks", required = false) String[] remarks,
+            @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        if (files == null || files.length == 0) return badRequest("No files provided for upload.");
+        PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadHusbandryOthAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
+        return success(response.isHasErrors() ? "Files uploaded with some errors." : "Husbandry other attachments uploaded successfully.", response);
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments")
+    @Operation(summary = "List husbandry other attachments", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> listHusbandryOthAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        return success("Husbandry other attachments", screenAttachmentService.listHusbandryOthAttachments(transactionPoid, detRowId, page, size));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments/summary")
+    @Operation(summary = "Husbandry other attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> getHusbandryOthAttachmentsSummary(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        String summary = screenAttachmentService.getHusbandryOthAttachmentsSummary(transactionPoid, detRowId);
+        return success("Husbandry other attachments summary", Map.of("arrngmntAttachments", summary != null ? summary : ""));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments/{storedFileName}/download")
+    @Operation(summary = "Download husbandry other attachment", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadHusbandryOthAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable()) throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadHusbandryOthAttachment(transactionPoid, detRowId, storedFileName);
+    }
+
+    // ----- Docs copy (OPS_PC_DOCS_COPY_DTL.DOCUMENT_ATTACHMENTS) -----
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/docs-copy/{detRowId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload docs copy attachments", description = "Stored in DOCUMENT_ATTACHMENTS.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> uploadDocsCopyAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+            @RequestParam(value = "files", required = false) MultipartFile[] files,
+            @RequestParam(value = "remarks", required = false) String[] remarks,
+            @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        if (files == null || files.length == 0) return badRequest("No files provided for upload.");
+        PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadDocsCopyAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
+        return success(response.isHasErrors() ? "Files uploaded with some errors." : "Docs copy attachments uploaded successfully.", response);
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments")
+    @Operation(summary = "List docs copy attachments", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> listDocsCopyAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        return success("Docs copy attachments", screenAttachmentService.listDocsCopyAttachments(transactionPoid, detRowId, page, size));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments/summary")
+    @Operation(summary = "Docs copy attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> getDocsCopyAttachmentsSummary(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        String summary = screenAttachmentService.getDocsCopyAttachmentsSummary(transactionPoid, detRowId);
+        return success("Docs copy attachments summary", Map.of("documentAttachments", summary != null ? summary : ""));
+    }
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments/{storedFileName}/download")
+    @Operation(summary = "Download docs copy attachment", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadDocsCopyAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable()) throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadDocsCopyAttachment(transactionPoid, detRowId, storedFileName);
     }
 }
