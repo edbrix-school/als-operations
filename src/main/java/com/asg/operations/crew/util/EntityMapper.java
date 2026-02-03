@@ -119,6 +119,8 @@ public class EntityMapper {
         entity.setCrewPassportIssueDate(request.getCrewPassportIssueDate());
         entity.setCrewPassportExpiryDate(request.getCrewPassportExpiryDate());
         entity.setCrewPassportIssuePlace(request.getCrewPassportIssuePlace());
+        entity.setLastModifiedBy(UserContext.getUserId());
+        entity.setLastModifiedDate(LocalDateTime.now());
         entity.setRemarks(request.getRemarks());
         if (request.getActive() != null) {
             entity.setActive(request.getActive());
