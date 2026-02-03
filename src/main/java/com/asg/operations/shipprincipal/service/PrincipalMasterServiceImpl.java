@@ -516,6 +516,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     entity.setRemarks(charge.getRemarks());
                     entity.setCreatedDate(LocalDateTime.now());
                     chargeRepository.save(entity);
+                    String logDetail = String.format("Row Created on Principal Charge Detail with detRowId: %s", nextDetRowId);
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     chargeRepository.findById(new ShipPrincipalMasterDtlId(id, charge.getDetRowId()))
                             .ifPresent(existing -> {
@@ -531,6 +533,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                             });
                 } else if (action == ActionType.isDeleted) {
                     chargeRepository.deleteById(new ShipPrincipalMasterDtlId(id, charge.getDetRowId()));
+                    loggingService.logDelete(charge, UserContext.getDocumentId(), id.toString());
                 }
             }
         }
@@ -547,6 +550,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     mapper.mapPaymentDTOToEntity(payment, entity);
                     entity.setCreatedDate(LocalDateTime.now());
                     paymentRepository.save(entity);
+                    String logDetail = String.format("Row Created on Principal Payment Detail with detRowId: %s", nextDetRowId);
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     paymentRepository.findById(new ShipPrincipalMasterDtlId(id, payment.getDetRowId()))
                             .ifPresent(existing -> {
@@ -560,6 +565,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                             });
                 } else if (action == ActionType.isDeleted) {
                     paymentRepository.deleteById(new ShipPrincipalMasterDtlId(id, payment.getDetRowId()));
+                    loggingService.logDelete(payment, UserContext.getDocumentId(), id.toString());
                 }
             }
         }
@@ -602,6 +608,8 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     entity.setCreatedBy(user.getUserName());
                     entity.setCreatedDate(LocalDateTime.now());
                     paRptDtlRepository.save(entity);
+                    String logDetail = String.format("Row Created on Principal Port Activity Report Detail with detRowId: %s", nextDetRowId);
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
                     paRptDtlRepository.findById(new ShipPrincipalPaRptDtlId(id, paRptDetail.getDetRowId()))
                             .ifPresent(existing -> {
@@ -625,6 +633,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                             });
                 } else if (action == ActionType.isDeleted) {
                     paRptDtlRepository.deleteById(new ShipPrincipalPaRptDtlId(id, paRptDetail.getDetRowId()));
+                    loggingService.logDelete(paRptDetail, UserContext.getDocumentId(), id.toString());
                 }
             }
         }

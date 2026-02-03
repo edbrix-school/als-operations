@@ -1,6 +1,7 @@
 package com.asg.operations.shipprincipal.service;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.shipprincipal.dto.AddressDetailsDTO;
 import com.asg.operations.shipprincipal.dto.AddressMasterResponse;
@@ -11,6 +12,7 @@ import com.asg.operations.shipprincipal.repository.AddressDetailsRepository;
 import com.asg.operations.shipprincipal.repository.AddressMasterRepository;
 import com.asg.operations.shipprincipal.repository.CountryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -26,6 +28,7 @@ public class AddressMasterServiceImpl implements AddressMasterService {
     private final AddressMasterRepository masterRepo;
     private final AddressDetailsRepository detailsRepo;
     private final LovService lovService;
+    private final LoggingService loggingService;
 
     /**
      * Get single Address Master with all department details (tabs).
@@ -124,11 +127,18 @@ public class AddressMasterServiceImpl implements AddressMasterService {
                 AddressDetails detail;
                 if (dto.getAddressPoid() != null && existingMap.containsKey(dto.getAddressPoid())) {
                     detail = existingMap.get(dto.getAddressPoid());
+                    AddressDetails oldDetail = new AddressDetails();
+                    BeanUtils.copyProperties(detail, oldDetail);
                     updateDetail(detail, dto, currentUser);
+                    toSave.add(detail);
+                    String logDetail = String.format("KeyId = ADDRESS_MASTER_POID %s: ADDRESS_POID %s", master.getAddressMasterPoid(), detail.getAddressPoid());
+                    loggingService.createLog(oldDetail, detail, AddressDetails.class, UserContext.getDocumentId(), master.getAddressMasterPoid().toString(), logDetail);
                 } else {
                     detail = buildDetail(dto, master, type, counter++, currentUser);
+                    toSave.add(detail);
+                    String logDetail = String.format("Row Created on Address Detail with addressPoid: %s", detail.getAddressPoid());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), master.getAddressMasterPoid().toString(), logDetail);
                 }
-                toSave.add(detail);
             }
         }
 

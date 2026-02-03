@@ -226,6 +226,8 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 .seqno(hdr.getSeqno())
                 .remarks(hdr.getRemarks())
                 .details(detailDtos)
+                .createdBy(hdr.getCreatedBy())
+                .createdDate(hdr.getCreatedDate())
                 .build();
     }
 
