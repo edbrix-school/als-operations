@@ -10,6 +10,7 @@ import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.utility.PaginationUtil;
+import com.asg.operations.common.repository.GlobalParameterRepository;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.finaldisbursementaccount.repository.PdaFdaHdrRepository;
@@ -81,6 +82,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final StockUnitMasterRepository stockUnitMasterRepository;
     private final GlobalUserRepository globalUserRepository;
     private final PortActivityMasterRepository portActivityMasterRepository;
+    private final GlobalParameterRepository globalParameterRepository;
 
 
     @Override
@@ -2135,6 +2137,17 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto) {
         log.info("Creating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
+        // Validate ETA is at least 1 day ahead - block all operations (create/edit) if not
+        List<PortCallOperationEstBertDtl> estBertRecords = estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid);
+        if (!estBertRecords.isEmpty()) {
+            PortCallOperationEstBertDtl latestEstBert = estBertRecords.getFirst();
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime oneDayFromNow = now.plusDays(1);
+            if (latestEstBert.getEta() != null && latestEstBert.getEta().isBefore(oneDayFromNow)) {
+                throw new ValidationException(String.format("Operations are not allowed when ETA is less than 1 day away. ETA is %s, current time is %s", latestEstBert.getEta(), now));
+            }
+        }
+
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
@@ -2143,20 +2156,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         if (dto.getSendEmail()) {
-            // Validate that email can only be sent at least 1 day before ETA/ETB
-            PortCallOperationEstPrearrivalDtl estPrearrivalDtl = estPrearrivalDtlRepository
-                    .findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
-                    .orElseThrow(() -> new ResourceNotFoundException("Est Prearrival Detail not found with transactionPoid: " + transactionPoid + ", detRowId: " + detRowId));
+            PortCallOperationEstPrearrivalDtl estPrearrivalDetails = estPrearrivalDtlRepository.findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
+                    .orElseThrow(() -> new ResourceNotFoundException("PRE-Arrival detail not found with Transaction Poid = " + transactionPoid + "Det Row Id = " + detRowId));
 
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime oneDayFromNow = now.plusDays(1);
-
-            if (estPrearrivalDtl.getEta() != null && estPrearrivalDtl.getEta().isBefore(oneDayFromNow)) {
-                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETA. ETA is %s, current time is %s", estPrearrivalDtl.getEta(), now));
-            }
-
-            if (estPrearrivalDtl.getEtb() != null && estPrearrivalDtl.getEtb().isBefore(oneDayFromNow)) {
-                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETB. ETB is %s, current time is %s", estPrearrivalDtl.getEtb(), now));
+            if (estPrearrivalDetails.getEmailPoid() == null) {
+                // Logic to send email
+            } else {
+                throw new CustomException("Email already sent", 400);
             }
         }
 
@@ -2192,6 +2198,17 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto) {
         log.info("Updating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}, preActivityDtlPoid: {}", transactionPoid, detRowId, preActivityDtlPoid);
 
+        // Validate ETA is at least 1 day ahead - block all operations (create/edit) if not
+        List<PortCallOperationEstBertDtl> estBertRecords = estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid);
+        if (!estBertRecords.isEmpty()) {
+            PortCallOperationEstBertDtl latestEstBert = estBertRecords.getFirst();
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime oneDayFromNow = now.plusDays(1);
+            if (latestEstBert.getEta() != null && latestEstBert.getEta().isBefore(oneDayFromNow)) {
+                throw new ValidationException(String.format("Operations are not allowed when ETA is less than 1 day away. ETA is %s, current time is %s", latestEstBert.getEta(), now));
+            }
+        }
+
         PortCallOperationEstPrearrivalActDtl entity = estPrearrivalActDtlRepository.findById(new PortCallOperationEstPrearrivalActDtlId(transactionPoid, detRowId, preActivityDtlPoid))
                 .orElseThrow(() -> new ResourceNotFoundException("EstPrearrivalActDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", preActivityDtlPoid", preActivityDtlPoid));
 
@@ -2205,21 +2222,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         if (dto.getSendEmail()) {
-            // Validate that email can only be sent at least 1 day before ETA/ETB
-            PortCallOperationEstPrearrivalDtl estPrearrivalDtl = estPrearrivalDtlRepository
-                    .findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
-                    .orElseThrow(() -> new ResourceNotFoundException("Est Prearrival Detail not found with transactionPoid: " + transactionPoid + ", detRowId: " + detRowId));
-
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime oneDayFromNow = now.plusDays(1);
-
-            if (estPrearrivalDtl.getEta() != null && estPrearrivalDtl.getEta().isBefore(oneDayFromNow)) {
-                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETA. ETA is %s, current time is %s", estPrearrivalDtl.getEta(), now));
-            }
-
-            if (estPrearrivalDtl.getEtb() != null && estPrearrivalDtl.getEtb().isBefore(oneDayFromNow)) {
-                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETB. ETB is %s, current time is %s", estPrearrivalDtl.getEtb(), now));
-            }
         }
 
         entity.setActivityPoid(dto.getActivityPoid());
@@ -2416,4 +2418,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         docsCopyDtlRepository.save(entity);
         return getOperationById(transactionPoid);
     }
+
+
 }

@@ -329,6 +329,7 @@ class PortCallOperationServiceImplTest {
 
         when(hdrRepository.existsById(transactionPoid)).thenReturn(true);
         when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
+        when(estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid)).thenReturn(Collections.emptyList());
         when(estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId))
                 .thenReturn(0L);
         when(estPrearrivalActDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -366,6 +367,7 @@ class PortCallOperationServiceImplTest {
         when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
         when(estPrearrivalActDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid))
                 .thenReturn(latestRecords);
+        when(estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid)).thenReturn(Collections.emptyList());
         when(estPrearrivalActDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         PortCallOperationEstPrearrivalActDetailResponseDto result =

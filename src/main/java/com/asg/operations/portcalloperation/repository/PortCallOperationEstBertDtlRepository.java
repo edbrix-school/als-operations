@@ -15,6 +15,8 @@ public interface PortCallOperationEstBertDtlRepository extends JpaRepository<Por
 
     List<PortCallOperationEstBertDtl> findByTransactionPoid(Long transactionPoid);
 
+    List<PortCallOperationEstBertDtl> findByTransactionPoidOrderByLastModifiedDateDesc(Long transactionPoid);
+
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationEstBertDtl d where d.transactionPoid = :transactionPoid")
     Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
 }
