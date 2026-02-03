@@ -105,6 +105,7 @@ class ContractCrewControllerTest {
                 "  \"crewNationalityPoid\": 1,\n" +
                 "  \"crewCompany\": \"ALS\",\n" +
                 "  \"crewDesignation\": \"Seaman\",\n" +
+                "  \"crewCdcNumber\": \"CDC123456\",\n" +
                 "  \"crewPassportNumber\": \"P123456\",\n" +
                 "  \"crewPassportIssueDate\": \"2025-01-01\",\n" +
                 "  \"crewPassportExpiryDate\": \"2027-01-01\"\n" +
@@ -139,6 +140,7 @@ class ContractCrewControllerTest {
                 "  \"crewNationalityPoid\": 1,\n" +
                 "  \"crewCompany\": \"ALS\",\n" +
                 "  \"crewDesignation\": \"Seaman\",\n" +
+                "  \"crewCdcNumber\": \"CDC123456\",\n" +
                 "  \"crewPassportNumber\": \"P123456\",\n" +
                 "  \"crewPassportIssueDate\": \"2025-01-01\",\n" +
                 "  \"crewPassportExpiryDate\": \"2027-01-01\"\n" +
