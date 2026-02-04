@@ -44,9 +44,9 @@ public class CommonAttachmentServiceClient {
     /** docId for other details screen (OPS_PC_OPERATION_HDR.PDA_FDA_ATTACHMENTS). */
     public static final String DOC_ID_PDA_FDA = "110-163-PDA-FDA";
     /** docId for husbandry crew screen (OPS_PC_HUSBANDRY_CREW_DTL.CREW_ATTACHMENTS). */
-    public static final String DOC_ID_HUSBANDRY_CREW = "110-163-HUSBANDRY-CREW";
+    public static final String DOC_ID_HUSBANDRY_CREW = "110-163-HUSB-CREW";
     /** docId for husbandry other details screen (OPS_PC_HUSBANDRY_OTH_DTL.ARRNGMNT_ATTACHMENTS). */
-    public static final String DOC_ID_HUSBANDRY_OTH = "110-163-HUSBANDRY-OTH";
+    public static final String DOC_ID_HUSBANDRY_OTH = "110-163-HUSB-OTH";
     /** docId for docs copy screen (OPS_PC_DOCS_COPY_DTL.DOCUMENT_ATTACHMENTS). */
     public static final String DOC_ID_DOCS_COPY = "110-163-DOCS-COPY";
 

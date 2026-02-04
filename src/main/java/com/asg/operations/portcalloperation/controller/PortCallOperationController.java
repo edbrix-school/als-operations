@@ -658,7 +658,7 @@ public class PortCallOperationController {
 
     // ----- Other details / PDA-FDA (OPS_PC_OPERATION_HDR.PDA_FDA_ATTACHMENTS) -----
     @AllowedAction(UserRolesRightsEnum.EDIT)
-    @PostMapping(value = "/{transactionPoid}/other-details/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{transactionPoid}/disbursement-other-details/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload other details (PDA/FDA) attachments", description = "Stored in PDA_FDA_ATTACHMENTS on header.", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<?> uploadPdaFdaAttachments(@PathVariable Long transactionPoid,
             @RequestParam(value = "files", required = false) MultipartFile[] files,
@@ -670,21 +670,21 @@ public class PortCallOperationController {
         return success(response.isHasErrors() ? "Files uploaded with some errors." : "Other details attachments uploaded successfully.", response);
     }
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/other-details/attachments")
+    @GetMapping("/{transactionPoid}/disbursement-other-details/attachments")
     @Operation(summary = "List other details attachments", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<?> listPdaFdaAttachments(@PathVariable Long transactionPoid, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
         if (requireAttachmentService() != null) return requireAttachmentService();
         return success("Other details attachments", screenAttachmentService.listPdaFdaAttachments(transactionPoid, page, size));
     }
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/other-details/attachments/summary")
+    @GetMapping("/{transactionPoid}/disbursement-other-details/attachments/summary")
     @Operation(summary = "Other details attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<?> getPdaFdaAttachmentsSummary(@PathVariable Long transactionPoid) {
         String summary = screenAttachmentService.getPdaFdaAttachmentsSummary(transactionPoid);
         return success("Other details attachments summary", Map.of("pdaFdaAttachments", summary != null ? summary : ""));
     }
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/other-details/attachments/{storedFileName}/download")
+    @GetMapping("/{transactionPoid}/disbursement-other-details/attachments/{storedFileName}/download")
     @Operation(summary = "Download other details attachment", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<org.springframework.core.io.Resource> downloadPdaFdaAttachment(@PathVariable Long transactionPoid, @PathVariable String storedFileName) {
         if (!screenAttachmentService.isAttachmentServiceAvailable()) throw new IllegalStateException("Attachment service is not configured.");
