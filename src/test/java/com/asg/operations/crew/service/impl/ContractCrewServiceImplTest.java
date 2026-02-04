@@ -1,5 +1,6 @@
 package com.asg.operations.crew.service.impl;
 
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.crew.dto.*;
 import com.asg.operations.crew.entity.ContractCrew;
 import com.asg.operations.crew.entity.ContractCrewDtl;
@@ -46,6 +47,9 @@ class ContractCrewServiceImplTest {
 
     @Mock
     private EntityManager entityManager;
+
+    @Mock
+    private LoggingService loggingService;
 
     @InjectMocks
     private ContractCrewServiceImpl service;
