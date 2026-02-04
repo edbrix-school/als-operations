@@ -2117,7 +2117,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+        long nextPreActivityDtlPoid = estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
         List<PortCallOperationEstPrearrivalActDtl> entitiesToSave = new ArrayList<>();
         for (PortCallReportActivityDto activity : activities) {
@@ -2193,7 +2193,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         // Validate ETA is at least 1 day ahead - block all operations (create/edit) if not
         List<PortCallOperationEstBertDtl> estBertRecords = estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid);
         if (!estBertRecords.isEmpty()) {
-            Optional<String> daysToBeEnabledForEdit = globalParameterRepository.findParameterValueByName("PC_PRE_ARRIVAL_DTL_ACTIVITY_RPT_POID");
+            Optional<String> daysToBeEnabledForEdit = globalParameterRepository.findParameterValueByName("PC_PREARRIVAL_EDIT_ALLOW_DAYS");
             if (daysToBeEnabledForEdit.isEmpty()) {
                 daysToBeEnabledForEdit = Optional.of("1");
             }
@@ -2250,7 +2250,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         estPrearrivalActDtlRepository.deleteByTransactionPoidAndDetRowId(transactionPoid, detRowId);
-        Long nextPreActivityDtlPoid = 1L;
+        long nextPreActivityDtlPoid = 1L;
 
         List<PortCallOperationEstPrearrivalActDtl> entitiesToSave = new ArrayList<>();
         for (PortCallReportActivityDto activity : activities) {
@@ -2324,7 +2324,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-
         List<PortCallReportDtl> portCallReportActivities = dtlRepository.findByPortCallReportPoid(dto.getPortCallReportPoid());
 
         // Validate mandatory activities: map by portActivityTypePoid, require otherDescription and estimatedDatetime when activityMandatory=Y
@@ -2375,7 +2374,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+        long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
         List<PortCallOperationActTimingsActvtyDtl> entitiesToSave = new ArrayList<>();
         for (PortCallReportActivityDto activity : activities) {
@@ -2442,7 +2441,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-
         List<PortCallReportActivityDto> activities = dto.getActivities() != null ? dto.getActivities() : List.of();
         for (PortCallReportActivityDto activity : activities) {
             if (activity.getActivityPoid() != null && !portActivityMasterRepository.existsByPortActivityTypePoid(activity.getActivityPoid())) {
@@ -2479,7 +2477,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         actTimingsActvtyDtlRepository.deleteByTransactionPoidAndDetRowId(transactionPoid, detRowId);
-        Long nextActualsTimingDtlPoid = 1L;
+        long nextActualsTimingDtlPoid = 1L;
 
         List<PortCallOperationActTimingsActvtyDtl> entitiesToSave = new ArrayList<>();
         for (PortCallReportActivityDto activity : activities) {
@@ -2581,6 +2579,4 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         docsCopyDtlRepository.save(entity);
         return getOperationById(transactionPoid);
     }
-
-
 }
