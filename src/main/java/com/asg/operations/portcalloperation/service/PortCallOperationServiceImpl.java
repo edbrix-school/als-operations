@@ -2119,13 +2119,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
-        PortCallOperationEstPrearrivalActDtl entity = null;
+        List<PortCallOperationEstPrearrivalActDtl> entitiesToSave = new ArrayList<>();
         for (PortCallReportActivityDto activity : activities) {
             if (activity.getActivityPoid() == null) continue;
-            entity = PortCallOperationEstPrearrivalActDtl.builder()
+            entitiesToSave.add(PortCallOperationEstPrearrivalActDtl.builder()
                     .transactionPoid(transactionPoid)
                     .detRowId(detRowId)
-                    .preActivityDtlPoid(nextPreActivityDtlPoid)
+                    .preActivityDtlPoid(nextPreActivityDtlPoid++)
                     .activityPoid(activity.getActivityPoid())
                     .otherDescription(activity.getOtherDescription())
                     .estimatedDatetime(activity.getEstimatedDatetime())
@@ -2133,14 +2133,15 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .createdDate(LocalDateTime.now())
                     .lastModifiedBy(UserContext.getUserId())
                     .lastModifiedDate(LocalDateTime.now())
-                    .build();
-            entity = estPrearrivalActDtlRepository.save(entity);
-            nextPreActivityDtlPoid++;
+                    .build());
         }
 
-        if (entity == null) {
+        if (entitiesToSave.isEmpty()) {
             throw new ValidationException("At least one activity must be provided");
         }
+
+        List<PortCallOperationEstPrearrivalActDtl> saved = estPrearrivalActDtlRepository.saveAll(entitiesToSave);
+        PortCallOperationEstPrearrivalActDtl entity = saved.get(saved.size() - 1);
 
         return PortCallOperationEstPrearrivalActDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
@@ -2210,9 +2211,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        PortCallOperationEstPrearrivalActDtl entity = estPrearrivalActDtlRepository.findById(new PortCallOperationEstPrearrivalActDtlId(transactionPoid, detRowId, preActivityDtlPoid))
-                .orElseThrow(() -> new ResourceNotFoundException("EstPrearrivalActDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", preActivityDtlPoid", preActivityDtlPoid));
-
         // Validate mandatory activities (same as create)
         Optional<String> portCallReportPoid = globalParameterRepository.findParameterValueByName("PC_PRE_ARRIVAL_DTL_ACTIVITY_RPT_POID");
         if (portCallReportPoid.isPresent()) {
@@ -2224,7 +2222,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
             List<PortCallReportDtl> portCallReportActivitiesUpdate = dtlRepository.findByPortCallReportPoid(portCallReportPoidLong);
 
-            // Validate mandatory activities: map by portActivityTypePoid, require otherDescription and estimatedDatetime when activityMandatory=Y
             Map<Long, PortCallReportActivityDto> requestActivityMapUpdate = (dto.getActivities() != null ? dto.getActivities() : List.<PortCallReportActivityDto>of()).stream()
                     .filter(a -> a.getActivityPoid() != null)
                     .collect(Collectors.toMap(PortCallReportActivityDto::getActivityPoid, a -> a, (a, b) -> a));
@@ -2245,28 +2242,39 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        Long entityActivityPoid = entity.getActivityPoid();
-        PortCallReportActivityDto activityToUpdate = (dto.getActivities() != null ? dto.getActivities() : List.<PortCallReportActivityDto>of()).stream()
-                .filter(a -> entityActivityPoid != null && entityActivityPoid.equals(a.getActivityPoid()))
-                .findFirst()
-                .orElseThrow(() -> new ValidationException("Activity data for activityPoid " + entityActivityPoid + " must be provided in activities list"));
-
-        if (!portActivityMasterRepository.existsByPortActivityTypePoid(activityToUpdate.getActivityPoid())) {
-            throw new ResourceNotFoundException("Port activity", "Transaction Poid", activityToUpdate.getActivityPoid());
+        List<PortCallReportActivityDto> activities = dto.getActivities() != null ? dto.getActivities() : List.of();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() != null && !portActivityMasterRepository.existsByPortActivityTypePoid(activity.getActivityPoid())) {
+                throw new ResourceNotFoundException("Port activity", "Transaction Poid", activity.getActivityPoid());
+            }
         }
 
-        PortCallOperationEstPrearrivalActDtl latestRecord = estPrearrivalActDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
-        if (!latestRecord.getPreActivityDtlPoid().equals(preActivityDtlPoid)) {
-            throw new ValidationException("Cannot edit this record. Please select a latest one");
+        estPrearrivalActDtlRepository.deleteByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        Long nextPreActivityDtlPoid = 1L;
+
+        List<PortCallOperationEstPrearrivalActDtl> entitiesToSave = new ArrayList<>();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() == null) continue;
+            entitiesToSave.add(PortCallOperationEstPrearrivalActDtl.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .preActivityDtlPoid(nextPreActivityDtlPoid++)
+                    .activityPoid(activity.getActivityPoid())
+                    .otherDescription(activity.getOtherDescription())
+                    .estimatedDatetime(activity.getEstimatedDatetime())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build());
         }
 
-        entity.setActivityPoid(activityToUpdate.getActivityPoid());
-        entity.setOtherDescription(activityToUpdate.getOtherDescription());
-        entity.setEstimatedDatetime(activityToUpdate.getEstimatedDatetime());
-        entity.setLastModifiedBy(UserContext.getUserId());
-        entity.setLastModifiedDate(LocalDateTime.now());
+        if (entitiesToSave.isEmpty()) {
+            throw new ValidationException("At least one activity must be provided");
+        }
 
-        entity = estPrearrivalActDtlRepository.save(entity);
+        List<PortCallOperationEstPrearrivalActDtl> saved = estPrearrivalActDtlRepository.saveAll(entitiesToSave);
+        PortCallOperationEstPrearrivalActDtl entity = saved.get(saved.size() - 1);
 
         return PortCallOperationEstPrearrivalActDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
@@ -2316,11 +2324,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        Optional<String> portCallReportPoid = Optional.of(String.valueOf(70));
-        if (portCallReportPoid.isEmpty()) {
-            throw new CustomException("Port call report poid is required", 400);
-        }
-        List<PortCallReportDtl> portCallReportActivities = dtlRepository.findByPortCallReportPoid(Long.valueOf(portCallReportPoid.get()));
+
+        List<PortCallReportDtl> portCallReportActivities = dtlRepository.findByPortCallReportPoid(dto.getPortCallReportPoid());
 
         // Validate mandatory activities: map by portActivityTypePoid, require otherDescription and estimatedDatetime when activityMandatory=Y
         Map<Long, PortCallReportActivityDto> requestActivityMap = activities.stream()
@@ -2372,13 +2377,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
-        PortCallOperationActTimingsActvtyDtl entity = null;
+        List<PortCallOperationActTimingsActvtyDtl> entitiesToSave = new ArrayList<>();
         for (PortCallReportActivityDto activity : activities) {
             if (activity.getActivityPoid() == null) continue;
-            entity = PortCallOperationActTimingsActvtyDtl.builder()
+            entitiesToSave.add(PortCallOperationActTimingsActvtyDtl.builder()
                     .transactionPoid(transactionPoid)
                     .detRowId(detRowId)
-                    .actualsTimingDtlPoid(nextActualsTimingDtlPoid)
+                    .actualsTimingDtlPoid(nextActualsTimingDtlPoid++)
                     .activityPoid(activity.getActivityPoid())
                     .details(activity.getOtherDescription())
                     .estimatedDatetime(activity.getEstimatedDatetime())
@@ -2386,14 +2391,15 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .createdDate(LocalDateTime.now())
                     .lastModifiedBy(UserContext.getUserId())
                     .lastModifiedDate(LocalDateTime.now())
-                    .build();
-            entity = actTimingsActvtyDtlRepository.save(entity);
-            nextActualsTimingDtlPoid++;
+                    .build());
         }
 
-        if (entity == null) {
+        if (entitiesToSave.isEmpty()) {
             throw new ValidationException("At least one activity must be provided");
         }
+
+        List<PortCallOperationActTimingsActvtyDtl> saved = actTimingsActvtyDtlRepository.saveAll(entitiesToSave);
+        PortCallOperationActTimingsActvtyDtl entity = saved.getLast();
 
         return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
@@ -2414,46 +2420,34 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        PortCallOperationActTimingsActvtyDtl entity = actTimingsActvtyDtlRepository.findById(new PortCallOperationActTimingsActvtyDtlId(transactionPoid, detRowId, actualsTimingDtlPoid))
-                .orElseThrow(() -> new ResourceNotFoundException("ActTimingsActvtyDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", actualsTimingDtlPoid", actualsTimingDtlPoid));
-
         // Validate mandatory activities (same as create)
-        Optional<String> portCallReportPoidUpdate = Optional.of(String.valueOf(70));
-        if (portCallReportPoidUpdate.isPresent()) {
-            List<PortCallReportDtl> portCallReportActivitiesUpdate = dtlRepository.findByPortCallReportPoid(Long.valueOf(portCallReportPoidUpdate.get()));
-            Map<Long, PortCallReportActivityDto> requestActivityMapUpdate = (dto.getActivities() != null ? dto.getActivities() : List.<PortCallReportActivityDto>of()).stream()
-                    .filter(a -> a.getActivityPoid() != null)
-                    .collect(Collectors.toMap(PortCallReportActivityDto::getActivityPoid, a -> a, (a, b) -> a));
-            for (PortCallReportDtl reportDtl : portCallReportActivitiesUpdate) {
-                if ("Y".equalsIgnoreCase(reportDtl.getActivityMandatory())) {
-                    Long activityPoid = reportDtl.getPortActivityTypePoid();
-                    PortCallReportActivityDto activityDto = requestActivityMapUpdate.get(activityPoid);
-                    if (activityDto == null) {
-                        throw new ValidationException("Mandatory activity (activityPoid: " + activityPoid + ") is required");
-                    }
-                    if (activityDto.getOtherDescription() == null || activityDto.getOtherDescription().isBlank()) {
-                        throw new ValidationException("otherDescription is required for mandatory activity (activityPoid: " + activityPoid + ")");
-                    }
-                    if (activityDto.getEstimatedDatetime() == null) {
-                        throw new ValidationException("estimatedDatetime is required for mandatory activity (activityPoid: " + activityPoid + ")");
-                    }
+
+        List<PortCallReportDtl> portCallReportActivitiesUpdate = dtlRepository.findByPortCallReportPoid(dto.getPortCallReportPoid());
+        Map<Long, PortCallReportActivityDto> requestActivityMapUpdate = (dto.getActivities() != null ? dto.getActivities() : List.<PortCallReportActivityDto>of()).stream()
+                .filter(a -> a.getActivityPoid() != null)
+                .collect(Collectors.toMap(PortCallReportActivityDto::getActivityPoid, a -> a, (a, b) -> a));
+        for (PortCallReportDtl reportDtl : portCallReportActivitiesUpdate) {
+            if ("Y".equalsIgnoreCase(reportDtl.getActivityMandatory())) {
+                Long activityPoid = reportDtl.getPortActivityTypePoid();
+                PortCallReportActivityDto activityDto = requestActivityMapUpdate.get(activityPoid);
+                if (activityDto == null) {
+                    throw new ValidationException("Mandatory activity (activityPoid: " + activityPoid + ") is required");
+                }
+                if (activityDto.getOtherDescription() == null || activityDto.getOtherDescription().isBlank()) {
+                    throw new ValidationException("otherDescription is required for mandatory activity (activityPoid: " + activityPoid + ")");
+                }
+                if (activityDto.getEstimatedDatetime() == null) {
+                    throw new ValidationException("estimatedDatetime is required for mandatory activity (activityPoid: " + activityPoid + ")");
                 }
             }
         }
 
-        Long entityActivityPoid = entity.getActivityPoid();
-        PortCallReportActivityDto activityToUpdate = (dto.getActivities() != null ? dto.getActivities() : List.<PortCallReportActivityDto>of()).stream()
-                .filter(a -> entityActivityPoid != null && entityActivityPoid.equals(a.getActivityPoid()))
-                .findFirst()
-                .orElseThrow(() -> new ValidationException("Activity data for activityPoid " + entityActivityPoid + " must be provided in activities list"));
 
-        if (!portActivityMasterRepository.existsByPortActivityTypePoid(activityToUpdate.getActivityPoid())) {
-            throw new ResourceNotFoundException("Port activity", "Transaction Poid", activityToUpdate.getActivityPoid());
-        }
-
-        PortCallOperationActTimingsActvtyDtl latestRecord = actTimingsActvtyDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
-        if (!latestRecord.getActualsTimingDtlPoid().equals(actualsTimingDtlPoid)) {
-            throw new ValidationException("Cannot edit this record. Please select a latest one");
+        List<PortCallReportActivityDto> activities = dto.getActivities() != null ? dto.getActivities() : List.of();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() != null && !portActivityMasterRepository.existsByPortActivityTypePoid(activity.getActivityPoid())) {
+                throw new ResourceNotFoundException("Port activity", "Transaction Poid", activity.getActivityPoid());
+            }
         }
 
         Long emailPoidToUse = dto.getEmailPoid();
@@ -2484,13 +2478,32 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        entity.setActivityPoid(activityToUpdate.getActivityPoid());
-        entity.setDetails(activityToUpdate.getOtherDescription());
-        entity.setEstimatedDatetime(activityToUpdate.getEstimatedDatetime());
-        entity.setLastModifiedBy(UserContext.getUserId());
-        entity.setLastModifiedDate(LocalDateTime.now());
+        actTimingsActvtyDtlRepository.deleteByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        Long nextActualsTimingDtlPoid = 1L;
 
-        entity = actTimingsActvtyDtlRepository.save(entity);
+        List<PortCallOperationActTimingsActvtyDtl> entitiesToSave = new ArrayList<>();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() == null) continue;
+            entitiesToSave.add(PortCallOperationActTimingsActvtyDtl.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .actualsTimingDtlPoid(nextActualsTimingDtlPoid++)
+                    .activityPoid(activity.getActivityPoid())
+                    .details(activity.getOtherDescription())
+                    .estimatedDatetime(activity.getEstimatedDatetime())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build());
+        }
+
+        if (entitiesToSave.isEmpty()) {
+            throw new ValidationException("At least one activity must be provided");
+        }
+
+        List<PortCallOperationActTimingsActvtyDtl> saved = actTimingsActvtyDtlRepository.saveAll(entitiesToSave);
+        PortCallOperationActTimingsActvtyDtl entity = saved.getLast();
 
         return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())

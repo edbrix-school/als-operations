@@ -17,6 +17,8 @@ public class PortCallOperationActTimingsActivityDetailDto {
     private Long transactionPoid;
     private Long detRowId;
     private Long actualsTimingDtlPoid;
+    @NotNull(message = "Port Call Report Poid is required")
+    private Long portCallReportPoid;
 
     @Valid
     private List<PortCallReportActivityDto> activities;
