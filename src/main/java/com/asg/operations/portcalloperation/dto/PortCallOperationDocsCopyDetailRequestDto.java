@@ -24,8 +24,5 @@ public class PortCallOperationDocsCopyDetailRequestDto {
     @Size(max = 1)
     private String documentSelect;
 
-    @NotNull(message = "Send Email is required")
-    private Boolean sendEmail;
-
     private ActionType actionType;
 }

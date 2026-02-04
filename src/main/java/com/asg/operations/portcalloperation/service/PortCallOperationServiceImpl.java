@@ -1901,26 +1901,35 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        OpsPcDocsMsgsDtl1 msgsDtl1;
+        Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+        Long emailPoidToUse = dto.getEmailPoid();
+
         if (dto.getEmailPoid() == null) {
-            msgsDtl1 = new OpsPcDocsMsgsDtl1();
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(nextDetRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
             msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
         }
 
-        if (dto.getSendEmail()) {
-            if (msgsDtl1.getEmailSendOn() == null) {
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
                 throw new CustomException("Email already sent", 400);
             }
         }
-
-        msgsDtl1Repository.save(msgsDtl1);
-
-        Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
 
         PortCallOperationEstBertDtl entity = PortCallOperationEstBertDtl.builder()
                 .transactionPoid(transactionPoid)
@@ -1928,7 +1937,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .eta(dto.getEta())
                 .etb(dto.getEtb())
                 .berthingAttachments(dto.getBerthingAttachments())
-                .emailPoid(dto.getEmailPoid())
+                .emailPoid(emailPoidToUse)
                 .createdBy(UserContext.getUserId())
                 .createdDate(LocalDateTime.now())
                 .lastModifiedBy(UserContext.getUserId())
@@ -1951,29 +1960,38 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        OpsPcDocsMsgsDtl1 msgsDtl1;
+        Long emailPoidToUse = dto.getEmailPoid();
         if (dto.getEmailPoid() == null) {
-            msgsDtl1 = new OpsPcDocsMsgsDtl1();
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
             msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
         }
 
-        if (dto.getSendEmail()) {
-            if (msgsDtl1.getEmailSendOn() == null) {
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
                 throw new CustomException("Email already sent", 400);
             }
         }
 
-        msgsDtl1Repository.save(msgsDtl1);
-
         entity.setEta(dto.getEta());
         entity.setEtb(dto.getEtb());
         entity.setBerthingAttachments(dto.getBerthingAttachments());
-        entity.setEmailPoid(dto.getEmailPoid());
+        entity.setEmailPoid(emailPoidToUse);
         entity.setLastModifiedBy(UserContext.getUserId());
         entity.setLastModifiedDate(LocalDateTime.now());
 
@@ -2008,17 +2026,28 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        OpsPcDocsMsgsDtl1 msgsDtl1;
+        Long emailPoidToUse = dto.getEmailPoid();
         if (dto.getEmailPoid() == null) {
-            msgsDtl1 = new OpsPcDocsMsgsDtl1();
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
             msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
         }
 
-        if (dto.getSendEmail()) {
-            if (msgsDtl1.getEmailSendOn() == null) {
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
                 throw new CustomException("Email already sent", 400);
@@ -2088,9 +2117,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-
-        msgsDtl1Repository.save(msgsDtl1);
-
         Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
         PortCallOperationEstPrearrivalActDtl entity = null;
@@ -2135,18 +2161,28 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        OpsPcDocsMsgsDtl1 msgsDtl1;
+        Long emailPoidToUse = dto.getEmailPoid();
         if (dto.getEmailPoid() == null) {
-            msgsDtl1 = new OpsPcDocsMsgsDtl1();
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
             msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
         }
 
-
-        if (dto.getSendEmail()) {
-            if (msgsDtl1.getEmailSendOn() == null) {
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
                 throw new CustomException("Email already sent", 400);
@@ -2223,8 +2259,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (!latestRecord.getPreActivityDtlPoid().equals(preActivityDtlPoid)) {
             throw new ValidationException("Cannot edit this record. Please select a latest one");
         }
-
-        msgsDtl1Repository.save(msgsDtl1);
 
         entity.setActivityPoid(activityToUpdate.getActivityPoid());
         entity.setOtherDescription(activityToUpdate.getOtherDescription());
@@ -2308,25 +2342,33 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        OpsPcDocsMsgsDtl1 msgsDtl1;
+        Long emailPoidToUse = dto.getEmailPoid();
         if (dto.getEmailPoid() == null) {
-            msgsDtl1 = new OpsPcDocsMsgsDtl1();
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
             msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
         }
 
-
-        if (dto.getSendEmail()) {
-            if (msgsDtl1.getEmailSendOn() == null) {
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
                 throw new CustomException("Email already sent", 400);
             }
         }
-
-        msgsDtl1Repository.save(msgsDtl1);
 
         Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
@@ -2414,25 +2456,33 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ValidationException("Cannot edit this record. Please select a latest one");
         }
 
-        OpsPcDocsMsgsDtl1 msgsDtl1;
+        Long emailPoidToUse = dto.getEmailPoid();
         if (dto.getEmailPoid() == null) {
-            msgsDtl1 = new OpsPcDocsMsgsDtl1();
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
             msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
         }
 
-
-        if (dto.getSendEmail()) {
-            if (msgsDtl1.getEmailSendOn() == null) {
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
                 throw new CustomException("Email already sent", 400);
             }
         }
-
-        msgsDtl1Repository.save(msgsDtl1);
 
         entity.setActivityPoid(activityToUpdate.getActivityPoid());
         entity.setDetails(activityToUpdate.getOtherDescription());
@@ -2478,10 +2528,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
 
-        if (dto.getSendEmail()) {
-            // Logic to send email
-        }
-
         Long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
 
         PortCallOperationDocsCopyDtl entity = PortCallOperationDocsCopyDtl.builder()
@@ -2511,10 +2557,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         PortCallOperationDocsCopyDtl latestRecord = docsCopyDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
         if (!latestRecord.getDetRowId().equals(detRowId)) {
             throw new ValidationException("Cannot edit this record. Please select a latest one");
-        }
-
-        if (dto.getSendEmail()) {
-            // Logic to send email
         }
 
         entity.setDocumentFrom(dto.getDocumentFrom());
