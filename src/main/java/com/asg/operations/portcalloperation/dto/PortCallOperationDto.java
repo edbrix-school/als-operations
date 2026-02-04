@@ -106,10 +106,4 @@ public class PortCallOperationDto {
 
     @Valid
     private List<PortCallOperationDocsCopyDetailDto> docsCopyDetails;
-
-    @Valid
-    private List<PortCallOperationDocsMsgsDtl1DetailDto> docsMsgsDtl1Details;
-
-    @Valid
-    private List<PortCallOperationDocsMsgsDtl2DetailDto> docsMsgsDtl2Details;
 }

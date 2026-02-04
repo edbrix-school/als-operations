@@ -1,29 +1,30 @@
 package com.asg.operations.portcalloperation.dto;
 
 import com.asg.operations.portcallreport.enums.ActionType;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PortCallOperationActTimingsActvtyDetailDto {
+public class PortCallOperationActTimingsActivityDetailDto {
     private Long transactionPoid;
     private Long detRowId;
     private Long actualsTimingDtlPoid;
-    private Long activityPoid;
 
-    @Size(max = 300)
-    private String details;
+    @Valid
+    private List<PortCallReportActivityDto> activities;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime estimatedDatetime;
+    @Size(max = 1000, message = "Remarks should not exceed 1000 characters")
+    private String remarks;
+
+    private Long emailPoid;
 
     @NotNull(message = "Send Email is required")
     private Boolean sendEmail;

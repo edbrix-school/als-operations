@@ -357,7 +357,7 @@ public class PortCallOperationController {
     )
     public ResponseEntity<?> createActTimingsActvtyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
-                                                          @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
+                                                          @Valid @RequestBody PortCallOperationActTimingsActivityDetailDto dto) {
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, detRowId, dto);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetail created successfully", result);
@@ -373,7 +373,7 @@ public class PortCallOperationController {
     public ResponseEntity<?> updateActTimingsActvtyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
                                                           @Parameter(description = "Actuals Timing Detail POID") @PathVariable Long actualsTimingDtlPoid,
-                                                          @Valid @RequestBody PortCallOperationActTimingsActvtyDetailDto dto) {
+                                                          @Valid @RequestBody PortCallOperationActTimingsActivityDetailDto dto) {
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto);
         loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetail updated successfully", result);

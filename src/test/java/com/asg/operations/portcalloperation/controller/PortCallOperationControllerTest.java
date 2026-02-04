@@ -300,7 +300,7 @@ class PortCallOperationControllerTest {
 
     @Test
     void createActTimingsActvtyDetail_Success() throws Exception {
-        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder()
+        PortCallOperationActTimingsActivityDetailDto dto = PortCallOperationActTimingsActivityDetailDto.builder()
                 .sendEmail(false)
                 .build();
         PortCallOperationActTimingsActvtyDetailResponseDto responseDto = PortCallOperationActTimingsActvtyDetailResponseDto.builder().build();
@@ -322,7 +322,7 @@ class PortCallOperationControllerTest {
 
     @Test
     void updateActTimingsActvtyDetail_Success() throws Exception {
-        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder()
+        PortCallOperationActTimingsActivityDetailDto dto = PortCallOperationActTimingsActivityDetailDto.builder()
                 .sendEmail(false)
                 .build();
         PortCallOperationActTimingsActvtyDetailResponseDto responseDto = PortCallOperationActTimingsActvtyDetailResponseDto.builder().build();
