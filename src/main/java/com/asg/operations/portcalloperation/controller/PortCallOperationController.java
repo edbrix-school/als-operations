@@ -261,6 +261,7 @@ public class PortCallOperationController {
     public ResponseEntity<?> getEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                               @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         PortCallOperationEstBertDetailResponseDto result = portCallOperationService.getEstBertDetail(transactionPoid, detRowId);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstBertDetail retrieved successfully", result);
     }
 
@@ -301,6 +302,7 @@ public class PortCallOperationController {
     public ResponseEntity<?> listEstPrearrivalActDetails(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         List<PortCallOperationEstPrearrivalActDetailResponseDto> result = portCallOperationService.listEstPrearrivalActDetails(transactionPoid, detRowId);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstPrearrivalActDetails retrieved successfully", result);
     }
 
@@ -345,6 +347,7 @@ public class PortCallOperationController {
     public ResponseEntity<?> listActTimingsActvtyDetails(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         List<PortCallOperationActTimingsActvtyDetailResponseDto> result = portCallOperationService.listActTimingsActvtyDetails(transactionPoid, detRowId);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetails retrieved successfully", result);
     }
 
@@ -597,7 +600,6 @@ public class PortCallOperationController {
         PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadBerthingAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
         return success(response.isHasErrors() ? "Files uploaded with some errors." : "Berthing attachments uploaded successfully.", response);
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/berthing/{detRowId}/attachments")
     @Operation(summary = "List berthing attachments", security = @SecurityRequirement(name = "bearerAuth"))
@@ -606,7 +608,6 @@ public class PortCallOperationController {
         if (requireAttachmentService() != null) return requireAttachmentService();
         return success("Berthing attachments", screenAttachmentService.listBerthingAttachments(transactionPoid, detRowId, page, size));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/berthing/{detRowId}/attachments/summary")
     @Operation(summary = "Berthing attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
@@ -614,7 +615,6 @@ public class PortCallOperationController {
         String summary = screenAttachmentService.getBerthingAttachmentsSummary(transactionPoid, detRowId);
         return success("Berthing attachments summary", Map.of("berthingAttachments", summary != null ? summary : ""));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/berthing/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download berthing attachment", security = @SecurityRequirement(name = "bearerAuth"))
@@ -637,7 +637,6 @@ public class PortCallOperationController {
         PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadPreArrivalAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
         return success(response.isHasErrors() ? "Files uploaded with some errors." : "Pre-arrival attachments uploaded successfully.", response);
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments")
     @Operation(summary = "List pre-arrival attachments", security = @SecurityRequirement(name = "bearerAuth"))
@@ -646,7 +645,6 @@ public class PortCallOperationController {
         if (requireAttachmentService() != null) return requireAttachmentService();
         return success("Pre-arrival attachments", screenAttachmentService.listPreArrivalAttachments(transactionPoid, detRowId, page, size));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments/summary")
     @Operation(summary = "Pre-arrival attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
@@ -654,7 +652,6 @@ public class PortCallOperationController {
         String summary = screenAttachmentService.getPreArrivalAttachmentsSummary(transactionPoid, detRowId);
         return success("Pre-arrival attachments summary", Map.of("preArrivalAttachments", summary != null ? summary : ""));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download pre-arrival attachment", security = @SecurityRequirement(name = "bearerAuth"))
@@ -677,7 +674,6 @@ public class PortCallOperationController {
         PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadPdaFdaAttachments(transactionPoid, files, remarks, checklistNames);
         return success(response.isHasErrors() ? "Files uploaded with some errors." : "Other details attachments uploaded successfully.", response);
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/disbursement-other-details/attachments")
     @Operation(summary = "List other details attachments", security = @SecurityRequirement(name = "bearerAuth"))
@@ -685,7 +681,6 @@ public class PortCallOperationController {
         if (requireAttachmentService() != null) return requireAttachmentService();
         return success("Other details attachments", screenAttachmentService.listPdaFdaAttachments(transactionPoid, page, size));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/disbursement-other-details/attachments/summary")
     @Operation(summary = "Other details attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
@@ -693,7 +688,6 @@ public class PortCallOperationController {
         String summary = screenAttachmentService.getPdaFdaAttachmentsSummary(transactionPoid);
         return success("Other details attachments summary", Map.of("pdaFdaAttachments", summary != null ? summary : ""));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/disbursement-other-details/attachments/{storedFileName}/download")
     @Operation(summary = "Download other details attachment", security = @SecurityRequirement(name = "bearerAuth"))
@@ -716,7 +710,6 @@ public class PortCallOperationController {
         PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadHusbandryCrewAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
         return success(response.isHasErrors() ? "Files uploaded with some errors." : "Husbandry crew attachments uploaded successfully.", response);
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments")
     @Operation(summary = "List husbandry crew attachments", security = @SecurityRequirement(name = "bearerAuth"))
@@ -725,7 +718,6 @@ public class PortCallOperationController {
         if (requireAttachmentService() != null) return requireAttachmentService();
         return success("Husbandry crew attachments", screenAttachmentService.listHusbandryCrewAttachments(transactionPoid, detRowId, page, size));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments/summary")
     @Operation(summary = "Husbandry crew attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
@@ -733,7 +725,6 @@ public class PortCallOperationController {
         String summary = screenAttachmentService.getHusbandryCrewAttachmentsSummary(transactionPoid, detRowId);
         return success("Husbandry crew attachments summary", Map.of("crewAttachments", summary != null ? summary : ""));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download husbandry crew attachment", security = @SecurityRequirement(name = "bearerAuth"))
@@ -756,7 +747,6 @@ public class PortCallOperationController {
         PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadHusbandryOthAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
         return success(response.isHasErrors() ? "Files uploaded with some errors." : "Husbandry other attachments uploaded successfully.", response);
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments")
     @Operation(summary = "List husbandry other attachments", security = @SecurityRequirement(name = "bearerAuth"))
@@ -765,7 +755,6 @@ public class PortCallOperationController {
         if (requireAttachmentService() != null) return requireAttachmentService();
         return success("Husbandry other attachments", screenAttachmentService.listHusbandryOthAttachments(transactionPoid, detRowId, page, size));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments/summary")
     @Operation(summary = "Husbandry other attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
@@ -773,7 +762,6 @@ public class PortCallOperationController {
         String summary = screenAttachmentService.getHusbandryOthAttachmentsSummary(transactionPoid, detRowId);
         return success("Husbandry other attachments summary", Map.of("arrngmntAttachments", summary != null ? summary : ""));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download husbandry other attachment", security = @SecurityRequirement(name = "bearerAuth"))
@@ -796,7 +784,6 @@ public class PortCallOperationController {
         PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadDocsCopyAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
         return success(response.isHasErrors() ? "Files uploaded with some errors." : "Docs copy attachments uploaded successfully.", response);
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments")
     @Operation(summary = "List docs copy attachments", security = @SecurityRequirement(name = "bearerAuth"))
@@ -805,7 +792,6 @@ public class PortCallOperationController {
         if (requireAttachmentService() != null) return requireAttachmentService();
         return success("Docs copy attachments", screenAttachmentService.listDocsCopyAttachments(transactionPoid, detRowId, page, size));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments/summary")
     @Operation(summary = "Docs copy attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
@@ -813,7 +799,6 @@ public class PortCallOperationController {
         String summary = screenAttachmentService.getDocsCopyAttachmentsSummary(transactionPoid, detRowId);
         return success("Docs copy attachments summary", Map.of("documentAttachments", summary != null ? summary : ""));
     }
-
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download docs copy attachment", security = @SecurityRequirement(name = "bearerAuth"))
