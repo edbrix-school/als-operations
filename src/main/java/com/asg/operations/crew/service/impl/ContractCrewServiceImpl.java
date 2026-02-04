@@ -314,6 +314,8 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         ContractCrew crew = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
 
+        log.info("creq -------------------> {}",crew.toString());
+
         ContractCrew oldCrew = new ContractCrew();
         BeanUtils.copyProperties(crew, oldCrew);
 
@@ -512,22 +514,30 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
     @Override
     public void deleteCrewDetail(Long companyPoid, Long crewPoid, Long detRowId) {
+        log.info("Deleting crew detail with crewPoid: {}, detRowId: {}", crewPoid, detRowId);
+        
         // Verify crew exists
-
         boolean crewExists = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid).isPresent();
         if (!crewExists) {
+            log.error("Crew master not found with id: {}", crewPoid);
             throw new ResourceNotFoundException("Crew master not found with id: " + crewPoid);
         }
 
         // Verify detail record exists
         ContractCrewDtl contractCrewDtl = crewDtlRepository.findByIdCrewPoidAndIdDetRowId(crewPoid, detRowId);
         if (contractCrewDtl == null || contractCrewDtl.getId().getDetRowId() == null) {
+            log.error("Detail record not found with crewPoid: {}, detRowId: {}", crewPoid, detRowId);
             throw new ResourceNotFoundException(
                     "Detail record not found with crewPoid: " + crewPoid + ", detRowId: " + detRowId
             );
         }
 
         crewDtlRepository.deleteById(contractCrewDtl.getId());
+        
+        String logDetail = String.format("Row Deleted on Contract Crew details with detRowId: %s", detRowId);
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), crewPoid.toString(), logDetail);
+        
+        log.info("Successfully deleted crew detail with crewPoid: {}, detRowId: {}", crewPoid, detRowId);
     }
 
     private void validateCrewRequest(ContractCrewRequest request) {
