@@ -13,6 +13,7 @@ import com.asg.operations.pdaporttariffmaster.repository.ShipPortMasterRepositor
 import com.asg.operations.portcalloperation.dto.*;
 import com.asg.operations.portcalloperation.entity.*;
 import com.asg.operations.portcalloperation.repository.*;
+import com.asg.operations.portcallreport.repository.PortCallReportDtlRepository;
 import com.asg.operations.portcallreport.repository.PortCallReportHdrRepository;
 import com.asg.operations.shipprincipal.repository.ShipPrincipalRepository;
 import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
@@ -94,6 +95,8 @@ class PortCallOperationServiceImplTest {
     private PdaFdaHdrRepository pdaFdaHdrRepository;
     @Mock
     private OpsPcDocsMsgsDtl1Repository msgsDtl1Repository;
+    @Mock
+    private PortCallReportDtlRepository dtlRepository;
     @Mock
     private PortCallReportHdrRepository portCallReportHdrRepository;
     @Mock
@@ -320,15 +323,16 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void createEstPrearrivalActDetail_Success() {
+        PortCallReportActivityDto activity = new PortCallReportActivityDto(1L, "description", LocalDateTime.now());
         PortCallOperationEstPrearrivalActDetailDto dto = PortCallOperationEstPrearrivalActDetailDto.builder()
-                .activityPoid(1L)
-                .otherDescription("description")
-                .estimatedDatetime(LocalDateTime.now())
+                .activities(List.of(activity))
                 .sendEmail(false)
                 .build();
 
         when(hdrRepository.existsById(transactionPoid)).thenReturn(true);
         when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
+        when(estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid)).thenReturn(Collections.emptyList());
+        when(dtlRepository.findByPortCallReportPoid(70L)).thenReturn(Collections.emptyList());
         when(estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId))
                 .thenReturn(0L);
         when(estPrearrivalActDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -344,10 +348,9 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void updateEstPrearrivalActDetail_Success() {
+        PortCallReportActivityDto activity = new PortCallReportActivityDto(1L, "updated description", LocalDateTime.now());
         PortCallOperationEstPrearrivalActDetailDto dto = PortCallOperationEstPrearrivalActDetailDto.builder()
-                .activityPoid(1L)
-                .otherDescription("updated description")
-                .estimatedDatetime(LocalDateTime.now())
+                .activities(List.of(activity))
                 .sendEmail(false)
                 .build();
 
@@ -366,6 +369,8 @@ class PortCallOperationServiceImplTest {
         when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
         when(estPrearrivalActDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid))
                 .thenReturn(latestRecords);
+        when(estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid)).thenReturn(Collections.emptyList());
+        when(dtlRepository.findByPortCallReportPoid(70L)).thenReturn(Collections.emptyList());
         when(estPrearrivalActDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         PortCallOperationEstPrearrivalActDetailResponseDto result =
@@ -404,15 +409,15 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void createActTimingsActvtyDetail_Success() {
-        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder()
-                .activityPoid(1L)
-                .details("details")
-                .estimatedDatetime(LocalDateTime.now())
+        PortCallReportActivityDto activity = new PortCallReportActivityDto(1L, "details", LocalDateTime.now());
+        PortCallOperationActTimingsActivityDetailDto dto = PortCallOperationActTimingsActivityDetailDto.builder()
+                .activities(List.of(activity))
                 .sendEmail(false)
                 .build();
 
         when(hdrRepository.existsById(transactionPoid)).thenReturn(true);
         when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
+        when(dtlRepository.findByPortCallReportPoid(70L)).thenReturn(Collections.emptyList());
         when(actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId))
                 .thenReturn(0L);
         when(actTimingsActvtyDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -428,10 +433,9 @@ class PortCallOperationServiceImplTest {
 
     @Test
     void updateActTimingsActvtyDetail_Success() {
-        PortCallOperationActTimingsActvtyDetailDto dto = PortCallOperationActTimingsActvtyDetailDto.builder()
-                .activityPoid(1L)
-                .details("updated details")
-                .estimatedDatetime(LocalDateTime.now())
+        PortCallReportActivityDto activity = new PortCallReportActivityDto(1L, "updated details", LocalDateTime.now());
+        PortCallOperationActTimingsActivityDetailDto dto = PortCallOperationActTimingsActivityDetailDto.builder()
+                .activities(List.of(activity))
                 .sendEmail(false)
                 .build();
 
@@ -450,6 +454,7 @@ class PortCallOperationServiceImplTest {
         when(portActivityMasterRepository.existsByPortActivityTypePoid(1L)).thenReturn(true);
         when(actTimingsActvtyDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid))
                 .thenReturn(latestRecords);
+        when(dtlRepository.findByPortCallReportPoid(70L)).thenReturn(Collections.emptyList());
         when(actTimingsActvtyDtlRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         PortCallOperationActTimingsActvtyDetailResponseDto result =

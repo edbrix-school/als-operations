@@ -17,7 +17,7 @@ public class SalesQuoteProjectsResponse {
     private Long companyPoid;
     private String docRef;
     private String customerType;
-    private Long customerPoid;
+    private BigDecimal customerPoid;
     private String customerName;
     private String customerContact;
     private String customerEmail;

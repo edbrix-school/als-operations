@@ -13,6 +13,8 @@ import java.util.List;
 public interface PortCallOperationActTimingsActvtyDtlRepository extends JpaRepository<PortCallOperationActTimingsActvtyDtl, PortCallOperationActTimingsActvtyDtlId> {
     void deleteByTransactionPoid(Long transactionPoid);
 
+    void deleteByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
+
     List<PortCallOperationActTimingsActvtyDtl> findByTransactionPoid(Long transactionPoid);
 
     List<PortCallOperationActTimingsActvtyDtl> findByTransactionPoidOrderByLastModifiedDateDesc(Long transactionPoid);

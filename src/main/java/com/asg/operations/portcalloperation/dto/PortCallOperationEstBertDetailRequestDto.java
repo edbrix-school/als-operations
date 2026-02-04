@@ -28,6 +28,9 @@ public class PortCallOperationEstBertDetailRequestDto {
     @Size(max = 4000, message = "Berthing Attachments should not exceed 4000 characters")
     private String berthingAttachments;
 
+    @Size(max = 1000, message = "Remarks should not exceed 1000 characters")
+    private String remarks;
+
     private Long emailPoid;
 
     @NotNull(message = "Send Email is required")

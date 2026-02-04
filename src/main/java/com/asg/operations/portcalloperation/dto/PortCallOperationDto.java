@@ -67,12 +67,6 @@ public class PortCallOperationDto {
     @Size(max = 1000, message = "PDA FDA Remarks should not exceed 1000 characters")
     private String pdaFdaRemarks;
 
-    @Size(max = 4000, message = "PDA FDA Attachments should not exceed 4000 characters")
-    private String pdaFdaAttachments;
-
-    @Size(max = 100,message = "Husbandry Crew Req By should not exceed 100 characters")
-    private String husbandryCrewReqBy;
-
     @Valid
     private List<PortCallOperationCargoDetailDto> cargoDetails;
 
@@ -112,10 +106,4 @@ public class PortCallOperationDto {
 
     @Valid
     private List<PortCallOperationDocsCopyDetailDto> docsCopyDetails;
-
-    @Valid
-    private List<PortCallOperationDocsMsgsDtl1DetailDto> docsMsgsDtl1Details;
-
-    @Valid
-    private List<PortCallOperationDocsMsgsDtl2DetailDto> docsMsgsDtl2Details;
 }

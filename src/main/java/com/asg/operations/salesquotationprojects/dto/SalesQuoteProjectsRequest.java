@@ -22,7 +22,7 @@ public class SalesQuoteProjectsRequest {
     private String customerType;
 
     @NotNull(message = "Customer Poid is required")
-    private Long customerPoid;
+    private BigDecimal customerPoid;
     
     @Size(max = 300, message = "Customer name cannot exceed 300 characters")
     private String customerName;

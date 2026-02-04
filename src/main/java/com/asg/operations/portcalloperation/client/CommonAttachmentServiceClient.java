@@ -37,6 +37,24 @@ public class CommonAttachmentServiceClient {
      */
     public static final String DOC_ID_DRAWER = "110-163-DRAWER";
 
+    /** docId for berthing screen side drawer (OPS_PC_EST_BERT_DTL.BERTHING_ATTACHMENTS). */
+    public static final String DOC_ID_BERTHING = "110-163-BERTHING";
+    /** docId for pre-arrival screen side drawer (OPS_PC_EST_PREARRIVAL_DTL.PRE_ARRIVAL_ATTACHMENTS). */
+    public static final String DOC_ID_PREARRIVAL = "110-163-PREARRIVAL";
+    /** docId for other details screen (OPS_PC_OPERATION_HDR.PDA_FDA_ATTACHMENTS). */
+    public static final String DOC_ID_PDA_FDA = "110-163-PDA-FDA";
+    /** docId for husbandry crew screen (OPS_PC_HUSBANDRY_CREW_DTL.CREW_ATTACHMENTS). */
+    public static final String DOC_ID_HUSBANDRY_CREW = "110-163-HUSB-CREW";
+    /** docId for husbandry other details screen (OPS_PC_HUSBANDRY_OTH_DTL.ARRNGMNT_ATTACHMENTS). */
+    public static final String DOC_ID_HUSBANDRY_OTH = "110-163-HUSB-OTH";
+    /** docId for docs copy screen (OPS_PC_DOCS_COPY_DTL.DOCUMENT_ATTACHMENTS). */
+    public static final String DOC_ID_DOCS_COPY = "110-163-DOCS-COPY";
+
+    /** Encode (transactionPoid, detRowId) as a unique docKeyPoid for detail tables. */
+    public static long toDetailDocKeyPoid(long transactionPoid, long detRowId) {
+        return transactionPoid * 1_000_000_000L + detRowId;
+    }
+
     private final RestTemplate restTemplate;
     private final String baseUrl;
 

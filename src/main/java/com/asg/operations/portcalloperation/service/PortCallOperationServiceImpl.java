@@ -10,6 +10,7 @@ import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.utility.PaginationUtil;
+import com.asg.operations.common.repository.GlobalParameterRepository;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.finaldisbursementaccount.repository.PdaFdaHdrRepository;
@@ -20,7 +21,9 @@ import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepo
 import com.asg.operations.portcalloperation.dto.*;
 import com.asg.operations.portcalloperation.entity.*;
 import com.asg.operations.portcalloperation.repository.*;
+import com.asg.operations.portcallreport.entity.PortCallReportDtl;
 import com.asg.operations.portcallreport.enums.ActionType;
+import com.asg.operations.portcallreport.repository.PortCallReportDtlRepository;
 import com.asg.operations.portcallreport.repository.PortCallReportHdrRepository;
 import com.asg.operations.shipprincipal.repository.ShipPrincipalRepository;
 import jakarta.validation.ValidationException;
@@ -81,6 +84,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final StockUnitMasterRepository stockUnitMasterRepository;
     private final GlobalUserRepository globalUserRepository;
     private final PortActivityMasterRepository portActivityMasterRepository;
+    private final GlobalParameterRepository globalParameterRepository;
+    private final PortCallReportDtlRepository dtlRepository;
 
 
     @Override
@@ -845,56 +850,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
             if (!details.isEmpty()) docsCopyDtlRepository.saveAll(details);
         }
-
-        // Save Docs Msgs Dtl1 Details
-        if (dto.getDocsMsgsDtl1Details() != null && !dto.getDocsMsgsDtl1Details().isEmpty()) {
-            long nextDetRowId = docsMsgsDtl1Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationDocsMsgsDtl1> details = new ArrayList<>();
-            for (PortCallOperationDocsMsgsDtl1DetailDto detailDto : dto.getDocsMsgsDtl1Details()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationDocsMsgsDtl1.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .sendByPoid(detailDto.getSendByPoid())
-                            .emailSubject(detailDto.getEmailSubject())
-                            .emailDocuments(detailDto.getEmailDocuments())
-                            .emailSendOn(detailDto.getEmailSendOn())
-                            .emailContent(detailDto.getEmailContent())
-                            .emailRemarks(detailDto.getEmailRemarks())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) docsMsgsDtl1Repository.saveAll(details);
-        }
-
-        // Save Docs Msgs Dtl2 Details
-        if (dto.getDocsMsgsDtl2Details() != null && !dto.getDocsMsgsDtl2Details().isEmpty()) {
-            long nextDetRowId = docsMsgsDtl2Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationDocsMsgsDtl2> details = new ArrayList<>();
-            for (PortCallOperationDocsMsgsDtl2DetailDto detailDto : dto.getDocsMsgsDtl2Details()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationDocsMsgsDtl2.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .emailPoid(detailDto.getEmailPoid())
-                            .emailType(detailDto.getEmailType())
-                            .company(detailDto.getCompany())
-                            .addressee(detailDto.getAddressee())
-                            .toEmailId(detailDto.getToEmailId())
-                            .ccEmailId(detailDto.getCcEmailId())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) docsMsgsDtl2Repository.saveAll(details);
-        }
     }
 
 
@@ -966,9 +921,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         hdr.setPdaBerthStayDays(dto.getPdaBerthStayDays());
         hdr.setPdaPortStayDays(dto.getPdaPortStayDays());
         hdr.setPdaFdaRemarks(dto.getPdaFdaRemarks());
-        hdr.setPdaFdaAttachments(dto.getPdaFdaAttachments());
 
-        hdr.setHusbandryCrewReqBy(dto.getHusbandryCrewReqBy());
+        hdr.setHusbandryCrewReqBy(UserContext.getUserId());
 
         hdr = hdrRepository.save(hdr);
 
@@ -1667,113 +1621,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 }
             }
         }
-
-        // Update Docs Msgs Dtl1 Details (3-part key, EMAIL_POID auto-generated)
-        if (dto.getDocsMsgsDtl1Details() != null && !dto.getDocsMsgsDtl1Details().isEmpty()) {
-            for (PortCallOperationDocsMsgsDtl1DetailDto detailDto : dto.getDocsMsgsDtl1Details()) {
-                if (detailDto.getEmailPoid() != null) {
-                    if (!msgsDtl1Repository.existsByIdEmailPoid(detailDto.getEmailPoid())) {
-                        throw new ResourceNotFoundException("Email", "Email Poid", detailDto.getEmailPoid());
-                    }
-                }
-                if (detailDto.getSendByPoid() != null) {
-                    if (!globalUserRepository.existsByUserPoid(detailDto.getSendByPoid())) {
-                        throw new ResourceNotFoundException("User", "Send By Poid", detailDto.getSendByPoid());
-                    }
-                }
-                ActionType action = detailDto.getActionType();
-                if (action == null || action == ActionType.noChange) continue;
-                if (action == ActionType.isCreated) {
-                    Long nextDetRowId = docsMsgsDtl1Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    // EMAIL_POID will be auto-generated by the sequence trigger
-                    PortCallOperationDocsMsgsDtl1 saved = docsMsgsDtl1Repository.save(PortCallOperationDocsMsgsDtl1.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId)
-                            .sendByPoid(detailDto.getSendByPoid())
-                            .emailSubject(detailDto.getEmailSubject())
-                            .emailDocuments(detailDto.getEmailDocuments())
-                            .emailSendOn(detailDto.getEmailSendOn())
-                            .emailContent(detailDto.getEmailContent())
-                            .emailRemarks(detailDto.getEmailRemarks())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                    String logDetail = String.format("Row Created on [Port Call Operation Docs Msgs Dtl1 Details] with detRowId: %s", saved.getDetRowId());
-                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-                } else if (action == ActionType.isUpdated) {
-                    if (detailDto.getEmailPoid() != null) {
-                        docsMsgsDtl1Repository.findById(new PortCallOperationDocsMsgsDtl1Id(
-                                        transactionPoid, detailDto.getDetRowId(), detailDto.getEmailPoid()))
-                                .ifPresent(existing -> {
-                                    PortCallOperationDocsMsgsDtl1 oldDetail = new PortCallOperationDocsMsgsDtl1();
-                                    org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
-                                    existing.setSendByPoid(detailDto.getSendByPoid());
-                                    existing.setEmailSubject(detailDto.getEmailSubject());
-                                    existing.setEmailDocuments(detailDto.getEmailDocuments());
-                                    existing.setEmailSendOn(detailDto.getEmailSendOn());
-                                    existing.setEmailContent(detailDto.getEmailContent());
-                                    existing.setEmailRemarks(detailDto.getEmailRemarks());
-                                    existing.setLastModifiedBy(userId);
-                                    existing.setLastModifiedDate(LocalDateTime.now());
-                                    existing = docsMsgsDtl1Repository.save(existing);
-                                    String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
-                                    loggingService.createLog(oldDetail, existing, PortCallOperationDocsMsgsDtl1.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-                                });
-                    }
-                }
-            }
-        }
-
-        // Update Docs Msgs Dtl2 Details
-        if (dto.getDocsMsgsDtl2Details() != null && !dto.getDocsMsgsDtl2Details().isEmpty()) {
-            for (PortCallOperationDocsMsgsDtl2DetailDto detailDto : dto.getDocsMsgsDtl2Details()) {
-                if (detailDto.getEmailPoid() != null) {
-                    if (!msgsDtl1Repository.existsByIdEmailPoid(detailDto.getEmailPoid())) {
-                        throw new ResourceNotFoundException("Email", "Email Poid", detailDto.getEmailPoid());
-                    }
-                }
-                ActionType action = detailDto.getActionType();
-                if (action == null || action == ActionType.noChange) continue;
-                if (action == ActionType.isCreated) {
-                    Long nextDetRowId = docsMsgsDtl2Repository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    PortCallOperationDocsMsgsDtl2 saved = docsMsgsDtl2Repository.save(PortCallOperationDocsMsgsDtl2.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId)
-                            .emailPoid(detailDto.getEmailPoid())
-                            .emailType(detailDto.getEmailType())
-                            .company(detailDto.getCompany())
-                            .addressee(detailDto.getAddressee())
-                            .toEmailId(detailDto.getToEmailId())
-                            .ccEmailId(detailDto.getCcEmailId())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                    String logDetail = String.format("Row Created on [Port Call Operation Docs Msgs Dtl2 Details] with detRowId: %s", saved.getDetRowId());
-                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-                } else if (action == ActionType.isUpdated) {
-                    docsMsgsDtl2Repository.findById(new PortCallOperationDocsMsgsDtl2Id(transactionPoid, detailDto.getDetRowId()))
-                            .ifPresent(existing -> {
-                                PortCallOperationDocsMsgsDtl2 oldDetail = new PortCallOperationDocsMsgsDtl2();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
-                                existing.setEmailPoid(detailDto.getEmailPoid());
-                                existing.setEmailType(detailDto.getEmailType());
-                                existing.setCompany(detailDto.getCompany());
-                                existing.setAddressee(detailDto.getAddressee());
-                                existing.setToEmailId(detailDto.getToEmailId());
-                                existing.setCcEmailId(detailDto.getCcEmailId());
-                                existing.setLastModifiedBy(userId);
-                                existing.setLastModifiedDate(LocalDateTime.now());
-                                existing = docsMsgsDtl2Repository.save(existing);
-                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
-                                loggingService.createLog(oldDetail, existing, PortCallOperationDocsMsgsDtl2.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-                            });
-                }
-            }
-        }
     }
 
 
@@ -2050,20 +1897,39 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
-
         if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        if (dto.getSendEmail()) {
-            if (dto.getEmailPoid() == null) {
+        Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+        Long emailPoidToUse = dto.getEmailPoid();
+
+        if (dto.getEmailPoid() == null) {
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(nextDetRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+        } else {
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
+        }
+
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
                 throw new CustomException("Email already sent", 400);
             }
         }
-
-        Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
 
         PortCallOperationEstBertDtl entity = PortCallOperationEstBertDtl.builder()
                 .transactionPoid(transactionPoid)
@@ -2071,7 +1937,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .eta(dto.getEta())
                 .etb(dto.getEtb())
                 .berthingAttachments(dto.getBerthingAttachments())
-                .emailPoid(dto.getEmailPoid())
+                .emailPoid(emailPoidToUse)
                 .createdBy(UserContext.getUserId())
                 .createdDate(LocalDateTime.now())
                 .lastModifiedBy(UserContext.getUserId())
@@ -2088,14 +1954,34 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         log.info("Updating EstBertDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
         PortCallOperationEstBertDtl entity = estBertDtlRepository.findById(new PortCallOperationEstBertDtlId(transactionPoid, detRowId))
-                .orElseThrow(() -> new ResourceNotFoundException("EstBertDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
+                .orElseThrow(() -> new ResourceNotFoundException("EstBertDetail", "transactionPoid: " + transactionPoid + ", detRowId: ", detRowId));
 
         if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        if (dto.getSendEmail()) {
-            if (dto.getEmailPoid() == null) {
+        Long emailPoidToUse = dto.getEmailPoid();
+        if (dto.getEmailPoid() == null) {
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+        } else {
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
+        }
+
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
                 throw new CustomException("Email already sent", 400);
@@ -2105,7 +1991,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         entity.setEta(dto.getEta());
         entity.setEtb(dto.getEtb());
         entity.setBerthingAttachments(dto.getBerthingAttachments());
-        entity.setEmailPoid(dto.getEmailPoid());
+        entity.setEmailPoid(emailPoidToUse);
         entity.setLastModifiedBy(UserContext.getUserId());
         entity.setLastModifiedDate(LocalDateTime.now());
 
@@ -2136,47 +2022,131 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto) {
         log.info("Creating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
+        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+            throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
+        }
+
+        Long emailPoidToUse = dto.getEmailPoid();
+        if (dto.getEmailPoid() == null) {
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+        } else {
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
+        }
+
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
+                // Logic to send email
+            } else {
+                throw new CustomException("Email already sent", 400);
+            }
+        }
+
+        // Validate pre-arrival is enabled: allow create/update only from X days before ETA (configurable via PC_PREARRIVAL_EDIT_ALLOW_DAYS)
+        List<PortCallOperationEstBertDtl> estBertRecords = estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid);
+        if (!estBertRecords.isEmpty()) {
+            Optional<String> daysToBeEnabledForEdit = globalParameterRepository.findParameterValueByName("PC_PREARRIVAL_EDIT_ALLOW_DAYS");
+            if (daysToBeEnabledForEdit.isEmpty()) {
+                throw new CustomException("PC_PREARRIVAL_EDIT_ALLOW_DAYS must be configured in global parameters", 400);
+            }
+            long daysToBeEnabledForEditLong;
+            try {
+                daysToBeEnabledForEditLong = Long.parseLong(daysToBeEnabledForEdit.get());
+            } catch (Exception e) {
+                throw new CustomException("PC_PREARRIVAL_EDIT_ALLOW_DAYS must be a valid number", 400);
+            }
+            PortCallOperationEstBertDtl latestEstBert = estBertRecords.getFirst();
+            LocalDateTime now = LocalDateTime.now();
+            if (latestEstBert.getEta() != null) {
+                LocalDateTime dayBeforeEta = latestEstBert.getEta().minusDays(daysToBeEnabledForEditLong);
+                if (now.isBefore(dayBeforeEta)) {
+                    throw new ValidationException(String.format("Pre-arrival operations are allowed only from %s day(s) before ETA. ETA is %s, current time is %s", daysToBeEnabledForEditLong, latestEstBert.getEta(), now));
+                }
+                if (now.isAfter(latestEstBert.getEta())) {
+                    throw new ValidationException(String.format("Pre-arrival operations are not allowed after ETA has passed. ETA is %s, current time is %s", latestEstBert.getEta(), now));
+                }
+            }
+        }
+
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
-        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
-            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
-        }
-
-        if (dto.getSendEmail()) {
-            // Validate that email can only be sent at least 1 day before ETA/ETB
-            PortCallOperationEstPrearrivalDtl estPrearrivalDtl = estPrearrivalDtlRepository
-                    .findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
-                    .orElseThrow(() -> new ResourceNotFoundException("Est Prearrival Detail not found with transactionPoid: " + transactionPoid + ", detRowId: " + detRowId));
-
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime oneDayFromNow = now.plusDays(1);
-
-            if (estPrearrivalDtl.getEta() != null && estPrearrivalDtl.getEta().isBefore(oneDayFromNow)) {
-                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETA. ETA is %s, current time is %s", estPrearrivalDtl.getEta(), now));
-            }
-
-            if (estPrearrivalDtl.getEtb() != null && estPrearrivalDtl.getEtb().isBefore(oneDayFromNow)) {
-                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETB. ETB is %s, current time is %s", estPrearrivalDtl.getEtb(), now));
+        List<PortCallReportActivityDto> activities = dto.getActivities() != null ? dto.getActivities() : List.of();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() != null && !portActivityMasterRepository.existsByPortActivityTypePoid(activity.getActivityPoid())) {
+                throw new ResourceNotFoundException("Port activity", "Transaction Poid", activity.getActivityPoid());
             }
         }
 
-        Long nextPreActivityDtlPoid = estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+        Optional<String> portCallReportPoid = globalParameterRepository.findParameterValueByName("PC_PRE_ARRIVAL_DTL_ACTIVITY_RPT_POID");
+        if (portCallReportPoid.isEmpty()) {
+            throw new CustomException("Port Call Report Poid is required, Please update PC_PRE_ARRIVAL_DTL_ACTIVITY_RPT_POID in global parameter");
+        }
+        long portCallReportPoidLong;
+        try {
+            portCallReportPoidLong = Long.parseLong(portCallReportPoid.get());
+        } catch (Exception e) {
+            throw new CustomException("Not a valid Port Call Report Poid: " + portCallReportPoid.get(), 400);
+        }
+        List<PortCallReportDtl> portCallReportActivities = dtlRepository.findByPortCallReportPoid(portCallReportPoidLong);
 
-        PortCallOperationEstPrearrivalActDtl entity = PortCallOperationEstPrearrivalActDtl.builder()
-                .transactionPoid(transactionPoid)
-                .detRowId(detRowId)
-                .preActivityDtlPoid(nextPreActivityDtlPoid)
-                .activityPoid(dto.getActivityPoid())
-                .otherDescription(dto.getOtherDescription())
-                .estimatedDatetime(dto.getEstimatedDatetime())
-                .createdBy(UserContext.getUserId())
-                .createdDate(LocalDateTime.now())
-                .lastModifiedBy(UserContext.getUserId())
-                .lastModifiedDate(LocalDateTime.now())
-                .build();
+        // Validate mandatory activities: map by portActivityTypePoid, require otherDescription and estimatedDatetime when activityMandatory=Y
+        Map<Long, PortCallReportActivityDto> requestActivityMap = (dto.getActivities() != null ? dto.getActivities() : List.<PortCallReportActivityDto>of()).stream()
+                .filter(a -> a.getActivityPoid() != null)
+                .collect(Collectors.toMap(PortCallReportActivityDto::getActivityPoid, a -> a, (a, b) -> a));
+        for (PortCallReportDtl reportDtl : portCallReportActivities) {
+            if ("Y".equalsIgnoreCase(reportDtl.getActivityMandatory())) {
+                Long activityPoid = reportDtl.getPortActivityTypePoid();
+                PortCallReportActivityDto activityDto = requestActivityMap.get(activityPoid);
+                if (activityDto == null) {
+                    throw new ValidationException("Mandatory activity (activityPoid: " + activityPoid + ") is required");
+                }
+                if (activityDto.getOtherDescription() == null || activityDto.getOtherDescription().isBlank()) {
+                    throw new ValidationException("otherDescription is required for mandatory activity (activityPoid: " + activityPoid + ")");
+                }
+                if (activityDto.getEstimatedDatetime() == null) {
+                    throw new ValidationException("estimatedDatetime is required for mandatory activity (activityPoid: " + activityPoid + ")");
+                }
+            }
+        }
 
-        entity = estPrearrivalActDtlRepository.save(entity);
+        long nextPreActivityDtlPoid = estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+
+        List<PortCallOperationEstPrearrivalActDtl> entitiesToSave = new ArrayList<>();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() == null) continue;
+            entitiesToSave.add(PortCallOperationEstPrearrivalActDtl.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .preActivityDtlPoid(nextPreActivityDtlPoid++)
+                    .activityPoid(activity.getActivityPoid())
+                    .otherDescription(activity.getOtherDescription())
+                    .estimatedDatetime(activity.getEstimatedDatetime())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build());
+        }
+
+        if (entitiesToSave.isEmpty()) {
+            throw new ValidationException("At least one activity must be provided");
+        }
+
+        List<PortCallOperationEstPrearrivalActDtl> saved = estPrearrivalActDtlRepository.saveAll(entitiesToSave);
+        PortCallOperationEstPrearrivalActDtl entity = saved.get(saved.size() - 1);
 
         return PortCallOperationEstPrearrivalActDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
@@ -2193,43 +2163,128 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto) {
         log.info("Updating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}, preActivityDtlPoid: {}", transactionPoid, detRowId, preActivityDtlPoid);
 
-        PortCallOperationEstPrearrivalActDtl entity = estPrearrivalActDtlRepository.findById(new PortCallOperationEstPrearrivalActDtlId(transactionPoid, detRowId, preActivityDtlPoid))
-                .orElseThrow(() -> new ResourceNotFoundException("EstPrearrivalActDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", preActivityDtlPoid", preActivityDtlPoid));
-
-        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
-            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+            throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        PortCallOperationEstPrearrivalActDtl latestRecord = estPrearrivalActDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
-        if (!latestRecord.getPreActivityDtlPoid().equals(preActivityDtlPoid)) {
-            throw new ValidationException("Cannot edit this record. Please select a latest one");
+        Long emailPoidToUse = dto.getEmailPoid();
+        if (dto.getEmailPoid() == null) {
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+        } else {
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
         }
 
-        if (dto.getSendEmail()) {
-            // Validate that email can only be sent at least 1 day before ETA/ETB
-            PortCallOperationEstPrearrivalDtl estPrearrivalDtl = estPrearrivalDtlRepository
-                    .findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
-                    .orElseThrow(() -> new ResourceNotFoundException("Est Prearrival Detail not found with transactionPoid: " + transactionPoid + ", detRowId: " + detRowId));
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
+                // Logic to send email
+            } else {
+                throw new CustomException("Email already sent", 400);
+            }
+        }
 
+        // Validate pre-arrival is enabled: allow create/update only from X days before ETA (configurable via PC_PREARRIVAL_EDIT_ALLOW_DAYS)
+        List<PortCallOperationEstBertDtl> estBertRecords = estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid);
+        if (!estBertRecords.isEmpty()) {
+            Optional<String> daysToBeEnabledForEdit = globalParameterRepository.findParameterValueByName("PC_PREARRIVAL_EDIT_ALLOW_DAYS");
+            if (daysToBeEnabledForEdit.isEmpty()) {
+                throw new CustomException("PC_PREARRIVAL_EDIT_ALLOW_DAYS must be configured in global parameters", 400);
+            }
+            long daysToBeEnabledForEditLong;
+            try {
+                daysToBeEnabledForEditLong = Long.parseLong(daysToBeEnabledForEdit.get());
+            } catch (Exception e) {
+                throw new CustomException("PC_PREARRIVAL_EDIT_ALLOW_DAYS must be a valid number", 400);
+            }
+            PortCallOperationEstBertDtl latestEstBert = estBertRecords.getFirst();
             LocalDateTime now = LocalDateTime.now();
-            LocalDateTime oneDayFromNow = now.plusDays(1);
-
-            if (estPrearrivalDtl.getEta() != null && estPrearrivalDtl.getEta().isBefore(oneDayFromNow)) {
-                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETA. ETA is %s, current time is %s", estPrearrivalDtl.getEta(), now));
-            }
-
-            if (estPrearrivalDtl.getEtb() != null && estPrearrivalDtl.getEtb().isBefore(oneDayFromNow)) {
-                throw new ValidationException(String.format("Email can only be sent at least 1 day before ETB. ETB is %s, current time is %s", estPrearrivalDtl.getEtb(), now));
+            if (latestEstBert.getEta() != null) {
+                LocalDateTime dayBeforeEta = latestEstBert.getEta().minusDays(daysToBeEnabledForEditLong);
+                if (now.isBefore(dayBeforeEta)) {
+                    throw new ValidationException(String.format("Pre-arrival operations are allowed only from %s day(s) before ETA. ETA is %s, current time is %s", daysToBeEnabledForEditLong, latestEstBert.getEta(), now));
+                }
+                if (now.isAfter(latestEstBert.getEta())) {
+                    throw new ValidationException(String.format("Pre-arrival operations are not allowed after ETA has passed. ETA is %s, current time is %s", latestEstBert.getEta(), now));
+                }
             }
         }
 
-        entity.setActivityPoid(dto.getActivityPoid());
-        entity.setOtherDescription(dto.getOtherDescription());
-        entity.setEstimatedDatetime(dto.getEstimatedDatetime());
-        entity.setLastModifiedBy(UserContext.getUserId());
-        entity.setLastModifiedDate(LocalDateTime.now());
+        // Validate mandatory activities (same as create)
+        Optional<String> portCallReportPoid = globalParameterRepository.findParameterValueByName("PC_PRE_ARRIVAL_DTL_ACTIVITY_RPT_POID");
+        if (portCallReportPoid.isPresent()) {
+            long portCallReportPoidLong;
+            try {
+                portCallReportPoidLong = Long.parseLong(portCallReportPoid.get());
+            } catch (Exception e) {
+                throw new CustomException("Not a valid Port Call Report Poid: " + portCallReportPoid.get(), 400);
+            }
+            List<PortCallReportDtl> portCallReportActivitiesUpdate = dtlRepository.findByPortCallReportPoid(portCallReportPoidLong);
 
-        entity = estPrearrivalActDtlRepository.save(entity);
+            Map<Long, PortCallReportActivityDto> requestActivityMapUpdate = (dto.getActivities() != null ? dto.getActivities() : List.<PortCallReportActivityDto>of()).stream()
+                    .filter(a -> a.getActivityPoid() != null)
+                    .collect(Collectors.toMap(PortCallReportActivityDto::getActivityPoid, a -> a, (a, b) -> a));
+            for (PortCallReportDtl reportDtl : portCallReportActivitiesUpdate) {
+                if ("Y".equalsIgnoreCase(reportDtl.getActivityMandatory())) {
+                    Long activityPoid = reportDtl.getPortActivityTypePoid();
+                    PortCallReportActivityDto activityDto = requestActivityMapUpdate.get(activityPoid);
+                    if (activityDto == null) {
+                        throw new ValidationException("Mandatory activity (activityPoid: " + activityPoid + ") is required");
+                    }
+                    if (activityDto.getOtherDescription() == null || activityDto.getOtherDescription().isBlank()) {
+                        throw new ValidationException("otherDescription is required for mandatory activity (activityPoid: " + activityPoid + ")");
+                    }
+                    if (activityDto.getEstimatedDatetime() == null) {
+                        throw new ValidationException("estimatedDatetime is required for mandatory activity (activityPoid: " + activityPoid + ")");
+                    }
+                }
+            }
+        }
+
+        List<PortCallReportActivityDto> activities = dto.getActivities() != null ? dto.getActivities() : List.of();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() != null && !portActivityMasterRepository.existsByPortActivityTypePoid(activity.getActivityPoid())) {
+                throw new ResourceNotFoundException("Port activity", "Transaction Poid", activity.getActivityPoid());
+            }
+        }
+
+        estPrearrivalActDtlRepository.deleteByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        long nextPreActivityDtlPoid = 1L;
+
+        List<PortCallOperationEstPrearrivalActDtl> entitiesToSave = new ArrayList<>();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() == null) continue;
+            entitiesToSave.add(PortCallOperationEstPrearrivalActDtl.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .preActivityDtlPoid(nextPreActivityDtlPoid++)
+                    .activityPoid(activity.getActivityPoid())
+                    .otherDescription(activity.getOtherDescription())
+                    .estimatedDatetime(activity.getEstimatedDatetime())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build());
+        }
+
+        if (entitiesToSave.isEmpty()) {
+            throw new ValidationException("At least one activity must be provided");
+        }
+
+        List<PortCallOperationEstPrearrivalActDtl> saved = estPrearrivalActDtlRepository.saveAll(entitiesToSave);
+        PortCallOperationEstPrearrivalActDtl entity = saved.get(saved.size() - 1);
 
         return PortCallOperationEstPrearrivalActDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
@@ -2261,36 +2316,99 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
     @Override
     @Transactional
-    public PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActvtyDetailDto dto) {
+    public PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActivityDetailDto dto) {
         log.info("Creating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+
+        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+            throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
+        }
 
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
-        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
-            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+
+        List<PortCallReportActivityDto> activities = dto.getActivities() != null ? dto.getActivities() : List.of();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() != null && !portActivityMasterRepository.existsByPortActivityTypePoid(activity.getActivityPoid())) {
+                throw new ResourceNotFoundException("Port activity", "Transaction Poid", activity.getActivityPoid());
+            }
         }
 
-        if (dto.getSendEmail()) {
-            // Logic to send email
+        List<PortCallReportDtl> portCallReportActivities = dtlRepository.findByPortCallReportPoid(dto.getPortCallReportPoid());
+
+        // Validate mandatory activities: map by portActivityTypePoid, require otherDescription and estimatedDatetime when activityMandatory=Y
+        Map<Long, PortCallReportActivityDto> requestActivityMap = activities.stream()
+                .filter(a -> a.getActivityPoid() != null)
+                .collect(Collectors.toMap(PortCallReportActivityDto::getActivityPoid, a -> a, (a, b) -> a));
+        for (PortCallReportDtl reportDtl : portCallReportActivities) {
+            if ("Y".equalsIgnoreCase(reportDtl.getActivityMandatory())) {
+                Long activityPoid = reportDtl.getPortActivityTypePoid();
+                PortCallReportActivityDto activityDto = requestActivityMap.get(activityPoid);
+                if (activityDto == null) {
+                    throw new ValidationException("Mandatory activity (activityPoid: " + activityPoid + ") is required");
+                }
+                if (activityDto.getOtherDescription() == null || activityDto.getOtherDescription().isBlank()) {
+                    throw new ValidationException("otherDescription is required for mandatory activity (activityPoid: " + activityPoid + ")");
+                }
+                if (activityDto.getEstimatedDatetime() == null) {
+                    throw new ValidationException("estimatedDatetime is required for mandatory activity (activityPoid: " + activityPoid + ")");
+                }
+            }
         }
 
-        Long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+        Long emailPoidToUse = dto.getEmailPoid();
+        if (dto.getEmailPoid() == null) {
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+        } else {
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
+        }
 
-        PortCallOperationActTimingsActvtyDtl entity = PortCallOperationActTimingsActvtyDtl.builder()
-                .transactionPoid(transactionPoid)
-                .detRowId(detRowId)
-                .actualsTimingDtlPoid(nextActualsTimingDtlPoid)
-                .activityPoid(dto.getActivityPoid())
-                .details(dto.getDetails())
-                .estimatedDatetime(dto.getEstimatedDatetime())
-                .createdBy(UserContext.getUserId())
-                .createdDate(LocalDateTime.now())
-                .lastModifiedBy(UserContext.getUserId())
-                .lastModifiedDate(LocalDateTime.now())
-                .build();
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
+                // Logic to send email
+            } else {
+                throw new CustomException("Email already sent", 400);
+            }
+        }
 
-        entity = actTimingsActvtyDtlRepository.save(entity);
+        long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+
+        List<PortCallOperationActTimingsActvtyDtl> entitiesToSave = new ArrayList<>();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() == null) continue;
+            entitiesToSave.add(PortCallOperationActTimingsActvtyDtl.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .actualsTimingDtlPoid(nextActualsTimingDtlPoid++)
+                    .activityPoid(activity.getActivityPoid())
+                    .details(activity.getOtherDescription())
+                    .estimatedDatetime(activity.getEstimatedDatetime())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build());
+        }
+
+        if (entitiesToSave.isEmpty()) {
+            throw new ValidationException("At least one activity must be provided");
+        }
+
+        List<PortCallOperationActTimingsActvtyDtl> saved = actTimingsActvtyDtlRepository.saveAll(entitiesToSave);
+        PortCallOperationActTimingsActvtyDtl entity = saved.getLast();
 
         return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
@@ -2304,32 +2422,96 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
     @Override
     @Transactional
-    public PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActvtyDetailDto dto) {
+    public PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActivityDetailDto dto) {
         log.info("Updating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}, actualsTimingDtlPoid: {}", transactionPoid, detRowId, actualsTimingDtlPoid);
 
-        PortCallOperationActTimingsActvtyDtl entity = actTimingsActvtyDtlRepository.findById(new PortCallOperationActTimingsActvtyDtlId(transactionPoid, detRowId, actualsTimingDtlPoid))
-                .orElseThrow(() -> new ResourceNotFoundException("ActTimingsActvtyDetail", "transactionPoid: " + transactionPoid + ", detRowId: " + detRowId + ", actualsTimingDtlPoid", actualsTimingDtlPoid));
-
-        if (!portActivityMasterRepository.existsByPortActivityTypePoid(dto.getActivityPoid())) {
-            throw new ResourceNotFoundException("Port activity", "Transaction Poid", dto.getActivityPoid());
+        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+            throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        PortCallOperationActTimingsActvtyDtl latestRecord = actTimingsActvtyDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
-        if (!latestRecord.getActualsTimingDtlPoid().equals(actualsTimingDtlPoid)) {
-            throw new ValidationException("Cannot edit this record. Please select a latest one");
+        // Validate mandatory activities (same as create)
+
+        List<PortCallReportDtl> portCallReportActivitiesUpdate = dtlRepository.findByPortCallReportPoid(dto.getPortCallReportPoid());
+        Map<Long, PortCallReportActivityDto> requestActivityMapUpdate = (dto.getActivities() != null ? dto.getActivities() : List.<PortCallReportActivityDto>of()).stream()
+                .filter(a -> a.getActivityPoid() != null)
+                .collect(Collectors.toMap(PortCallReportActivityDto::getActivityPoid, a -> a, (a, b) -> a));
+        for (PortCallReportDtl reportDtl : portCallReportActivitiesUpdate) {
+            if ("Y".equalsIgnoreCase(reportDtl.getActivityMandatory())) {
+                Long activityPoid = reportDtl.getPortActivityTypePoid();
+                PortCallReportActivityDto activityDto = requestActivityMapUpdate.get(activityPoid);
+                if (activityDto == null) {
+                    throw new ValidationException("Mandatory activity (activityPoid: " + activityPoid + ") is required");
+                }
+                if (activityDto.getOtherDescription() == null || activityDto.getOtherDescription().isBlank()) {
+                    throw new ValidationException("otherDescription is required for mandatory activity (activityPoid: " + activityPoid + ")");
+                }
+                if (activityDto.getEstimatedDatetime() == null) {
+                    throw new ValidationException("estimatedDatetime is required for mandatory activity (activityPoid: " + activityPoid + ")");
+                }
+            }
         }
 
-        if (dto.getSendEmail()) {
-            // Logic to send email
+        List<PortCallReportActivityDto> activities = dto.getActivities() != null ? dto.getActivities() : List.of();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() != null && !portActivityMasterRepository.existsByPortActivityTypePoid(activity.getActivityPoid())) {
+                throw new ResourceNotFoundException("Port activity", "Transaction Poid", activity.getActivityPoid());
+            }
         }
 
-        entity.setActivityPoid(dto.getActivityPoid());
-        entity.setDetails(dto.getDetails());
-        entity.setEstimatedDatetime(dto.getEstimatedDatetime());
-        entity.setLastModifiedBy(UserContext.getUserId());
-        entity.setLastModifiedDate(LocalDateTime.now());
+        Long emailPoidToUse = dto.getEmailPoid();
+        if (dto.getEmailPoid() == null) {
+            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .emailRemarks(dto.getRemarks())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build();
+            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+        } else {
+            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            msgsDtl1.setEmailRemarks(dto.getRemarks());
+            msgsDtl1Repository.save(msgsDtl1);
+        }
 
-        entity = actTimingsActvtyDtlRepository.save(entity);
+        if (dto.getSendEmail() && emailPoidToUse != null) {
+            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            if (msgsForSend.getEmailSendOn() == null) {
+                // Logic to send email
+            } else {
+                throw new CustomException("Email already sent", 400);
+            }
+        }
+
+        actTimingsActvtyDtlRepository.deleteByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        long nextActualsTimingDtlPoid = 1L;
+
+        List<PortCallOperationActTimingsActvtyDtl> entitiesToSave = new ArrayList<>();
+        for (PortCallReportActivityDto activity : activities) {
+            if (activity.getActivityPoid() == null) continue;
+            entitiesToSave.add(PortCallOperationActTimingsActvtyDtl.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .actualsTimingDtlPoid(nextActualsTimingDtlPoid++)
+                    .activityPoid(activity.getActivityPoid())
+                    .details(activity.getOtherDescription())
+                    .estimatedDatetime(activity.getEstimatedDatetime())
+                    .createdBy(UserContext.getUserId())
+                    .createdDate(LocalDateTime.now())
+                    .lastModifiedBy(UserContext.getUserId())
+                    .lastModifiedDate(LocalDateTime.now())
+                    .build());
+        }
+
+        if (entitiesToSave.isEmpty()) {
+            throw new ValidationException("At least one activity must be provided");
+        }
+
+        List<PortCallOperationActTimingsActvtyDtl> saved = actTimingsActvtyDtlRepository.saveAll(entitiesToSave);
+        PortCallOperationActTimingsActvtyDtl entity = saved.getLast();
 
         return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
                 .transactionPoid(entity.getTransactionPoid())
@@ -2367,10 +2549,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
 
-        if (dto.getSendEmail()) {
-            // Logic to send email
-        }
-
         Long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
 
         PortCallOperationDocsCopyDtl entity = PortCallOperationDocsCopyDtl.builder()
@@ -2379,7 +2557,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .documentFrom(dto.getDocumentFrom())
                 .documentList(dto.getDocumentList())
                 .documentSelect(dto.getDocumentSelect())
-                .documentAttachments(dto.getDocumentAttachments())
                 .createdBy(UserContext.getUserId())
                 .createdDate(LocalDateTime.now())
                 .lastModifiedBy(UserContext.getUserId())
@@ -2403,14 +2580,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ValidationException("Cannot edit this record. Please select a latest one");
         }
 
-        if (dto.getSendEmail()) {
-            // Logic to send email
-        }
-
         entity.setDocumentFrom(dto.getDocumentFrom());
         entity.setDocumentList(dto.getDocumentList());
         entity.setDocumentSelect(dto.getDocumentSelect());
-        entity.setDocumentAttachments(dto.getDocumentAttachments());
         entity.setLastModifiedBy(UserContext.getUserId());
         entity.setLastModifiedDate(LocalDateTime.now());
 

@@ -24,12 +24,5 @@ public class PortCallOperationDocsCopyDetailRequestDto {
     @Size(max = 1)
     private String documentSelect;
 
-    @Size(max = 4000)
-    @NotBlank(message = "Document Attachments cannot be empty")
-    private String documentAttachments;
-
-    @NotNull(message = "Send Email is required")
-    private Boolean sendEmail;
-
     private ActionType actionType;
 }

@@ -8,4 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface OpsPcDocsMsgsDtl1Repository extends JpaRepository<OpsPcDocsMsgsDtl1, OpsPcDocsMsgsDtl1Id> {
     boolean existsByIdEmailPoid(Long emailPoid);
+
+    OpsPcDocsMsgsDtl1 findByIdEmailPoid(Long emailPoid);
 }
