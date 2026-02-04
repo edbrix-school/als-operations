@@ -314,8 +314,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         ContractCrew crew = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
 
-        log.info("creq -------------------> {}",crew.toString());
-
         ContractCrew oldCrew = new ContractCrew();
         BeanUtils.copyProperties(crew, oldCrew);
 
