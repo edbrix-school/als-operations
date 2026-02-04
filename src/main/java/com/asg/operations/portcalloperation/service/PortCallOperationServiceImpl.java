@@ -2054,24 +2054,29 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        // Validate ETA is at least 1 day ahead - block all operations (create/edit) if not
+        // Validate pre-arrival is enabled: allow create/update only from X days before ETA (configurable via PC_PREARRIVAL_EDIT_ALLOW_DAYS)
         List<PortCallOperationEstBertDtl> estBertRecords = estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid);
         if (!estBertRecords.isEmpty()) {
-            Optional<String> daysToBeEnabledForEdit = globalParameterRepository.findParameterValueByName("");
+            Optional<String> daysToBeEnabledForEdit = globalParameterRepository.findParameterValueByName("PC_PREARRIVAL_EDIT_ALLOW_DAYS");
             if (daysToBeEnabledForEdit.isEmpty()) {
-                daysToBeEnabledForEdit = Optional.of("1");
+                throw new CustomException("PC_PREARRIVAL_EDIT_ALLOW_DAYS must be configured in global parameters", 400);
             }
             long daysToBeEnabledForEditLong;
             try {
                 daysToBeEnabledForEditLong = Long.parseLong(daysToBeEnabledForEdit.get());
             } catch (Exception e) {
-                throw new CustomException("Not a valid Port Call Report Poid", 400);
+                throw new CustomException("PC_PREARRIVAL_EDIT_ALLOW_DAYS must be a valid number", 400);
             }
             PortCallOperationEstBertDtl latestEstBert = estBertRecords.getFirst();
             LocalDateTime now = LocalDateTime.now();
-            LocalDateTime dayFromNow = now.plusDays(daysToBeEnabledForEditLong);
-            if (latestEstBert.getEta() != null && latestEstBert.getEta().isBefore(dayFromNow)) {
-                throw new ValidationException(String.format("Operations are not allowed when ETA is less than %s day away. ETA is %s, current time is %s", daysToBeEnabledForEditLong, latestEstBert.getEta(), now));
+            if (latestEstBert.getEta() != null) {
+                LocalDateTime dayBeforeEta = latestEstBert.getEta().minusDays(daysToBeEnabledForEditLong);
+                if (now.isBefore(dayBeforeEta)) {
+                    throw new ValidationException(String.format("Pre-arrival operations are allowed only from %s day(s) before ETA. ETA is %s, current time is %s", daysToBeEnabledForEditLong, latestEstBert.getEta(), now));
+                }
+                if (now.isAfter(latestEstBert.getEta())) {
+                    throw new ValidationException(String.format("Pre-arrival operations are not allowed after ETA has passed. ETA is %s, current time is %s", latestEstBert.getEta(), now));
+                }
             }
         }
 
@@ -2190,24 +2195,29 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        // Validate ETA is at least 1 day ahead - block all operations (create/edit) if not
+        // Validate pre-arrival is enabled: allow create/update only from X days before ETA (configurable via PC_PREARRIVAL_EDIT_ALLOW_DAYS)
         List<PortCallOperationEstBertDtl> estBertRecords = estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid);
         if (!estBertRecords.isEmpty()) {
             Optional<String> daysToBeEnabledForEdit = globalParameterRepository.findParameterValueByName("PC_PREARRIVAL_EDIT_ALLOW_DAYS");
             if (daysToBeEnabledForEdit.isEmpty()) {
-                daysToBeEnabledForEdit = Optional.of("1");
+                throw new CustomException("PC_PREARRIVAL_EDIT_ALLOW_DAYS must be configured in global parameters", 400);
             }
             long daysToBeEnabledForEditLong;
             try {
                 daysToBeEnabledForEditLong = Long.parseLong(daysToBeEnabledForEdit.get());
             } catch (Exception e) {
-                throw new CustomException("Not a valid Port Call Report Poid", 400);
+                throw new CustomException("PC_PREARRIVAL_EDIT_ALLOW_DAYS must be a valid number", 400);
             }
             PortCallOperationEstBertDtl latestEstBert = estBertRecords.getFirst();
             LocalDateTime now = LocalDateTime.now();
-            LocalDateTime dayFromNow = now.plusDays(daysToBeEnabledForEditLong);
-            if (latestEstBert.getEta() != null && latestEstBert.getEta().isBefore(dayFromNow)) {
-                throw new ValidationException(String.format("Operations are not allowed when ETA is less than %s day away. ETA is %s, current time is %s", daysToBeEnabledForEditLong, latestEstBert.getEta(), now));
+            if (latestEstBert.getEta() != null) {
+                LocalDateTime dayBeforeEta = latestEstBert.getEta().minusDays(daysToBeEnabledForEditLong);
+                if (now.isBefore(dayBeforeEta)) {
+                    throw new ValidationException(String.format("Pre-arrival operations are allowed only from %s day(s) before ETA. ETA is %s, current time is %s", daysToBeEnabledForEditLong, latestEstBert.getEta(), now));
+                }
+                if (now.isAfter(latestEstBert.getEta())) {
+                    throw new ValidationException(String.format("Pre-arrival operations are not allowed after ETA has passed. ETA is %s, current time is %s", latestEstBert.getEta(), now));
+                }
             }
         }
 
