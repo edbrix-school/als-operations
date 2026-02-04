@@ -2192,7 +2192,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         // Validate ETA is at least 1 day ahead - block all operations (create/edit) if not
         List<PortCallOperationEstBertDtl> estBertRecords = estBertDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid);
         if (!estBertRecords.isEmpty()) {
-            Optional<String> daysToBeEnabledForEdit = globalParameterRepository.findParameterValueByName("");
+            Optional<String> daysToBeEnabledForEdit = globalParameterRepository.findParameterValueByName("PC_PRE_ARRIVAL_DTL_ACTIVITY_RPT_POID");
             if (daysToBeEnabledForEdit.isEmpty()) {
                 daysToBeEnabledForEdit = Optional.of("1");
             }
