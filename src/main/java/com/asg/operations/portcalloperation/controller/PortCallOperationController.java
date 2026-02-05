@@ -293,15 +293,14 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/est-prearrival-details/{detRowId}/activities")
+    @GetMapping("/{transactionPoid}/est-prearrival-details/activities")
     @Operation(
             summary = "List EstPrearrivalActDetails",
             description = "Retrieve list of activities for a specific prearrival detail",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<?> listEstPrearrivalActDetails(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                         @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
-        List<PortCallOperationEstPrearrivalActDetailResponseDto> result = portCallOperationService.listEstPrearrivalActDetails(transactionPoid, detRowId);
+    public ResponseEntity<?> listEstPrearrivalActDetailsActivities(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid) {
+        Map<String, Object> result = portCallOperationService.listEstPrearrivalActDetails(transactionPoid);
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstPrearrivalActDetails retrieved successfully", result);
     }

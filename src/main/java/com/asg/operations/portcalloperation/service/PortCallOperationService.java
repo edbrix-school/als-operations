@@ -46,7 +46,7 @@ public interface PortCallOperationService {
     PortCallOperationResponseDto updateEstBertDetail(Long transactionPoid, Long detRowId, PortCallOperationEstBertDetailRequestDto dto);
 
     // EstPrearrivalActDtl CRUD operations
-    List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId);
+    Map<String, Object>  listEstPrearrivalActDetails(Long transactionPoid);
 
     PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto);
 

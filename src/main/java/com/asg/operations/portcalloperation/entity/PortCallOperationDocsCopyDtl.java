@@ -23,13 +23,16 @@ public class PortCallOperationDocsCopyDtl {
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
-   @AuditIgnore
+    @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID")
     private Long detRowId;
 
     @Column(name = "DOCUMENT_FROM", length = 100)
     private String documentFrom;
+
+    @Column(name = "EMAIL_POID")
+    private Long emailPoid;
 
     @Column(name = "DOCUMENT_LIST", length = 4000)
     private String documentList;
