@@ -9,11 +9,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -136,5 +138,28 @@ public class GlobalExceptionHandler {
                 ex.getFieldErrors()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<?> handleHandlerMethodValidationException(HandlerMethodValidationException ex, HttpServletRequest request) {
+
+        Map<String, Object> errors = new HashMap<>();
+
+        ex.getAllErrors().forEach(error -> {
+            String fieldName = "unknown";
+
+            if (error instanceof org.springframework.validation.FieldError fieldError) {
+                fieldName = fieldError.getField();
+            } else if (error.getCodes() != null && error.getCodes().length > 0) {
+                // fallback: extract parameter name from validation codes
+                fieldName = error.getCodes()[0];
+            }
+
+            errors.put(fieldName, error.getDefaultMessage());
+        });
+
+        log.info("Validation errors at {}", request.getRequestURI());
+
+        return ApiResponse.error("Validation error occurred", HttpStatus.BAD_REQUEST.value(), errors);
     }
 }
