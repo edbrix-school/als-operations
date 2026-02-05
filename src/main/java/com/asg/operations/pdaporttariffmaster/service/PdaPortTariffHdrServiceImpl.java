@@ -11,6 +11,7 @@ import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import jakarta.validation.Valid;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.service.LovService;
@@ -36,7 +37,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -69,8 +69,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
 
     @Override
     @Transactional(readOnly = true)
-    public Map<String, Object> getAllTariffsWithFilters(
-            String documentId, FilterRequestDto filterRequestDto, Pageable pageable, LocalDate periodFrom, LocalDate periodTo) {
+    public Map<String, Object> getAllTariffsWithFilters(String documentId, FilterRequestDto filterRequestDto, Pageable pageable, LocalDate periodFrom, LocalDate periodTo) {
 
         String operator = documentSearchService.resolveOperator(filterRequestDto);
         String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
@@ -201,16 +200,14 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     public PdaPortTariffMasterResponse getTariffById(Long transactionPoid, Long groupPoid) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoid(
-                        transactionPoid, groupPoidBD)
+        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoid(transactionPoid, groupPoidBD)
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
         List<PdaPortTariffChargeDtl> chargeDetails = chargeDtlRepository.findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(transactionPoid);
 
         for (PdaPortTariffChargeDtl chargeDetail : chargeDetails) {
             if (!entityManager.contains(chargeDetail)) {
-                List<PdaPortTariffSlabDtl> slabDetails = slabDtlRepository.findByTransactionPoidAndChargeDetRowIdOrderByDetRowIdAsc(
-                        transactionPoid, chargeDetail.getId().getDetRowId());
+                List<PdaPortTariffSlabDtl> slabDetails = slabDtlRepository.findByTransactionPoidAndChargeDetRowIdOrderByDetRowIdAsc(transactionPoid, chargeDetail.getId().getDetRowId());
                 chargeDetail.setSlabDetails(slabDetails);
             }
         }
@@ -230,8 +227,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         String portsStr = request.getPort();
         String vesselTypesStr = mapper.listToString(request.getVesselTypes());
 
-        if (tariffHdrRepository.existsOverlappingPeriod(
-                groupPoidBD, null, request.getPeriodFrom(), request.getPeriodTo(), portsStr, vesselTypesStr)) {
+        if (tariffHdrRepository.existsOverlappingPeriod(groupPoidBD, null, request.getPeriodFrom(), request.getPeriodTo(), portsStr, vesselTypesStr)) {
             throw new ValidationException("A tariff with overlapping period already exists for the selected port and vessel types.");
         }
 
@@ -252,8 +248,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
 
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        PdaPortTariffHdr existingTariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                        transactionPoid, groupPoidBD, "N")
+        PdaPortTariffHdr existingTariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(transactionPoid, groupPoidBD, "N")
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
         PdaPortTariffHdr oldTariff = new PdaPortTariffHdr();
@@ -262,8 +257,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         String portsStr = request.getPort();
         String vesselTypesStr = mapper.listToString(request.getVesselTypes());
 
-        if (tariffHdrRepository.existsOverlappingPeriod(
-                groupPoidBD, transactionPoid, request.getPeriodFrom(), request.getPeriodTo(), portsStr, vesselTypesStr)) {
+        if (tariffHdrRepository.existsOverlappingPeriod(groupPoidBD, transactionPoid, request.getPeriodFrom(), request.getPeriodTo(), portsStr, vesselTypesStr)) {
             throw new ValidationException("A tariff with overlapping period already exists for the selected port and vessel types.");
         }
 
@@ -285,8 +279,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     public void deleteTariff(Long transactionPoid, Long groupPoid, String userId, @Valid DeleteReasonDto deleteReasonDto) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                        transactionPoid, groupPoidBD, "N")
+        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(transactionPoid, groupPoidBD, "N")
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
         documentDeleteService.deleteDocument(
@@ -302,15 +295,14 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     public PdaPortTariffMasterResponse copyTariff(Long sourceTransactionPoid, CopyTariffRequest request, Long groupPoid, String userId) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        PdaPortTariffHdr sourceTariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                        sourceTransactionPoid, groupPoidBD, "N")
+        PdaPortTariffHdr sourceTariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(sourceTransactionPoid, groupPoidBD, "N")
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", sourceTransactionPoid));
 
         PdaPortTariffMasterRequest copyRequest = mapper.toRequest(sourceTariff);
         copyRequest.setPeriodFrom(request.getNewPeriodFrom());
         copyRequest.setPeriodTo(request.getNewPeriodTo());
 
-        return createTariff(copyRequest, groupPoid, sourceTariff.getCompanyPoid().longValue(), userId);
+        return createTariff(copyRequest, groupPoid, sourceTariff.getCompanyPoid(), userId);
     }
 
     @Override
@@ -318,8 +310,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     public ChargeDetailsResponse getChargeDetails(Long transactionPoid, Long groupPoid, boolean includeSlabs) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                        transactionPoid, groupPoidBD, "N")
+        tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(transactionPoid, groupPoidBD, "N")
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
         List<PdaPortTariffChargeDtl> chargeDetails = chargeDtlRepository.findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(transactionPoid);
@@ -341,8 +332,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     public ChargeDetailsResponse bulkSaveChargeDetails(Long transactionPoid, ChargeDetailsRequest request, Long groupPoid, String userId) {
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                        transactionPoid, groupPoidBD, "N")
+        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(transactionPoid, groupPoidBD, "N")
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {
@@ -449,11 +439,15 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     private void createChargeDetail(PdaPortTariffHdr tariffHdr, PdaPortTariffChargeDetailRequest chargeRequest, String currentUser) {
-        if (!shipChargeMasterRepository.existsByChargePoid(chargeRequest.getChargePoid())) {
-            throw new ResourceNotFoundException("Charge Master", "Charge Poid", chargeRequest.getChargePoid());
+        if (chargeRequest.getChargePoid() != null) {
+            if (!shipChargeMasterRepository.existsByChargePoid(chargeRequest.getChargePoid())) {
+                throw new ResourceNotFoundException("Charge Master", "Charge Poid", chargeRequest.getChargePoid());
+            }
         }
-        if (!pdaRateTypeMasterRepository.existsByRateTypePoid(chargeRequest.getRateTypePoid())) {
-            throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
+        if (chargeRequest.getRateTypePoid() != null) {
+            if (!pdaRateTypeMasterRepository.existsByRateTypePoid(chargeRequest.getRateTypePoid())) {
+                throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
+            }
         }
 
         PdaPortTariffChargeDtlId chargeId = new PdaPortTariffChargeDtlId();
@@ -514,12 +508,15 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private void saveChargeDetails(PdaPortTariffHdr tariffHdr, List<PdaPortTariffChargeDetailRequest> chargeDetails, String currentUser) {
         int seqNo = 1;
         for (PdaPortTariffChargeDetailRequest chargeRequest : chargeDetails) {
-
-            if (!shipChargeMasterRepository.existsByChargePoid(chargeRequest.getChargePoid())) {
-                throw new ResourceNotFoundException("Charge Master", "Charge Poid", chargeRequest.getChargePoid());
+            if (chargeRequest.getChargePoid() != null) {
+                if (!shipChargeMasterRepository.existsByChargePoid(chargeRequest.getChargePoid())) {
+                    throw new ResourceNotFoundException("Charge Master", "Charge Poid", chargeRequest.getChargePoid());
+                }
             }
-            if (!pdaRateTypeMasterRepository.existsByRateTypePoid(chargeRequest.getRateTypePoid())) {
-                throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
+            if (chargeRequest.getRateTypePoid() != null) {
+                if (!pdaRateTypeMasterRepository.existsByRateTypePoid(chargeRequest.getRateTypePoid())) {
+                    throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
+                }
             }
 
             if (chargeRequest.getSeqNo() == null) {
@@ -585,12 +582,16 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     private void validateCreateRequest(PdaPortTariffMasterRequest request, Long groupPoid) {
-        if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(request.getPort())), BigDecimal.valueOf(groupPoid))) {
-            throw new ResourceNotFoundException("Port", "Port Poid", request.getPort());
+        if (StringUtils.isNotBlank(request.getPort())) {
+            if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(request.getPort())), BigDecimal.valueOf(groupPoid))) {
+                throw new ResourceNotFoundException("Port", "Port Poid", request.getPort());
+            }
         }
         for (String vesselPoid : request.getVesselTypes()) {
-            if (!shipVesselTypeMasterRepository.existsByVesselTypePoidAndGroupPoid(BigDecimal.valueOf(Long.parseLong(vesselPoid)), BigDecimal.valueOf(groupPoid))) {
-                throw new ResourceNotFoundException("Vessel", "Vessel Poid", vesselPoid);
+            if (StringUtils.isNotBlank(vesselPoid)) {
+                if (!shipVesselTypeMasterRepository.existsByVesselTypePoidAndGroupPoid(BigDecimal.valueOf(Long.parseLong(vesselPoid)), BigDecimal.valueOf(groupPoid))) {
+                    throw new ResourceNotFoundException("Vessel", "Vessel Poid", vesselPoid);
+                }
             }
         }
     }
