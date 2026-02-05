@@ -8,5 +8,5 @@ import java.math.BigDecimal;
 
 @Repository
 public interface PdaRateTypeMasterRepository extends JpaRepository<PdaRateTypeMaster, Long> {
-    boolean existsByRateTypePoidAndDeletedIgnoreCase(BigDecimal rateTypePoid, String deleted);
+    boolean existsByRateTypePoid(BigDecimal rateTypePoid);
 }
