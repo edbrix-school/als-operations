@@ -4,6 +4,7 @@ import com.asg.operations.pdaporttariffmaster.annotation.TariffSlabValidation;
 import com.asg.operations.portcallreport.enums.ActionType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -19,8 +20,10 @@ public class PdaPortTariffChargeDetailRequest {
 
     private Long detRowId; // Optional, used for updates
 
+    @NotNull(message = "Charge Poid is required")
     private BigDecimal chargePoid;
 
+    @NotNull(message = "Rate Type Poid is required")
     private BigDecimal rateTypePoid;
 
     @Size(max = 20, message = "Tariff slab cannot exceed 20 characters")

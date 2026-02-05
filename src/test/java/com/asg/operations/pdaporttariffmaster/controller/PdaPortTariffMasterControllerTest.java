@@ -143,11 +143,15 @@ class PdaPortTariffMasterControllerTest {
 
     @Test
     void bulkSaveChargeDetails_Success() throws Exception {
+        PdaPortTariffChargeDetailRequest chargeDetail = new PdaPortTariffChargeDetailRequest();
+        chargeDetail.setChargePoid(new java.math.BigDecimal("1"));
+        chargeDetail.setRateTypePoid(new java.math.BigDecimal("1"));
+        
         ChargeDetailsRequest chargeRequest = new ChargeDetailsRequest();
-        chargeRequest.setChargeDetails(List.of(new PdaPortTariffChargeDetailRequest()));
+        chargeRequest.setChargeDetails(List.of(chargeDetail));
         ChargeDetailsResponse chargeResponse = new ChargeDetailsResponse();
 
-        when(tariffService.bulkSaveChargeDetails(eq(1L), any(), eq(200L), eq("user1"))).thenReturn(chargeResponse);
+        when(tariffService.bulkSaveChargeDetails(eq(1L), any(ChargeDetailsRequest.class), eq(200L), eq("user1"))).thenReturn(chargeResponse);
 
         mockMvc.perform(post("/v1/pda-port-tariffs/1/charges/bulk")
                 .header("X-User-Id", "user1")
@@ -157,7 +161,7 @@ class PdaPortTariffMasterControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Charge details saved successfully"));
 
-        verify(tariffService).bulkSaveChargeDetails(eq(1L), any(), eq(200L), eq("user1"));
+        verify(tariffService).bulkSaveChargeDetails(eq(1L), any(ChargeDetailsRequest.class), eq(200L), eq("user1"));
     }
 
     @Test
