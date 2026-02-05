@@ -75,7 +75,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
 
         String operator = documentSearchService.resolveOperator(filterRequestDto);
         String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
-        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto, "TRANSACTION_DATE", periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
                 "PORT_CALL_REPORT_POID",
@@ -245,7 +245,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         }
 
         if (dto.getPortCallApplVesselType() != null && !dto.getPortCallApplVesselType().isEmpty()) {
-            List<Long> validVesselTypePoids = vesselTypeRepository.findAllActive().stream()
+            List<Long> validVesselTypePoids = vesselTypeRepository.findAll().stream()
                     .map(VesselType::getVesselTypePoid)
                     .toList();
             for (String vesselTypePoid : dto.getPortCallApplVesselType()) {
@@ -326,7 +326,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         }
 
         if (dto.getPortCallApplVesselType() != null && !dto.getPortCallApplVesselType().isEmpty()) {
-            List<Long> validVesselTypePoids = vesselTypeRepository.findAllActive().stream()
+            List<Long> validVesselTypePoids = vesselTypeRepository.findAll().stream()
                     .map(VesselType::getVesselTypePoid)
                     .toList();
             for (String vesselTypePoid : dto.getPortCallApplVesselType()) {
@@ -456,7 +456,8 @@ public class PortCallReportServiceImpl implements PortCallReportService {
         if (portActivityLov != null && portActivityLov.getItems() != null) {
             Map<Long, LovItem> lovMap = portActivityLov.getItems().stream()
                     .collect(Collectors.toMap(LovItem::getPoid, item -> item));
-            activities.forEach(activity -> activity.setPortActivityDet(lovMap.get(activity.getPortActivityTypePoid())));
+            if (activities != null && !activities.isEmpty())
+                activities.forEach(activity -> activity.setPortActivityDet(lovMap.get(activity.getPortActivityTypePoid())));
         }
 
         return activities;

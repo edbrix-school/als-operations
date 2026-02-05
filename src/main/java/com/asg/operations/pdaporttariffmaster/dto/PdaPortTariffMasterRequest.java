@@ -1,6 +1,7 @@
 package com.asg.operations.pdaporttariffmaster.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -15,8 +16,7 @@ import java.util.List;
 @Setter
 public class PdaPortTariffMasterRequest {
 
-    @NotNull(message = "Port must be selected")
-    @NotEmpty(message = "Port cannot be empty")
+    @NotBlank(message = "Port is required")
     private String port; // Port POID as string
 
     @NotNull(message = "At least one vessel type must be selected")

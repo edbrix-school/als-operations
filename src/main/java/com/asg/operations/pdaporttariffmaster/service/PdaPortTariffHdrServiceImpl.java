@@ -74,7 +74,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
 
         String operator = documentSearchService.resolveOperator(filterRequestDto);
         String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
-        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto, "TRANSACTION_DATE", periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
                 "DOC_REF",
@@ -449,10 +449,10 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     private void createChargeDetail(PdaPortTariffHdr tariffHdr, PdaPortTariffChargeDetailRequest chargeRequest, String currentUser) {
-        if (!shipChargeMasterRepository.existsByChargePoidAndActiveIgnoreCaseAndDeletedIgnoreCase(chargeRequest.getChargePoid(), "Y", "N")) {
+        if (!shipChargeMasterRepository.existsByChargePoid(chargeRequest.getChargePoid())) {
             throw new ResourceNotFoundException("Charge Master", "Charge Poid", chargeRequest.getChargePoid());
         }
-        if (!pdaRateTypeMasterRepository.existsByRateTypePoidAndDeletedIgnoreCase(chargeRequest.getRateTypePoid(), "N")) {
+        if (!pdaRateTypeMasterRepository.existsByRateTypePoid(chargeRequest.getRateTypePoid())) {
             throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
         }
 
@@ -515,10 +515,10 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         int seqNo = 1;
         for (PdaPortTariffChargeDetailRequest chargeRequest : chargeDetails) {
 
-            if (!shipChargeMasterRepository.existsByChargePoidAndActiveIgnoreCaseAndDeletedIgnoreCase(chargeRequest.getChargePoid(), "Y", "N")) {
+            if (!shipChargeMasterRepository.existsByChargePoid(chargeRequest.getChargePoid())) {
                 throw new ResourceNotFoundException("Charge Master", "Charge Poid", chargeRequest.getChargePoid());
             }
-            if (!pdaRateTypeMasterRepository.existsByRateTypePoidAndDeletedIgnoreCase(chargeRequest.getRateTypePoid(), "N")) {
+            if (!pdaRateTypeMasterRepository.existsByRateTypePoid(chargeRequest.getRateTypePoid())) {
                 throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
             }
 
@@ -585,9 +585,6 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     private void validateCreateRequest(PdaPortTariffMasterRequest request, Long groupPoid) {
-        if (request.getPort() == null || request.getPort().trim().isEmpty()) {
-            throw new ValidationException("Port cannot be empty");
-        }
         if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(request.getPort())), BigDecimal.valueOf(groupPoid))) {
             throw new ResourceNotFoundException("Port", "Port Poid", request.getPort());
         }
@@ -599,9 +596,6 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     private void validateUpdateRequest(PdaPortTariffMasterRequest request, Long groupPoid) {
-        if (request.getPort() == null || request.getPort().trim().isEmpty()) {
-            throw new ValidationException("Port cannot be empty");
-        }
         if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(request.getPort())), BigDecimal.valueOf(groupPoid))) {
             throw new ResourceNotFoundException("Port", "Port Poid", request.getPort());
         }
