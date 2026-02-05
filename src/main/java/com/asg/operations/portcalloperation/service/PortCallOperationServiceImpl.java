@@ -274,7 +274,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             if (dtl.getEmailPoid() != null) {
                 docsMsgsDtl1Repository.findByEmailPoid(dtl.getEmailPoid())
                         .ifPresent(emailRecord -> {
-                            builder.sentStatus(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).typeOfRemarks(emailRecord.getEmailRemarks()).details(emailRecord.getEmailContent());
+                            builder.sentStatus(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).details(emailRecord.getEmailRemarks());
                         });
             }
 
@@ -481,7 +481,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .portOfCallPoid(dto.getPortOfCallPoid())
                 .specialInstructions(dto.getSpecialInstructions())
                 .termsConditions(dto.getTermsConditions())
-                .pcInfoAttachments(dto.getPcInfoAttachments())
                 .createdBy(UserContext.getUserId())
                 .createdDate(LocalDateTime.now())
                 .lastModifiedBy(UserContext.getUserId())
@@ -577,7 +576,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .detRowId(nextDetRowId++)
                             .eta(detailDto.getEta())
                             .etb(detailDto.getEtb())
-                            .berthingAttachments(detailDto.getBerthingAttachments())
                             .emailPoid(detailDto.getEmailPoid())
                             .createdBy(UserContext.getUserId())
                             .createdDate(LocalDateTime.now())
@@ -601,7 +599,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .preActivityDtlPoid(detailDto.getPreActivityDtlPoid())
                             .eta(detailDto.getEta())
                             .etb(detailDto.getEtb())
-                            .preArrivalAttachments(detailDto.getPreArrivalAttachments())
                             .emailPoid(detailDto.getEmailPoid())
                             .createdBy(UserContext.getUserId())
                             .createdDate(LocalDateTime.now())
@@ -785,7 +782,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .crewPptNumber(detailDto.getCrewPptNumber())
                             .crewSeamanNo(detailDto.getCrewSeamanNo())
                             .crewRank(detailDto.getCrewRank())
-                            .crewAttachments(detailDto.getCrewAttachments())
                             .createdBy(UserContext.getUserId())
                             .createdDate(LocalDateTime.now())
                             .lastModifiedBy(UserContext.getUserId())
@@ -815,7 +811,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .currencyCode(detailDto.getCurrencyCode())
                             .totalPrice(detailDto.getTotalPrice())
                             .adjustedPrice(detailDto.getAdjustedPrice())
-                            .arrngmntAttachments(detailDto.getArrngmntAttachments())
                             .requestedBy(detailDto.getRequestedBy())
                             .paymentMode(detailDto.getPaymentMode())
                             .createdBy(UserContext.getUserId())
@@ -840,7 +835,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .documentFrom(detailDto.getDocumentFrom())
                             .documentList(detailDto.getDocumentList())
                             .documentSelect(detailDto.getDocumentSelect())
-                            .documentAttachments(detailDto.getDocumentAttachments())
                             .createdBy(UserContext.getUserId())
                             .createdDate(LocalDateTime.now())
                             .lastModifiedBy(UserContext.getUserId())
@@ -912,7 +906,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         hdr.setSpecialInstructions(dto.getSpecialInstructions());
         hdr.setTermsConditions(dto.getTermsConditions());
-        hdr.setPcInfoAttachments(dto.getPcInfoAttachments());
 
         hdr.setPdaRefPoid(dto.getPdaRefPoid());
         hdr.setFdaRefPoid(dto.getFdaRefPoid());
@@ -1091,7 +1084,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .detRowId(nextDetRowId)
                             .eta(detailDto.getEta())
                             .etb(detailDto.getEtb())
-                            .berthingAttachments(detailDto.getBerthingAttachments())
                             .emailPoid(detailDto.getEmailPoid())
                             .createdBy(UserContext.getUserId())
                             .createdDate(LocalDateTime.now())
@@ -1107,7 +1099,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setEta(detailDto.getEta());
                                 existing.setEtb(detailDto.getEtb());
-                                existing.setBerthingAttachments(detailDto.getBerthingAttachments());
                                 existing.setEmailPoid(detailDto.getEmailPoid());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
@@ -1139,7 +1130,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .preActivityDtlPoid(detailDto.getPreActivityDtlPoid())
                             .eta(detailDto.getEta())
                             .etb(detailDto.getEtb())
-                            .preArrivalAttachments(detailDto.getPreArrivalAttachments())
                             .emailPoid(detailDto.getEmailPoid())
                             .createdBy(userId).build());
                     String logDetail = String.format("Row Created on [Port Call Operation Est Prearrival Details] with detRowId: %s", saved.getDetRowId());
@@ -1152,7 +1142,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setPreActivityDtlPoid(detailDto.getPreActivityDtlPoid());
                                 existing.setEta(detailDto.getEta());
                                 existing.setEtb(detailDto.getEtb());
-                                existing.setPreArrivalAttachments(detailDto.getPreArrivalAttachments());
                                 existing.setEmailPoid(detailDto.getEmailPoid());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
@@ -1489,7 +1478,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .crewPptNumber(detailDto.getCrewPptNumber())
                             .crewSeamanNo(detailDto.getCrewSeamanNo())
                             .crewRank(detailDto.getCrewRank())
-                            .crewAttachments(detailDto.getCrewAttachments())
                             .createdBy(UserContext.getUserId())
                             .createdDate(LocalDateTime.now())
                             .lastModifiedBy(UserContext.getUserId())
@@ -1508,7 +1496,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setCrewPptNumber(detailDto.getCrewPptNumber());
                                 existing.setCrewSeamanNo(detailDto.getCrewSeamanNo());
                                 existing.setCrewRank(detailDto.getCrewRank());
-                                existing.setCrewAttachments(detailDto.getCrewAttachments());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
                                 existing = husbandryCrewDtlRepository.save(existing);
@@ -1544,7 +1531,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .currencyCode(detailDto.getCurrencyCode())
                             .totalPrice(detailDto.getTotalPrice())
                             .adjustedPrice(detailDto.getAdjustedPrice())
-                            .arrngmntAttachments(detailDto.getArrngmntAttachments())
                             .requestedBy(detailDto.getRequestedBy())
                             .paymentMode(detailDto.getPaymentMode())
                             .createdBy(UserContext.getUserId())
@@ -1569,7 +1555,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setCurrencyCode(detailDto.getCurrencyCode());
                                 existing.setTotalPrice(detailDto.getTotalPrice());
                                 existing.setAdjustedPrice(detailDto.getAdjustedPrice());
-                                existing.setArrngmntAttachments(detailDto.getArrngmntAttachments());
                                 existing.setRequestedBy(detailDto.getRequestedBy());
                                 existing.setPaymentMode(detailDto.getPaymentMode());
                                 existing.setLastModifiedBy(userId);
@@ -1595,7 +1580,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .documentFrom(detailDto.getDocumentFrom())
                             .documentList(detailDto.getDocumentList())
                             .documentSelect(detailDto.getDocumentSelect())
-                            .documentAttachments(detailDto.getDocumentAttachments())
                             .createdBy(UserContext.getUserId())
                             .createdDate(LocalDateTime.now())
                             .lastModifiedBy(UserContext.getUserId())
@@ -1611,7 +1595,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setDocumentFrom(detailDto.getDocumentFrom());
                                 existing.setDocumentList(detailDto.getDocumentList());
                                 existing.setDocumentSelect(detailDto.getDocumentSelect());
-                                existing.setDocumentAttachments(detailDto.getDocumentAttachments());
                                 existing.setLastModifiedBy(userId);
                                 existing.setLastModifiedDate(LocalDateTime.now());
                                 existing = docsCopyDtlRepository.save(existing);
