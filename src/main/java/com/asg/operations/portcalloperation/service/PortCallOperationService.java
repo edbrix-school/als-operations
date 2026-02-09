@@ -41,9 +41,9 @@ public interface PortCallOperationService {
     // EstBertDtl CRUD operations
     PortCallOperationEstBertDetailResponseDto getEstBertDetail(Long transactionPoid, Long detRowId);
 
-    PortCallOperationResponseDto createEstBertDetail(Long transactionPoid, PortCallOperationEstBertDetailRequestDto dto);
+    PortCallOperationEstBertDetailResponseDto createEstBertDetail(Long transactionPoid, PortCallOperationEstBertDetailRequestDto dto);
 
-    PortCallOperationResponseDto updateEstBertDetail(Long transactionPoid, Long detRowId, PortCallOperationEstBertDetailRequestDto dto);
+    PortCallOperationEstBertDetailResponseDto updateEstBertDetail(Long transactionPoid, Long detRowId, PortCallOperationEstBertDetailRequestDto dto);
 
     // EstPrearrivalActDtl CRUD operations
     Map<String, Object>  listEstPrearrivalActDetails(Long transactionPoid);
@@ -62,8 +62,8 @@ public interface PortCallOperationService {
     // DocsCopyDtl CRUD operations
     PortCallOperationDocsCopyDetailResponseDto getDocsCopyDetail(Long transactionPoid, Long detRowId);
 
-    PortCallOperationResponseDto createDocsCopyDetail(Long transactionPoid, PortCallOperationDocsCopyDetailRequestDto dto);
+    PortCallOperationDocsCopyDetailResponseDto createDocsCopyDetail(Long transactionPoid, PortCallOperationDocsCopyDetailRequestDto dto);
 
-    PortCallOperationResponseDto updateDocsCopyDetail(Long transactionPoid, Long detRowId, PortCallOperationDocsCopyDetailRequestDto dto);
+    PortCallOperationDocsCopyDetailResponseDto updateDocsCopyDetail(Long transactionPoid, Long detRowId, PortCallOperationDocsCopyDetailRequestDto dto);
 
 }

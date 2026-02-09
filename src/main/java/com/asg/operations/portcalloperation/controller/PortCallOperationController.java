@@ -274,7 +274,7 @@ public class PortCallOperationController {
     )
     public ResponseEntity<?> createEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                  @Valid @RequestBody PortCallOperationEstBertDetailRequestDto dto) {
-        PortCallOperationResponseDto result = portCallOperationService.createEstBertDetail(transactionPoid, dto);
+        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.createEstBertDetail(transactionPoid, dto);
         return success("EstBertDetail created successfully", result);
     }
 
@@ -288,7 +288,7 @@ public class PortCallOperationController {
     public ResponseEntity<?> updateEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                  @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
                                                  @Valid @RequestBody PortCallOperationEstBertDetailRequestDto dto) {
-        PortCallOperationResponseDto result = portCallOperationService.updateEstBertDetail(transactionPoid, detRowId, dto);
+        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.updateEstBertDetail(transactionPoid, detRowId, dto);
         return success("EstBertDetail updated successfully", result);
     }
 
@@ -332,7 +332,6 @@ public class PortCallOperationController {
                                                           @Parameter(description = "Pre Activity Detail POID") @PathVariable Long preActivityDtlPoid,
                                                           @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
         PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, preActivityDtlPoid, dto);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstPrearrivalActDetail updated successfully", result);
     }
 
@@ -377,7 +376,6 @@ public class PortCallOperationController {
                                                           @Parameter(description = "Actuals Timing Detail POID") @PathVariable Long actualsTimingDtlPoid,
                                                           @Valid @RequestBody PortCallOperationActTimingsActivityDetailDto dto) {
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetail updated successfully", result);
     }
 
@@ -404,7 +402,7 @@ public class PortCallOperationController {
     )
     public ResponseEntity<?> createDocsCopyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                   @Valid @RequestBody PortCallOperationDocsCopyDetailRequestDto dto) {
-        PortCallOperationResponseDto result = portCallOperationService.createDocsCopyDetail(transactionPoid, dto);
+        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.createDocsCopyDetail(transactionPoid, dto);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("DocsCopyDetail created successfully", result);
     }
@@ -419,8 +417,7 @@ public class PortCallOperationController {
     public ResponseEntity<?> updateDocsCopyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                   @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
                                                   @Valid @RequestBody PortCallOperationDocsCopyDetailRequestDto dto) {
-        PortCallOperationResponseDto result = portCallOperationService.updateDocsCopyDetail(transactionPoid, detRowId, dto);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.MODIFIED, UserContext.getDocumentId(), transactionPoid.toString());
+        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.updateDocsCopyDetail(transactionPoid, detRowId, dto);
         return success("DocsCopyDetail updated successfully", result);
     }
 
