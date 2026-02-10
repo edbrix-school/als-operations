@@ -18,12 +18,14 @@ import java.util.List;
 @Table(name = "PDA_ENTRY_HDR")
 public class PdaEntryHdr {
 
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pda_entry_hdr_seq")
     @SequenceGenerator(name = "pda_entry_hdr_seq", sequenceName = "PDA_ENTRY_HDR_SEQ", allocationSize = 1)
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
 
+    @AuditIgnore
     @Column(name = "TRANSACTION_DATE", nullable = false)
     @NotNull
     private LocalDate transactionDate;

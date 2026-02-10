@@ -22,6 +22,7 @@ import java.util.List;
 @Table(name = "PDA_PORT_TARIFF_HDR")
 public class PdaPortTariffHdr {
 
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pda_port_tariff_hdr_seq")
     @SequenceGenerator(name = "pda_port_tariff_hdr_seq", sequenceName = "PDA_PORT_TARIFF_HDR_SEQ", allocationSize = 1)

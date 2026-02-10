@@ -18,6 +18,7 @@ public class SalesSalesmanMaster {
     @Column(name = "SALESMAN_POID", nullable = false)
     private Long salesmanPoid;
 
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 

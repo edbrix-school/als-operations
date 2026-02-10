@@ -387,6 +387,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 chargeId.setDetRowId(chargeRequest.getDetRowId());
                 slabDtlRepository.deleteByTransactionPoidAndChargeDetRowId(tariffHdr.getTransactionPoid(), chargeRequest.getDetRowId());
                 chargeDtlRepository.deleteById(chargeId);
+                String logDetail = String.format("Row Deleted on [PDA Port Tariff Master Charge Details] with detRowId: %s", chargeRequest.getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(),tariffHdr.getTransactionPoid().toString(),logDetail);
             }
         }
     }
@@ -434,6 +436,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 slabId.setChargeDetRowId(chargeDetRowId);
                 slabId.setDetRowId(slabRequest.getDetRowId());
                 slabDtlRepository.deleteById(slabId);
+                String logDetail = String.format("Row Deleted on [PDA Port Tariff Master Slab Details] with detRowId: %s", slabId.getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(),slabId.getTransactionPoid().toString(),logDetail);
             }
         }
     }
@@ -476,6 +480,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 createSlabDetail(tariffHdr.getTransactionPoid(), savedChargeDtl.getId().getDetRowId(), slabRequest, currentUser);
             }
         }
+        String logDetail = String.format("Row Created on [PDA Port Tariff Master Charge Details] with detRowId: %s", savedChargeDtl.getId().getDetRowId());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(),tariffHdr.getTransactionPoid().toString(),logDetail);
     }
 
     private void createSlabDetail(Long transactionPoid, Long chargeDetRowId, PdaPortTariffSlabDetailRequest slabRequest, String currentUser) {
@@ -503,6 +509,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         slabDtl.setLastModifiedDate(LocalDateTime.now());
 
         slabDtlRepository.save(slabDtl);
+        String logDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", slabRequest.getDetRowId());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(),slabId.getTransactionPoid().toString(),logDetail);
     }
 
     private void saveChargeDetails(PdaPortTariffHdr tariffHdr, List<PdaPortTariffChargeDetailRequest> chargeDetails, String currentUser) {

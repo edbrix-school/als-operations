@@ -27,17 +27,18 @@ import java.time.LocalDateTime;
 )
 public class PdaRoRoEntryHdr {
 
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID", nullable = false, updatable = false)
     private Long transactionPoid;
-   @AuditIgnore
+    @AuditIgnore
     @Column(name = "TRANSACTION_DATE", nullable = false)
     private LocalDate transactionDate;
     @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
-     @AuditIgnore
+    @AuditIgnore
     @Column(name = "DOC_REF", updatable = false)
     private String docRef;
     @AuditIgnore
@@ -49,7 +50,7 @@ public class PdaRoRoEntryHdr {
     @AuditIgnore
     @Column(name = "VESSEL_NAME", length = 300)
     private String vesselName;
-   @AuditIgnore
+    @AuditIgnore
     @Column(name = "VOYAGE_NO", length = 100)
     private String voyageNo;
 

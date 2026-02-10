@@ -11,11 +11,13 @@ import java.time.LocalDateTime;
 @IdClass(PdaEntryTdrDetailId.class)
 public class PdaEntryTdrDetail {
 
+    @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID", nullable = false)
     @NotNull
     private Long transactionPoid;
 
+    @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID", nullable = false)
     @NotNull
