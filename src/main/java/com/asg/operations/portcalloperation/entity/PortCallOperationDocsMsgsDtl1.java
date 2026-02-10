@@ -61,7 +61,7 @@ public class PortCallOperationDocsMsgsDtl1 {
     @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-@AuditIgnore
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 

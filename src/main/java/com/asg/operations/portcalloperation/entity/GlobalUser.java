@@ -6,15 +6,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
 @Table(
-    name = "GLOBAL_USERS",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "GLOBAL_USERS_UK_USERID", columnNames = "USER_ID")
-    }
+        name = "GLOBAL_USERS",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "GLOBAL_USERS_UK_USERID", columnNames = "USER_ID")
+        }
 )
 @Getter
 @Setter
@@ -64,7 +65,7 @@ public class GlobalUser {
     @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-@AuditIgnore
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
     @AuditIgnore

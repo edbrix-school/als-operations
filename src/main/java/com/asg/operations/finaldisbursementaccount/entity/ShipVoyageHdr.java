@@ -20,6 +20,7 @@ import java.util.Date;
 )
 public class ShipVoyageHdr {
 
+    @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;

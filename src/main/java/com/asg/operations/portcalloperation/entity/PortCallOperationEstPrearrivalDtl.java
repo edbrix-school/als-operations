@@ -20,10 +20,12 @@ import java.time.LocalDateTime;
 @IdClass(PortCallOperationEstPrearrivalDtlId.class)
 public class PortCallOperationEstPrearrivalDtl {
 
+    @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
 
+    @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID")
     private Long detRowId;

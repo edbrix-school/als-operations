@@ -15,11 +15,13 @@ import java.time.LocalDateTime;
 @Table(name = "PDA_FDA_HDR")
 public class PdaFdaHdr {
 
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID", nullable = false)
     private Long transactionPoid;
 
+    @AuditIgnore
     @Column(name = "TRANSACTION_DATE", nullable = false)
     private LocalDate transactionDate;
     @AuditIgnore

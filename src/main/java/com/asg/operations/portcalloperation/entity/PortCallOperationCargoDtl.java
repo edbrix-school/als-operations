@@ -21,10 +21,12 @@ import java.time.LocalDateTime;
 @IdClass(PortCallOperationCargoDtlId.class)
 public class PortCallOperationCargoDtl {
 
+    @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
 
+    @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID")
     private Long detRowId;
@@ -58,16 +60,20 @@ public class PortCallOperationCargoDtl {
 
     @Column(name = "RECEIVER", length = 300)
     private String receiver;
+
     @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
 
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 

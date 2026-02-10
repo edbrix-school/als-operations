@@ -1,5 +1,6 @@
 package com.asg.operations.user.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +23,7 @@ public class User {
     @Column(name = "USER_POID", nullable = false)
     private Long userPoid;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID", nullable = false)
     private Long groupPoid;
 
@@ -67,6 +69,7 @@ public class User {
     @Column(name = "SEQNO")
     private Integer seqno;
 
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private Timestamp createdDate;
 
@@ -76,12 +79,15 @@ public class User {
     @Column(name = "ALLOW_OFFICE365_LOGIN", length = 1)
     private String authenticationMethod = "N";
 
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
 }
