@@ -92,6 +92,9 @@
 	<parameter name="DOC_ID" class="java.lang.String">
 		<defaultValueExpression><![CDATA["000-000"]]></defaultValueExpression>
 	</parameter>
+	<parameter name="LOGIN_DIV_POID" class="java.lang.String">
+		<defaultValueExpression><![CDATA["1"]]></defaultValueExpression>
+	</parameter>
 	<parameter name="DOC_KEY_POID" class="java.lang.String"/>
 	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
 		<defaultValueExpression><![CDATA[""]]></defaultValueExpression>
@@ -202,13 +205,12 @@ WHERE PEH.TRANSACTION_POID=$P{DOC_KEY_POID}]]>
 		<band height="83" splitType="Stretch">
 			<subreport>
 				<reportElement x="0" y="0" width="555" height="66" uuid="11dd97b8-4c92-45fe-85bb-3b9358474446">
-					<printWhenExpression><![CDATA[$P{SUB_HEADER} != null]]></printWhenExpression>
 				</reportElement>
+				<subreportParameter name="LOGIN_DIV_POID">
+					<subreportParameterExpression><![CDATA[$P{LOGIN_DIV_POID}]]></subreportParameterExpression>
+				</subreportParameter>
 				<subreportParameter name="LOGIN_COMP_POID">
 					<subreportParameterExpression><![CDATA[$P{LOGIN_COMP_POID}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="LOGIN_DIV_POID">
-					<subreportParameterExpression><![CDATA["581"]]></subreportParameterExpression>
 				</subreportParameter>
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA[$P{SUB_HEADER}]]></subreportExpression>
