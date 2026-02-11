@@ -3,8 +3,10 @@ package com.asg.operations.salesquotationprojects.controller;
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.dto.excel.ExcelFileData;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.ExcelExportService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
@@ -12,10 +14,13 @@ import com.asg.operations.salesquotationprojects.dto.AddressDetailsDto;
 import com.asg.operations.salesquotationprojects.dto.SalesQuoteProjectsRequest;
 import com.asg.operations.salesquotationprojects.dto.SalesQuoteProjectsResponse;
 import com.asg.operations.salesquotationprojects.service.SalesQuoteProjectsService;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +37,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 
+import static com.asg.common.lib.dto.response.ApiResponse.error;
 import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @Slf4j
@@ -43,6 +49,7 @@ public class SalesQuoteProjectsController {
 
     private final SalesQuoteProjectsService salesQuoteProjectsService;
     private final LoggingService loggingService;
+    private final ExcelExportService excelExportService;
 
     @Operation(summary = "Get all Sales Quote Projects", description = "Returns paginated list of Sales Quote Projects with optional filters. Supports pagination with page and size parameters.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Sales Quote Projects list fetched successfully", content = @Content(schema = @Schema(implementation = Page.class)))
@@ -141,5 +148,22 @@ public class SalesQuoteProjectsController {
 
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), addressPoid.toString());
         return ApiResponse.success("Sales Quote Project retrieved successfully", response);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.PRINT)
+    @Operation(summary = "Generate Excel for Sales Quotation Projects Charge Details")
+    @GetMapping("/excel/{transactionPoid}")
+    public ResponseEntity<?> exportSalesQuotationProjectsChargeDetailsExcel(@Parameter(description = "Transaction POID", example = "539")
+                                                                            @PathVariable Long transactionPoid) {
+        try {
+            ExcelFileData data = excelExportService.generateExcel("140-100", String.valueOf(transactionPoid), null, "Sales Quotation Projects Charge Details.xlsx");
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + data.getFileName())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(data.getContent());
+        } catch (Exception e) {
+            log.error("Failed to generate Excel", e);
+            return error("Failed to generate Excel: " + e.getMessage(), 500);
+        }
     }
 }
