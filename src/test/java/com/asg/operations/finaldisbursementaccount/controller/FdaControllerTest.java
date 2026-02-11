@@ -72,10 +72,11 @@ class FdaControllerTest {
 
     @Test
     void createFda_ShouldCreateAndReturnFda() throws Exception {
-        FdaHeaderDto requestDto = new FdaHeaderDto();
+        CreateFdaHeaderRequest requestDto = new CreateFdaHeaderRequest();
+        requestDto.setTransactionDate(java.time.LocalDate.now());
         requestDto.setPrincipalPoid(1L);
         requestDto.setSalesmanPoid(1L);
-        requestDto.setPortPoid(1L);
+        requestDto.setNominatedPartyPoid(1L);
         requestDto.setGrt(BigDecimal.valueOf(1000));
 
         FdaHeaderDto responseDto = new FdaHeaderDto();
@@ -86,7 +87,7 @@ class FdaControllerTest {
             mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
             mockedUserContext.when(UserContext::getUserId).thenReturn("user1");
 
-            when(fdaService.createFdaHeader(any(FdaHeaderDto.class), eq(1L), eq(100L), eq("user1")))
+            when(fdaService.createFdaHeader(any(CreateFdaHeaderRequest.class), eq(1L), eq(100L), eq("user1")))
                     .thenReturn(responseDto);
 
             mockMvc.perform(post("/v1/fdas")

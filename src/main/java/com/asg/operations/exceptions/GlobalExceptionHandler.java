@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -19,7 +18,9 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.dao.DataAccessException;
 
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -170,6 +171,75 @@ public class GlobalExceptionHandler {
                 ex.getMessage()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Handles Oracle trigger errors (ORA-20001, ORA-20002) from database triggers
+     * These errors are thrown by PDA_FDA_HDR_GTTRG trigger for financial/transaction period validations
+     */
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<?> handleDataAccessException(DataAccessException ex, HttpServletRequest request) {
+        Throwable rootCause = ex.getRootCause();
+        
+        if (rootCause instanceof SQLException sqlEx) {
+            int errorCode = sqlEx.getErrorCode();
+            String message = sqlEx.getMessage();
+            
+            // ORA-20001: Financial period validation error
+            if (errorCode == 20001) {
+                String userMessage = extractUserMessage(message, 
+                    "Changes allowed only within current Financial Period. Please select a date within the allowed financial period.");
+                log.warn("Financial period validation error at {}: {}", request.getRequestURI(), message);
+                return ApiResponse.error(userMessage, 422);
+            }
+            
+            // ORA-20002: Transaction period validation error
+            if (errorCode == 20002) {
+                String userMessage = extractUserMessage(message,
+                    "Transaction date validation failed. Please ensure the date is within the allowed transaction period.");
+                log.warn("Transaction period validation error at {}: {}", request.getRequestURI(), message);
+                return ApiResponse.error(userMessage, 422);
+            }
+        }
+        
+        // For other database errors, log and return generic error
+        log.error("DataAccessException at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+        return ApiResponse.error("Database operation failed. Please contact support if the issue persists.", 
+            HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    /**
+     * Extracts user-friendly message from Oracle error message
+     * Oracle error messages often contain technical details, we extract the meaningful part
+     */
+    private String extractUserMessage(String oracleMessage, String defaultMessage) {
+        if (StringUtils.isBlank(oracleMessage)) {
+            return defaultMessage;
+        }
+        
+        // Try to extract meaningful error text after "ERROR:" or similar patterns
+        String[] patterns = {
+            "ERROR:",
+            "error:",
+            "Error:"
+        };
+        
+        for (String pattern : patterns) {
+            int index = oracleMessage.indexOf(pattern);
+            if (index >= 0) {
+                String extracted = oracleMessage.substring(index + pattern.length()).trim();
+                // Remove trailing technical details if present
+                if (extracted.contains("\n") || extracted.contains("\r")) {
+                    extracted = extracted.split("[\n\r]")[0].trim();
+                }
+                if (StringUtils.isNotBlank(extracted)) {
+                    return extracted;
+                }
+            }
+        }
+        
+        // If no pattern found, return default message
+        return defaultMessage;
     }
 
 
