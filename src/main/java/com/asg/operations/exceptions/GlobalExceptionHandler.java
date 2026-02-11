@@ -162,4 +162,15 @@ public class GlobalExceptionHandler {
 
         return ApiResponse.error("Validation error occurred", HttpStatus.BAD_REQUEST.value(), errors);
     }
+
+    @ExceptionHandler(com.asg.common.lib.exception.ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(com.asg.common.lib.exception.ValidationException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                "Validation Error",
+                ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+
 }
