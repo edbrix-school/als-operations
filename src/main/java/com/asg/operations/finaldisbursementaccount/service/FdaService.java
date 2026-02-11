@@ -3,10 +3,9 @@ package com.asg.operations.finaldisbursementaccount.service;
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.common.PageResponse;
-//import org.springframework.core.io.Resource;
+import com.asg.operations.finaldisbursementaccount.dto.CreateFdaHeaderRequest;
 import com.asg.operations.finaldisbursementaccount.dto.*;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
@@ -17,7 +16,7 @@ public interface FdaService {
 
     FdaHeaderDto getFdaHeader(Long fdaPoid, Long groupPoid, Long companyPoid);
 
-    FdaHeaderDto createFdaHeader(FdaHeaderDto dto, Long groupPoid, Long companyPoid, String userId);
+    FdaHeaderDto createFdaHeader(CreateFdaHeaderRequest dto, Long groupPoid, Long companyPoid, String userId);
 
     FdaHeaderDto updateFdaHeader(Long fdaPoid, UpdateFdaHeaderRequest dto, Long groupPoid, Long companyPoid, String userId);
 

@@ -7,6 +7,7 @@ import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.common.PageResponse;
+import com.asg.operations.finaldisbursementaccount.dto.CreateFdaHeaderRequest;
 import com.asg.operations.finaldisbursementaccount.dto.*;
 import com.asg.operations.finaldisbursementaccount.service.FdaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,13 +30,7 @@ import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.Map;
-//import org.springframework.core.io.Resource;
-//import org.springframework.http.HttpHeaders;
-//import org.springframework.http.MediaType;
-//import io.swagger.v3.oas.annotations.media.Content;
-//import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
@@ -95,7 +90,7 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid FDA data")
     })
     public ResponseEntity<?> createFda(
-            @Parameter(description = "FDA header data", required = true) @Valid @RequestBody FdaHeaderDto dto
+            @Parameter(description = "FDA header data", required = true) @Valid @RequestBody CreateFdaHeaderRequest dto
     ) {
         return ApiResponse.success("FDA created successfully", fdaService.createFdaHeader(dto, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId()));
     }
