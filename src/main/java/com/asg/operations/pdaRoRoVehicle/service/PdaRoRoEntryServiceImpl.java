@@ -391,7 +391,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                         "PDA Ro-Ro Entry not found with ID: " + transactionPoid));
         
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                .withSchemaName("PRODUCTION")
                 .withProcedureName("PROC_PDA_RORO_DTLS_CLEAR")
                 .declareParameters(
                         new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
@@ -414,7 +413,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
 
     private ExcelConfig getExcelConfig(String docId) {
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                .withSchemaName("PRODUCTION")
                 .withProcedureName("PROC_GLOB_EXCEL_IMPORT_SHEETS")
                 .declareParameters(
                         new SqlParameter("P_COMPANY_POID", Types.NUMERIC),

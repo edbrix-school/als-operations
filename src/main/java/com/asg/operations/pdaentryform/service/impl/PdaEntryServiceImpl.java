@@ -2653,7 +2653,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             logger.info("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - transactionPoid: {}", transactionPoid);
 
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                    .withSchemaName("PRODUCTION")
                     .withProcedureName("PROC_PDA_ACKNOW_DTLS_UPLOAD")
                     .withoutProcedureColumnMetaDataAccess()
                     .declareParameters(
@@ -3480,7 +3479,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private ExcelConfig getExcelConfig(String docId) {
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                .withSchemaName("PRODUCTION")
                 .withProcedureName("PROC_GLOB_EXCEL_IMPORT_SHEETS")
                 .declareParameters(
                         new SqlParameter("P_COMPANY_POID", Types.NUMERIC),
