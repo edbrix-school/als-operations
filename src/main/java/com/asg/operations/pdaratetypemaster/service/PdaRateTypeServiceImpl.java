@@ -11,32 +11,27 @@ import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.utility.PaginationUtil;
 import jakarta.validation.Valid;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import com.asg.operations.common.Util.FormulaValidator;
-import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaratetypemaster.dto.*;
 import com.asg.operations.pdaratetypemaster.util.PdaRateTypeMapper;
 import com.asg.operations.pdaratetypemaster.repository.PdaRateTypeRepository;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.pdaratetypemaster.entity.PdaRateTypeMaster;
-import jakarta.persistence.EntityManager;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -46,8 +41,6 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     private final PdaRateTypeRepository repository;
     private final PdaRateTypeMapper mapper;
     private final FormulaValidator formulaValidator;
-    private final EntityManager entityManager;
-    private final LovService lovService;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
@@ -59,7 +52,7 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
 
         String operator = documentSearchService.resolveOperator(filterRequestDto);
         String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
-        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto, "TRANSACTION_DATE", periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
                 "RATE_TYPE_CODE",
@@ -160,9 +153,11 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
 
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        String normalizedCode = request.getRateTypeCode() != null
-                ? request.getRateTypeCode().trim().toUpperCase()
-                : null;
+        String normalizedCode = StringUtils.isNotBlank(request.getRateTypeCode()) ? request.getRateTypeCode().trim().toUpperCase() : null;
+
+        if (StringUtils.isNotBlank(normalizedCode) && normalizedCode.contains(" ")) {
+            throw new ValidationException("Rate type code must not contain spaces");
+        }
 
         if (repository.existsByRateTypeCodeAndGroupPoid(normalizedCode, groupPoidBD)) {
             throw new ValidationException("Rate type code already exists: " + normalizedCode);
