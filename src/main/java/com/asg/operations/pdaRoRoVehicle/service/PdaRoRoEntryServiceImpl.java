@@ -1,6 +1,7 @@
 package com.asg.operations.pdaRoRoVehicle.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.exception.ValidationException;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
@@ -302,11 +303,9 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         List<PdaRoRoVehicleDtlResponseDto> vehicleDetails = (List<PdaRoRoVehicleDtlResponseDto>) result.get("OUTDATA");
 
         if (status != null && (status.contains("ERROR") || status.contains("WARNING"))) {
-            return PdaRoroVehicleUploadResponse.builder()
-                    .status(status)
-                    .vehicleDetails(vehicleDetails)
-                    .build();
+            throw new ValidationException(status);
         }
+
 
         List<PdaRoRoVehicleDtlResponseDto> savedDetails = null;
         if (vehicleDetails != null && !vehicleDetails.isEmpty()) {
