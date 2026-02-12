@@ -14,7 +14,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class ShipCommodityMasterId implements Serializable {
 
-    @AuditIgnore
+
     @Column(name = "COMODITY_POID")
     private Long commodityPoid;
 
