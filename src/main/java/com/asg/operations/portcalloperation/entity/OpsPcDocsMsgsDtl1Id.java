@@ -1,5 +1,6 @@
 package com.asg.operations.portcalloperation.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import lombok.*;
 
 import jakarta.persistence.Column;
@@ -13,9 +14,11 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class OpsPcDocsMsgsDtl1Id implements Serializable {
 
+    @AuditIgnore
     @Column(name = "TRANSACTION_POID", nullable = false)
     private Long transactionPoid;
 
+    @AuditIgnore
     @Column(name = "DET_ROW_ID")
     private Long detRowId;
 

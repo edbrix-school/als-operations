@@ -40,6 +40,7 @@ public class TermsTemplateEntity {
     @Column(name = "SEQNO")
     private Long seqNo;
 
+    @AuditIgnore
     @Column(name = "DELETED")
     private String deleted;
 

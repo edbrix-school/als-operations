@@ -22,6 +22,7 @@ public class ShipPrincipalPaRptDtl {
     @Column(name = "PRINCIPAL_POID")
     private Long principalPoid;
 
+    @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID")
     private Long detRowId;

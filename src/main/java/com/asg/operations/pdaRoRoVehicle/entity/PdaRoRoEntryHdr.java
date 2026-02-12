@@ -32,7 +32,7 @@ public class PdaRoRoEntryHdr {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID", nullable = false, updatable = false)
     private Long transactionPoid;
-    @AuditIgnore
+
     @Column(name = "TRANSACTION_DATE", nullable = false)
     private LocalDate transactionDate;
     @AuditIgnore
