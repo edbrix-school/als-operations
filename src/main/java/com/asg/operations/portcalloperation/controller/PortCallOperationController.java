@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -827,51 +828,40 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.PRINT)
     @Operation(summary = "Generate Excel for Husbandry Crew Details")
     @GetMapping("/excel/husbandryCrewDetails/{transactionPoid}")
-    public ResponseEntity<?> exportHusbandryCrewDetailsExcel(@Parameter(description = "Transaction POID", example = "476")
-                                                             @PathVariable Long transactionPoid) {
-        try {
-            ExcelFileData data = excelExportService.generateExcel("110-163-crew", String.valueOf(transactionPoid), null, "Husbandry Crew Details.xlsx");
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + data.getFileName())
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(data.getContent());
-        } catch (Exception e) {
-            log.error("Failed to generate Excel", e);
-            return error("Failed to generate Excel: " + e.getMessage(), 500);
-        }
+    public ResponseEntity<byte[]> exportHusbandryCrewDetailsExcel(@PathVariable Long transactionPoid) {
+
+        ExcelFileData data = excelExportService.generateExcel("110-163-crew", String.valueOf(transactionPoid), null, "Husbandry Crew Details.xlsx");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDisposition(ContentDisposition.builder("attachment").filename(data.getFileName()).build());
+
+        return ResponseEntity.ok().headers(headers).body(data.getContent());
     }
 
     @AllowedAction(UserRolesRightsEnum.PRINT)
     @Operation(summary = "Generate Excel for PDA Charge Details")
     @GetMapping("/excel/pda/{transactionPoid}")
-    public ResponseEntity<?> exportPdaDetailsExcel(@Parameter(description = "Transaction POID", example = "476")
-                                                   @PathVariable Long transactionPoid) {
-        try {
-            ExcelFileData data = excelExportService.generateExcel("110-163-pda", String.valueOf(transactionPoid), null, "PDA Charge Details.xlsx");
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + data.getFileName())
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(data.getContent());
-        } catch (Exception e) {
-            log.error("Failed to generate Excel", e);
-            return error("Failed to generate Excel: " + e.getMessage(), 500);
-        }
+    public ResponseEntity<byte[]> exportPdaDetailsExcel(@PathVariable Long transactionPoid) {
+
+        ExcelFileData data = excelExportService.generateExcel("110-163-pda", String.valueOf(transactionPoid), null, "PDA Charge Details.xlsx");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDisposition(ContentDisposition.builder("attachment").filename(data.getFileName()).build());
+
+        return ResponseEntity.ok().headers(headers).body(data.getContent());
     }
 
-    @AllowedAction(UserRolesRightsEnum.PRINT)
-    @Operation(summary = "Generate Excel for FDA Charge Details")
     @GetMapping("/excel/fda/{transactionPoid}")
-    public ResponseEntity<?> exportFdaDetailsExcel(@Parameter(description = "Transaction POID", example = "476")
-                                                   @PathVariable Long transactionPoid) {
-        try {
-            ExcelFileData data = excelExportService.generateExcel("110-163-fda", String.valueOf(transactionPoid), null, "FDA Charge Details.xlsx");
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + data.getFileName())
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(data.getContent());
-        } catch (Exception e) {
-            log.error("Failed to generate Excel", e);
-            return error("Failed to generate Excel: " + e.getMessage(), 500);
-        }
+    public ResponseEntity<byte[]> exportFdaDetailsExcel(@PathVariable Long transactionPoid) {
+
+        ExcelFileData data = excelExportService.generateExcel("110-163-fda", String.valueOf(transactionPoid), null, "FDA_Charge_Details.xlsx");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDisposition(ContentDisposition.builder("attachment").filename(data.getFileName()).build());
+
+        return ResponseEntity.ok().headers(headers).body(data.getContent());
     }
 }

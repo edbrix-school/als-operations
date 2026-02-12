@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -153,17 +154,14 @@ public class SalesQuoteProjectsController {
     @AllowedAction(UserRolesRightsEnum.PRINT)
     @Operation(summary = "Generate Excel for Sales Quotation Projects Charge Details")
     @GetMapping("/excel/{transactionPoid}")
-    public ResponseEntity<?> exportSalesQuotationProjectsChargeDetailsExcel(@Parameter(description = "Transaction POID", example = "539")
-                                                                            @PathVariable Long transactionPoid) {
-        try {
-            ExcelFileData data = excelExportService.generateExcel("140-100", String.valueOf(transactionPoid), null, "Sales Quotation Projects Charge Details.xlsx");
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + data.getFileName())
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(data.getContent());
-        } catch (Exception e) {
-            log.error("Failed to generate Excel", e);
-            return error("Failed to generate Excel: " + e.getMessage(), 500);
-        }
+    public ResponseEntity<?> exportSalesQuotationProjectsChargeDetailsExcel(@PathVariable Long transactionPoid) {
+
+        ExcelFileData data = excelExportService.generateExcel("140-100", String.valueOf(transactionPoid), null, "Sales Quotation Projects Charge Details.xlsx");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDisposition(ContentDisposition.builder("attachment").filename(data.getFileName()).build());
+
+        return ResponseEntity.ok().headers(headers).body(data.getContent());
     }
 }
