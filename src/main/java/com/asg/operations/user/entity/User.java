@@ -53,7 +53,7 @@ public class User {
 
     @Column(name = "ACTIVE", length = 1)
     private String active;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 

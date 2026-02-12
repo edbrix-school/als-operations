@@ -35,6 +35,7 @@ public class SalesQuoteProjectsHdr {
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", nullable = false, length = 25)
     private String docRef;
 

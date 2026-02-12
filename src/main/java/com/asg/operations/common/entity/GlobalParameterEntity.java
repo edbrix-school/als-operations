@@ -1,5 +1,6 @@
 package com.asg.operations.common.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +15,7 @@ public class GlobalParameterEntity {
     @Column(name = "PARAMETER_POID")
     private Long parameterPoid;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
 

@@ -41,6 +41,7 @@ public class Country {
     @Column(name = "SEQNO")
     private Integer seqNo;
 
+    @AuditIgnore
     @Column(name = "CREATED_BY")
     private String createdBy;
 

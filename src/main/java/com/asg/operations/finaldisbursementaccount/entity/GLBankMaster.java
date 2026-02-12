@@ -78,7 +78,7 @@ public class GLBankMaster {
     @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
     @AuditIgnore

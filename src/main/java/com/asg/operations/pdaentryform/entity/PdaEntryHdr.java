@@ -25,7 +25,6 @@ public class PdaEntryHdr {
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
 
-    @AuditIgnore
     @Column(name = "TRANSACTION_DATE", nullable = false)
     @NotNull
     private LocalDate transactionDate;
@@ -36,6 +35,7 @@ public class PdaEntryHdr {
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", unique = true, length = 25)
     @Size(max = 25)
     private String docRef;
