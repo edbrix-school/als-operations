@@ -23,6 +23,7 @@ public class PortCallReportDtl {
     @Column(name = "PORT_CALL_REPORT_POID")
     private Long portCallReportPoid;
 
+    @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID")
     private Long detRowId;

@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import lombok.*;
 
 import jakarta.persistence.*;
@@ -59,15 +60,19 @@ public class SalesCustomerMaster {
     @Column(name = "DELIVERY_TERMS", length = 100)
     private String deliveryTerms;
 
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
 
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 
@@ -86,6 +91,7 @@ public class SalesCustomerMaster {
     @Column(name = "CONTRACT_END")
     private LocalDate contractEnd;
 
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 

@@ -111,6 +111,7 @@ public class ShipLineMaster {
     @Temporal(TemporalType.DATE)
     private Date chamberOfCommerceExpiry;
 
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 

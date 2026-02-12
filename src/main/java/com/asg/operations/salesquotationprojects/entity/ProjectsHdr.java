@@ -25,7 +25,6 @@ public class ProjectsHdr {
     @Column(name = "TRANSACTION_POID", nullable = false)
     private Long transactionPoid;
 
-    @AuditIgnore
     @Column(name = "TRANSACTION_DATE")
     private LocalDate transactionDate;
 
@@ -33,6 +32,7 @@ public class ProjectsHdr {
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", length = 25, nullable = false)
     private String docRef;
 

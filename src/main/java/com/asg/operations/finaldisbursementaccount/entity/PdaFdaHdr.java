@@ -21,7 +21,6 @@ public class PdaFdaHdr {
     @Column(name = "TRANSACTION_POID", nullable = false)
     private Long transactionPoid;
 
-    @AuditIgnore
     @Column(name = "TRANSACTION_DATE", nullable = false)
     private LocalDate transactionDate;
     @AuditIgnore
@@ -37,6 +36,7 @@ public class PdaFdaHdr {
     @Column(name = "PRINCIPAL_CONTACT", length = 50)
     private String principalContact;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", length = 25)
     private String docRef;
 
