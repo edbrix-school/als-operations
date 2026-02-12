@@ -123,7 +123,7 @@ public class ProjectsHdr {
     @Column(name = "GRANT_TOTAL_SELL_AMOUNT_FC")
     private Double grantTotalSellAmountFc;
 
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted = "N";
 
