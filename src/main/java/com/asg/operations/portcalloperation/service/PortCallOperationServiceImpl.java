@@ -82,7 +82,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final PdaFdaHdrRepository pdaFdaHdrRepository;
     private final PortCallReportHdrRepository portCallReportHdrRepository;
     private final StockUnitMasterRepository stockUnitMasterRepository;
-    private final GlobalUserRepository globalUserRepository;
     private final PortActivityMasterRepository portActivityMasterRepository;
     private final GlobalParameterRepository globalParameterRepository;
     private final PortCallReportDtlRepository dtlRepository;
@@ -1907,7 +1906,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         List<PortCallOperationEstPrearrivalActDtl> saved = estPrearrivalActDtlRepository.saveAll(entitiesToSave);
-        PortCallOperationEstPrearrivalActDtl entity = saved.get(saved.size() - 1);
+        PortCallOperationEstPrearrivalActDtl entity = saved.getLast();
 
         String logDetail = String.format("Row Created on [Port Call Operation Est Prearrival Act Details] with preActivityDtlPoid: %s", entity.getPreActivityDtlPoid());
         loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
@@ -1932,10 +1931,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("EstPrearrivalActDetail", "transactionPoid: " + transactionPoid + ", detRowId: ", detRowId);
         }
 
+        if (!hdrRepository.existsById(transactionPoid)) {
+            throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
+        }
 
         PortCallOperationEstPrearrivalActDtl oldEntity = new PortCallOperationEstPrearrivalActDtl();
         if (!existingEntities.isEmpty()) {
-            BeanUtils.copyProperties(existingEntities.get(0), oldEntity);
+            BeanUtils.copyProperties(existingEntities.getFirst(), oldEntity);
         }
 
         if (dto.getEmailPoid() != null && !docsMsgsDtl1Repository.existsByEmailPoid(dto.getEmailPoid())) {
@@ -2219,6 +2221,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("ActTimingsActvtyDetail", "transactionPoid: " + transactionPoid + ", detRowId: ", detRowId);
         }
 
+        if (!hdrRepository.existsById(transactionPoid)) {
+            throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
+        }
 
         PortCallOperationActTimingsActvtyDtl oldEntity = new PortCallOperationActTimingsActvtyDtl();
         BeanUtils.copyProperties(existingEntities, oldEntity);
