@@ -29,6 +29,7 @@ import com.asg.operations.shipprincipal.repository.ShipPrincipalRepository;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -79,10 +80,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final ShipPortMasterRepository shipPortMasterRepository;
     private final PdaEntryHdrRepository pdaEntryHdrRepository;
     private final PdaFdaHdrRepository pdaFdaHdrRepository;
-    private final OpsPcDocsMsgsDtl1Repository msgsDtl1Repository;
     private final PortCallReportHdrRepository portCallReportHdrRepository;
     private final StockUnitMasterRepository stockUnitMasterRepository;
-    private final GlobalUserRepository globalUserRepository;
     private final PortActivityMasterRepository portActivityMasterRepository;
     private final GlobalParameterRepository globalParameterRepository;
     private final PortCallReportDtlRepository dtlRepository;
@@ -568,296 +567,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        // Use it if needed in future
-        // Save all other detail tables
-//        saveAllDetailTables(hdr.getTransactionPoid(), dto, UserContext.getUserId());
-
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), hdr.getTransactionPoid().toString());
         return getOperationById(hdr.getTransactionPoid());
     }
-
-    private void saveAllDetailTables(Long transactionPoid, PortCallOperationDto dto) {
-        // Save Est Bert Details
-        if (dto.getEstBertDetails() != null && !dto.getEstBertDetails().isEmpty()) {
-            long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationEstBertDtl> details = new ArrayList<>();
-            for (PortCallOperationEstBertDetailDto detailDto : dto.getEstBertDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationEstBertDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .eta(detailDto.getEta())
-                            .etb(detailDto.getEtb())
-                            .emailPoid(detailDto.getEmailPoid())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) estBertDtlRepository.saveAll(details);
-        }
-
-        // Save Est Prearrival Details
-        if (dto.getEstPrearrivalDetails() != null && !dto.getEstPrearrivalDetails().isEmpty()) {
-            long nextDetRowId = estPrearrivalDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationEstPrearrivalDtl> details = new ArrayList<>();
-            for (PortCallOperationEstPrearrivalDetailDto detailDto : dto.getEstPrearrivalDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationEstPrearrivalDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .preActivityDtlPoid(detailDto.getPreActivityDtlPoid())
-                            .eta(detailDto.getEta())
-                            .etb(detailDto.getEtb())
-                            .emailPoid(detailDto.getEmailPoid())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) estPrearrivalDtlRepository.saveAll(details);
-        }
-
-        // Save Act Timing Details
-        if (dto.getActTimingDetails() != null && !dto.getActTimingDetails().isEmpty()) {
-            long nextDetRowId = actTimingDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationActTimingDtl> details = new ArrayList<>();
-            for (PortCallOperationActTimingDetailDto detailDto : dto.getActTimingDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationActTimingDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .portReportPoid(detailDto.getPortReportPoid())
-                            .actualsTimingDtlPoid(detailDto.getActualsTimingDtlPoid())
-                            .emailPoid(detailDto.getEmailPoid())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) actTimingDtlRepository.saveAll(details);
-        }
-
-        // Save Act Cond Details
-        if (dto.getActCondDetails() != null && !dto.getActCondDetails().isEmpty()) {
-            long nextDetRowId = actCondDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationActCondDtl> details = new ArrayList<>();
-            for (PortCallOperationActCondDetailDto detailDto : dto.getActCondDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationActCondDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .conditionType(detailDto.getConditionType())
-                            .draftForward(detailDto.getDraftForward())
-                            .draftMid(detailDto.getDraftMid())
-                            .draftAft(detailDto.getDraftAft())
-                            .fuelOil(detailDto.getFuelOil())
-                            .dieselOil(detailDto.getDieselOil())
-                            .freshWater(detailDto.getFreshWater())
-                            .tugsService(detailDto.getTugsService())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) actCondDtlRepository.saveAll(details);
-        }
-
-        // Save Act Rmks Details
-        if (dto.getActRmksDetails() != null && !dto.getActRmksDetails().isEmpty()) {
-            long nextDetRowId = actRmksDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationActRmksDtl> details = new ArrayList<>();
-            for (PortCallOperationActRmksDetailDto detailDto : dto.getActRmksDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationActRmksDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .remarksType(detailDto.getRemarksType())
-                            .remarksFrom(detailDto.getRemarksFrom())
-                            .remarksTo(detailDto.getRemarksTo())
-                            .cargoDetails(detailDto.getCargoDetails())
-                            .reason(detailDto.getReason())
-                            .pcReportPoid(detailDto.getPcReportPoid())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) actRmksDtlRepository.saveAll(details);
-        }
-
-        // Save Act Prog Details
-        if (dto.getActProgDetails() != null && !dto.getActProgDetails().isEmpty()) {
-            long nextDetRowId = actProgDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationActProgDtl> details = new ArrayList<>();
-            for (PortCallOperationActProgDetailDto detailDto : dto.getActProgDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationActProgDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .emailPoid(detailDto.getEmailPoid())
-                            .cargo(detailDto.getCargo())
-                            .progressDateTime(detailDto.getProgressDateTime())
-                            .progressQty(detailDto.getProgressQty())
-                            .progressStatus(detailDto.getProgressStatus())
-                            .balanceQty(detailDto.getBalanceQty())
-                            .unitPoid(detailDto.getUnitPoid())
-                            .ratePerHr(detailDto.getRatePerHr())
-                            .etc(detailDto.getEtc())
-                            .estBlDate(detailDto.getEstBlDate())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) actProgDtlRepository.saveAll(details);
-        }
-
-        // Save Act Cargo Fig Details
-        if (dto.getActCargoFigDetails() != null && !dto.getActCargoFigDetails().isEmpty()) {
-            long nextDetRowId = actCargoFigDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationActCargoFigDtl> details = new ArrayList<>();
-            for (PortCallOperationActCargoFigDetailDto detailDto : dto.getActCargoFigDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationActCargoFigDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .cargo(detailDto.getCargo())
-                            .callType(detailDto.getCallType())
-                            .qty(detailDto.getQty())
-                            .unitPoid(detailDto.getUnitPoid())
-                            .vesselReq(detailDto.getVesselReq())
-                            .terminalNom(detailDto.getTerminalNom())
-                            .shipFigureMt(detailDto.getShipFigureMt())
-                            .shoreFigureMt(detailDto.getShoreFigureMt())
-                            .shipFigureBbls(detailDto.getShipFigureBbls())
-                            .blDate(detailDto.getBlDate())
-                            .hoseNo(detailDto.getHoseNo())
-                            .hoseSize(detailDto.getHoseSize())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) actCargoFigDtlRepository.saveAll(details);
-        }
-
-        // Save Act Bunker Details
-        if (dto.getActBunkerDetails() != null && !dto.getActBunkerDetails().isEmpty()) {
-            long nextDetRowId = actBunkerDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationActBunkerDtl> details = new ArrayList<>();
-            for (PortCallOperationActBunkerDetailDto detailDto : dto.getActBunkerDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationActBunkerDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .grade(detailDto.getGrade())
-                            .nominatedQtyMt(detailDto.getNominatedQtyMt())
-                            .suppliedQtyMt(detailDto.getSuppliedQtyMt())
-                            .shipQtyMt(detailDto.getShipQtyMt())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) actBunkerDtlRepository.saveAll(details);
-        }
-
-        // Save Husbandry Crew Details
-        if (dto.getHusbandryCrewDetails() != null && !dto.getHusbandryCrewDetails().isEmpty()) {
-            long nextDetRowId = husbandryCrewDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationHusbandryCrewDtl> details = new ArrayList<>();
-            for (PortCallOperationHusbandryCrewDetailDto detailDto : dto.getHusbandryCrewDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationHusbandryCrewDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .crewName(detailDto.getCrewName())
-                            .crewGenderPoid(detailDto.getCrewGenderPoid())
-                            .crewNationalityPoid(detailDto.getCrewNationalityPoid())
-                            .crewPptNumber(detailDto.getCrewPptNumber())
-                            .crewSeamanNo(detailDto.getCrewSeamanNo())
-                            .crewRank(detailDto.getCrewRank())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) husbandryCrewDtlRepository.saveAll(details);
-        }
-
-        // Save Husbandry Oth Details
-        if (dto.getHusbandryOthDetails() != null && !dto.getHusbandryOthDetails().isEmpty()) {
-            long nextDetRowId = husbandryOthDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationHusbandryOthDtl> details = new ArrayList<>();
-            for (PortCallOperationHusbandryOthDetailDto detailDto : dto.getHusbandryOthDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationHusbandryOthDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .arrangement(detailDto.getArrangement())
-                            .descriptionText(detailDto.getDescriptionText())
-                            .meetGreet(detailDto.getMeetGreet())
-                            .noOfDays(detailDto.getNoOfDays())
-                            .qty(detailDto.getQty())
-                            .unitPoid(detailDto.getUnitPoid())
-                            .unitPrice(detailDto.getUnitPrice())
-                            .currencyCode(detailDto.getCurrencyCode())
-                            .totalPrice(detailDto.getTotalPrice())
-                            .adjustedPrice(detailDto.getAdjustedPrice())
-                            .requestedBy(detailDto.getRequestedBy())
-                            .paymentMode(detailDto.getPaymentMode())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) husbandryOthDtlRepository.saveAll(details);
-        }
-
-        // Save Docs Copy Details
-        if (dto.getDocsCopyDetails() != null && !dto.getDocsCopyDetails().isEmpty()) {
-            long nextDetRowId = docsCopyDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-            List<PortCallOperationDocsCopyDtl> details = new ArrayList<>();
-            for (PortCallOperationDocsCopyDetailDto detailDto : dto.getDocsCopyDetails()) {
-                if (detailDto.getActionType() == ActionType.isCreated || detailDto.getActionType() == null) {
-                    details.add(PortCallOperationDocsCopyDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId++)
-                            .documentFrom(detailDto.getDocumentFrom())
-                            .documentList(detailDto.getDocumentList())
-                            .documentSelect(detailDto.getDocumentSelect())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                }
-            }
-            if (!details.isEmpty()) docsCopyDtlRepository.saveAll(details);
-        }
-    }
-
 
     @Override
     @Transactional
@@ -868,7 +580,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", id));
 
         PortCallOperationHdr oldHdr = new PortCallOperationHdr();
-        org.springframework.beans.BeanUtils.copyProperties(hdr, oldHdr);
+        BeanUtils.copyProperties(hdr, oldHdr);
 
         if (dto.getVesselVoyagePoid() != null) {
             if (!shipVoyageHdrRepository.existsByTransactionPoid(dto.getVesselVoyagePoid())) {
@@ -975,7 +687,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     cargoDtlRepository.findById(new PortCallOperationCargoDtlId(id, cargoDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationCargoDtl oldDetail = new PortCallOperationCargoDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                BeanUtils.copyProperties(existing, oldDetail);
 
                                 existing.setProductName(cargoDto.getProductName());
                                 existing.setPortCargoName(cargoDto.getPortCargoName());
@@ -1031,7 +743,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     mailDtlRepository.findById(new PortCallOperationMailDtlId(id, mailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationMailDtl oldDetail = new PortCallOperationMailDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                BeanUtils.copyProperties(existing, oldDetail);
 
                                 existing.setCommunicationType(mailDto.getCommunicationType());
                                 existing.setCommunicationMode(mailDto.getCommunicationMode());
@@ -1079,140 +791,141 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
 
     private void updateAllDetailTables(Long transactionPoid, PortCallOperationDto dto, String userId) {
-        // Update Est Bert Details
-        if (dto.getEstBertDetails() != null && !dto.getEstBertDetails().isEmpty()) {
-            for (PortCallOperationEstBertDetailDto detailDto : dto.getEstBertDetails()) {
-                if (detailDto.getEmailPoid() != null) {
-                    if (!msgsDtl1Repository.existsByIdEmailPoid(detailDto.getEmailPoid())) {
-                        throw new ResourceNotFoundException("Email", "Email Poid", detailDto.getEmailPoid());
-                    }
-                }
-                ActionType action = detailDto.getActionType();
-                if (action == null || action == ActionType.noChange) continue;
-                if (action == ActionType.isCreated) {
-                    Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    PortCallOperationEstBertDtl saved = estBertDtlRepository.save(PortCallOperationEstBertDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId)
-                            .eta(detailDto.getEta())
-                            .etb(detailDto.getEtb())
-                            .emailPoid(detailDto.getEmailPoid())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                    String logDetail = String.format("Row Created on [Port Call Operation Est Bert Details] with detRowId: %s", saved.getDetRowId());
-                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-                } else if (action == ActionType.isUpdated) {
-                    estBertDtlRepository.findById(new PortCallOperationEstBertDtlId(transactionPoid, detailDto.getDetRowId()))
-                            .ifPresent(existing -> {
-                                PortCallOperationEstBertDtl oldDetail = new PortCallOperationEstBertDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
-                                existing.setEta(detailDto.getEta());
-                                existing.setEtb(detailDto.getEtb());
-                                existing.setEmailPoid(detailDto.getEmailPoid());
-                                existing.setLastModifiedBy(userId);
-                                existing.setLastModifiedDate(LocalDateTime.now());
-                                existing = estBertDtlRepository.save(existing);
-                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
-                                loggingService.createLog(oldDetail, existing, PortCallOperationEstBertDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-                            });
-                }
-            }
-        }
-
-        // Similar pattern for all other detail tables - Est Prearrival, Act Timing, etc.
-        // Due to length constraints, I'll add a few key ones and note that the pattern should be repeated for all
-
-        // Update Est Prearrival Details
-        if (dto.getEstPrearrivalDetails() != null && !dto.getEstPrearrivalDetails().isEmpty()) {
-            for (PortCallOperationEstPrearrivalDetailDto detailDto : dto.getEstPrearrivalDetails()) {
-                if (detailDto.getEmailPoid() != null) {
-                    if (!msgsDtl1Repository.existsByIdEmailPoid(detailDto.getEmailPoid())) {
-                        throw new ResourceNotFoundException("Email", "Email Poid", detailDto.getEmailPoid());
-                    }
-                }
-                ActionType action = detailDto.getActionType();
-                if (action == null || action == ActionType.noChange) continue;
-                if (action == ActionType.isCreated) {
-                    Long nextDetRowId = estPrearrivalDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    PortCallOperationEstPrearrivalDtl saved = estPrearrivalDtlRepository.save(PortCallOperationEstPrearrivalDtl.builder()
-                            .transactionPoid(transactionPoid).detRowId(nextDetRowId)
-                            .preActivityDtlPoid(detailDto.getPreActivityDtlPoid())
-                            .eta(detailDto.getEta())
-                            .etb(detailDto.getEtb())
-                            .emailPoid(detailDto.getEmailPoid())
-                            .createdBy(userId).build());
-                    String logDetail = String.format("Row Created on [Port Call Operation Est Prearrival Details] with detRowId: %s", saved.getDetRowId());
-                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-                } else if (action == ActionType.isUpdated) {
-                    estPrearrivalDtlRepository.findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detailDto.getDetRowId()))
-                            .ifPresent(existing -> {
-                                PortCallOperationEstPrearrivalDtl oldDetail = new PortCallOperationEstPrearrivalDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
-                                existing.setPreActivityDtlPoid(detailDto.getPreActivityDtlPoid());
-                                existing.setEta(detailDto.getEta());
-                                existing.setEtb(detailDto.getEtb());
-                                existing.setEmailPoid(detailDto.getEmailPoid());
-                                existing.setLastModifiedBy(userId);
-                                existing.setLastModifiedDate(LocalDateTime.now());
-                                existing = estPrearrivalDtlRepository.save(existing);
-                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
-                                loggingService.createLog(oldDetail, existing, PortCallOperationEstPrearrivalDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-                            });
-                }
-            }
-        }
-
-        // Update Act Timing Details (3-part key)
-        if (dto.getActTimingDetails() != null && !dto.getActTimingDetails().isEmpty()) {
-            for (PortCallOperationActTimingDetailDto detailDto : dto.getActTimingDetails()) {
-                if (detailDto.getEmailPoid() != null) {
-                    if (!msgsDtl1Repository.existsByIdEmailPoid(detailDto.getEmailPoid())) {
-                        throw new ResourceNotFoundException("Email", "Email Poid", detailDto.getEmailPoid());
-                    }
-                }
-                if (detailDto.getPortReportPoid() != null) {
-                    if (!portCallReportHdrRepository.existsByPortCallReportPoid(detailDto.getPortReportPoid())) {
-                        throw new ResourceNotFoundException("Port Report", "Port Report Poid", detailDto.getPortReportPoid());
-                    }
-                }
-                ActionType action = detailDto.getActionType();
-                if (action == null || action == ActionType.noChange) continue;
-                if (action == ActionType.isCreated) {
-                    Long nextDetRowId = actTimingDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                    PortCallOperationActTimingDtl saved = actTimingDtlRepository.save(PortCallOperationActTimingDtl.builder()
-                            .transactionPoid(transactionPoid)
-                            .detRowId(nextDetRowId)
-                            .portReportPoid(detailDto.getPortReportPoid())
-                            .actualsTimingDtlPoid(detailDto.getActualsTimingDtlPoid())
-                            .emailPoid(detailDto.getEmailPoid())
-                            .createdBy(UserContext.getUserId())
-                            .createdDate(LocalDateTime.now())
-                            .lastModifiedBy(UserContext.getUserId())
-                            .lastModifiedDate(LocalDateTime.now())
-                            .build());
-                    String logDetail = String.format("Row Created on [Port Call Operation Act Timing Details] with detRowId: %s", saved.getDetRowId());
-                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-                } else if (action == ActionType.isUpdated) {
-                    actTimingDtlRepository.findById(new PortCallOperationActTimingDtlId(
-                                    transactionPoid, detailDto.getDetRowId(), detailDto.getPortReportPoid()))
-                            .ifPresent(existing -> {
-                                PortCallOperationActTimingDtl oldDetail = new PortCallOperationActTimingDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
-                                existing.setActualsTimingDtlPoid(detailDto.getActualsTimingDtlPoid());
-                                existing.setEmailPoid(detailDto.getEmailPoid());
-                                existing.setLastModifiedBy(userId);
-                                existing.setLastModifiedDate(LocalDateTime.now());
-                                existing = actTimingDtlRepository.save(existing);
-                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
-                                loggingService.createLog(oldDetail, existing, PortCallOperationActTimingDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-                            });
-                }
-            }
-        }
-
+//
+//        // Update Est Bert Details
+//        if (dto.getEstBertDetails() != null && !dto.getEstBertDetails().isEmpty()) {
+//            for (PortCallOperationEstBertDetailDto detailDto : dto.getEstBertDetails()) {
+//                if (detailDto.getEmailPoid() != null) {
+//                    if (!docsMsgsDtl1Repository.existsByEmailPoid(detailDto.getEmailPoid())) {
+//                        throw new ResourceNotFoundException("Email", "Email Poid", detailDto.getEmailPoid());
+//                    }
+//                }
+//                ActionType action = detailDto.getActionType();
+//                if (action == null || action == ActionType.noChange) continue;
+//                if (action == ActionType.isCreated) {
+//                    Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+//                    PortCallOperationEstBertDtl saved = estBertDtlRepository.save(PortCallOperationEstBertDtl.builder()
+//                            .transactionPoid(transactionPoid)
+//                            .detRowId(nextDetRowId)
+//                            .eta(detailDto.getEta())
+//                            .etb(detailDto.getEtb())
+//                            .emailPoid(detailDto.getEmailPoid())
+//                            .createdBy(UserContext.getUserId())
+//                            .createdDate(LocalDateTime.now())
+//                            .lastModifiedBy(UserContext.getUserId())
+//                            .lastModifiedDate(LocalDateTime.now())
+//                            .build());
+//                    String logDetail = String.format("Row Created on [Port Call Operation Est Bert Details] with detRowId: %s", saved.getDetRowId());
+//                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+//                } else if (action == ActionType.isUpdated) {
+//                    estBertDtlRepository.findById(new PortCallOperationEstBertDtlId(transactionPoid, detailDto.getDetRowId()))
+//                            .ifPresent(existing -> {
+//                                PortCallOperationEstBertDtl oldDetail = new PortCallOperationEstBertDtl();
+//                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+//                                existing.setEta(detailDto.getEta());
+//                                existing.setEtb(detailDto.getEtb());
+//                                existing.setEmailPoid(detailDto.getEmailPoid());
+//                                existing.setLastModifiedBy(userId);
+//                                existing.setLastModifiedDate(LocalDateTime.now());
+//                                existing = estBertDtlRepository.save(existing);
+//                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+//                                loggingService.createLog(oldDetail, existing, PortCallOperationEstBertDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+//                            });
+//                }
+//            }
+//        }
+//
+//        // Similar pattern for all other detail tables - Est Prearrival, Act Timing, etc.
+//        // Due to length constraints, I'll add a few key ones and note that the pattern should be repeated for all
+//
+//        // Update Est Prearrival Details
+//        if (dto.getEstPrearrivalDetails() != null && !dto.getEstPrearrivalDetails().isEmpty()) {
+//            for (PortCallOperationEstPrearrivalDetailDto detailDto : dto.getEstPrearrivalDetails()) {
+//                if (detailDto.getEmailPoid() != null) {
+//                    if (!docsMsgsDtl1Repository.existsByEmailPoid(detailDto.getEmailPoid())) {
+//                        throw new ResourceNotFoundException("Email", "Email Poid", detailDto.getEmailPoid());
+//                    }
+//                }
+//                ActionType action = detailDto.getActionType();
+//                if (action == null || action == ActionType.noChange) continue;
+//                if (action == ActionType.isCreated) {
+//                    Long nextDetRowId = estPrearrivalDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+//                    PortCallOperationEstPrearrivalDtl saved = estPrearrivalDtlRepository.save(PortCallOperationEstPrearrivalDtl.builder()
+//                            .transactionPoid(transactionPoid).detRowId(nextDetRowId)
+//                            .preActivityDtlPoid(detailDto.getPreActivityDtlPoid())
+//                            .eta(detailDto.getEta())
+//                            .etb(detailDto.getEtb())
+//                            .emailPoid(detailDto.getEmailPoid())
+//                            .createdBy(userId).build());
+//                    String logDetail = String.format("Row Created on [Port Call Operation Est Prearrival Details] with detRowId: %s", saved.getDetRowId());
+//                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+//                } else if (action == ActionType.isUpdated) {
+//                    estPrearrivalDtlRepository.findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detailDto.getDetRowId()))
+//                            .ifPresent(existing -> {
+//                                PortCallOperationEstPrearrivalDtl oldDetail = new PortCallOperationEstPrearrivalDtl();
+//                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+//                                existing.setPreActivityDtlPoid(detailDto.getPreActivityDtlPoid());
+//                                existing.setEta(detailDto.getEta());
+//                                existing.setEtb(detailDto.getEtb());
+//                                existing.setEmailPoid(detailDto.getEmailPoid());
+//                                existing.setLastModifiedBy(userId);
+//                                existing.setLastModifiedDate(LocalDateTime.now());
+//                                existing = estPrearrivalDtlRepository.save(existing);
+//                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+//                                loggingService.createLog(oldDetail, existing, PortCallOperationEstPrearrivalDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+//                            });
+//                }
+//            }
+//        }
+//
+//        // Update Act Timing Details (3-part key)
+//        if (dto.getActTimingDetails() != null && !dto.getActTimingDetails().isEmpty()) {
+//            for (PortCallOperationActTimingDetailDto detailDto : dto.getActTimingDetails()) {
+//                if (detailDto.getEmailPoid() != null) {
+//                    if (!docsMsgsDtl1Repository.existsByEmailPoid(detailDto.getEmailPoid())) {
+//                        throw new ResourceNotFoundException("Email", "Email Poid", detailDto.getEmailPoid());
+//                    }
+//                }
+//                if (detailDto.getPortReportPoid() != null) {
+//                    if (!portCallReportHdrRepository.existsByPortCallReportPoid(detailDto.getPortReportPoid())) {
+//                        throw new ResourceNotFoundException("Port Report", "Port Report Poid", detailDto.getPortReportPoid());
+//                    }
+//                }
+//                ActionType action = detailDto.getActionType();
+//                if (action == null || action == ActionType.noChange) continue;
+//                if (action == ActionType.isCreated) {
+//                    Long nextDetRowId = actTimingDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+//                    PortCallOperationActTimingDtl saved = actTimingDtlRepository.save(PortCallOperationActTimingDtl.builder()
+//                            .transactionPoid(transactionPoid)
+//                            .detRowId(nextDetRowId)
+//                            .portReportPoid(detailDto.getPortReportPoid())
+//                            .actualsTimingDtlPoid(detailDto.getActualsTimingDtlPoid())
+//                            .emailPoid(detailDto.getEmailPoid())
+//                            .createdBy(UserContext.getUserId())
+//                            .createdDate(LocalDateTime.now())
+//                            .lastModifiedBy(UserContext.getUserId())
+//                            .lastModifiedDate(LocalDateTime.now())
+//                            .build());
+//                    String logDetail = String.format("Row Created on [Port Call Operation Act Timing Details] with detRowId: %s", saved.getDetRowId());
+//                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+//                } else if (action == ActionType.isUpdated) {
+//                    actTimingDtlRepository.findById(new PortCallOperationActTimingDtlId(
+//                                    transactionPoid, detailDto.getDetRowId(), detailDto.getPortReportPoid()))
+//                            .ifPresent(existing -> {
+//                                PortCallOperationActTimingDtl oldDetail = new PortCallOperationActTimingDtl();
+//                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+//                                existing.setActualsTimingDtlPoid(detailDto.getActualsTimingDtlPoid());
+//                                existing.setEmailPoid(detailDto.getEmailPoid());
+//                                existing.setLastModifiedBy(userId);
+//                                existing.setLastModifiedDate(LocalDateTime.now());
+//                                existing = actTimingDtlRepository.save(existing);
+//                                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
+//                                loggingService.createLog(oldDetail, existing, PortCallOperationActTimingDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+//                            });
+//                }
+//            }
+//        }
+//
 
         // Update Act Cond Details
         if (dto.getActCondDetails() != null && !dto.getActCondDetails().isEmpty()) {
@@ -1243,7 +956,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     actCondDtlRepository.findById(new PortCallOperationActCondDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationActCondDtl oldDetail = new PortCallOperationActCondDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setConditionType(detailDto.getConditionType());
                                 existing.setDraftForward(detailDto.getDraftForward());
                                 existing.setDraftMid(detailDto.getDraftMid());
@@ -1294,7 +1007,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     actRmksDtlRepository.findById(new PortCallOperationActRmksDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationActRmksDtl oldDetail = new PortCallOperationActRmksDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setRemarksType(detailDto.getRemarksType());
                                 existing.setRemarksFrom(detailDto.getRemarksFrom());
                                 existing.setRemarksTo(detailDto.getRemarksTo());
@@ -1315,7 +1028,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (dto.getActProgDetails() != null && !dto.getActProgDetails().isEmpty()) {
             for (PortCallOperationActProgDetailDto detailDto : dto.getActProgDetails()) {
                 if (detailDto.getEmailPoid() != null) {
-                    if (!msgsDtl1Repository.existsByIdEmailPoid(detailDto.getEmailPoid())) {
+                    if (!docsMsgsDtl1Repository.existsByEmailPoid(detailDto.getEmailPoid())) {
                         throw new ResourceNotFoundException("Email", "Email Poid", detailDto.getEmailPoid());
                     }
                 }
@@ -1352,7 +1065,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     actProgDtlRepository.findById(new PortCallOperationActProgDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationActProgDtl oldDetail = new PortCallOperationActProgDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setEmailPoid(detailDto.getEmailPoid());
                                 existing.setCargo(detailDto.getCargo());
                                 existing.setProgressDateTime(detailDto.getProgressDateTime());
@@ -1411,7 +1124,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     actCargoFigDtlRepository.findById(new PortCallOperationActCargoFigDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationActCargoFigDtl oldDetail = new PortCallOperationActCargoFigDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setCargo(detailDto.getCargo());
                                 existing.setCallType(detailDto.getCallType());
                                 existing.setQty(detailDto.getQty());
@@ -1459,7 +1172,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     actBunkerDtlRepository.findById(new PortCallOperationActBunkerDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationActBunkerDtl oldDetail = new PortCallOperationActBunkerDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setGrade(detailDto.getGrade());
                                 existing.setNominatedQtyMt(detailDto.getNominatedQtyMt());
                                 existing.setSuppliedQtyMt(detailDto.getSuppliedQtyMt());
@@ -1501,7 +1214,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     husbandryCrewDtlRepository.findById(new PortCallOperationHusbandryCrewDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationHusbandryCrewDtl oldDetail = new PortCallOperationHusbandryCrewDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setCrewName(detailDto.getCrewName());
                                 existing.setCrewGenderPoid(detailDto.getCrewGenderPoid());
                                 existing.setCrewNationalityPoid(detailDto.getCrewNationalityPoid());
@@ -1556,7 +1269,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     husbandryOthDtlRepository.findById(new PortCallOperationHusbandryOthDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationHusbandryOthDtl oldDetail = new PortCallOperationHusbandryOthDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setArrangement(detailDto.getArrangement());
                                 existing.setDescriptionText(detailDto.getDescriptionText());
                                 existing.setMeetGreet(detailDto.getMeetGreet());
@@ -1603,7 +1316,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationDocsCopyDtl oldDetail = new PortCallOperationDocsCopyDtl();
-                                org.springframework.beans.BeanUtils.copyProperties(existing, oldDetail);
+                                BeanUtils.copyProperties(existing, oldDetail);
                                 existing.setDocumentFrom(detailDto.getDocumentFrom());
                                 existing.setDocumentList(detailDto.getDocumentList());
                                 existing.setDocumentSelect(detailDto.getDocumentSelect());
@@ -1892,12 +1605,12 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
-        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+        if (dto.getEmailPoid() != null && !docsMsgsDtl1Repository.existsByEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
         Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-        Long emailPoidToUse = dto.getEmailPoid();
+        Long emailPoidToUse;
 
         if (dto.getEmailPoid() == null) {
             PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
@@ -1912,13 +1625,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
             emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            emailPoidToUse = dto.getEmailPoid();
+            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
             msgsDtl1.setEmailRemarks(dto.getRemarks());
-            msgsDtl1Repository.save(msgsDtl1);
+            docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
         if (dto.getSendEmail() && emailPoidToUse != null) {
-            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
@@ -1971,13 +1687,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .orElseThrow(() -> new ResourceNotFoundException("EstBertDetail", "transactionPoid: " + transactionPoid + ", detRowId: ", detRowId));
 
         PortCallOperationEstBertDtl oldEntity = new PortCallOperationEstBertDtl();
-        org.springframework.beans.BeanUtils.copyProperties(entity, oldEntity);
+        BeanUtils.copyProperties(entity, oldEntity);
 
-        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+        if (dto.getEmailPoid() != null && !docsMsgsDtl1Repository.existsByEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        Long emailPoidToUse = dto.getEmailPoid();
+        Long emailPoidToUse;
         if (dto.getEmailPoid() == null) {
             PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
                     .transactionPoid(transactionPoid)
@@ -1991,13 +1707,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
             emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            emailPoidToUse = dto.getEmailPoid();
+            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
             msgsDtl1.setEmailRemarks(dto.getRemarks());
-            msgsDtl1Repository.save(msgsDtl1);
+            docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
         if (dto.getSendEmail() && emailPoidToUse != null) {
-            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
@@ -2013,7 +1732,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         entity.setLastModifiedDate(LocalDateTime.now());
 
         PortCallOperationEstBertDtl saved = estBertDtlRepository.save(entity);
-
 
 
         PortCallOperationEstBertDetailResponseDto.PortCallOperationEstBertDetailResponseDtoBuilder builder = PortCallOperationEstBertDetailResponseDto.builder()
@@ -2056,14 +1774,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
     @Override
     @Transactional
-    public PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto) {
-        log.info("Creating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+    public PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, PortCallOperationEstPrearrivalActDetailDto dto) {
+        // Generate detRowId automatically
+        Long detRowId = estPrearrivalDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+        log.info("Creating EstPrearrivalActDetail for transactionPoid: {}, generated detRowId: {}", transactionPoid, detRowId);
 
-        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+        if (dto.getEmailPoid() != null && !docsMsgsDtl1Repository.existsByEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        Long emailPoidToUse = dto.getEmailPoid();
+        Long emailPoidToUse;
         if (dto.getEmailPoid() == null) {
             PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
                     .transactionPoid(transactionPoid)
@@ -2077,13 +1797,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
             emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            emailPoidToUse = dto.getEmailPoid();
+            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
             msgsDtl1.setEmailRemarks(dto.getRemarks());
-            msgsDtl1Repository.save(msgsDtl1);
+            docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
         if (dto.getSendEmail() && emailPoidToUse != null) {
-            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
@@ -2183,7 +1906,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         List<PortCallOperationEstPrearrivalActDtl> saved = estPrearrivalActDtlRepository.saveAll(entitiesToSave);
-        PortCallOperationEstPrearrivalActDtl entity = saved.get(saved.size() - 1);
+        PortCallOperationEstPrearrivalActDtl entity = saved.getLast();
 
         String logDetail = String.format("Row Created on [Port Call Operation Est Prearrival Act Details] with preActivityDtlPoid: %s", entity.getPreActivityDtlPoid());
         loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
@@ -2208,17 +1931,20 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("EstPrearrivalActDetail", "transactionPoid: " + transactionPoid + ", detRowId: ", detRowId);
         }
 
+        if (!hdrRepository.existsById(transactionPoid)) {
+            throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
+        }
 
         PortCallOperationEstPrearrivalActDtl oldEntity = new PortCallOperationEstPrearrivalActDtl();
         if (!existingEntities.isEmpty()) {
-            org.springframework.beans.BeanUtils.copyProperties(existingEntities.get(0), oldEntity);
+            BeanUtils.copyProperties(existingEntities.getFirst(), oldEntity);
         }
 
-        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+        if (dto.getEmailPoid() != null && !docsMsgsDtl1Repository.existsByEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        Long emailPoidToUse = dto.getEmailPoid();
+        Long emailPoidToUse;
         if (dto.getEmailPoid() == null) {
             PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
                     .transactionPoid(transactionPoid)
@@ -2232,13 +1958,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
             emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            emailPoidToUse = dto.getEmailPoid();
+            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
             msgsDtl1.setEmailRemarks(dto.getRemarks());
-            msgsDtl1Repository.save(msgsDtl1);
+            docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
         if (dto.getSendEmail() && emailPoidToUse != null) {
-            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
@@ -2370,10 +2099,12 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
     @Override
     @Transactional
-    public PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActivityDetailDto dto) {
-        log.info("Creating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+    public PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, PortCallOperationActTimingsActivityDetailDto dto) {
+        // Generate detRowId automatically
+        Long detRowId = actTimingDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
+        log.info("Creating ActTimingsActvtyDetail for transactionPoid: {}, generated detRowId: {}", transactionPoid, detRowId);
 
-        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+        if (dto.getEmailPoid() != null && !docsMsgsDtl1Repository.existsByEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
@@ -2410,7 +2141,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        Long emailPoidToUse = dto.getEmailPoid();
+        Long emailPoidToUse;
         if (dto.getEmailPoid() == null) {
             PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
                     .transactionPoid(transactionPoid)
@@ -2424,13 +2155,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
             emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            emailPoidToUse = dto.getEmailPoid();
+            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
             msgsDtl1.setEmailRemarks(dto.getRemarks());
-            msgsDtl1Repository.save(msgsDtl1);
+            docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
         if (dto.getSendEmail() && emailPoidToUse != null) {
-            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
@@ -2487,11 +2221,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("ActTimingsActvtyDetail", "transactionPoid: " + transactionPoid + ", detRowId: ", detRowId);
         }
 
+        if (!hdrRepository.existsById(transactionPoid)) {
+            throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
+        }
 
         PortCallOperationActTimingsActvtyDtl oldEntity = new PortCallOperationActTimingsActvtyDtl();
-        org.springframework.beans.BeanUtils.copyProperties(existingEntities, oldEntity);
+        BeanUtils.copyProperties(existingEntities, oldEntity);
 
-        if (dto.getEmailPoid() != null && !msgsDtl1Repository.existsByIdEmailPoid(dto.getEmailPoid())) {
+        if (dto.getEmailPoid() != null && !docsMsgsDtl1Repository.existsByEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
@@ -2524,7 +2261,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        Long emailPoidToUse = dto.getEmailPoid();
+        Long emailPoidToUse;
         if (dto.getEmailPoid() == null) {
             PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
                     .transactionPoid(transactionPoid)
@@ -2538,13 +2275,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
             emailPoidToUse = newMsgsDtl1.getEmailPoid();
         } else {
-            OpsPcDocsMsgsDtl1 msgsDtl1 = msgsDtl1Repository.findByIdEmailPoid(dto.getEmailPoid());
+            emailPoidToUse = dto.getEmailPoid();
+            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
             msgsDtl1.setEmailRemarks(dto.getRemarks());
-            msgsDtl1Repository.save(msgsDtl1);
+            docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
         if (dto.getSendEmail() && emailPoidToUse != null) {
-            OpsPcDocsMsgsDtl1 msgsForSend = msgsDtl1Repository.findByIdEmailPoid(emailPoidToUse);
+            PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
+                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
                 // Logic to send email
             } else {
@@ -2672,7 +2412,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .orElseThrow(() -> new ResourceNotFoundException("DocsCopyDetail", "transactionPoid: " + transactionPoid + ", detRowId", detRowId));
 
         PortCallOperationDocsCopyDtl oldEntity = new PortCallOperationDocsCopyDtl();
-        org.springframework.beans.BeanUtils.copyProperties(entity, oldEntity);
+        BeanUtils.copyProperties(entity, oldEntity);
 
         PortCallOperationDocsCopyDtl latestRecord = docsCopyDtlRepository.findByTransactionPoidOrderByLastModifiedDateDesc(transactionPoid).getFirst();
         if (!latestRecord.getDetRowId().equals(detRowId)) {

@@ -72,15 +72,6 @@ public class PortCallOperationDto {
     private List<PortCallOperationMailDetailDto> mailDetails;
 
     @Valid
-    private List<PortCallOperationEstBertDetailDto> estBertDetails;
-
-    @Valid
-    private List<PortCallOperationEstPrearrivalDetailDto> estPrearrivalDetails;
-
-    @Valid
-    private List<PortCallOperationActTimingDetailDto> actTimingDetails;
-
-    @Valid
     private List<PortCallOperationActCondDetailDto> actCondDetails;
 
     @Valid

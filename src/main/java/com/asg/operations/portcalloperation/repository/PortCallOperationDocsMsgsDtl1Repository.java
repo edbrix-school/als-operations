@@ -14,6 +14,8 @@ import java.util.Optional;
 public interface PortCallOperationDocsMsgsDtl1Repository extends JpaRepository<PortCallOperationDocsMsgsDtl1, PortCallOperationDocsMsgsDtl1Id> {
     void deleteByTransactionPoid(Long transactionPoid);
 
+    boolean existsByEmailPoid(Long emailPoid);
+
     List<PortCallOperationDocsMsgsDtl1> findByTransactionPoid(Long transactionPoid);
 
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationDocsMsgsDtl1 d where d.transactionPoid = :transactionPoid")

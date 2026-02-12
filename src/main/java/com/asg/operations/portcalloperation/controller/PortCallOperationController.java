@@ -309,16 +309,15 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
-    @PostMapping("/{transactionPoid}/est-prearrival-details/{detRowId}/activities")
+    @PostMapping("/{transactionPoid}/est-prearrival-details/activities")
     @Operation(
             summary = "Create EstPrearrivalActDetail",
-            description = "Create a new activity for a prearrival detail",
+            description = "Create a new activity for a prearrival detail. detRowId will be generated automatically.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> createEstPrearrivalActDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
                                                           @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
-        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, detRowId, dto);
+        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, dto);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstPrearrivalActDetail created successfully", result);
     }
@@ -353,16 +352,15 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
-    @PostMapping("/{transactionPoid}/act-timing-details/{detRowId}/activities")
+    @PostMapping("/{transactionPoid}/act-timing-details/activities")
     @Operation(
             summary = "Create ActTimingsActvtyDetail",
-            description = "Create a new activity for an actual timing detail",
+            description = "Create a new activity for an actual timing detail. detRowId will be generated automatically.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> createActTimingsActvtyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
                                                           @Valid @RequestBody PortCallOperationActTimingsActivityDetailDto dto) {
-        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, detRowId, dto);
+        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, dto);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetail created successfully", result);
     }
