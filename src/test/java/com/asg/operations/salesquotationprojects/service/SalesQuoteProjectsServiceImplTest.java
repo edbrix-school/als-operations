@@ -209,7 +209,6 @@ class SalesQuoteProjectsServiceImplTest {
         deleteReasonDto.setDeleteReason("Test deletion");
 
         when(repository.findById(transactionPoid)).thenReturn(Optional.of(mockEntity));
-        doNothing().when(documentDeleteService).deleteDocument(any(), any(), any(), any(), any());
 
         service.deleteSalesQuoteProject(transactionPoid, deleteReasonDto);
 
