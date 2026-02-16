@@ -187,11 +187,11 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 throw new ResourceNotFoundException("Bank", "Bank Poid", request.getBankAccountPoid());
             }
         }
-//        if (StringUtils.isNotBlank(request.getProjectReferenceNumber())) {
-//            if (!projectsHdrRepository.existsByProjectReferenceIgnoreCase(request.getProjectReferenceNumber())) {
-//                throw new ResourceNotFoundException("Project", "Project Reference Number", request.getProjectReferenceNumber());
-//            }
-//        }
+        if (StringUtils.isNotBlank(request.getProjectReferenceNumber())) {
+            if (!projectsHdrRepository.existsByDocRefIgnoreCase(request.getProjectReferenceNumber())) {
+                throw new ResourceNotFoundException("Project", "Doc Ref", request.getProjectReferenceNumber());
+            }
+        }
         if (StringUtils.isNotBlank(request.getBillingCurrencyCode())) {
             if (!globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(request.getBillingCurrencyCode())) {
                 throw new ResourceNotFoundException("Currency", "Currency Code", request.getBillingCurrencyCode());
@@ -395,11 +395,11 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 throw new ResourceNotFoundException("Bank", "Bank Poid", request.getBankAccountPoid());
             }
         }
-//        if (StringUtils.isNotBlank(request.getProjectReferenceNumber())) {
-//            if (!projectsHdrRepository.existsByProjectReferenceIgnoreCase(request.getProjectReferenceNumber())) {
-//                throw new ResourceNotFoundException("Project", "Project Reference Number", request.getProjectReferenceNumber());
-//            }
-//        }
+        if (StringUtils.isNotBlank(request.getProjectReferenceNumber())) {
+            if (!projectsHdrRepository.existsByDocRefIgnoreCase(request.getProjectReferenceNumber())) {
+                throw new ResourceNotFoundException("Project", "Doc Ref", request.getProjectReferenceNumber());
+            }
+        }
         if (StringUtils.isNotBlank(request.getBillingCurrencyCode())) {
             if (!globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(request.getBillingCurrencyCode())) {
                 throw new ResourceNotFoundException("Currency", "Currency Code", request.getBillingCurrencyCode());
