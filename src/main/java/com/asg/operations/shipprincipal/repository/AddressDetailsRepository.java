@@ -29,4 +29,6 @@ public interface AddressDetailsRepository extends JpaRepository<AddressDetails, 
             "INNER JOIN GLOBAL_ADDRESS_MASTER AM ON AD.ADDRESS_MASTER_POID = AM.ADDRESS_MASTER_POID " +
             "WHERE AD.ADDRESS_POID = :addressPoid", nativeQuery = true)
     Optional<Object[]> findAddressDetailsWithNameByAddressPoid(@Param("addressPoid") BigDecimal addressPoid);
+
+    AddressDetails findByAddressPoidAndAddressType(BigDecimal addressMasterPoid, String addressType);
 }

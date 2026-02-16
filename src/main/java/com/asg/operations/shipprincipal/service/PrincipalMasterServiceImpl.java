@@ -34,9 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,7 +59,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
     private final PrincipalMasterMapper mapper;
     private final LovService lovService;
     private final VesselTypeRepository vesselTypeRepository;
-    private final EntityManager entityManager;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
@@ -84,188 +81,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
         return PaginationUtil.wrapPage(page, raw.displayFields());
 
-    }
-
-    private String mapPrincipalSearchFieldToColumn(String searchField) {
-        if (searchField == null) return null;
-        String normalizedField = searchField.toUpperCase().replace("_", "");
-        switch (normalizedField) {
-            case "PRINCIPALPOID":
-                return "p.PRINCIPAL_POID";
-            case "PRINCIPALCODE":
-                return "p.PRINCIPAL_CODE";
-            case "PRINCIPALNAME":
-                return "p.PRINCIPAL_NAME";
-            case "PRINCIPALNAME2":
-                return "p.PRINCIPAL_NAME2";
-            case "GROUPPOID":
-                return "p.GROUP_POID";
-            case "COMPANYPOID":
-                return "p.COMPANY_POID";
-            case "GROUPNAME":
-                return "p.GROUP_NAME";
-            case "COUNTRYPOID":
-                return "p.COUNTRY_POID";
-            case "ADDRESSPOID":
-                return "p.ADDRESS_POID";
-            case "CREDITPERIOD":
-                return "p.CREDIT_PERIOD";
-            case "AGREEDPERIOD":
-                return "p.AGREED_PERIOD";
-            case "CURRENCYCODE":
-                return "p.CURRENCY_CODE";
-            case "CURRENCYRATE":
-                return "p.CURRENCY_RATE";
-            case "BUYINGRATE":
-                return "p.BUYING_RATE";
-            case "SELLINGRATE":
-                return "p.SELLING_RATE";
-            case "GLCODEPOID":
-                return "p.GL_CODE_POID";
-            case "GLACCTNO":
-                return "p.GL_ACCTNO";
-            case "TINNUMBER":
-                return "p.TIN_NUMBER";
-            case "TAXSLAB":
-                return "p.TAX_SLAB";
-            case "EXEMPTIONREASON":
-                return "p.EXEMPTION_REASON";
-            case "REMARKS":
-                return "p.REMARKS";
-            case "SEQNO":
-                return "p.SEQNO";
-            case "ACTIVE":
-                return "p.ACTIVE";
-            case "PRINCIPALCODEOLD":
-                return "p.PRINCIPAL_CODE_OLD";
-            case "DELETED":
-                return "p.DELETED";
-            case "CREATEDBY":
-                return "p.CREATED_BY";
-            case "CREATEDDATE":
-                return "p.CREATED_DATE";
-            case "LASTMODIFIEDBY":
-                return "p.LASTMODIFIED_BY";
-            case "LASTMODIFIEDDATE":
-                return "p.LASTMODIFIED_DATE";
-            default:
-                log.warn("Unknown search field: {}, defaulting to PRINCIPAL_NAME", searchField);
-                return "p.PRINCIPAL_NAME";
-        }
-    }
-
-    private String mapPrincipalSortFieldToColumn(String sortField) {
-        if (sortField == null) return "p.CREATED_DATE";
-        String normalizedField = sortField.toUpperCase().replace("_", "");
-        switch (normalizedField) {
-            case "PRINCIPALPOID":
-                return "p.PRINCIPAL_POID";
-            case "PRINCIPALCODE":
-                return "p.PRINCIPAL_CODE";
-            case "PRINCIPALNAME":
-                return "p.PRINCIPAL_NAME";
-            case "PRINCIPALNAME2":
-                return "p.PRINCIPAL_NAME2";
-            case "GROUPPOID":
-                return "p.GROUP_POID";
-            case "COMPANYPOID":
-                return "p.COMPANY_POID";
-            case "GROUPNAME":
-                return "p.GROUP_NAME";
-            case "COUNTRYPOID":
-                return "p.COUNTRY_POID";
-            case "ADDRESSPOID":
-                return "p.ADDRESS_POID";
-            case "CREDITPERIOD":
-                return "p.CREDIT_PERIOD";
-            case "AGREEDPERIOD":
-                return "p.AGREED_PERIOD";
-            case "CURRENCYCODE":
-                return "p.CURRENCY_CODE";
-            case "CURRENCYRATE":
-                return "p.CURRENCY_RATE";
-            case "BUYINGRATE":
-                return "p.BUYING_RATE";
-            case "SELLINGRATE":
-                return "p.SELLING_RATE";
-            case "GLCODEPOID":
-                return "p.GL_CODE_POID";
-            case "GLACCTNO":
-                return "p.GL_ACCTNO";
-            case "TINNUMBER":
-                return "p.TIN_NUMBER";
-            case "TAXSLAB":
-                return "p.TAX_SLAB";
-            case "EXEMPTIONREASON":
-                return "p.EXEMPTION_REASON";
-            case "REMARKS":
-                return "p.REMARKS";
-            case "SEQNO":
-                return "p.SEQNO";
-            case "ACTIVE":
-                return "p.ACTIVE";
-            case "PRINCIPALCODEOLD":
-                return "p.PRINCIPAL_CODE_OLD";
-            case "DELETED":
-                return "p.DELETED";
-            case "CREATEDBY":
-                return "p.CREATED_BY";
-            case "CREATEDDATE":
-                return "p.CREATED_DATE";
-            case "LASTMODIFIEDBY":
-                return "p.LASTMODIFIED_BY";
-            case "LASTMODIFIEDDATE":
-                return "p.LASTMODIFIED_DATE";
-            default:
-                log.warn("Unknown sort field: {}, defaulting to CREATED_DATE", sortField);
-                return "p.CREATED_DATE";
-        }
-    }
-
-    private PrincipalListResponse mapToPrincipalListResponseDto(Object[] row) {
-        PrincipalListResponse dto = new PrincipalListResponse();
-        dto.setPrincipalPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setPrincipalCode(convertToString(row[1]));
-        dto.setPrincipalName(convertToString(row[2]));
-        dto.setPrincipalName2(convertToString(row[3]));
-        dto.setGroupPoid(row[4] != null ? ((Number) row[4]).longValue() : null);
-        dto.setCompanyPoid(row[5] != null ? ((Number) row[5]).longValue() : null);
-        dto.setCountryPoid(row[7] != null ? ((Number) row[7]).longValue() : null);
-        dto.setAddressPoid(row[8] != null ? ((Number) row[8]).longValue() : null);
-        dto.setCreditPeriod(row[9] != null ? ((Number) row[9]).longValue() : null);
-        dto.setAgreedPeriod(row[10] != null ? ((Number) row[10]).longValue() : null);
-        dto.setCurrencyCode(convertToString(row[11]));
-        dto.setCurrencyRate(row[12] != null ? new java.math.BigDecimal(row[12].toString()) : null);
-        dto.setBuyingRate(row[13] != null ? new java.math.BigDecimal(row[13].toString()) : null);
-        dto.setSellingRate(row[14] != null ? new java.math.BigDecimal(row[14].toString()) : null);
-        dto.setGlCodePoid(row[15] != null ? ((Number) row[15]).longValue() : null);
-        dto.setTinNumber(convertToString(row[17]));
-        dto.setTaxSlab(convertToString(row[18]));
-        dto.setExemptionReason(convertToString(row[19]));
-        dto.setRemarks(convertToString(row[20]));
-        dto.setSeqNo(row[21] != null ? ((Number) row[21]).intValue() : null);
-        dto.setActive(convertToString(row[22]));
-        dto.setDeleted(convertToString(row[24]));
-        dto.setCreatedBy(convertToString(row[25]));
-        dto.setCreatedDate(row[26] != null ? convertToLocalDateTime(row[26]) : null);
-        dto.setLastModifiedBy(convertToString(row[27]));
-        dto.setLastModifiedDate(row[28] != null ? convertToLocalDateTime(row[28]) : null);
-        return dto;
-    }
-
-    private String convertToString(Object value) {
-        return value != null ? value.toString() : null;
-    }
-
-    private LocalDateTime convertToLocalDateTime(Object value) {
-        if (value == null) return null;
-        if (value instanceof java.sql.Timestamp) {
-            return ((java.sql.Timestamp) value).toLocalDateTime();
-        }
-        if (value instanceof java.util.Date) {
-            return new java.sql.Timestamp(((java.util.Date) value).getTime()).toLocalDateTime();
-        }
-        return null;
     }
 
     @Override
@@ -367,7 +182,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         Long principalId = principal.getPrincipalPoid();
 
         if (dto.getCharges() != null && !dto.getCharges().isEmpty()) {
-            Long nextDetRowId = chargeRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
+            long nextDetRowId = chargeRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
             for (ChargeDetailDto charge : dto.getCharges()) {
                 ShipPrincipalMasterDtl entity = new ShipPrincipalMasterDtl();
                 entity.setPrincipalPoid(principalId);
@@ -383,7 +198,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         }
 
         if (dto.getPayments() != null && !dto.getPayments().isEmpty()) {
-            Long nextDetRowId = paymentRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
+            long nextDetRowId = paymentRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
             for (PaymentItemDTO payment : dto.getPayments()) {
                 ShipPrincipalMasterPymtDtl entity = new ShipPrincipalMasterPymtDtl();
                 entity.setPrincipalPoid(principalId);
@@ -402,7 +217,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     .map(VesselType::getVesselTypePoid)
                     .toList();
 
-            Long nextDetRowId = paRptDtlRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
+            long nextDetRowId = paRptDtlRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
             int index = 0;
             for (ShipPrincipalPaRptDetailDto paRptDetail : dto.getPortActivityReportDetails()) {
                 if (paRptDetail.getVesselType() != null && !validVesselTypePoids.contains(Long.parseLong(paRptDetail.getVesselType()))) {

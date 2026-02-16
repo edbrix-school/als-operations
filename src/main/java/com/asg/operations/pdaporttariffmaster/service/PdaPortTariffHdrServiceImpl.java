@@ -13,8 +13,6 @@ import com.asg.common.lib.enums.LogDetailsEnum;
 import jakarta.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import com.asg.operations.commonlov.dto.LovItem;
-import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffChargeDtl;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffHdr;
@@ -24,27 +22,22 @@ import com.asg.operations.pdaporttariffmaster.key.PdaPortTariffSlabDtlId;
 import com.asg.operations.pdaporttariffmaster.repository.*;
 import com.asg.operations.portcallreport.enums.ActionType;
 import com.asg.operations.exceptions.ResourceNotFoundException;
-import com.asg.operations.pdaporttariffmaster.util.DateOverlapValidator;
 import com.asg.operations.pdaporttariffmaster.util.PdaPortTariffMapper;
 import com.asg.operations.pdaporttariffmaster.util.PortTariffDocumentRefGenerator;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -59,10 +52,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private final ShipVesselTypeMasterRepository shipVesselTypeMasterRepository;
     private final ShipChargeMasterRepository shipChargeMasterRepository;
     private final PdaPortTariffMapper mapper;
-    private final DateOverlapValidator overlapValidator;
     private final PortTariffDocumentRefGenerator docRefGenerator;
     private final EntityManager entityManager;
-    private final LovService lovService;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
@@ -83,117 +74,6 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
 
         return PaginationUtil.wrapPage(page, raw.displayFields());
     }
-
-    private String mapTariffSearchFieldToColumn(String searchField) {
-        if (searchField == null) {
-            return null;
-        }
-        // Normalize the field name by removing underscores and converting to uppercase
-        String normalizedField = searchField.toUpperCase().replace("_", "");
-
-        switch (normalizedField) {
-            case "DOCREF":
-                return "t.DOC_REF";
-            case "PORTS":
-            case "PORT":
-                return "t.PORTS";
-            case "VESSELTYPES":
-            case "VESSELTYPE":
-            case "VESSEL":
-                return "t.VESSEL_TYPES";
-            case "REMARKS":
-                return "t.REMARKS";
-            case "PERIODFROM":
-                return "t.PERIOD_FROM";
-            case "PERIODTO":
-                return "t.PERIOD_TO";
-            default:
-                // Fallback: assume it's a direct column name from t table
-                String columnName = searchField.toUpperCase().replace(" ", "_");
-                return "t." + columnName;
-        }
-    }
-
-    private String mapTariffSortFieldToColumn(String sortField) {
-        if (sortField == null) {
-            return "t.TRANSACTION_DATE";
-        }
-        String normalizedField = sortField.toUpperCase().replace("_", "");
-
-        switch (normalizedField) {
-            case "TRANSACTIONPOID":
-                return "t.TRANSACTION_POID";
-            case "DOCREF":
-                return "t.DOC_REF";
-            case "TRANSACTIONDATE":
-                return "t.TRANSACTION_DATE";
-            case "PORTS":
-            case "PORT":
-                return "t.PORTS";
-            case "VESSELTYPES":
-            case "VESSELTYPE":
-            case "VESSEL":
-                return "t.VESSEL_TYPES";
-            case "PERIODFROM":
-                return "t.PERIOD_FROM";
-            case "PERIODTO":
-                return "t.PERIOD_TO";
-            case "REMARKS":
-                return "t.REMARKS";
-            case "DELETED":
-                return "t.DELETED";
-            case "CREATEDDATE":
-                return "t.CREATED_DATE";
-            case "LASTMODIFIEDDATE":
-                return "t.LASTMODIFIED_DATE";
-            default:
-                String columnName = sortField.toUpperCase().replace(" ", "_");
-                return "t." + columnName;
-        }
-    }
-
-    private PdaPortTariffListResponse mapToTariffListResponseDto(Object[] row) {
-        PdaPortTariffListResponse dto = new PdaPortTariffListResponse();
-
-        dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setDocRef(convertToString(row[1]));
-        dto.setTransactionDate(row[2] != null ? ((Timestamp) row[2]).toLocalDateTime().toLocalDate() : null);
-        dto.setPort(convertToString(row[3]));
-        dto.setPeriodFrom(row[5] != null ? ((Timestamp) row[5]).toLocalDateTime().toLocalDate() : null);
-        dto.setPeriodTo(row[6] != null ? ((Timestamp) row[6]).toLocalDateTime().toLocalDate() : null);
-        dto.setRemarks(convertToString(row[7]));
-        dto.setDeleted(convertToString(row[8]));
-        dto.setCreatedDate(row[9] != null ? ((Timestamp) row[9]).toLocalDateTime() : null);
-        dto.setLastModifiedDate(row[10] != null ? ((Timestamp) row[10]).toLocalDateTime() : null);
-        LovItem lovItem = dto.getPort() != null ? lovService.getLovItemByPoid(Long.parseLong(dto.getPort()), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()) : null;
-        dto.setPortName(lovItem != null ? lovItem.getLabel() : null);
-        return dto;
-    }
-
-    private String convertToString(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof String) {
-            return (String) value;
-        }
-        if (value instanceof Character) {
-            return String.valueOf((Character) value);
-        }
-        return value.toString();
-    }
-
-    private List<String> convertToStringList(Object value) {
-        if (value == null) {
-            return null;
-        }
-        String str = convertToString(value);
-        if (str == null || str.trim().isEmpty()) {
-            return new java.util.ArrayList<>();
-        }
-        return java.util.Arrays.asList(str.split(","));
-    }
-
 
     @Override
     @Transactional(readOnly = true)
