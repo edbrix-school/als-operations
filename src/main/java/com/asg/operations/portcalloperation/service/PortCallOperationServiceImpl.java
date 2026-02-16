@@ -2054,35 +2054,85 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        estPrearrivalActDtlRepository.deleteByTransactionPoidAndDetRowId(transactionPoid, detRowId);
-        long nextPreActivityDtlPoid = 1L;
+        // Map existing activities by activityPoid for matching
+        Map<Long, PortCallOperationEstPrearrivalActDtl> existingActivitiesMap = existingEntities.stream()
+                .collect(Collectors.toMap(PortCallOperationEstPrearrivalActDtl::getActivityPoid, e -> e, (e1, e2) -> e1));
 
-        List<PortCallOperationEstPrearrivalActDtl> entitiesToSave = new ArrayList<>();
+        // Track which activities from DTO we've processed
+        Set<Long> processedActivityPoids = new HashSet<>();
+        List<PortCallOperationEstPrearrivalActDtl> entitiesToUpdate = new ArrayList<>();
+        List<PortCallOperationEstPrearrivalActDtl> entitiesToCreate = new ArrayList<>();
+        List<PortCallOperationEstPrearrivalActDtl> entitiesToDelete = new ArrayList<>();
+
+        // Calculate next preActivityDtlPoid for new activities
+        long nextPreActivityDtlPoid = estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+
+        // Process activities from DTO: update existing or mark for creation
         for (PortCallReportActivityDto activity : activities) {
             if (activity.getActivityPoid() == null) continue;
-            entitiesToSave.add(PortCallOperationEstPrearrivalActDtl.builder()
-                    .transactionPoid(transactionPoid)
-                    .detRowId(detRowId)
-                    .preActivityDtlPoid(nextPreActivityDtlPoid++)
-                    .activityPoid(activity.getActivityPoid())
-                    .otherDescription(activity.getOtherDescription())
-                    .estimatedDatetime(activity.getEstimatedDatetime())
-                    .createdBy(UserContext.getUserId())
-                    .createdDate(LocalDateTime.now())
-                    .lastModifiedBy(UserContext.getUserId())
-                    .lastModifiedDate(LocalDateTime.now())
-                    .build());
+            processedActivityPoids.add(activity.getActivityPoid());
+            
+            PortCallOperationEstPrearrivalActDtl existingActivity = existingActivitiesMap.get(activity.getActivityPoid());
+            if (existingActivity != null) {
+                // Update existing activity
+                PortCallOperationEstPrearrivalActDtl oldActivity = new PortCallOperationEstPrearrivalActDtl();
+                BeanUtils.copyProperties(existingActivity, oldActivity);
+                
+                existingActivity.setOtherDescription(activity.getOtherDescription());
+                existingActivity.setEstimatedDatetime(activity.getEstimatedDatetime());
+                existingActivity.setLastModifiedBy(UserContext.getUserId());
+                existingActivity.setLastModifiedDate(LocalDateTime.now());
+                
+                entitiesToUpdate.add(existingActivity);
+                loggingService.createLog(oldActivity, existingActivity, PortCallOperationEstPrearrivalActDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), 
+                        String.format("Activity updated: activityPoid=%s", activity.getActivityPoid()));
+            } else {
+                // Create new activity
+                entitiesToCreate.add(PortCallOperationEstPrearrivalActDtl.builder()
+                        .transactionPoid(transactionPoid)
+                        .detRowId(detRowId)
+                        .preActivityDtlPoid(nextPreActivityDtlPoid++)
+                        .activityPoid(activity.getActivityPoid())
+                        .otherDescription(activity.getOtherDescription())
+                        .estimatedDatetime(activity.getEstimatedDatetime())
+                        .createdBy(UserContext.getUserId())
+                        .createdDate(LocalDateTime.now())
+                        .lastModifiedBy(UserContext.getUserId())
+                        .lastModifiedDate(LocalDateTime.now())
+                        .build());
+            }
         }
 
-        if (entitiesToSave.isEmpty()) {
+        // Mark activities for deletion that are no longer in the DTO
+        for (PortCallOperationEstPrearrivalActDtl existingActivity : existingEntities) {
+            if (!processedActivityPoids.contains(existingActivity.getActivityPoid())) {
+                entitiesToDelete.add(existingActivity);
+            }
+        }
+
+        if (entitiesToUpdate.isEmpty() && entitiesToCreate.isEmpty()) {
             throw new ValidationException("At least one activity must be provided");
         }
 
-        List<PortCallOperationEstPrearrivalActDtl> saved = estPrearrivalActDtlRepository.saveAll(entitiesToSave);
-        PortCallOperationEstPrearrivalActDtl entity = saved.getLast();
+        // Save updates and creates
+        if (!entitiesToUpdate.isEmpty()) {
+            estPrearrivalActDtlRepository.saveAll(entitiesToUpdate);
+        }
+        if (!entitiesToCreate.isEmpty()) {
+            estPrearrivalActDtlRepository.saveAll(entitiesToCreate);
+        }
+        // Delete activities that are no longer in the DTO
+        if (!entitiesToDelete.isEmpty()) {
+            estPrearrivalActDtlRepository.deleteAll(entitiesToDelete);
+        }
 
-        String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", entity.getTransactionPoid(), entity.getDetRowId());
-        loggingService.createLog(oldEntity, entity, PortCallOperationEstPrearrivalActDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+        // Get the last saved entity for response (prefer updated, then created)
+        PortCallOperationEstPrearrivalActDtl entity = !entitiesToUpdate.isEmpty() 
+                ? entitiesToUpdate.getLast()
+                : entitiesToCreate.getLast();
+
+        // Calculate the maximum preActivityDtlPoid from all saved activities (updated + created)
+        long maxPreActivityDtlPoid = estPrearrivalActDtlRepository.findMaxPreActivityDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId);
 
         // Update PortCallOperationEstPrearrivalDtl record
         PortCallOperationEstPrearrivalDtl existingPrearrivalDtl = estPrearrivalDtlRepository.findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
@@ -2092,7 +2142,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         BeanUtils.copyProperties(existingPrearrivalDtl, oldPrearrivalDtl);
 
         existingPrearrivalDtl.setEmailPoid(emailPoidToUse);
-        existingPrearrivalDtl.setPreActivityDtlPoid(entity.getPreActivityDtlPoid());
+        existingPrearrivalDtl.setPreActivityDtlPoid(maxPreActivityDtlPoid);
         existingPrearrivalDtl.setLastModifiedBy(UserContext.getUserId());
         existingPrearrivalDtl.setLastModifiedDate(LocalDateTime.now());
 
@@ -2347,6 +2397,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         List<PortCallOperationActTimingsActvtyDtl> entitiesToCreate = new ArrayList<>();
         List<PortCallOperationActTimingsActvtyDtl> entitiesToDelete = new ArrayList<>();
 
+        // Calculate next actualsTimingDtlPoid for new activities (only if we need to create any)
+        long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
+
         // Process activities from DTO: update existing or mark for creation
         for (PortCallReportActivityDto activity : activities) {
             if (activity.getActivityPoid() == null) continue;
@@ -2368,11 +2421,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         String.format("Activity updated: activityPoid=%s", activity.getActivityPoid()));
             } else {
                 // Create new activity
-                long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
                 entitiesToCreate.add(PortCallOperationActTimingsActvtyDtl.builder()
                         .transactionPoid(transactionPoid)
                         .detRowId(detRowId)
-                        .actualsTimingDtlPoid(nextActualsTimingDtlPoid)
+                        .actualsTimingDtlPoid(nextActualsTimingDtlPoid++)
                         .activityPoid(activity.getActivityPoid())
                         .details(activity.getOtherDescription())
                         .estimatedDatetime(activity.getEstimatedDatetime())
@@ -2409,8 +2461,11 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Get the last saved entity for response (prefer updated, then created)
         PortCallOperationActTimingsActvtyDtl entity = !entitiesToUpdate.isEmpty() 
-                ? entitiesToUpdate.get(entitiesToUpdate.size() - 1)
-                : entitiesToCreate.get(entitiesToCreate.size() - 1);
+                ? entitiesToUpdate.getLast()
+                : entitiesToCreate.getLast();
+
+        // Calculate the maximum actualsTimingDtlPoid from all saved activities (updated + created)
+        long maxActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId);
 
         // Update PortCallOperationActTimingDtl record
         PortCallOperationActTimingDtl existingActTimingDtl = actTimingDtlRepository.findById(new PortCallOperationActTimingDtlId(transactionPoid, detRowId, dto.getPortCallReportPoid()))
@@ -2420,8 +2475,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         BeanUtils.copyProperties(existingActTimingDtl, oldActTimingDtl);
         
         existingActTimingDtl.setEmailPoid(emailPoidToUse);
-        existingActTimingDtl.setPortReportPoid(dto.getPortCallReportPoid());
-        existingActTimingDtl.setActualsTimingDtlPoid(entity.getActualsTimingDtlPoid());
+        existingActTimingDtl.setActualsTimingDtlPoid(maxActualsTimingDtlPoid);
         existingActTimingDtl.setLastModifiedBy(UserContext.getUserId());
         existingActTimingDtl.setLastModifiedDate(LocalDateTime.now());
         
