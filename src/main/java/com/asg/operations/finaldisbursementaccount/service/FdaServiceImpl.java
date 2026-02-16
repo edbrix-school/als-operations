@@ -42,7 +42,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -74,7 +73,7 @@ public class FdaServiceImpl implements FdaService {
                 .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
 
         FdaHeaderDto fdaHeaderDto = HeaderMapper.mapHeaderEntityToDto(entity);
-//        setDetailsForHeader(fdaHeaderDto);
+        setDetailsForHeader(fdaHeaderDto);
 
         List<PdaFdaDtl> dtls = pdaFdaDtlRepository.findByIdTransactionPoid(transactionPoid);
 
@@ -82,9 +81,9 @@ public class FdaServiceImpl implements FdaService {
                 .map(ChargesMapper::mapChargeEntityToDto)
                 .collect(Collectors.toList());
 
-//        for (FdaChargeDto charge : charges) {
-//            setDetailsForCharge(charge);
-//        }
+        for (FdaChargeDto charge : charges) {
+            setDetailsForCharge(charge);
+        }
 
         CalculationUtils.computeProfitLossRuntime(charges, fdaHeaderDto);
 
@@ -200,281 +199,6 @@ public class FdaServiceImpl implements FdaService {
         Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
         return PaginationUtil.wrapPage(page, raw.displayFields());
-    }
-
-    private String mapFdaSearchFieldToColumn(String searchField) {
-        if (StringUtils.isBlank(searchField)) {
-            return null;
-        }
-        // Normalize the field name by removing underscores and converting to uppercase
-        String normalizedField = searchField.toUpperCase().replace("_", "");
-
-        switch (normalizedField) {
-            case "DOCREF":
-                return "f.DOC_REF";
-            case "STATUS":
-                return "f.STATUS";
-            case "REMARKS":
-                return "f.REMARKS";
-            case "PRINCIPALCONTACT":
-                return "f.PRINCIPAL_CONTACT";
-            case "OPERATIONTYPE":
-                return "f.OPERATION_TYPE";
-            case "UNIT":
-                return "f.UNIT";
-            case "HARBOURCALLTYPE":
-                return "f.HARBOUR_CALL_TYPE";
-            case "CURRENCYCODE":
-                return "f.CURRENCY_CODE";
-            case "VESSELVERIFIED":
-                return "f.VESSEL_VERIFIED";
-            case "VESSELVERIFIEDBY":
-                return "f.VESSEL_VERIFIED_BY";
-            case "URGENTAPPROVAL":
-                return "f.URGENT_APPROVAL";
-            case "PRINCIPALAPPROVED":
-                return "f.PRINCIPAL_APPROVED";
-            case "PRINCIPALAPPROVEDBY":
-                return "f.PRINCIPAL_APPROVED_BY";
-            case "CARGODETAILS":
-                return "f.CARGO_DETAILS";
-            case "CREATEDBY":
-                return "f.CREATED_BY";
-            case "LASTMODIFIEDBY":
-                return "f.LASTMODIFIED_BY";
-            case "DELETED":
-                return "f.DELETED";
-            case "PDAREF":
-                return "f.PDA_REF";
-            case "IMONUMBER":
-                return "f.IMO_NUMBER";
-            case "PORTDESCRIPTION":
-                return "f.PORT_DESCRIPTION";
-            case "VESSELTYPEPOID":
-                return "f.VESSEL_TYPE_POID";
-            case "VOYAGENO":
-                return "f.VOYAGE_NO";
-            case "PROFITLOSSPER":
-                return "f.PROFIT_LOSS_PER";
-            case "FDACLOSINGBY":
-                return "f.FDA_CLOSING_BY";
-            case "REFTYPE":
-                return "f.REF_TYPE";
-            case "CLOSEDREMARK":
-                return "f.CLOSED_REMARK";
-            case "SUPPLEMENTARY":
-                return "f.SUPPLEMENTARY";
-            case "BUSINESSREFBY":
-                return "f.BUSINESS_REF_BY";
-            case "FDAWITHOUTCHARGES":
-                return "f.FDA_WITHOUT_CHARGES";
-            case "PORTCALLNUMBER":
-                return "f.PORT_CALL_NUMBER";
-            case "NOMINATEDPARTYTYPE":
-                return "f.NOMINATED_PARTY_TYPE";
-            case "DOCUMENTSUBMITTEDBY":
-                return "f.DOCUMENT_SUBMITTED_BY";
-            case "DOCUMENTSUBMITTEDSTATUS":
-                return "f.DOCUMENT_SUBMITTED_STATUS";
-            case "FDASUBTYPE":
-                return "f.FDA_SUB_TYPE";
-            case "SUBCATEGORY":
-                return "f.SUB_CATEGORY";
-            case "DOCUMENTRECEIVEDFROM":
-                return "f.DOCUMENT_RECEIVED_FROM";
-            case "DOCUMENTRECEIVEDSTATUS":
-                return "f.DOCUMENT_RECEIVED_STATUS";
-            case "SUBMISSIONACCEPTEDBY":
-                return "f.SUBMISSION_ACCEPTED_BY";
-            case "VERIFICATIONACCEPTEDBY":
-                return "f.VERIFICATION_ACCEPTED_BY";
-            case "ACCOUNTSVERIFIED":
-                return "f.ACCOUNTS_VERIFIED";
-            case "OPSCORRECTIONREMARKS":
-                return "f.OPS_CORRECTION_REMARKS";
-            default:
-                // Fallback: assume it's a direct column name from f table
-                String columnName = searchField.toUpperCase().replace(" ", "_");
-                return "f." + columnName;
-        }
-    }
-
-    private FdaListResponse mapToFdaListResponseDto(Object[] row) {
-        FdaListResponse dto = new FdaListResponse();
-
-        dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setTransactionDate(row[1] != null ? ((Timestamp) row[1]).toLocalDateTime().toLocalDate() : null);
-        dto.setGroupPoid(row[2] != null ? ((Number) row[2]).longValue() : null);
-        dto.setCompanyPoid(row[3] != null ? ((Number) row[3]).longValue() : null);
-        dto.setPrincipalPoid(row[4] != null ? ((Number) row[4]).longValue() : null);
-        dto.setPrincipalContact(convertToString(row[5]));
-        dto.setDocRef(convertToString(row[6]));
-        dto.setVoyagePoid(row[7] != null ? ((Number) row[7]).longValue() : null);
-        dto.setVesselPoid(row[8] != null ? ((Number) row[8]).longValue() : null);
-        dto.setArrivalDate(row[9] != null ? ((Timestamp) row[9]).toLocalDateTime().toLocalDate() : null);
-        dto.setSailDate(row[10] != null ? ((Timestamp) row[10]).toLocalDateTime().toLocalDate() : null);
-        dto.setPortPoid(row[11] != null ? ((Number) row[11]).longValue() : null);
-        dto.setCommodityPoid(convertToString(row[12]));
-        dto.setOperationType(convertToString(row[13]));
-        dto.setTotalQuantity(row[16] != null ? (BigDecimal) row[16] : null);
-        dto.setUnit(convertToString(row[17]));
-        dto.setHarbourCallType(convertToString(row[18]));
-        dto.setCurrencyCode(convertToString(row[19]));
-        dto.setStatus(convertToString(row[32]));
-        dto.setTotalAmount(row[35] != null ? (BigDecimal) row[35] : null);
-        dto.setPdaRef(convertToString(row[41]));
-        dto.setSalesmanPoid(row[43] != null ? ((Number) row[43]).longValue() : null);
-        dto.setVoyageNo(convertToString(row[55]));
-        dto.setRefType(convertToString(row[60]));
-        dto.setDeleted(convertToString(row[40]));
-        dto.setCreatedBy(convertToString(row[36]));
-        dto.setCreatedDate(row[37] != null ? ((Timestamp) row[37]).toLocalDateTime() : null);
-        dto.setLastModifiedBy(convertToString(row[38]));
-        dto.setLastModifiedDate(row[39] != null ? ((Timestamp) row[39]).toLocalDateTime() : null);
-
-        return dto;
-    }
-
-    private FdaHeaderDto mapToFdaResponseDto(Object[] row) {
-        FdaHeaderDto dto = new FdaHeaderDto();
-
-        dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setTransactionDate(row[1] != null ? ((Timestamp) row[1]).toLocalDateTime().toLocalDate() : null);
-        dto.setGroupPoid(row[2] != null ? ((Number) row[2]).longValue() : null);
-        dto.setCompanyPoid(row[3] != null ? ((Number) row[3]).longValue() : null);
-        dto.setPrincipalPoid(row[4] != null ? ((Number) row[4]).longValue() : null);
-        dto.setPrincipalContact(convertToString(row[5]));
-        dto.setDocRef(convertToString(row[6]));
-        dto.setVoyagePoid(row[7] != null ? ((Number) row[7]).longValue() : null);
-        dto.setVesselPoid(row[8] != null ? ((Number) row[8]).longValue() : null);
-        dto.setArrivalDate(row[9] != null ? ((Timestamp) row[9]).toLocalDateTime().toLocalDate() : null);
-        dto.setSailDate(row[10] != null ? ((Timestamp) row[10]).toLocalDateTime().toLocalDate() : null);
-        dto.setPortPoid(row[11] != null ? ((Number) row[11]).longValue() : null);
-        dto.setCommodityPoid(convertToString(row[12]));
-        dto.setOperationType(convertToString(row[13]));
-        dto.setImportQty(row[14] != null ? (BigDecimal) row[14] : null);
-        dto.setExportQty(row[15] != null ? (BigDecimal) row[15] : null);
-        dto.setTotalQuantity(row[16] != null ? (BigDecimal) row[16] : null);
-        dto.setUnit(convertToString(row[17]));
-        dto.setHarbourCallType(convertToString(row[18]));
-        dto.setCurrencyCode(convertToString(row[19]));
-        dto.setCurrencyRate(row[20] != null ? (BigDecimal) row[20] : null);
-        dto.setCostCentrePoid(row[21] != null ? ((Number) row[21]).longValue() : null);
-        dto.setVesselVerified(convertToString(row[22]));
-        dto.setVesselVerifiedDate(row[23] != null ? ((Timestamp) row[23]).toLocalDateTime().toLocalDate() : null);
-        dto.setVesselVerifiedBy(convertToString(row[24]));
-        dto.setUrgentApproval(convertToString(row[25]));
-        dto.setPrincipalAprvlDays(row[26] != null ? ((Number) row[26]).longValue() : null);
-        dto.setPrincipalApproved(convertToString(row[27]));
-        dto.setPrincipalApprovedDate(row[28] != null ? ((Timestamp) row[28]).toLocalDateTime().toLocalDate() : null);
-        dto.setPrincipalApprovedBy(convertToString(row[29]));
-        dto.setReminderMinutes(row[30] != null ? ((Number) row[30]).longValue() : null);
-        dto.setCargoDetails(convertToString(row[31]));
-        dto.setStatus(convertToString(row[32]));
-        dto.setFdaClosedDate(row[33] != null ? ((Timestamp) row[33]).toLocalDateTime().toLocalDate() : null);
-        dto.setRemarks(convertToString(row[34]));
-        dto.setTotalAmount(row[35] != null ? (BigDecimal) row[35] : null);
-        dto.setCreatedBy(convertToString(row[36]));
-        dto.setCreatedDate(row[37] != null ? ((Timestamp) row[37]).toLocalDateTime() : null);
-        dto.setLastModifiedBy(convertToString(row[38]));
-        dto.setLastModifiedDate(row[39] != null ? ((Timestamp) row[39]).toLocalDateTime() : null);
-        dto.setDeleted(convertToString(row[40]));
-        dto.setPdaRef(convertToString(row[41]));
-        dto.setAddressPoid(row[42] != null ? ((Number) row[42]).longValue() : null);
-        dto.setSalesmanPoid(row[43] != null ? ((Number) row[43]).longValue() : null);
-        dto.setTranshipmentQty(row[44] != null ? (BigDecimal) row[44] : null);
-        dto.setDwt(row[45] != null ? (BigDecimal) row[45] : null);
-        dto.setGrt(row[46] != null ? (BigDecimal) row[46] : null);
-        dto.setImoNumber(convertToString(row[47]));
-        dto.setNrt(row[48] != null ? (BigDecimal) row[48] : null);
-        dto.setNumberOfDays(row[49] != null ? (BigDecimal) row[49] : null);
-        dto.setPortDescription(convertToString(row[50]));
-        dto.setTermsPoid(row[51] != null ? ((Number) row[51]).longValue() : null);
-        dto.setVesselTypePoid(convertToString(row[52]));
-        dto.setLinePoid(row[53] != null ? ((Number) row[53]).longValue() : null);
-        dto.setPrintPrincipal(row[54] != null ? ((Number) row[54]).longValue() : null);
-        dto.setVoyageNo(convertToString(row[55]));
-        dto.setProfitLossAmount(row[56] != null ? (BigDecimal) row[56] : null);
-        dto.setProfitLossPer(convertToString(row[57]));
-        dto.setFdaClosingBy(convertToString(row[58]));
-        dto.setGlClosingDate(row[59] != null ? ((Timestamp) row[59]).toLocalDateTime().toLocalDate() : null);
-        dto.setRefType(convertToString(row[60]));
-        dto.setClosedRemark(convertToString(row[61]));
-        dto.setSupplementary(convertToString(row[62]));
-        dto.setSupplementaryFdaPoid(row[63] != null ? ((Number) row[63]).longValue() : null);
-        dto.setBusinessRefBy(convertToString(row[64]));
-        dto.setFdaWithoutCharges(convertToString(row[65]));
-        dto.setPrintBankPoid(row[66] != null ? ((Number) row[66]).longValue() : null);
-        dto.setPortCallNumber(convertToString(row[67]));
-        dto.setNominatedPartyType(convertToString(row[68]));
-        dto.setNominatedPartyPoid(row[69] != null ? ((Number) row[69]).longValue() : null);
-        dto.setDocumentSubmittedDate(row[70] != null ? ((Timestamp) row[70]).toLocalDateTime().toLocalDate() : null);
-        dto.setDocumentSubmittedBy(convertToString(row[71]));
-        dto.setDocumentSubmittedStatus(convertToString(row[72]));
-        dto.setFdaSubType(convertToString(row[73]));
-        dto.setSubCategory(convertToString(row[74]));
-        dto.setDocumentReceivedDate(row[75] != null ? ((Timestamp) row[75]).toLocalDateTime().toLocalDate() : null);
-        dto.setDocumentReceivedFrom(convertToString(row[76]));
-        dto.setDocumentReceivedStatus(convertToString(row[77]));
-        dto.setSubmissionAcceptedDate(row[78] != null ? ((Timestamp) row[78]).toLocalDateTime().toLocalDate() : null);
-        dto.setVerificationAcceptedDate(row[79] != null ? ((Timestamp) row[79]).toLocalDateTime().toLocalDate() : null);
-        dto.setSubmissionAcceptedBy(convertToString(row[80]));
-        dto.setVerificationAcceptedBy(convertToString(row[81]));
-        dto.setVesselHandledBy(row[82] != null ? ((Number) row[82]).longValue() : null);
-        dto.setVesselSailDate(row[83] != null ? ((Timestamp) row[83]).toLocalDateTime().toLocalDate() : null);
-        dto.setAccountsVerified(convertToString(row[84]));
-        dto.setOpsCorrectionRemarks(convertToString(row[85]));
-        dto.setOpsReturnedDate(row[86] != null ? ((Timestamp) row[86]).toLocalDateTime().toLocalDate() : null);
-
-        return dto;
-    }
-
-    private String convertToString(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof String) {
-            return (String) value;
-        }
-        if (value instanceof Character) {
-            return String.valueOf((Character) value);
-        }
-        return value.toString();
-    }
-
-    private String mapSortFieldToColumn(String sortField) {
-        if (StringUtils.isBlank(sortField)) {
-            return "f.TRANSACTION_DATE";
-        }
-        String normalizedField = sortField.toUpperCase().replace("_", "");
-
-        switch (normalizedField) {
-            case "TRANSACTIONPOID":
-                return "f.TRANSACTION_POID";
-            case "TRANSACTIONDATE":
-                return "f.TRANSACTION_DATE";
-            case "DOCREF":
-                return "f.DOC_REF";
-            case "STATUS":
-                return "f.STATUS";
-            case "REMARKS":
-                return "f.REMARKS";
-            case "TOTALAMOUNT":
-                return "f.TOTAL_AMOUNT";
-            case "CREATEDDATE":
-                return "f.CREATED_DATE";
-            case "LASTMODIFIEDDATE":
-                return "f.LASTMODIFIED_DATE";
-            case "FDACLOSEDDATE":
-                return "f.FDA_CLOSED_DATE";
-            case "ARRIVALDATE":
-                return "f.ARRIVAL_DATE";
-            case "SAILDATE":
-                return "f.SAIL_DATE";
-            default:
-                String columnName = sortField.toUpperCase().replace(" ", "_");
-                return "f." + columnName;
-        }
     }
 
     @Override

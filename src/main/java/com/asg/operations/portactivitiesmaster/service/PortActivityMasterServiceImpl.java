@@ -17,12 +17,10 @@ import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.portactivitiesmaster.dto.*;
 import com.asg.operations.portactivitiesmaster.entity.PortActivityMaster;
 import com.asg.operations.portactivitiesmaster.repository.PortActivityMasterRepository;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +29,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +37,6 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
 
     private final PortActivityMasterRepository repository;
     private final LovService lovService;
-    private final EntityManager entityManager;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
@@ -61,94 +57,6 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
         Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
         return PaginationUtil.wrapPage(page, raw.displayFields());
-    }
-
-    private String mapPortActivitySearchFieldToColumn(String searchField) {
-        if (searchField == null) return null;
-        String normalizedField = searchField.toUpperCase().replace("_", "");
-        switch (normalizedField) {
-            case "PORTACTIVITYTYPEPOID":
-                return "p.PORT_ACTIVITY_TYPE_POID";
-            case "GROUPPOID":
-                return "p.GROUP_POID";
-            case "PORTACTIVITYTYPECODE":
-                return "p.PORT_ACTIVITY_TYPE_CODE";
-            case "PORTACTIVITYTYPENAME":
-                return "p.PORT_ACTIVITY_TYPE_NAME";
-            case "PORTACTIVITYTYPENAME2":
-                return "p.PORT_ACTIVITY_TYPE_NAME2";
-            case "ACTIVE":
-                return "p.ACTIVE";
-            case "SEQNO":
-                return "p.SEQNO";
-            case "CREATEDBY":
-                return "p.CREATED_BY";
-            case "LASTMODIFIEDBY":
-                return "p.LASTMODIFIED_BY";
-            case "DELETED":
-                return "p.DELETED";
-            case "REMARKS":
-                return "p.REMARKS";
-            default:
-                return "p." + searchField.toUpperCase().replace(" ", "_");
-        }
-    }
-
-    private String mapPortActivitySortFieldToColumn(String sortField) {
-        if (sortField == null) return "p.PORT_ACTIVITY_TYPE_CODE";
-        String normalizedField = sortField.toUpperCase().replace("_", "");
-        switch (normalizedField) {
-            case "PORTACTIVITYTYPEPOID":
-                return "p.PORT_ACTIVITY_TYPE_POID";
-            case "GROUPPOID":
-                return "p.GROUP_POID";
-            case "PORTACTIVITYTYPECODE":
-                return "p.PORT_ACTIVITY_TYPE_CODE";
-            case "PORTACTIVITYTYPENAME":
-                return "p.PORT_ACTIVITY_TYPE_NAME";
-            case "PORTACTIVITYTYPENAME2":
-                return "p.PORT_ACTIVITY_TYPE_NAME2";
-            case "ACTIVE":
-                return "p.ACTIVE";
-            case "SEQNO":
-                return "p.SEQNO";
-            case "CREATEDBY":
-                return "p.CREATED_BY";
-            case "CREATEDDATE":
-                return "p.CREATED_DATE";
-            case "LASTMODIFIEDBY":
-                return "p.LASTMODIFIED_BY";
-            case "LASTMODIFIEDDATE":
-                return "p.LASTMODIFIED_DATE";
-            case "DELETED":
-                return "p.DELETED";
-            case "REMARKS":
-                return "p.REMARKS";
-            default:
-                return "p." + sortField.toUpperCase().replace(" ", "_");
-        }
-    }
-
-    private PortActivityListResponse mapToPortActivityListResponseDto(Object[] row) {
-        PortActivityListResponse dto = new PortActivityListResponse();
-        dto.setPortActivityTypePoid(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setGroupPoid(row[1] != null ? ((Number) row[1]).longValue() : null);
-        dto.setPortActivityTypeCode(convertToString(row[2]));
-        dto.setPortActivityTypeName(convertToString(row[3]));
-        dto.setPortActivityTypeName2(convertToString(row[4]));
-        dto.setActive(convertToString(row[5]));
-        dto.setSeqno(row[6] != null ? ((Number) row[6]).longValue() : null);
-        dto.setCreatedBy(convertToString(row[7]));
-        dto.setCreatedDate(row[8] != null ? ((java.sql.Timestamp) row[8]).toLocalDateTime() : null);
-        dto.setLastModifiedBy(convertToString(row[9]));
-        dto.setLastModifiedDate(row[10] != null ? ((java.sql.Timestamp) row[10]).toLocalDateTime() : null);
-        dto.setDeleted(convertToString(row[11]));
-        dto.setRemarks(convertToString(row[12]));
-        return dto;
-    }
-
-    private String convertToString(Object value) {
-        return value != null ? value.toString() : null;
     }
 
     @Override

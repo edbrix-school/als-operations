@@ -25,7 +25,10 @@ import com.asg.operations.salesquotationprojects.entity.SalesQuoteProjectsTcDtl;
 import com.asg.operations.salesquotationprojects.key.SalesQuoteProjectsChargeDtlId;
 import com.asg.operations.salesquotationprojects.key.SalesQuoteProjectsNotesDtlId;
 import com.asg.operations.salesquotationprojects.key.SalesQuoteProjectsTcDtlId;
+import com.asg.operations.shipprincipal.entity.AddressDetails;
+import com.asg.operations.shipprincipal.entity.AddressMaster;
 import com.asg.operations.shipprincipal.repository.AddressDetailsRepository;
+import com.asg.operations.shipprincipal.repository.AddressMasterRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +66,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     private final DocumentSearchService documentSearchService;
     private final DocumentDeleteService documentDeleteService;
     private final AddressDetailsRepository addressDetailsRepository;
+    private final AddressMasterRepository addressMasterRepository;
     private final ApSupplierMasterRepository apSupplierMasterRepository;
     private final SalesSalesmanMasterRepository salesSalesmanMasterRepository;
     private final ShipCommodityMasterRepository shipCommodityMasterRepository;
@@ -835,6 +839,36 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         }
     }
 
+    @Override
+    public AddressDetailsDto getCustomerDetailsById(BigDecimal addressPoid) {
+
+        AddressDetails addressToUse = addressDetailsRepository.findByAddressPoidAndAddressType(addressPoid, "SALES");
+
+        if (addressToUse == null) {
+            addressToUse = addressDetailsRepository.findByAddressPoidAndAddressType(addressPoid, "MAIN");
+            if (addressToUse == null) {
+                throw new ResourceNotFoundException("Address Details", "addressPoid", addressPoid);
+            }
+        }
+
+        AddressMaster addressMaster = addressMasterRepository.findByAddressMasterPoid(addressToUse.getAddressMasterPoid());
+
+        if (addressMaster == null) {
+            throw new ResourceNotFoundException("Address Master", "addressMasterPoid", addressToUse.getAddressMasterPoid());
+        }
+
+        return AddressDetailsDto.builder()
+                .addressPoid(addressToUse.getAddressPoid())
+                .addressName(addressMaster.getAddressName())
+                .contactPerson(addressToUse.getContactPerson())
+                .email(addressToUse.getEmail1())
+                .telephone(addressToUse.getOffTel1())
+                .mobile(addressToUse.getMobile())
+                .poBox(addressToUse.getPoBox())
+                .whatsAppNumber(addressToUse.getWhatsappNo())
+                .build();
+    }
+
     private void saveChargeDetails(SalesQuoteProjectsHdr savedEntity, List<SalesQuoteProjectsChargeDetailRequest> chargeDetails) {
         for (SalesQuoteProjectsChargeDetailRequest request : chargeDetails) {
 
@@ -902,64 +936,5 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             String logDetail = String.format("Row Created on [Sales Quote Projects TC Details] with detRowId: %s", entity.getId().getDetRowId());
             loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
         }
-    }
-
-    @Override
-    public AddressDetailsDto getCustomerDetailsById(BigDecimal addressPoid) {
-
-        // Single query with JOIN - faster than entity-based approach (one round trip vs two)
-        Object[] result = addressDetailsRepository.findAddressDetailsWithNameByAddressPoid(addressPoid)
-                .orElseThrow(() -> new ResourceNotFoundException("Address", "addressPoid", addressPoid));
-
-        // Handle wrapped result - if result[0] is an Object[], use it; otherwise use result directly
-        Object[] row;
-        if (result != null && result.length > 0 && result[0] instanceof Object[]) {
-            row = (Object[]) result[0];
-        } else {
-            row = result;
-        }
-        return mapToAddressDetailsResponse(row);
-    }
-
-    private AddressDetailsDto mapToAddressDetailsResponse(Object[] row) {
-        AddressDetailsDto response = new AddressDetailsDto();
-        if (row != null && row.length > 0 && row[0] != null) {
-            response.setAddressPoid(getBigDecimalValue(row[0]));
-        }
-        if (row != null && row.length > 1 && row[1] != null) {
-            response.setAddressName(getStringValue(row[1]));
-        }
-        if (row != null && row.length > 2 && row[2] != null) {
-            response.setContactPerson(getStringValue(row[2]));
-        }
-        if (row != null && row.length > 3 && row[3] != null) {
-            response.setEmail(getStringValue(row[3]));
-        }
-        if (row != null && row.length > 4 && row[4] != null) {
-            response.setTelephone(getStringValue(row[4]));
-        }
-        if (row != null && row.length > 5 && row[5] != null) {
-            response.setMobile(getStringValue(row[5]));
-        }
-        if (row != null && row.length > 6 && row[6] != null) {
-            response.setPoBox(getStringValue(row[6]));
-        }
-        if (row != null && row.length > 7 && row[7] != null) {
-            response.setWhatsAppNumber(getStringValue(row[7]));
-        }
-        return response;
-    }
-
-    private BigDecimal getBigDecimalValue(Object obj) {
-        return switch (obj) {
-            case null -> null;
-            case BigDecimal bigDecimal -> bigDecimal;
-            case Number number -> BigDecimal.valueOf(number.doubleValue());
-            default -> null;
-        };
-    }
-
-    private String getStringValue(Object obj) {
-        return obj != null ? obj.toString() : null;
     }
 }
