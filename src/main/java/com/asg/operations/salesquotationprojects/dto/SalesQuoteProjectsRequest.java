@@ -1,5 +1,6 @@
 package com.asg.operations.salesquotationprojects.dto;
 
+import com.asg.operations.salesquotationprojects.annotation.ValidTransportationMode;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Getter
 @Setter
+@ValidTransportationMode
 public class SalesQuoteProjectsRequest {
 
     @NotBlank(message = "Customer type is required")
@@ -50,7 +52,6 @@ public class SalesQuoteProjectsRequest {
     @Size(max = 100, message = "Transportation mode cannot exceed 100 characters")
     private String transportationMode;
 
-    @NotBlank(message = "Other mode is required")
     @Size(max = 100, message = "Other mode cannot exceed 100 characters")
     private String otherMode;
     
