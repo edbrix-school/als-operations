@@ -10,18 +10,15 @@ public class TransportationModeValidator implements ConstraintValidator<ValidTra
 
     @Override
     public boolean isValid(SalesQuoteProjectsRequest request, ConstraintValidatorContext context) {
-
         if (request == null) {
             return true;
         }
-
         String transportationMode = request.getTransportationMode();
 
         if ("OTHER".equalsIgnoreCase(transportationMode) && StringUtils.isBlank(request.getOtherMode())) {
 
             context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate(
-                            "Other mode is required when transportation mode is OTHER")
+            context.buildConstraintViolationWithTemplate("Other mode is required when transportation mode is OTHER")
                     .addPropertyNode("otherMode")
                     .addConstraintViolation();
 
