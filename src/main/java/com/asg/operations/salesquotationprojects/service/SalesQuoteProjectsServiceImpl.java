@@ -21,10 +21,10 @@ import com.asg.operations.salesquotationprojects.repository.*;
 import com.asg.operations.portcallreport.enums.ActionType;
 import com.asg.operations.salesquotationprojects.entity.SalesQuoteProjectsChargeDtl;
 import com.asg.operations.salesquotationprojects.entity.SalesQuoteProjectsNotesDtl;
-import com.asg.operations.salesquotationprojects.entity.SalesQuoteProjectsTcDtl;
+import com.asg.operations.salesquotationprojects.entity.GlobalTermsCustomChanges;
 import com.asg.operations.salesquotationprojects.key.SalesQuoteProjectsChargeDtlId;
 import com.asg.operations.salesquotationprojects.key.SalesQuoteProjectsNotesDtlId;
-import com.asg.operations.salesquotationprojects.key.SalesQuoteProjectsTcDtlId;
+import com.asg.operations.salesquotationprojects.key.GlobalTermsCustomChangesId;
 import com.asg.operations.shipprincipal.entity.AddressDetails;
 import com.asg.operations.shipprincipal.entity.AddressMaster;
 import com.asg.operations.shipprincipal.repository.AddressDetailsRepository;
@@ -62,7 +62,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     private final SalesQuoteProjectsStoredProcRepository salesQuoteProjectsStoredProcRepository;
     private final SalesQuoteProjectsChargeDtlRepository chargeDtlRepository;
     private final SalesQuoteProjectsNotesDtlRepository notesDtlRepository;
-    private final SalesQuoteProjectsTcDtlRepository tcDtlRepository;
+    private final GlobalTermsCustomChangesRepository globalTermsCustomChangesRepository;
     private final DocumentSearchService documentSearchService;
     private final DocumentDeleteService documentDeleteService;
     private final AddressDetailsRepository addressDetailsRepository;
@@ -438,7 +438,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             updateNotesDetails(existingEntity.getTransactionPoid(), request.getNotesDetails());
         }
         if (request.getTcDetails() != null) {
-            updateTcDetails(existingEntity.getTransactionPoid(), request.getTcDetails());
+            updateTcDetails(existingEntity, request.getTcDetails());
         }
 
         loggingService.logChanges(oldHeader, existingEntity, SalesQuoteProjectsHdr.class, UserContext.getDocumentId(), transactionPoid.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
@@ -518,7 +518,13 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         // Fetch and set child entities
         response.setChargeDetails(chargeDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapChargeDetailToResponse).toList());
         response.setNotesDetails(notesDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapNotesDetailToResponse).toList());
-        response.setTcDetails(tcDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapTcDetailToResponse).toList());
+        String docId = UserContext.getDocumentId();
+        Long refTermsPoid = entity.getTermsPoid();
+        if (refTermsPoid != null) {
+            response.setTcDetails(globalTermsCustomChangesRepository.findByIdDocIdAndIdDocKeyPoidAndIdRefTermsPoid(docId, entity.getTransactionPoid(), refTermsPoid).stream().map(this::mapTcDetailToResponse).toList());
+        } else {
+            response.setTcDetails(new ArrayList<>());
+        }
 
         return response;
     }
@@ -611,16 +617,16 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         return response;
     }
 
-    private SalesQuoteProjectsTcDetailResponse mapTcDetailToResponse(SalesQuoteProjectsTcDtl entity) {
+    private SalesQuoteProjectsTcDetailResponse mapTcDetailToResponse(GlobalTermsCustomChanges entity) {
         SalesQuoteProjectsTcDetailResponse response = new SalesQuoteProjectsTcDetailResponse();
-        response.setTransactionPoid(entity.getId().getTransactionPoid());
+        response.setTransactionPoid(entity.getId().getDocKeyPoid());
         response.setDetRowId(entity.getId().getDetRowId());
-        response.setClauseRef(entity.getClauseRef());
-        response.setTermsDescription(entity.getTermsDescription());
+        response.setClauseRef(entity.getClauseNo());
+        response.setTermsDescription(entity.getClauseDetails());
         response.setCreatedBy(entity.getCreatedBy());
-        response.setCreatedDate(entity.getCreatedDate());
+        response.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate().toLocalDate() : null);
         response.setLastModifiedBy(entity.getLastModifiedBy());
-        response.setLastModifiedDate(entity.getLastModifiedDate());
+        response.setLastModifiedDate(entity.getLastModifiedDate() != null ? entity.getLastModifiedDate().toLocalDate() : null);
         return response;
     }
 
@@ -713,40 +719,65 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         }
     }
 
-    private void updateTcDetails(Long transactionPoid, List<SalesQuoteProjectsTcDetailRequest> tcDetails) {
+    private void updateTcDetails(SalesQuoteProjectsHdr existingEntity, List<SalesQuoteProjectsTcDetailRequest> tcDetails) {
+        String docId = UserContext.getDocumentId();
+        Long companyPoid = UserContext.getCompanyPoid();
+        Long refTermsPoid = existingEntity.getTermsPoid();
+        
+        if (refTermsPoid == null) {
+            throw new CustomException("Terms POID is required to update TC details", 400);
+        }
+
+        // Check if there are any existing records with different REF_TERMS_POID
+        // If termsPoid changed, delete all old records for this DOC_ID and DOC_KEY_POID
+        List<GlobalTermsCustomChanges> existingRecords = globalTermsCustomChangesRepository.findByIdDocIdAndIdDocKeyPoid(docId, existingEntity.getTransactionPoid());
+        boolean hasDifferentTermsPoid = existingRecords.stream()
+                .anyMatch(record -> !refTermsPoid.equals(record.getId().getRefTermsPoid()));
+        
+        if (hasDifferentTermsPoid) {
+            // Terms POID changed - delete all old records
+            globalTermsCustomChangesRepository.deleteAll(existingRecords);
+            log.info("Terms POID changed. Deleted {} old Global Terms Custom Changes records for DOC_ID: {}, DOC_KEY_POID: {}, old REF_TERMS_POID(s) replaced with: {}", 
+                    existingRecords.size(), docId, existingEntity.getTransactionPoid(), refTermsPoid);
+        }
+
         for (SalesQuoteProjectsTcDetailRequest request : tcDetails) {
             ActionType action = request.getActionType();
             if (action == null) continue;
 
             if (action == ActionType.isCreated) {
-                Long nextDetRowId = tcDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
-                SalesQuoteProjectsTcDtl entity = new SalesQuoteProjectsTcDtl();
-                SalesQuoteProjectsTcDtlId id = new SalesQuoteProjectsTcDtlId(transactionPoid, nextDetRowId);
+                Long nextDetRowId = globalTermsCustomChangesRepository.findMaxDetRowIdByDocIdAndDocKeyPoidAndRefTermsPoid(docId, existingEntity.getTransactionPoid(), refTermsPoid) + 1;
+                GlobalTermsCustomChanges entity = new GlobalTermsCustomChanges();
+                GlobalTermsCustomChangesId id = new GlobalTermsCustomChangesId(docId, existingEntity.getTransactionPoid(), refTermsPoid, nextDetRowId);
                 entity.setId(id);
-                entity.setClauseRef(request.getClauseRef());
-                entity.setTermsDescription(request.getTermsDescription());
+                entity.setCompanyPoid(companyPoid);
+                entity.setClauseNo(request.getClauseRef());
+                entity.setClauseDetails(request.getTermsDescription());
+                entity.setActive("Y");
                 entity.setCreatedBy(UserContext.getUserId());
-                entity.setCreatedDate(java.time.LocalDate.now());
-                SalesQuoteProjectsTcDtl saved = tcDtlRepository.save(entity);
-                String logDetail = String.format("Row Created on [Sales Quote Projects TC Details] with detRowId: %s", saved.getId().getDetRowId());
-                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+                entity.setCreatedDate(LocalDateTime.now());
+                entity.setLastModifiedBy(UserContext.getUserId());
+                entity.setLastModifiedDate(LocalDateTime.now());
+                GlobalTermsCustomChanges saved = globalTermsCustomChangesRepository.save(entity);
+                String logDetail = String.format("Row Created on [Global Terms Custom Changes] with detRowId: %s", saved.getId().getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), existingEntity.getTransactionPoid().toString(), logDetail);
             } else if (action == ActionType.isUpdated) {
-                SalesQuoteProjectsTcDtlId id = new SalesQuoteProjectsTcDtlId(transactionPoid, request.getDetRowId());
-                tcDtlRepository.findById(id).ifPresent(existing -> {
-                    SalesQuoteProjectsTcDtl oldDetail = new SalesQuoteProjectsTcDtl();
+                GlobalTermsCustomChangesId id = new GlobalTermsCustomChangesId(docId, existingEntity.getTransactionPoid(), refTermsPoid, request.getDetRowId());
+                globalTermsCustomChangesRepository.findById(id).ifPresent(existing -> {
+                    GlobalTermsCustomChanges oldDetail = new GlobalTermsCustomChanges();
                     BeanUtils.copyProperties(existing, oldDetail);
-                    existing.setClauseRef(request.getClauseRef());
-                    existing.setTermsDescription(request.getTermsDescription());
+                    existing.setClauseNo(request.getClauseRef());
+                    existing.setClauseDetails(request.getTermsDescription());
                     existing.setLastModifiedBy(UserContext.getUserId());
-                    existing.setLastModifiedDate(java.time.LocalDate.now());
-                    tcDtlRepository.save(existing);
-                    String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getDetRowId());
-                    loggingService.createLog(oldDetail, existing, SalesQuoteProjectsTcDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+                    existing.setLastModifiedDate(LocalDateTime.now());
+                    globalTermsCustomChangesRepository.save(existing);
+                    String logDetail = String.format("KeyId = DOC_ID %s: DOC_KEY_POID %s: REF_TERMS_POID %s: DET_ROW_ID %s", existing.getId().getDocId(), existing.getId().getDocKeyPoid(), existing.getId().getRefTermsPoid(), existing.getId().getDetRowId());
+                    loggingService.createLog(oldDetail, existing, GlobalTermsCustomChanges.class, UserContext.getDocumentId(), existingEntity.getTransactionPoid().toString(), logDetail);
                 });
             } else if (action == ActionType.isDeleted) {
-                SalesQuoteProjectsTcDtlId id = new SalesQuoteProjectsTcDtlId(transactionPoid, request.getDetRowId());
-                tcDtlRepository.deleteById(id);
-                loggingService.logDelete(request, UserContext.getDocumentId(), transactionPoid.toString());
+                GlobalTermsCustomChangesId id = new GlobalTermsCustomChangesId(docId, existingEntity.getTransactionPoid(), refTermsPoid, request.getDetRowId());
+                globalTermsCustomChangesRepository.deleteById(id);
+                loggingService.logDelete(request, UserContext.getDocumentId(), existingEntity.getTransactionPoid().toString());
             }
         }
     }
@@ -792,7 +823,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         }
     }
 
-    public Map<String, Object> getTermsAndConditions(Long termsPoid) {
+    public Map<String, Object> getTermsAndConditions(Long termsPoid, Long docKeyPoid) {
         try {
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_GLOB_TERMS_LOADLIST")
@@ -809,7 +840,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             params.put("P_GROUP_POID", UserContext.getGroupPoid());
             params.put("P_COMPANY_POID", UserContext.getCompanyPoid());
             params.put("P_DOC_ID", UserContext.getDocumentId());
-            params.put("P_DOC_KEY_POID", 0);
+            params.put("P_DOC_KEY_POID", docKeyPoid);
             params.put("P_TERMS_POID", termsPoid);
             return jdbcCall.execute(params);
         } catch (Exception e) {
@@ -921,19 +952,38 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     }
 
     private void saveTcDetails(SalesQuoteProjectsHdr savedEntity, List<SalesQuoteProjectsTcDetailRequest> tcDetails) {
+        String docId = UserContext.getDocumentId();
+        Long companyPoid = UserContext.getCompanyPoid();
+        Long refTermsPoid = savedEntity.getTermsPoid();
+        
+        if (refTermsPoid == null) {
+            throw new CustomException("Terms POID is required to save TC details", 400);
+        }
+
+        // Delete any existing records for this DOC_ID and DOC_KEY_POID before creating new ones
+        // This handles the case where termsPoid changes - old records are removed
+        List<GlobalTermsCustomChanges> existingRecords = globalTermsCustomChangesRepository.findByIdDocIdAndIdDocKeyPoid(docId, savedEntity.getTransactionPoid());
+        if (!existingRecords.isEmpty()) {
+            globalTermsCustomChangesRepository.deleteAll(existingRecords);
+            log.info("Deleted {} old Global Terms Custom Changes records for DOC_ID: {}, DOC_KEY_POID: {}", 
+                    existingRecords.size(), docId, savedEntity.getTransactionPoid());
+        }
+
         for (SalesQuoteProjectsTcDetailRequest request : tcDetails) {
-            Long nextDetRowId = tcDtlRepository.findMaxDetRowIdByTransactionPoid(savedEntity.getTransactionPoid()) + 1;
-            SalesQuoteProjectsTcDtl entity = new SalesQuoteProjectsTcDtl();
-            SalesQuoteProjectsTcDtlId id = new SalesQuoteProjectsTcDtlId(savedEntity.getTransactionPoid(), nextDetRowId);
+            Long nextDetRowId = globalTermsCustomChangesRepository.findMaxDetRowIdByDocIdAndDocKeyPoidAndRefTermsPoid(docId, savedEntity.getTransactionPoid(), refTermsPoid) + 1;
+            GlobalTermsCustomChanges entity = new GlobalTermsCustomChanges();
+            GlobalTermsCustomChangesId id = new GlobalTermsCustomChangesId(docId, savedEntity.getTransactionPoid(), refTermsPoid, nextDetRowId);
             entity.setId(id);
-            entity.setClauseRef(request.getClauseRef());
-            entity.setTermsDescription(request.getTermsDescription());
+            entity.setCompanyPoid(companyPoid);
+            entity.setClauseNo(request.getClauseRef());
+            entity.setClauseDetails(request.getTermsDescription());
+            entity.setActive("Y");
             entity.setCreatedBy(UserContext.getUserId());
-            entity.setCreatedDate(java.time.LocalDate.now());
+            entity.setCreatedDate(LocalDateTime.now());
             entity.setLastModifiedBy(UserContext.getUserId());
-            entity.setLastModifiedDate(java.time.LocalDate.now());
-            tcDtlRepository.save(entity);
-            String logDetail = String.format("Row Created on [Sales Quote Projects TC Details] with detRowId: %s", entity.getId().getDetRowId());
+            entity.setLastModifiedDate(LocalDateTime.now());
+            globalTermsCustomChangesRepository.save(entity);
+            String logDetail = String.format("Row Created on [Global Terms Custom Changes] with detRowId: %s", entity.getId().getDetRowId());
             loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
         }
     }
