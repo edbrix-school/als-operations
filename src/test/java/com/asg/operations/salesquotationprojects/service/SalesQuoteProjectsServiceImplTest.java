@@ -44,7 +44,7 @@ class SalesQuoteProjectsServiceImplTest {
     @Mock private SalesQuoteProjectsStoredProcRepository salesQuoteProjectsStoredProcRepository;
     @Mock private SalesQuoteProjectsChargeDtlRepository chargeDtlRepository;
     @Mock private SalesQuoteProjectsNotesDtlRepository notesDtlRepository;
-    @Mock private SalesQuoteProjectsTcDtlRepository tcDtlRepository;
+    @Mock private GlobalTermsCustomChangesRepository globalTermsCustomChangesRepository;
     @Mock private DocumentSearchService documentSearchService;
     @Mock private DocumentDeleteService documentDeleteService;
     @Mock private AddressDetailsRepository addressDetailsRepository;
@@ -105,7 +105,7 @@ class SalesQuoteProjectsServiceImplTest {
         when(repository.findById(transactionPoid)).thenReturn(Optional.of(mockEntity));
         when(chargeDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
         when(notesDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
-        when(tcDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
+        when(globalTermsCustomChangesRepository.findByIdDocIdAndIdDocKeyPoidAndIdRefTermsPoid(anyString(), eq(transactionPoid), anyLong())).thenReturn(new ArrayList<>());
         when(salesQuoteProjectsStoredProcRepository.callNewTempAddressLoadListProc(any(), any(), any(), any(), any()))
             .thenReturn(new ArrayList<>());
 
@@ -145,12 +145,9 @@ class SalesQuoteProjectsServiceImplTest {
 
             when(addressDetailsRepository.existsByAddressPoid(any())).thenReturn(true);
             when(globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(any())).thenReturn(true);
+            when(termsTemplateRepository.existsByTermsPoid(any())).thenReturn(true);
             when(repository.saveAndFlush(any(SalesQuoteProjectsHdr.class))).thenReturn(mockEntity);
-            when(chargeDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
-            when(notesDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
-            when(tcDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
             doNothing().when(entityManager).refresh(any());
-            doNothing().when(loggingService).createLogSummaryEntry(any(com.asg.common.lib.enums.LogDetailsEnum.class), any(String.class), any(String.class));
 
             SalesQuoteProjectsResponse result = service.createSalesQuoteProject(mockRequest);
 
@@ -182,8 +179,8 @@ class SalesQuoteProjectsServiceImplTest {
             when(repository.findById(transactionPoid)).thenReturn(Optional.of(mockEntity));
             when(addressDetailsRepository.existsByAddressPoid(any())).thenReturn(true);
             when(globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(any())).thenReturn(true);
+            when(termsTemplateRepository.existsByTermsPoid(any())).thenReturn(true);
             when(repository.save(any(SalesQuoteProjectsHdr.class))).thenReturn(mockEntity);
-            doNothing().when(loggingService).logChanges(any(), any(), any(), any(), any(), any(), any());
 
             SalesQuoteProjectsResponse result = service.updateSalesQuoteProject(transactionPoid, mockRequest);
 
@@ -277,6 +274,7 @@ class SalesQuoteProjectsServiceImplTest {
         entity.setCustomerPoid(BigDecimal.valueOf(100L));
         entity.setCustomerName("Test Customer");
         entity.setBillingCurrencyCode("USD");
+        entity.setTermsPoid(1L);
         entity.setTransactionDate(LocalDate.now());
         entity.setDeleted("N");
         entity.setCreatedBy("testUser");
@@ -292,6 +290,7 @@ class SalesQuoteProjectsServiceImplTest {
         request.setCustomerPoid(BigDecimal.valueOf(100L));
         request.setCustomerName("Test Customer");
         request.setBillingCurrencyCode("USD");
+        request.setTermsPoid(1L);
         request.setChargeDetails(new ArrayList<>());
         request.setNotesDetails(new ArrayList<>());
         request.setTcDetails(new ArrayList<>());
