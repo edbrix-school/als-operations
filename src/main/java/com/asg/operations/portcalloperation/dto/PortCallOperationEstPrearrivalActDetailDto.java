@@ -16,8 +16,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PortCallOperationEstPrearrivalActDetailDto {
-    private Long transactionPoid;
-    private Long detRowId;
     private Long preActivityDtlPoid;
 
     @Valid

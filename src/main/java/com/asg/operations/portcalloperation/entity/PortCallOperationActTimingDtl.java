@@ -37,6 +37,9 @@ public class PortCallOperationActTimingDtl {
 
     @Column(name = "EMAIL_POID")
     private Long emailPoid;
+
+    @Column(name = "TIMING_ATTACHMENTS", length = 4000)
+    private String timingAttachments;
     @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
