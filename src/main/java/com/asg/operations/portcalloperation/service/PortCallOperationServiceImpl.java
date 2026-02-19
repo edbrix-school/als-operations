@@ -2713,8 +2713,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ValidationException("Cannot edit this record. Please select a latest one");
         }
 
-        // Validate that files are provided
-        if (files == null || files.length == 0) {
+        // Require files only when the record has no existing attachments in DOCUMENT_ATTACHMENTS
+        if (StringUtils.isBlank(entity.getDocumentAttachments()) && (files == null || files.length == 0)) {
             throw new ValidationException("Document attachments are required. At least one file must be provided.");
         }
 
@@ -2726,16 +2726,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         docsCopyDtlRepository.save(entity);
 
-        // Upload attachments and update documentAttachments field
-        screenAttachmentService.uploadDocsCopyAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
-
-        // Reload entity to get updated documentAttachments
-        entity = docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detRowId))
-                .orElseThrow(() -> new ResourceNotFoundException("DocsCopyDetail", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId)));
-
-        // Validate that documentAttachments is not empty after upload
-        if (StringUtils.isBlank(entity.getDocumentAttachments())) {
-            throw new ValidationException("Failed to upload document attachments. Document attachments cannot be empty.");
+        // Upload attachments when files are provided; existing documentAttachments are preserved when no new files
+        if (files != null && files.length > 0) {
+            screenAttachmentService.uploadDocsCopyAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
+            entity = docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detRowId))
+                    .orElseThrow(() -> new ResourceNotFoundException("DocsCopyDetail", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId)));
+            if (StringUtils.isBlank(entity.getDocumentAttachments())) {
+                throw new ValidationException("Failed to upload document attachments. Document attachments cannot be empty.");
+            }
         }
 
         String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", entity.getTransactionPoid(), entity.getDetRowId());
