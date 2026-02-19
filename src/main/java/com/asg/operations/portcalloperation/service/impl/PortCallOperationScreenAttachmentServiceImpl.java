@@ -7,14 +7,16 @@ import com.asg.operations.portcalloperation.entity.*;
 import com.asg.operations.portcalloperation.repository.*;
 import com.asg.operations.portcalloperation.service.PortCallOperationScreenAttachmentService;
 import com.asg.operations.exceptions.ResourceNotFoundException;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,6 +39,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     private final PortCallOperationHusbandryCrewDtlRepository husbandryCrewDtlRepository;
     private final PortCallOperationHusbandryOthDtlRepository husbandryOthDtlRepository;
     private final PortCallOperationDocsCopyDtlRepository docsCopyDtlRepository;
+    private final PortCallOperationActTimingDtlRepository actTimingDtlRepository;
 
     private static long docKey(Long transactionPoid, Long detRowId) {
         return CommonAttachmentServiceClient.toDetailDocKeyPoid(transactionPoid, detRowId);
@@ -48,17 +51,17 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
                                       List<PcInfoAttachmentDto> uploadedFiles) {
         String newNames = uploadedFiles.stream()
                 .map(PcInfoAttachmentDto::getOriginalFileName)
-                .filter(StringUtils::hasText)
+                .filter(name -> StringUtils.isNotBlank(name))
                 .collect(Collectors.joining(SEP));
         if (newNames.isEmpty()) return;
-        String updated = existing == null || existing.isBlank() ? newNames : existing.trim() + SEP + newNames;
+        String updated = StringUtils.isBlank(existing) ? newNames : existing.trim() + SEP + newNames;
         setter.accept(updated);
         save.run();
     }
 
     private static void deleteUploaded(CommonAttachmentServiceClient client, String docId, long docKeyPoid, List<PcInfoAttachmentDto> files) {
         for (PcInfoAttachmentDto f : files) {
-            if (f.getStoredFileName() != null && !f.getStoredFileName().isBlank()) {
+            if (StringUtils.isNotBlank(f.getStoredFileName())) {
                 try {
                     client.deleteAttachment(docId, docKeyPoid, f.getStoredFileName());
                 } catch (Exception e) {
@@ -122,6 +125,49 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
         return attachmentClient.downloadAttachment(CommonAttachmentServiceClient.DOC_ID_BERTHING, docKey(transactionPoid, detRowId), storedFileName);
     }
 
+    @Override
+    @Transactional
+    public void deleteBerthingAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
+        ensureConfigured();
+        PortCallOperationEstBertDtl entity = resolveBerthing(transactionPoid, detRowId);
+        long key = docKey(transactionPoid, detRowId);
+        
+        // List attachments to find the originalFileName for the storedFileName
+        Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_BERTHING, key, 0, 1000);
+        String originalFileName = null;
+        
+        // Extract attachments from response
+        List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
+        for (Map<String, Object> attachment : attachments) {
+            Object storedName = attachment.get("storedFileName");
+            if (storedFileName.equals(storedName)) {
+                Object origName = attachment.get("originalFileName");
+                if (origName != null) {
+                    originalFileName = origName.toString();
+                }
+                break;
+            }
+        }
+        
+        if (originalFileName == null) {
+            throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
+        }
+        
+        // Delete from attachment service
+        attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_BERTHING, key, storedFileName);
+        
+        // Remove originalFileName from berthingAttachments field
+        String currentAttachments = entity.getBerthingAttachments();
+        if (StringUtils.isNotBlank(currentAttachments)) {
+            final String finalOriginalFileName = originalFileName;
+            List<String> fileNames = new ArrayList<>(Arrays.asList(currentAttachments.split(SEP)));
+            fileNames.removeIf(name -> name.trim().equals(finalOriginalFileName));
+            String updatedAttachments = String.join(SEP, fileNames);
+            entity.setBerthingAttachments(updatedAttachments);
+            estBertDtlRepository.save(entity);
+        }
+    }
+
     // ----- Pre-arrival -----
     @Override
     @Transactional
@@ -154,6 +200,49 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
         return attachmentClient.downloadAttachment(CommonAttachmentServiceClient.DOC_ID_PREARRIVAL, docKey(transactionPoid, detRowId), storedFileName);
     }
 
+    @Override
+    @Transactional
+    public void deletePreArrivalAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
+        ensureConfigured();
+        PortCallOperationEstPrearrivalDtl entity = resolvePreArrival(transactionPoid, detRowId);
+        long key = docKey(transactionPoid, detRowId);
+        
+        // List attachments to find the originalFileName for the storedFileName
+        Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_PREARRIVAL, key, 0, 1000);
+        String originalFileName = null;
+        
+        // Extract attachments from response
+        List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
+        for (Map<String, Object> attachment : attachments) {
+            Object storedName = attachment.get("storedFileName");
+            if (storedFileName.equals(storedName)) {
+                Object origName = attachment.get("originalFileName");
+                if (origName != null) {
+                    originalFileName = origName.toString();
+                }
+                break;
+            }
+        }
+        
+        if (originalFileName == null) {
+            throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
+        }
+        
+        // Delete from attachment service
+        attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_PREARRIVAL, key, storedFileName);
+        
+        // Remove originalFileName from preArrivalAttachments field
+        String currentAttachments = entity.getPreArrivalAttachments();
+        if (StringUtils.isNotBlank(currentAttachments)) {
+            final String finalOriginalFileName = originalFileName;
+            List<String> fileNames = new ArrayList<>(Arrays.asList(currentAttachments.split(SEP)));
+            fileNames.removeIf(name -> name.trim().equals(finalOriginalFileName));
+            String updatedAttachments = String.join(SEP, fileNames);
+            entity.setPreArrivalAttachments(updatedAttachments);
+            estPrearrivalDtlRepository.save(entity);
+        }
+    }
+
     // ----- PDA-FDA (header) -----
     @Override
     @Transactional
@@ -183,6 +272,49 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
         ensureConfigured();
         hdrRepository.findById(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
         return attachmentClient.downloadAttachment(CommonAttachmentServiceClient.DOC_ID_PDA_FDA, transactionPoid, storedFileName);
+    }
+
+    @Override
+    @Transactional
+    public void deletePdaFdaAttachment(Long transactionPoid, String storedFileName) {
+        ensureConfigured();
+        PortCallOperationHdr entity = hdrRepository.findById(transactionPoid)
+                .orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
+        
+        // List attachments to find the originalFileName for the storedFileName
+        Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_PDA_FDA, transactionPoid, 0, 1000);
+        String originalFileName = null;
+        
+        // Extract attachments from response
+        List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
+        for (Map<String, Object> attachment : attachments) {
+            Object storedName = attachment.get("storedFileName");
+            if (storedFileName.equals(storedName)) {
+                Object origName = attachment.get("originalFileName");
+                if (origName != null) {
+                    originalFileName = origName.toString();
+                }
+                break;
+            }
+        }
+        
+        if (originalFileName == null) {
+            throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
+        }
+        
+        // Delete from attachment service
+        attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_PDA_FDA, transactionPoid, storedFileName);
+        
+        // Remove originalFileName from pdaFdaAttachments field
+        String currentAttachments = entity.getPdaFdaAttachments();
+        if (StringUtils.isNotBlank(currentAttachments)) {
+            final String finalOriginalFileName = originalFileName;
+            List<String> fileNames = new ArrayList<>(Arrays.asList(currentAttachments.split(SEP)));
+            fileNames.removeIf(name -> name.trim().equals(finalOriginalFileName));
+            String updatedAttachments = String.join(SEP, fileNames);
+            entity.setPdaFdaAttachments(updatedAttachments);
+            hdrRepository.save(entity);
+        }
     }
 
     // ----- Husbandry crew -----
@@ -282,6 +414,130 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     }
 
     @Override
+    @Transactional
+    public void deleteDocsCopyAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
+        ensureConfigured();
+        PortCallOperationDocsCopyDtl entity = resolveDocsCopy(transactionPoid, detRowId);
+        long key = docKey(transactionPoid, detRowId);
+        
+        // List attachments to find the originalFileName for the storedFileName
+        Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_DOCS_COPY, key, 0, 1000);
+        String originalFileName = null;
+        int attachmentCount = 0;
+        
+        // Extract attachments from response
+        List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
+        for (Map<String, Object> attachment : attachments) {
+            attachmentCount++;
+            Object storedName = attachment.get("storedFileName");
+            if (storedFileName.equals(storedName)) {
+                Object origName = attachment.get("originalFileName");
+                if (origName != null) {
+                    originalFileName = origName.toString();
+                }
+                break;
+            }
+        }
+        
+        if (originalFileName == null) {
+            throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
+        }
+        
+        // Prevent deletion if it's the last file
+        if (attachmentCount <= 1) {
+            throw new ValidationException("Cannot delete the last attachment. Document attachments cannot be empty.");
+        }
+        
+        // Delete from attachment service
+        attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_DOCS_COPY, key, storedFileName);
+        
+        // Remove originalFileName from documentAttachments field
+        String currentAttachments = entity.getDocumentAttachments();
+        if (StringUtils.isNotBlank(currentAttachments)) {
+            final String finalOriginalFileName = originalFileName;
+            List<String> fileNames = new ArrayList<>(Arrays.asList(currentAttachments.split(SEP)));
+            fileNames.removeIf(name -> name.trim().equals(finalOriginalFileName));
+            String updatedAttachments = String.join(SEP, fileNames);
+            entity.setDocumentAttachments(updatedAttachments);
+            docsCopyDtlRepository.save(entity);
+        }
+    }
+
+    // ----- Actual timing (OPS_PC_ACT_TIMING_DTL.TIMING_ATTACHMENTS) -----
+
+    @Override
+    @Transactional
+    public PcInfoAttachmentUploadResponseDto uploadTimingAttachments(Long transactionPoid, Long detRowId, MultipartFile[] files, String[] remarks, String[] checklistNames) {
+        PortCallOperationActTimingDtl d = resolveTiming(transactionPoid, detRowId);
+        long key = docKey(transactionPoid, detRowId);
+        return uploadDetail(CommonAttachmentServiceClient.DOC_ID_TIMING, key,
+                d.getTimingAttachments(), d::setTimingAttachments, () -> actTimingDtlRepository.save(d),
+                files, remarks, checklistNames);
+    }
+
+    @Override
+    public Map<String, Object> listTimingAttachments(Long transactionPoid, Long detRowId, int page, int size) {
+        ensureConfigured();
+        resolveTiming(transactionPoid, detRowId);
+        return attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_TIMING, docKey(transactionPoid, detRowId), page, size);
+    }
+
+    @Override
+    public String getTimingAttachmentsSummary(Long transactionPoid, Long detRowId) {
+        return nullToEmpty(resolveTiming(transactionPoid, detRowId).getTimingAttachments());
+    }
+
+    @Override
+    public org.springframework.http.ResponseEntity<org.springframework.core.io.Resource> downloadTimingAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
+        ensureConfigured();
+        resolveTiming(transactionPoid, detRowId);
+        return attachmentClient.downloadAttachment(CommonAttachmentServiceClient.DOC_ID_TIMING, docKey(transactionPoid, detRowId), storedFileName);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTimingAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
+        ensureConfigured();
+        PortCallOperationActTimingDtl entity = resolveTiming(transactionPoid, detRowId);
+        long key = docKey(transactionPoid, detRowId);
+        
+        // List attachments to find the originalFileName for the storedFileName
+        Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_TIMING, key, 0, 1000);
+        String originalFileName = null;
+        
+        // Extract attachments from response
+        List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
+        for (Map<String, Object> attachment : attachments) {
+            Object storedName = attachment.get("storedFileName");
+            if (storedFileName.equals(storedName)) {
+                Object origName = attachment.get("originalFileName");
+                if (origName != null) {
+                    originalFileName = origName.toString();
+                }
+                break;
+            }
+        }
+        
+        if (originalFileName == null) {
+            throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
+        }
+        
+        // Delete from attachment service
+        attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_TIMING, key, storedFileName);
+        
+        // Remove originalFileName from timingAttachments field
+        String currentAttachments = entity.getTimingAttachments();
+        if (StringUtils.isNotBlank(currentAttachments)) {
+            final String finalOriginalFileName = originalFileName;
+            List<String> fileNames = new ArrayList<>(Arrays.asList(currentAttachments.split(SEP)));
+            fileNames.removeIf(name -> name.trim().equals(finalOriginalFileName));
+            String updatedAttachments = String.join(SEP, fileNames);
+            entity.setTimingAttachments(updatedAttachments);
+            actTimingDtlRepository.save(entity);
+        }
+    }
+
+    @Override
     public boolean isAttachmentServiceAvailable() {
         return attachmentClient.isConfigured();
     }
@@ -319,5 +575,54 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     private PortCallOperationDocsCopyDtl resolveDocsCopy(Long transactionPoid, Long detRowId) {
         return docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detRowId))
                 .orElseThrow(() -> new ResourceNotFoundException("Docs copy detail", "detRowId", detRowId));
+    }
+
+    private PortCallOperationActTimingDtl resolveTiming(Long transactionPoid, Long detRowId) {
+        List<PortCallOperationActTimingDtl> entities = actTimingDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        if (entities.isEmpty()) {
+            throw new ResourceNotFoundException("Actual timing detail", "detRowId", detRowId);
+        }
+        // Return the first one (there could be multiple with different portReportPoid, but attachments are at detRowId level)
+        return entities.get(0);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> extractAttachmentsFromResponse(Map<String, Object> response) {
+        if (response == null) {
+            return new ArrayList<>();
+        }
+        
+        Object content = null;
+        if (response.containsKey("content")) {
+            content = response.get("content");
+        } else if (response.containsKey("result")) {
+            Object result = response.get("result");
+            if (result instanceof Map) {
+                Map<String, Object> resultMap = (Map<String, Object>) result;
+                Object data = resultMap.get("data");
+                if (data instanceof Map) {
+                    Map<String, Object> dataMap = (Map<String, Object>) data;
+                    content = dataMap.get("content");
+                }
+            }
+        } else if (response.containsKey("data")) {
+            Object data = response.get("data");
+            if (data instanceof Map) {
+                Map<String, Object> dataMap = (Map<String, Object>) data;
+                content = dataMap.get("content");
+            }
+        }
+        
+        if (content instanceof List) {
+            List<Map<String, Object>> attachments = new ArrayList<>();
+            for (Object item : (List<?>) content) {
+                if (item instanceof Map) {
+                    attachments.add((Map<String, Object>) item);
+                }
+            }
+            return attachments;
+        }
+        
+        return new ArrayList<>();
     }
 }

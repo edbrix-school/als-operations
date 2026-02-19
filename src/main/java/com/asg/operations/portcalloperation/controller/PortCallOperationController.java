@@ -10,7 +10,6 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.ExcelExportService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.portcalloperation.dto.*;
-import com.asg.operations.portcalloperation.service.PortCallOperationDrawerAttachmentService;
 import com.asg.operations.portcalloperation.service.PortCallOperationPcInfoAttachmentService;
 import com.asg.operations.portcalloperation.service.PortCallOperationScreenAttachmentService;
 import com.asg.operations.portcalloperation.service.PortCallOperationService;
@@ -50,7 +49,6 @@ public class PortCallOperationController {
     private final PortCallOperationService portCallOperationService;
     private final LoggingService loggingService;
     private final PortCallOperationPcInfoAttachmentService pcInfoAttachmentService;
-    private final PortCallOperationDrawerAttachmentService drawerAttachmentService;
     private final PortCallOperationScreenAttachmentService screenAttachmentService;
     private final ExcelExportService excelExportService;
 
@@ -269,20 +267,23 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
-    @PostMapping("/{transactionPoid}/est-bert-details")
+    @PostMapping(value = "/{transactionPoid}/est-bert-details", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Create EstBertDetail",
             description = "Create a new EstBertDetail for a port call operation",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> createEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                 @Valid @RequestBody PortCallOperationEstBertDetailRequestDto dto) {
-        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.createEstBertDetail(transactionPoid, dto);
+                                                 @Valid @ModelAttribute PortCallOperationEstBertDetailRequestDto dto,
+                                                 @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                 @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                 @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.createEstBertDetail(transactionPoid, dto, files, remarks, checklistNames);
         return success("EstBertDetail created successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
-    @PutMapping("/{transactionPoid}/est-bert-details/{detRowId}")
+    @PutMapping(value = "/{transactionPoid}/est-bert-details/{detRowId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Update EstBertDetail",
             description = "Update an existing EstBertDetail for a port call operation",
@@ -290,8 +291,11 @@ public class PortCallOperationController {
     )
     public ResponseEntity<?> updateEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                  @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
-                                                 @Valid @RequestBody PortCallOperationEstBertDetailRequestDto dto) {
-        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.updateEstBertDetail(transactionPoid, detRowId, dto);
+                                                 @Valid @ModelAttribute PortCallOperationEstBertDetailRequestDto dto,
+                                                 @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                 @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                 @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.updateEstBertDetail(transactionPoid, detRowId, dto, files, remarks, checklistNames);
         return success("EstBertDetail updated successfully", result);
     }
 
@@ -309,21 +313,24 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
-    @PostMapping("/{transactionPoid}/est-prearrival-details/activities")
+    @PostMapping(value = "/{transactionPoid}/est-prearrival-details/activities", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Create EstPrearrivalActDetail",
             description = "Create a new activity for a prearrival detail. detRowId will be generated automatically.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> createEstPrearrivalActDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                          @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
-        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, dto);
+                                                          @Valid @ModelAttribute PortCallOperationEstPrearrivalActDetailDto dto,
+                                                          @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                          @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                          @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, dto, files, remarks, checklistNames);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstPrearrivalActDetail created successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
-    @PutMapping("/{transactionPoid}/est-prearrival-details/{detRowId}/activities/{preActivityDtlPoid}")
+    @PutMapping(value = "/{transactionPoid}/est-prearrival-details/{detRowId}/activities/{preActivityDtlPoid}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Update EstPrearrivalActDetail",
             description = "Update an existing activity for a prearrival detail",
@@ -332,8 +339,11 @@ public class PortCallOperationController {
     public ResponseEntity<?> updateEstPrearrivalActDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
                                                           @Parameter(description = "Pre Activity Detail POID") @PathVariable Long preActivityDtlPoid,
-                                                          @Valid @RequestBody PortCallOperationEstPrearrivalActDetailDto dto) {
-        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, preActivityDtlPoid, dto);
+                                                          @Valid @ModelAttribute PortCallOperationEstPrearrivalActDetailDto dto,
+                                                          @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                          @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                          @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, preActivityDtlPoid, dto, files, remarks, checklistNames);
         return success("EstPrearrivalActDetail updated successfully", result);
     }
 
@@ -352,21 +362,24 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
-    @PostMapping("/{transactionPoid}/act-timing-details/activities")
+    @PostMapping(value = "/{transactionPoid}/act-timing-details/activities", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Create ActTimingsActvtyDetail",
             description = "Create a new activity for an actual timing detail. detRowId will be generated automatically.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> createActTimingsActvtyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                          @Valid @RequestBody PortCallOperationActTimingsActivityDetailDto dto) {
-        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, dto);
+                                                          @Valid @ModelAttribute PortCallOperationActTimingsActivityDetailDto dto,
+                                                          @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                          @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                          @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, dto, files, remarks, checklistNames);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetail created successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
-    @PutMapping("/{transactionPoid}/act-timing-details/{detRowId}/activities/{actualsTimingDtlPoid}")
+    @PutMapping(value = "/{transactionPoid}/act-timing-details/{detRowId}/activities/{actualsTimingDtlPoid}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Update ActTimingsActvtyDetail",
             description = "Update an existing activity for an actual timing detail",
@@ -375,8 +388,11 @@ public class PortCallOperationController {
     public ResponseEntity<?> updateActTimingsActvtyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
                                                           @Parameter(description = "Actuals Timing Detail POID") @PathVariable Long actualsTimingDtlPoid,
-                                                          @Valid @RequestBody PortCallOperationActTimingsActivityDetailDto dto) {
-        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto);
+                                                          @Valid @ModelAttribute PortCallOperationActTimingsActivityDetailDto dto,
+                                                          @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                          @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                          @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto, files, remarks, checklistNames);
         return success("ActTimingsActvtyDetail updated successfully", result);
     }
 
@@ -395,21 +411,24 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
-    @PostMapping("/{transactionPoid}/docs-copy-details")
+    @PostMapping(value = "/{transactionPoid}/docs-copy-details", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Create DocsCopyDetail",
             description = "Create a new DocsCopyDetail for a port call operation",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> createDocsCopyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                  @Valid @RequestBody PortCallOperationDocsCopyDetailRequestDto dto) {
-        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.createDocsCopyDetail(transactionPoid, dto);
+                                                  @Valid @ModelAttribute PortCallOperationDocsCopyDetailRequestDto dto,
+                                                  @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                  @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                  @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.createDocsCopyDetail(transactionPoid, dto, files, remarks, checklistNames);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("DocsCopyDetail created successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
-    @PutMapping("/{transactionPoid}/docs-copy-details/{detRowId}")
+    @PutMapping(value = "/{transactionPoid}/docs-copy-details/{detRowId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Update DocsCopyDetail",
             description = "Update an existing DocsCopyDetail for a port call operation",
@@ -417,8 +436,11 @@ public class PortCallOperationController {
     )
     public ResponseEntity<?> updateDocsCopyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                   @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
-                                                  @Valid @RequestBody PortCallOperationDocsCopyDetailRequestDto dto) {
-        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.updateDocsCopyDetail(transactionPoid, detRowId, dto);
+                                                  @Valid @ModelAttribute PortCallOperationDocsCopyDetailRequestDto dto,
+                                                  @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                  @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                  @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.updateDocsCopyDetail(transactionPoid, detRowId, dto, files, remarks, checklistNames);
         return success("DocsCopyDetail updated successfully", result);
     }
 
@@ -496,82 +518,21 @@ public class PortCallOperationController {
         return pcInfoAttachmentService.downloadAttachment(transactionPoid, storedFileName);
     }
 
-    // ------------------- Side drawer attachments (Docs Msgs Dtl1 / EMAIL_DOCUMENTS) -------------------
-
-    @AllowedAction(UserRolesRightsEnum.EDIT)
-    @PostMapping(value = "/{transactionPoid}/docs-drawer/{emailPoid}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{transactionPoid}/pc-info-attachments/{storedFileName}")
     @Operation(
-            summary = "Upload drawer attachments",
-            description = "Upload multiple files as side drawer attachments. Stored file names are appended to EMAIL_DOCUMENTS on the Docs Msgs Dtl1 row (comma-separated). Isolated from main screen and list area.",
+            summary = "Delete PC Info attachment",
+            description = "Delete a PC Info attachment file by its stored filename.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<?> uploadDrawerAttachments(
-            @Parameter(description = "Transaction POID (port call operation id)") @PathVariable Long transactionPoid,
-            @Parameter(description = "Email POID (Docs Msgs Dtl1 row id)") @PathVariable Long emailPoid,
-            @RequestParam(value = "files", required = false) MultipartFile[] files,
-            @RequestParam(value = "remarks", required = false) String[] remarks,
-            @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
-        if (!drawerAttachmentService.isAttachmentServiceAvailable()) {
-            return badRequest("Attachment service is not configured. Set common.service.attachment.base-url.");
-        }
-        if (files == null || files.length == 0) {
-            return badRequest("No files provided for upload.");
-        }
-        PcInfoAttachmentUploadResponseDto response = drawerAttachmentService.uploadDrawerAttachments(transactionPoid, emailPoid, files, remarks, checklistNames);
-        String message = response.isHasErrors()
-                ? "Files uploaded with some errors. Check 'errors' in response."
-                : "Drawer attachments uploaded successfully.";
-        return success(message, response);
-    }
-
-    @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/docs-drawer/{emailPoid}/attachments")
-    @Operation(
-            summary = "List drawer attachments",
-            description = "Retrieve paginated list of side drawer attachments for the given Docs Msgs Dtl1 row from the common attachment service.",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    public ResponseEntity<?> listDrawerAttachments(
+    public ResponseEntity<?> deletePcInfoAttachment(
             @Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-            @Parameter(description = "Email POID (Docs Msgs Dtl1 row id)") @PathVariable Long emailPoid,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        if (!drawerAttachmentService.isAttachmentServiceAvailable()) {
-            return badRequest("Attachment service is not configured. Set common.service.attachment.base-url.");
-        }
-        Map<String, Object> result = drawerAttachmentService.listDrawerAttachments(transactionPoid, emailPoid, page, size);
-        return success("Drawer attachments fetched successfully", result);
-    }
-
-    @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/docs-drawer/{emailPoid}/attachments/summary")
-    @Operation(
-            summary = "Get drawer attachments summary",
-            description = "Get comma-separated attachment names stored in EMAIL_DOCUMENTS for the Docs Msgs Dtl1 row.",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    public ResponseEntity<?> getDrawerAttachmentsSummary(
-            @Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-            @Parameter(description = "Email POID (Docs Msgs Dtl1 row id)") @PathVariable Long emailPoid) {
-        String summary = drawerAttachmentService.getDrawerAttachmentsSummary(transactionPoid, emailPoid);
-        return success("Drawer attachments summary", Map.of("emailDocuments", summary != null ? summary : ""));
-    }
-
-    @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/docs-drawer/{emailPoid}/attachments/{storedFileName}/download")
-    @Operation(
-            summary = "Download drawer attachment",
-            description = "Download a drawer attachment file by its stored filename. Use the storedFileName from the list attachments response.",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    public ResponseEntity<org.springframework.core.io.Resource> downloadDrawerAttachment(
-            @Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-            @Parameter(description = "Email POID (Docs Msgs Dtl1 row id)") @PathVariable Long emailPoid,
             @Parameter(description = "Stored filename (fileNameMapped) from attachment list response") @PathVariable String storedFileName) {
-        if (!drawerAttachmentService.isAttachmentServiceAvailable()) {
-            throw new IllegalStateException("Attachment service is not configured. Set common.service.attachment.base-url.");
+        if (!pcInfoAttachmentService.isAttachmentServiceAvailable()) {
+            return badRequest("Attachment service is not configured. Set common.service.attachment.base-url.");
         }
-        return drawerAttachmentService.downloadAttachment(transactionPoid, emailPoid, storedFileName);
+        pcInfoAttachmentService.deletePcInfoAttachment(transactionPoid, storedFileName);
+        return success("Attachment deleted successfully", null);
     }
 
     // ------------------- Screen-specific attachments (isolated per screen) -------------------
@@ -624,6 +585,15 @@ public class PortCallOperationController {
         return screenAttachmentService.downloadBerthingAttachment(transactionPoid, detRowId, storedFileName);
     }
 
+    @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{transactionPoid}/berthing/{detRowId}/attachments/{storedFileName}")
+    @Operation(summary = "Delete berthing attachment", description = "Deletes an attachment. Cannot delete the last attachment.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> deleteBerthingAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        screenAttachmentService.deleteBerthingAttachment(transactionPoid, detRowId, storedFileName);
+        return success("Attachment deleted successfully", null);
+    }
+
     // ----- Pre-arrival (OPS_PC_EST_PREARRIVAL_DTL.PRE_ARRIVAL_ATTACHMENTS) -----
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping(value = "/{transactionPoid}/pre-arrival/{detRowId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -664,6 +634,15 @@ public class PortCallOperationController {
         return screenAttachmentService.downloadPreArrivalAttachment(transactionPoid, detRowId, storedFileName);
     }
 
+    @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments/{storedFileName}")
+    @Operation(summary = "Delete pre-arrival attachment", description = "Deletes an attachment. Cannot delete the last attachment.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> deletePreArrivalAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        screenAttachmentService.deletePreArrivalAttachment(transactionPoid, detRowId, storedFileName);
+        return success("Attachment deleted successfully", null);
+    }
+
     // ----- Other details / PDA-FDA (OPS_PC_OPERATION_HDR.PDA_FDA_ATTACHMENTS) -----
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping(value = "/{transactionPoid}/disbursement-other-details/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -701,6 +680,15 @@ public class PortCallOperationController {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadPdaFdaAttachment(transactionPoid, storedFileName);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{transactionPoid}/disbursement-other-details/attachments/{storedFileName}")
+    @Operation(summary = "Delete other details (PDA/FDA) attachment", description = "Deletes an attachment. Cannot delete the last attachment.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> deletePdaFdaAttachment(@PathVariable Long transactionPoid, @PathVariable String storedFileName) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        screenAttachmentService.deletePdaFdaAttachment(transactionPoid, storedFileName);
+        return success("Attachment deleted successfully", null);
     }
 
     // ----- Husbandry crew (OPS_PC_HUSBANDRY_CREW_DTL.CREW_ATTACHMENTS) -----
@@ -821,6 +809,64 @@ public class PortCallOperationController {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadDocsCopyAttachment(transactionPoid, detRowId, storedFileName);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments/{storedFileName}")
+    @Operation(summary = "Delete docs copy attachment", description = "Deletes an attachment. Cannot delete the last attachment.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> deleteDocsCopyAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        screenAttachmentService.deleteDocsCopyAttachment(transactionPoid, detRowId, storedFileName);
+        return success("Attachment deleted successfully", null);
+    }
+
+    // ----- Actual timing (OPS_PC_ACT_TIMING_DTL.TIMING_ATTACHMENTS) -----
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/actual-timing/{detRowId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload actual timing attachments", description = "Stored in TIMING_ATTACHMENTS.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> uploadTimingAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+                                                     @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                     @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                     @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        if (files == null || files.length == 0) return badRequest("No files provided for upload.");
+        PcInfoAttachmentUploadResponseDto response = screenAttachmentService.uploadTimingAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
+        return success(response.isHasErrors() ? "Files uploaded with some errors." : "Actual timing attachments uploaded successfully.", response);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/actual-timing/{detRowId}/attachments")
+    @Operation(summary = "List actual timing attachments", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> listTimingAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId,
+                                                   @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        return success("Actual timing attachments", screenAttachmentService.listTimingAttachments(transactionPoid, detRowId, page, size));
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/actual-timing/{detRowId}/attachments/summary")
+    @Operation(summary = "Actual timing attachments summary", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> getTimingAttachmentsSummary(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        String summary = screenAttachmentService.getTimingAttachmentsSummary(transactionPoid, detRowId);
+        return success("Actual timing attachments summary", Map.of("timingAttachments", summary != null ? summary : ""));
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/actual-timing/{detRowId}/attachments/{storedFileName}/download")
+    @Operation(summary = "Download actual timing attachment", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadTimingAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable())
+            throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadTimingAttachment(transactionPoid, detRowId, storedFileName);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{transactionPoid}/actual-timing/{detRowId}/attachments/{storedFileName}")
+    @Operation(summary = "Delete actual timing attachment", description = "Deletes an attachment.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> deleteTimingAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        screenAttachmentService.deleteTimingAttachment(transactionPoid, detRowId, storedFileName);
+        return success("Attachment deleted successfully", null);
     }
 
     @AllowedAction(UserRolesRightsEnum.PRINT)

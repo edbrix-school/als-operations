@@ -17,4 +17,7 @@ public interface PortCallOperationActTimingDtlRepository extends JpaRepository<P
 
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationActTimingDtl d where d.transactionPoid = :transactionPoid")
     Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
+
+    @Query("select d from PortCallOperationActTimingDtl d where d.transactionPoid = :transactionPoid and d.detRowId = :detRowId")
+    List<PortCallOperationActTimingDtl> findByTransactionPoidAndDetRowId(@Param("transactionPoid") Long transactionPoid, @Param("detRowId") Long detRowId);
 }
