@@ -1625,7 +1625,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .lastModifiedDate(LocalDateTime.now())
                     .build();
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+            docsMsgsDtl1Repository.flush();
+            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL), which can
+            // differ from Hibernate's @GeneratedValue. Read the actual value from the database (latest row).
+            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, nextDetRowId);
+            if (actualEmailPoid == null) {
+                throw new IllegalStateException("Email Poid was not set by trigger after insert");
+            }
+            emailPoidToUse = actualEmailPoid;
         } else {
             emailPoidToUse = dto.getEmailPoid();
             PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
@@ -1634,7 +1641,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
-        if (dto.getSendEmail() && emailPoidToUse != null) {
+        if (dto.getSendEmail()) {
             PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
                     .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
@@ -1644,12 +1651,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
+        // Insert EstBertDtl with emailPoid=null first to avoid FK constraint violation (OPS_PC_EST_BERT_HDR_FK2
+        // may be checked at commit; parent row in same transaction can still cause "parent key not found").
         PortCallOperationEstBertDtl entity = PortCallOperationEstBertDtl.builder()
                 .transactionPoid(transactionPoid)
                 .detRowId(nextDetRowId)
                 .eta(dto.getEta())
                 .etb(dto.getEtb())
-                .emailPoid(emailPoidToUse)
+                .emailPoid(null)
                 .createdBy(UserContext.getUserId())
                 .createdDate(LocalDateTime.now())
                 .lastModifiedBy(UserContext.getUserId())
@@ -1657,6 +1666,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .build();
 
         PortCallOperationEstBertDtl saved = estBertDtlRepository.save(entity);
+        estBertDtlRepository.flush();
+
+        // Now set emailPoid using native SQL update to ensure Oracle sees the flushed parent row.
+        // Hibernate's entity update might check constraints before Oracle sees the parent row.
+        jdbcTemplate.update("UPDATE OPS_PC_EST_BERT_DTL SET EMAIL_POID = ? WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", emailPoidToUse, transactionPoid, nextDetRowId);
+        // Update the entity object to reflect the change
+        saved.setEmailPoid(emailPoidToUse);
 
         // Upload attachments if provided (optional)
         if (files != null && files.length > 0) {
@@ -1715,7 +1731,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .lastModifiedDate(LocalDateTime.now())
                     .build();
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+            docsMsgsDtl1Repository.flush();
+            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL).
+            // Read the actual value from the database (latest row).
+            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, detRowId);
+            if (actualEmailPoid == null) {
+                throw new IllegalStateException("Email Poid was not set by trigger after insert");
+            }
+            emailPoidToUse = actualEmailPoid;
         } else {
             emailPoidToUse = dto.getEmailPoid();
             PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
@@ -1724,7 +1747,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
-        if (dto.getSendEmail() && emailPoidToUse != null) {
+        if (dto.getSendEmail()) {
             PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
                     .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
@@ -1811,7 +1834,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .lastModifiedDate(LocalDateTime.now())
                     .build();
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+            docsMsgsDtl1Repository.flush();
+            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL).
+            // Read the actual value from the database (latest row).
+            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, detRowId);
+            if (actualEmailPoid == null) {
+                throw new IllegalStateException("Email Poid was not set by trigger after insert");
+            }
+            emailPoidToUse = actualEmailPoid;
         } else {
             emailPoidToUse = dto.getEmailPoid();
             PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
@@ -1820,7 +1850,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
-        if (dto.getSendEmail() && emailPoidToUse != null) {
+        if (dto.getSendEmail()) {
             PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
                     .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
@@ -1917,18 +1947,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .build());
         }
 
-        if (entitiesToSave.isEmpty()) {
-            throw new ValidationException("At least one activity must be provided");
-        }
-
-        List<PortCallOperationEstPrearrivalActDtl> saved = estPrearrivalActDtlRepository.saveAll(entitiesToSave);
-        PortCallOperationEstPrearrivalActDtl entity = saved.getLast();
-
-        String prearrivalActDtlLogDetail = String.format("Row Created on [Port Call Operation Est Prearrival Act Details] with preActivityDtlPoid: %s", entity.getPreActivityDtlPoid());
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), prearrivalActDtlLogDetail);
-
         PortCallOperationEstPrearrivalDtl newPrearrivalDtl = new PortCallOperationEstPrearrivalDtl();
-
         newPrearrivalDtl.setEmailPoid(emailPoidToUse);
         newPrearrivalDtl.setTransactionPoid(transactionPoid);
         newPrearrivalDtl.setDetRowId(detRowId);
@@ -1936,29 +1955,50 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         newPrearrivalDtl.setLastModifiedDate(LocalDateTime.now());
         newPrearrivalDtl.setCreatedBy(UserContext.getUserId());
         newPrearrivalDtl.setLastModifiedBy(UserContext.getUserId());
-        newPrearrivalDtl.setPreActivityDtlPoid(entity.getPreActivityDtlPoid());
 
-        PortCallOperationEstPrearrivalDtl savedPrearrivalDtl = estPrearrivalDtlRepository.save(newPrearrivalDtl);
+        PortCallOperationEstPrearrivalActDetailResponseDto response;
+        if (entitiesToSave.isEmpty()) {
+            // No activities: do not save PortCallOperationEstPrearrivalActDtl; only create header record
+            newPrearrivalDtl.setPreActivityDtlPoid(null);
+            estPrearrivalDtlRepository.save(newPrearrivalDtl);
+            String prearrivalDtlLogDetail = String.format("Row Created on [Port Call Operation Est Prearrival Details] with detRowId: %s", detRowId);
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), prearrivalDtlLogDetail);
+            response = PortCallOperationEstPrearrivalActDetailResponseDto.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .build();
+        } else {
+            List<PortCallOperationEstPrearrivalActDtl> saved = estPrearrivalActDtlRepository.saveAll(entitiesToSave);
+            PortCallOperationEstPrearrivalActDtl entity = saved.getLast();
 
-        // Upload attachments if provided (optional)
+            String prearrivalActDtlLogDetail = String.format("Row Created on [Port Call Operation Est Prearrival Act Details] with preActivityDtlPoid: %s", entity.getPreActivityDtlPoid());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), prearrivalActDtlLogDetail);
+
+            newPrearrivalDtl.setPreActivityDtlPoid(entity.getPreActivityDtlPoid());
+
+            estPrearrivalDtlRepository.save(newPrearrivalDtl);
+
+            String prearrivalDtlLogDetail = String.format("Row Created on [Port Call Operation Est Prearrival Details] with preActivityDtlPoid: %s", entity.getPreActivityDtlPoid());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), prearrivalDtlLogDetail);
+
+            response = PortCallOperationEstPrearrivalActDetailResponseDto.builder()
+                    .transactionPoid(entity.getTransactionPoid())
+                    .detRowId(entity.getDetRowId())
+                    .preActivityDtlPoid(entity.getPreActivityDtlPoid())
+                    .activityPoid(entity.getActivityPoid())
+                    .otherDescription(entity.getOtherDescription())
+                    .estimatedDatetime(entity.getEstimatedDatetime())
+                    .build();
+        }
+
+        // Upload attachments if provided (optional) - same for both empty and non-empty
         if (files != null && files.length > 0) {
             screenAttachmentService.uploadPreArrivalAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
-            // Reload entity to get updated preArrivalAttachments
-            savedPrearrivalDtl = estPrearrivalDtlRepository.findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
+            estPrearrivalDtlRepository.findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
                     .orElseThrow(() -> new ResourceNotFoundException("EstPrearrivalDetail", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId)));
         }
 
-        String prearrivalDtlLogDetail = String.format("Row Created on [Port Call Operation Est Prearrival Details] with preActivityDtlPoid: %s", entity.getPreActivityDtlPoid());
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), prearrivalDtlLogDetail);
-
-        return PortCallOperationEstPrearrivalActDetailResponseDto.builder()
-                .transactionPoid(entity.getTransactionPoid())
-                .detRowId(entity.getDetRowId())
-                .preActivityDtlPoid(entity.getPreActivityDtlPoid())
-                .activityPoid(entity.getActivityPoid())
-                .otherDescription(entity.getOtherDescription())
-                .estimatedDatetime(entity.getEstimatedDatetime())
-                .build();
+        return response;
     }
 
     @Override
@@ -1996,7 +2036,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .lastModifiedDate(LocalDateTime.now())
                     .build();
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+            docsMsgsDtl1Repository.flush();
+            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL).
+            // Read the actual value from the database (latest row).
+            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, detRowId);
+            if (actualEmailPoid == null) {
+                throw new IllegalStateException("Email Poid was not set by trigger after insert");
+            }
+            emailPoidToUse = actualEmailPoid;
         } else {
             emailPoidToUse = dto.getEmailPoid();
             PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
@@ -2005,7 +2052,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
-        if (dto.getSendEmail() && emailPoidToUse != null) {
+        if (dto.getSendEmail()) {
             PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
                     .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
@@ -2268,7 +2315,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .lastModifiedDate(LocalDateTime.now())
                     .build();
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+            docsMsgsDtl1Repository.flush();
+            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL).
+            // Read the actual value from the database (latest row).
+            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, detRowId);
+            if (actualEmailPoid == null) {
+                throw new IllegalStateException("Email Poid was not set by trigger after insert");
+            }
+            emailPoidToUse = actualEmailPoid;
         } else {
             emailPoidToUse = dto.getEmailPoid();
             PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
@@ -2277,7 +2331,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
-        if (dto.getSendEmail() && emailPoidToUse != null) {
+        if (dto.getSendEmail()) {
             PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
                     .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
@@ -2306,46 +2360,57 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .build());
         }
 
-        if (entitiesToSave.isEmpty()) {
-            throw new ValidationException("At least one activity must be provided");
-        }
-
-        List<PortCallOperationActTimingsActvtyDtl> saved = actTimingsActvtyDtlRepository.saveAll(entitiesToSave);
-        PortCallOperationActTimingsActvtyDtl entity = saved.getLast();
-
-        String actTimingsActvtyDtlLogDetail = String.format("Row Created on [Port Call Operation Act Timings Actvty Details] with actualsTimingDtlPoid: %s", entity.getActualsTimingDtlPoid());
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), actTimingsActvtyDtlLogDetail);
-
         PortCallOperationActTimingDtl newActTimingDtl = new PortCallOperationActTimingDtl();
-
         newActTimingDtl.setEmailPoid(emailPoidToUse);
         newActTimingDtl.setTransactionPoid(transactionPoid);
         newActTimingDtl.setDetRowId(detRowId);
-        newActTimingDtl.setActualsTimingDtlPoid(nextActualsTimingDtlPoid);
         newActTimingDtl.setPortReportPoid(dto.getPortCallReportPoid());
         newActTimingDtl.setLastModifiedBy(UserContext.getUserId());
         newActTimingDtl.setLastModifiedDate(LocalDateTime.now());
         newActTimingDtl.setCreatedBy(UserContext.getUserId());
         newActTimingDtl.setCreatedDate(LocalDateTime.now());
 
-        actTimingDtlRepository.save(newActTimingDtl);
+        PortCallOperationActTimingsActvtyDetailResponseDto response;
+        if (entitiesToSave.isEmpty()) {
+            // No activities: do not save PortCallOperationActTimingsActvtyDtl; only create header record
+            newActTimingDtl.setActualsTimingDtlPoid(nextActualsTimingDtlPoid);
+            actTimingDtlRepository.save(newActTimingDtl);
+            String actTimingsDtlLogDetail = String.format("Row Created on [Port Call Operation Act Timings Details] with detRowId: %s", detRowId);
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), actTimingsDtlLogDetail);
+            response = PortCallOperationActTimingsActvtyDetailResponseDto.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(detRowId)
+                    .build();
+        } else {
+            List<PortCallOperationActTimingsActvtyDtl> saved = actTimingsActvtyDtlRepository.saveAll(entitiesToSave);
+            PortCallOperationActTimingsActvtyDtl entity = saved.getLast();
 
-        // Upload attachments if provided (optional)
+            String actTimingsActvtyDtlLogDetail = String.format("Row Created on [Port Call Operation Act Timings Actvty Details] with actualsTimingDtlPoid: %s", entity.getActualsTimingDtlPoid());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), actTimingsActvtyDtlLogDetail);
+
+            newActTimingDtl.setActualsTimingDtlPoid(entity.getActualsTimingDtlPoid());
+
+            actTimingDtlRepository.save(newActTimingDtl);
+
+            String actTimingsDtlLogDetail = String.format("Row Created on [Port Call Operation Act Timings Details] with actualsTimingDtlPoid: %s", entity.getActualsTimingDtlPoid());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), actTimingsDtlLogDetail);
+
+            response = PortCallOperationActTimingsActvtyDetailResponseDto.builder()
+                    .transactionPoid(entity.getTransactionPoid())
+                    .detRowId(entity.getDetRowId())
+                    .actualsTimingDtlPoid(entity.getActualsTimingDtlPoid())
+                    .activityPoid(entity.getActivityPoid())
+                    .details(entity.getDetails())
+                    .estimatedDatetime(entity.getEstimatedDatetime())
+                    .build();
+        }
+
+        // Upload attachments if provided (optional) - same for both empty and non-empty
         if (files != null && files.length > 0) {
             screenAttachmentService.uploadTimingAttachments(transactionPoid, detRowId, files, remarks, checklistNames);
         }
 
-        String actTimingsDtlLogDetail = String.format("Row Created on [Port Call Operation Act Timings Details] with actualsTimingDtlPoid: %s", entity.getActualsTimingDtlPoid());
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), actTimingsDtlLogDetail);
-
-        return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
-                .transactionPoid(entity.getTransactionPoid())
-                .detRowId(entity.getDetRowId())
-                .actualsTimingDtlPoid(entity.getActualsTimingDtlPoid())
-                .activityPoid(entity.getActivityPoid())
-                .details(entity.getDetails())
-                .estimatedDatetime(entity.getEstimatedDatetime())
-                .build();
+        return response;
     }
 
     @Override
@@ -2406,7 +2471,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .lastModifiedDate(LocalDateTime.now())
                     .build();
             newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            emailPoidToUse = newMsgsDtl1.getEmailPoid();
+            docsMsgsDtl1Repository.flush();
+            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL).
+            // Read the actual value from the database (latest row).
+            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, detRowId);
+            if (actualEmailPoid == null) {
+                throw new IllegalStateException("Email Poid was not set by trigger after insert");
+            }
+            emailPoidToUse = actualEmailPoid;
         } else {
             emailPoidToUse = dto.getEmailPoid();
             PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
@@ -2415,7 +2487,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             docsMsgsDtl1Repository.save(msgsDtl1);
         }
 
-        if (dto.getSendEmail() && emailPoidToUse != null) {
+        if (dto.getSendEmail()) {
             PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
                     .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
