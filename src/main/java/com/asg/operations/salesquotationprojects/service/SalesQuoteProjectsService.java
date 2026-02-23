@@ -22,12 +22,12 @@ public interface SalesQuoteProjectsService {
     SalesQuoteProjectsResponse updateSalesQuoteProject(Long transactionPoid, SalesQuoteProjectsRequest request);
 
     void deleteSalesQuoteProject(Long transactionPoid, DeleteReasonDto deleteReasonDto);
-    
+
     // Stored Procedure Methods
     Map<String, Object> getCustomerAddress(Long customerPoid);
-    
-    Map<String, Object> getTermsAndConditions(Long templatePoid);
-    
+
+    Map<String, Object> getTermsAndConditions(Long templatePoid, Long docKeyPoid);
+
     Map<String, Object> getChargeTaxDetails(Long companyPoid, String partyType, Long partyPoid, Long chargePoid);
 
     AddressDetailsDto getCustomerDetailsById(BigDecimal addressPoid);

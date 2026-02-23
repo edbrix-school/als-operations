@@ -235,20 +235,21 @@ class SalesQuoteProjectsControllerTest {
 
     @Test
     void getTermsAndConditions_ok() throws Exception {
-        Long termsPoid = 456L;
+        Long templatePoid = 456L;
+        Long docKeyPoid = 789L;
         Map<String, Object> mockResponse = new HashMap<>();
         mockResponse.put("terms", "Test Terms");
         mockResponse.put("conditions", "Test Conditions");
 
-        when(salesQuoteProjectsService.getTermsAndConditions(termsPoid))
+        when(salesQuoteProjectsService.getTermsAndConditions(templatePoid, docKeyPoid))
                 .thenReturn(mockResponse);
 
-        mockMvc.perform(get("/v1/sales-quotation-projects/terms-conditions/{termsPoid}", termsPoid))
+        mockMvc.perform(get("/v1/sales-quotation-projects/terms-conditions/{templatePoid}/{docKeyPoid}", templatePoid, docKeyPoid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Terms and conditions retrieved successfully"))
                 .andExpect(jsonPath("$.result.data.terms").value("Test Terms"));
 
-        then(salesQuoteProjectsService).should().getTermsAndConditions(termsPoid);
+        then(salesQuoteProjectsService).should().getTermsAndConditions(templatePoid, docKeyPoid);
     }
 
     @Test

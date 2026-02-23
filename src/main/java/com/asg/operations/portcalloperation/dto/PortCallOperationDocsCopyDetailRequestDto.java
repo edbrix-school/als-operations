@@ -12,9 +12,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PortCallOperationDocsCopyDetailRequestDto {
-    private Long transactionPoid;
-    private Long detRowId;
-
     @Size(max = 100)
     private String documentFrom;
 

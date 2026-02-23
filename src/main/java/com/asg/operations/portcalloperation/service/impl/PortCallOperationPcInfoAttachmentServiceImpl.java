@@ -59,7 +59,7 @@ public class PortCallOperationPcInfoAttachmentServiceImpl implements PortCallOpe
 
         // Track uploaded files for potential rollback if PC_INFO_ATTACHMENTS update fails
         List<PcInfoAttachmentDto> uploadedFiles = new ArrayList<>(response.getUploadedFiles());
-        
+
         try {
             String newNames = uploadedFiles.stream()
                     .map(PcInfoAttachmentDto::getOriginalFileName)
@@ -114,14 +114,103 @@ public class PortCallOperationPcInfoAttachmentServiceImpl implements PortCallOpe
             throw new IllegalStateException("Common attachment service is not configured. Set common.service.attachment.base-url.");
         }
         hdrRepository.findById(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
-        
+
         // Forward the ResponseEntity from common-services (includes headers like Content-Type, Content-Disposition)
         return attachmentClient.downloadAttachment(transactionPoid, storedFileName);
     }
 
     @Override
+    @Transactional
+    public void deletePcInfoAttachment(Long transactionPoid, String storedFileName) {
+        if (!attachmentClient.isConfigured()) {
+            throw new IllegalStateException("Common attachment service is not configured. Set common.service.attachment.base-url.");
+        }
+        PortCallOperationHdr entity = hdrRepository.findById(transactionPoid)
+                .orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
+        
+        // List attachments to find the originalFileName for the storedFileName
+        Map<String, Object> attachmentsList = attachmentClient.listAttachments(transactionPoid, 0, 1000);
+        String originalFileName = null;
+        
+        // Extract attachments from response
+        List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
+        for (Map<String, Object> attachment : attachments) {
+            Object storedName = attachment.get("storedFileName");
+            if (storedFileName.equals(storedName)) {
+                Object origName = attachment.get("originalFileName");
+                if (origName != null) {
+                    originalFileName = origName.toString();
+                }
+                break;
+            }
+        }
+        
+        if (originalFileName == null) {
+            throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
+        }
+        
+        // Delete from attachment service
+        attachmentClient.deleteAttachment(transactionPoid, storedFileName);
+        
+        // Remove originalFileName from pcInfoAttachments field
+        String currentAttachments = entity.getPcInfoAttachments();
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(currentAttachments)) {
+            final String finalOriginalFileName = originalFileName;
+            List<String> fileNames = new ArrayList<>(Arrays.asList(currentAttachments.split(ATTACHMENT_NAMES_SEPARATOR)));
+            fileNames.removeIf(name -> name.trim().equals(finalOriginalFileName));
+            String updatedAttachments = String.join(ATTACHMENT_NAMES_SEPARATOR, fileNames);
+            entity.setPcInfoAttachments(updatedAttachments);
+            hdrRepository.save(entity);
+        }
+    }
+
+    @Override
     public boolean isAttachmentServiceAvailable() {
         return attachmentClient.isConfigured();
+    }
+
+    /**
+     * Extract attachments list from the common attachment service response.
+     * Handles different response structures (content, result.data.content, data.content).
+     */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> extractAttachmentsFromResponse(Map<String, Object> response) {
+        if (response == null) {
+            return new ArrayList<>();
+        }
+        
+        Object content = null;
+        if (response.containsKey("content")) {
+            content = response.get("content");
+        } else if (response.containsKey("result")) {
+            Object result = response.get("result");
+            if (result instanceof Map) {
+                Map<String, Object> resultMap = (Map<String, Object>) result;
+                Object data = resultMap.get("data");
+                if (data instanceof Map) {
+                    Map<String, Object> dataMap = (Map<String, Object>) data;
+                    content = dataMap.get("content");
+                }
+            }
+        } else if (response.containsKey("data")) {
+            Object data = response.get("data");
+            if (data instanceof Map) {
+                Map<String, Object> dataMap = (Map<String, Object>) data;
+                content = dataMap.get("content");
+            }
+        }
+        
+        if (content instanceof List) {
+            List<Map<String, Object>> attachments = new ArrayList<>();
+            for (Object item : (List<?>) content) {
+                if (item instanceof Map) {
+                    attachments.add((Map<String, Object>) item);
+                }
+            }
+            return attachments;
+        }
+        
+        return new ArrayList<>();
     }
 
     /**
@@ -134,7 +223,7 @@ public class PortCallOperationPcInfoAttachmentServiceImpl implements PortCallOpe
                     attachmentClient.deleteAttachment(transactionPoid, file.getStoredFileName());
                     log.debug("Deleted uploaded file {} (storedFileName: {})", file.getOriginalFileName(), file.getStoredFileName());
                 } catch (Exception e) {
-                    log.warn("Failed to delete uploaded file {} (storedFileName: {}): {}", 
+                    log.warn("Failed to delete uploaded file {} (storedFileName: {}): {}",
                             file.getOriginalFileName(), file.getStoredFileName(), e.getMessage());
                     // Continue deleting other files even if one fails
                 }

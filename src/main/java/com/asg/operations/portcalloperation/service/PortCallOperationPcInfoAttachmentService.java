@@ -21,9 +21,9 @@ public interface PortCallOperationPcInfoAttachmentService {
      * @return upload response with uploaded files and any errors
      */
     PcInfoAttachmentUploadResponseDto uploadPcInfoAttachments(Long transactionPoid,
-                                                               MultipartFile[] files,
-                                                               String[] remarks,
-                                                               String[] checklistNames);
+                                                              MultipartFile[] files,
+                                                              String[] remarks,
+                                                              String[] checklistNames);
 
     /**
      * List PC Info attachments from common attachment service (paginated).
@@ -48,6 +48,14 @@ public interface PortCallOperationPcInfoAttachmentService {
      * @return ResponseEntity with file content as Resource and proper headers
      */
     org.springframework.http.ResponseEntity<org.springframework.core.io.Resource> downloadAttachment(Long transactionPoid, String storedFileName);
+
+    /**
+     * Delete a PC Info attachment by storedFileName.
+     *
+     * @param transactionPoid port call operation id
+     * @param storedFileName  the stored filename (fileNameMapped) from the upload response
+     */
+    void deletePcInfoAttachment(Long transactionPoid, String storedFileName);
 
     /**
      * Check if common attachment service is configured and available.
