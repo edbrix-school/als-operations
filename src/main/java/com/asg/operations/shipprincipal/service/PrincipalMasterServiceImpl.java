@@ -98,7 +98,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         dto.setCountryDet(lovService.getLovItemByPoid(principal.getCountryPoid(), "COUNTRY",
                 principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
 
-        dto.setGlCodeDet(lovService.getLovItemByPoid(principal.getGlCodePoid(), "GL_CODE",
+        dto.setGlCodeDet(lovService.getLovItemByPoid(principal.getGlCodePoid(), "GL_MASTER_LEDGERS",
                 principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
 
         dto.setCompanyDet(lovService.getLovItemByPoid(principal.getCompanyPoid(), "COMPANY",
@@ -245,13 +245,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 String logDetail = String.format("Row Created on Principal Port Report Activity with detRowId: %s", entity.getDetRowId());
                 loggingService.createLogSummaryEntry(UserContext.getDocumentId(), principalId.toString() , logDetail);
             }
-        }
-
-        if (principal.getGlCodePoid() == null) {
-            CreateLedgerResponseDto result = createLedger(principal.getPrincipalPoid(), principal.getGroupPoid(), principal.getCompanyPoid(), user.getUserPoid());
-            principal.setGlCodePoid(result.getGlCodePoid());
-            principalRepository.save(principal);
-            log.info("Successfully created GL account with POID: {} for principal: {}", result.getGlCodePoid(), principalId);
         }
 
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), principalId.toString());
