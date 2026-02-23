@@ -1,5 +1,6 @@
 package com.asg.operations.salesquotationprojects.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ProjectsHdr {
 
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "projects_hdr_seq")
     @SequenceGenerator(name = "projects_hdr_seq", sequenceName = "PROJECTS_HDR_SEQ", allocationSize = 1)
@@ -26,9 +28,11 @@ public class ProjectsHdr {
     @Column(name = "TRANSACTION_DATE")
     private LocalDate transactionDate;
 
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", length = 25, nullable = false)
     private String docRef;
 
@@ -119,18 +123,23 @@ public class ProjectsHdr {
     @Column(name = "GRANT_TOTAL_SELL_AMOUNT_FC")
     private Double grantTotalSellAmountFc;
 
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted = "N";
 
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
 
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 }

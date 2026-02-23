@@ -11,32 +11,27 @@ import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.utility.PaginationUtil;
 import jakarta.validation.Valid;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import com.asg.operations.common.Util.FormulaValidator;
-import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaratetypemaster.dto.*;
 import com.asg.operations.pdaratetypemaster.util.PdaRateTypeMapper;
 import com.asg.operations.pdaratetypemaster.repository.PdaRateTypeRepository;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.pdaratetypemaster.entity.PdaRateTypeMaster;
-import jakarta.persistence.EntityManager;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -46,8 +41,6 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     private final PdaRateTypeRepository repository;
     private final PdaRateTypeMapper mapper;
     private final FormulaValidator formulaValidator;
-    private final EntityManager entityManager;
-    private final LovService lovService;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
@@ -59,7 +52,7 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
 
         String operator = documentSearchService.resolveOperator(filterRequestDto);
         String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
-        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto, "TRANSACTION_DATE", periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
                 "RATE_TYPE_CODE",
@@ -68,78 +61,6 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
         return PaginationUtil.wrapPage(page, raw.displayFields());
-    }
-
-    private String mapRateTypeSearchFieldToColumn(String searchField) {
-        if (searchField == null) return null;
-        String normalizedField = searchField.toUpperCase().replace("_", "");
-        switch (normalizedField) {
-            case "RATETYPECODE":
-                return "r.RATE_TYPE_CODE";
-            case "RATETYPENAME":
-                return "r.RATE_TYPE_NAME";
-            case "RATETYPEFORMULA":
-                return "r.RATE_TYPE_FORMULA";
-            case "ACTIVE":
-                return "r.ACTIVE";
-            case "DELETED":
-                return "r.DELETED";
-            default:
-                return "r." + searchField.toUpperCase().replace(" ", "_");
-        }
-    }
-
-    private String mapRateTypeSortFieldToColumn(String sortField) {
-        if (sortField == null) return "r.RATE_TYPE_CODE";
-        String normalizedField = sortField.toUpperCase().replace("_", "");
-        switch (normalizedField) {
-            case "RATETYPEPOID":
-                return "r.RATE_TYPE_POID";
-            case "RATETYPECODE":
-                return "r.RATE_TYPE_CODE";
-            case "RATETYPENAME":
-                return "r.RATE_TYPE_NAME";
-            case "RATETYPEFORMULA":
-                return "r.RATE_TYPE_FORMULA";
-            case "DEFDAYS":
-                return "r.DEF_DAYS";
-            case "ACTIVE":
-                return "r.ACTIVE";
-            case "DELETED":
-                return "r.DELETED";
-            case "SEQNO":
-                return "r.SEQNO";
-            case "CREATEDBY":
-                return "r.CREATED_BY";
-            case "CREATEDDATE":
-                return "r.CREATED_DATE";
-            case "LASTMODIFIEDBY":
-                return "r.LASTMODIFIED_BY";
-            case "LASTMODIFIEDDATE":
-                return "r.LASTMODIFIED_DATE";
-            default:
-                return "r." + sortField.toUpperCase().replace(" ", "_");
-        }
-    }
-
-    private PdaRateTypeListResponse mapToRateTypeListResponseDto(Object[] row) {
-        PdaRateTypeListResponse dto = new PdaRateTypeListResponse();
-        dto.setRateTypeId(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setRateTypeCode(convertToString(row[1]));
-        dto.setRateTypeName(convertToString(row[2]));
-        dto.setRateTypeFormula(convertToString(row[3]));
-        dto.setDefDays(row[4] != null ? (BigDecimal) row[4] : null);
-        dto.setActive(convertToString(row[5]));
-        dto.setSeqNo(row[7] != null ? new BigInteger(row[7].toString()) : null);
-        dto.setCreatedBy(convertToString(row[8]));
-        dto.setCreatedDate(row[9] != null ? ((java.sql.Timestamp) row[9]).toLocalDateTime() : null);
-        dto.setModifiedBy(convertToString(row[10]));
-        dto.setModifiedDate(row[11] != null ? ((java.sql.Timestamp) row[11]).toLocalDateTime() : null);
-        return dto;
-    }
-
-    private String convertToString(Object value) {
-        return value != null ? value.toString() : null;
     }
 
     @Override
@@ -160,9 +81,11 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
 
         BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
 
-        String normalizedCode = request.getRateTypeCode() != null
-                ? request.getRateTypeCode().trim().toUpperCase()
-                : null;
+        String normalizedCode = StringUtils.isNotBlank(request.getRateTypeCode()) ? request.getRateTypeCode().trim().toUpperCase() : null;
+
+        if (StringUtils.isNotBlank(normalizedCode) && normalizedCode.contains(" ")) {
+            throw new ValidationException("Rate type code must not contain spaces");
+        }
 
         if (repository.existsByRateTypeCodeAndGroupPoid(normalizedCode, groupPoidBD)) {
             throw new ValidationException("Rate type code already exists: " + normalizedCode);

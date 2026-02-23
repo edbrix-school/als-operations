@@ -12,7 +12,6 @@ import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
-import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.crew.dto.*;
 import com.asg.operations.crew.entity.ContractCrew;
 import com.asg.operations.crew.entity.ContractCrewDtl;
@@ -25,19 +24,15 @@ import com.asg.operations.crew.util.ValidationUtil;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
 import com.asg.operations.crew.service.ContractCrewService;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -55,8 +50,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
     private final ContractCrewDtlRepository crewDtlRepository;
     private final EntityMapper entityMapper;
     private final CrewCodeGenerator codeGenerator;
-    private final EntityManager entityManager;
-    private final LovService lovService;
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
@@ -76,184 +69,6 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
         return PaginationUtil.wrapPage(page, raw.displayFields());
-    }
-
-    private void setLovDetails(List<ContractCrewResponse> dtos) {
-        for (ContractCrewResponse dto : dtos) {
-            dto.setGroupDet(lovService.getLovItemByPoid(dto.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-            dto.setCompanyDet(lovService.getLovItemByPoid(dto.getCompanyPoid(), "COMPANY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-            dto.setCrewNationalityDet(lovService.getLovItemByPoid(dto.getCrewNationalityPoid(), "NATIONALITY", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-        }
-    }
-
-    private String mapCrewSearchFieldToColumn(String searchField) {
-        if (searchField == null) {
-            return null;
-        }
-        // Normalize the field name by removing underscores and converting to uppercase
-        String normalizedField = searchField.toUpperCase().replace("_", "");
-
-        switch (normalizedField) {
-            case "CREWNAME":
-            case "NAME":
-                return "c.CREW_NAME";
-            case "NATIONALITY":
-            case "CREWNATIONPOID":
-            case "NATIONALITYPOID":
-                return "c.CREW_NATION_POID";
-            case "CDCNUMBER":
-            case "CREW_CDC_NUMBER":
-            case "CDC":
-                return "c.CREW_CDC_NUMBER";
-            case "COMPANY":
-            case "CREWCOMPANY":
-                return "c.CREW_COMPANY";
-            case "DESIGNATION":
-            case "CREWDESIGNATION":
-                return "c.CREW_DESIGNATION";
-            case "CREWPASSPORTNUMBER":
-            case "PASSPORTNUMBER":
-            case "PASSPORT":
-                return "c.CREW_PASSPORT_NUMBER";
-            case "CREWPASSPORTISSDATE":
-            case "PASSPORTISSUEPLACE":
-            case "ISSUEPLACE":
-                return "c.CREW_PASSPORT_ISS_PLACE";
-            case "REMARKS":
-                return "c.REMARKS";
-            case "ACTIVE":
-            case "STATUS":
-                return "c.ACTIVE";
-            case "DELETED":
-                return "c.DELETED";
-            case "CREATEDBY":
-                return "c.CREATED_BY";
-            case "LASTMODIFIEDBY":
-            case "MODIFIEDBY":
-                return "c.LASTMODIFIED_BY";
-            default:
-                // Fallback: assume it's a direct column name from c table
-                String columnName = searchField.toUpperCase().replace(" ", "_");
-                return "c." + columnName;
-        }
-    }
-
-    private ContractCrewListResponse mapToCrewListResponseDto(Object[] row) {
-        ContractCrewListResponse dto = new ContractCrewListResponse();
-
-        dto.setCrewPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setCrewName(convertToString(row[1]));
-        dto.setCrewNationalityPoid(row[2] != null ? ((Number) row[2]).longValue() : null);
-        dto.setCrewCdcNumber(convertToString(row[3]));
-        dto.setCrewCompany(convertToString(row[4]));
-        dto.setCrewDesignation(convertToString(row[5]));
-        dto.setCrewPassportNumber(convertToString(row[6]));
-        dto.setCrewPassportIssueDate(row[7] != null ? ((Timestamp) row[7]).toLocalDateTime().toLocalDate() : null);
-        dto.setCrewPassportExpiryDate(row[8] != null ? ((Timestamp) row[8]).toLocalDateTime().toLocalDate() : null);
-        dto.setCrewPassportIssuePlace(convertToString(row[9]));
-        dto.setRemarks(convertToString(row[10]));
-        dto.setGroupPoid(row[11] != null ? ((Number) row[11]).longValue() : null);
-        dto.setCompanyPoid(row[12] != null ? ((Number) row[12]).longValue() : null);
-        dto.setActive(convertToString(row[13]));
-        dto.setCreatedBy(convertToString(row[16]));
-        dto.setCreatedDate(row[17] != null ? ((Timestamp) row[17]).toLocalDateTime() : null);
-        dto.setLastModifiedBy(convertToString(row[18]));
-        dto.setLastModifiedDate(row[19] != null ? ((Timestamp) row[19]).toLocalDateTime() : null);
-
-        return dto;
-    }
-
-    private ContractCrewResponse mapToCrewResponseDto(Object[] row) {
-        ContractCrewResponse dto = new ContractCrewResponse();
-
-        dto.setCrewPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setCrewName(convertToString(row[1]));
-        dto.setCrewNationalityPoid(row[2] != null ? ((Number) row[2]).longValue() : null);
-        dto.setCrewCdcNumber(convertToString(row[3]));
-        dto.setCrewCompany(convertToString(row[4]));
-        dto.setCrewDesignation(convertToString(row[5]));
-        dto.setCrewPassportNumber(convertToString(row[6]));
-        dto.setCrewPassportIssueDate(row[7] != null ? ((Timestamp) row[7]).toLocalDateTime().toLocalDate() : null);
-        dto.setCrewPassportExpiryDate(row[8] != null ? ((Timestamp) row[8]).toLocalDateTime().toLocalDate() : null);
-        dto.setCrewPassportIssuePlace(convertToString(row[9]));
-        dto.setRemarks(convertToString(row[10]));
-        dto.setGroupPoid(row[11] != null ? ((Number) row[11]).longValue() : null);
-        dto.setCompanyPoid(row[12] != null ? ((Number) row[12]).longValue() : null);
-        dto.setActive(convertToString(row[13]));
-        dto.setCreatedBy(convertToString(row[16]));
-        dto.setCreatedDate(row[17] != null ? ((Timestamp) row[17]).toLocalDateTime() : null);
-        dto.setLastModifiedBy(convertToString(row[18]));
-        dto.setLastModifiedDate(row[19] != null ? ((Timestamp) row[19]).toLocalDateTime() : null);
-
-        return dto;
-    }
-
-    private String convertToString(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof String) {
-            return (String) value;
-        }
-        if (value instanceof Character) {
-            return String.valueOf((Character) value);
-        }
-        return value.toString();
-    }
-
-    private String mapSortFieldToColumn(String sortField) {
-        if (sortField == null) {
-            return "c.CREATED_DATE";
-        }
-        String normalizedField = sortField.toUpperCase().replace("_", "");
-
-        switch (normalizedField) {
-            case "CREWPOID":
-                return "c.CREW_POID";
-            case "CREWNAME":
-            case "NAME":
-                return "c.CREW_NAME";
-            case "NATIONALITY":
-            case "CREWNATIONPOID":
-                return "c.CREW_NATION_POID";
-            case "CDCNUMBER":
-            case "CDC":
-                return "c.CREW_CDC_NUMBER";
-            case "COMPANY":
-            case "CREWCOMPANY":
-                return "c.CREW_COMPANY";
-            case "DESIGNATION":
-            case "CREWDESIGNATION":
-                return "c.CREW_DESIGNATION";
-            case "PASSPORTNUMBER":
-            case "CREWPASSPORTNUMBER":
-                return "c.CREW_PASSPORT_NUMBER";
-            case "PASSPORTISSUEDATE":
-            case "CREWPASSPORTISSDATE":
-                return "c.CREW_PASSPORT_ISS_DATE";
-            case "PASSPORTEXPIRYDATE":
-            case "CREWPASSPORTEXPDATE":
-                return "c.CREW_PASSPORT_EXP_DATE";
-            case "PASSPORTISSUEPLACE":
-            case "CREWPASSPORTISSPLACE":
-                return "c.CREW_PASSPORT_ISS_PLACE";
-            case "REMARKS":
-                return "c.REMARKS";
-            case "ACTIVE":
-            case "STATUS":
-                return "c.ACTIVE";
-            case "CREATEDDATE":
-                return "c.CREATED_DATE";
-            case "LASTMODIFIEDDATE":
-                return "c.LASTMODIFIED_DATE";
-            case "CREATEDBY":
-                return "c.CREATED_BY";
-            case "LASTMODIFIEDBY":
-                return "c.LASTMODIFIED_BY";
-            default:
-                String columnName = sortField.toUpperCase().replace(" ", "_");
-                return "c." + columnName;
-        }
     }
 
     @Override
@@ -512,22 +327,30 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
     @Override
     public void deleteCrewDetail(Long companyPoid, Long crewPoid, Long detRowId) {
+        log.info("Deleting crew detail with crewPoid: {}, detRowId: {}", crewPoid, detRowId);
+        
         // Verify crew exists
-
         boolean crewExists = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid).isPresent();
         if (!crewExists) {
+            log.error("Crew master not found with id: {}", crewPoid);
             throw new ResourceNotFoundException("Crew master not found with id: " + crewPoid);
         }
 
         // Verify detail record exists
         ContractCrewDtl contractCrewDtl = crewDtlRepository.findByIdCrewPoidAndIdDetRowId(crewPoid, detRowId);
         if (contractCrewDtl == null || contractCrewDtl.getId().getDetRowId() == null) {
+            log.error("Detail record not found with crewPoid: {}, detRowId: {}", crewPoid, detRowId);
             throw new ResourceNotFoundException(
                     "Detail record not found with crewPoid: " + crewPoid + ", detRowId: " + detRowId
             );
         }
 
         crewDtlRepository.deleteById(contractCrewDtl.getId());
+        
+        String logDetail = String.format("Row Deleted on Contract Crew details with detRowId: %s", detRowId);
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), crewPoid.toString(), logDetail);
+        
+        log.info("Successfully deleted crew detail with crewPoid: {}, detRowId: {}", crewPoid, detRowId);
     }
 
     private void validateCrewRequest(ContractCrewRequest request) {

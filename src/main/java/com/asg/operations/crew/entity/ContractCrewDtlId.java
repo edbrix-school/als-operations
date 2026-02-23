@@ -1,5 +1,6 @@
 package com.asg.operations.crew.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
@@ -19,6 +20,7 @@ public class ContractCrewDtlId implements Serializable {
 
     @Column(name = "CREW_POID", nullable = false)
     private Long crewPoid;
+    @AuditIgnore
     @Column(name = "DET_ROW_ID", nullable = false)
     private Long detRowId;
 

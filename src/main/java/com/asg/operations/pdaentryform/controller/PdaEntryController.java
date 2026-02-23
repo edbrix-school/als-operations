@@ -1089,7 +1089,18 @@ public class PdaEntryController {
     public ResponseEntity<?> loadAcknowledgmentDetails(
             @PathVariable Long transactionPoid
     ) {
-        return ApiResponse.success("Acknowledgment details loaded successfully", pdaEntryService.uploadAcknowledgmentDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        List<PdaEntryAcknowledgmentDetailResponse> result = pdaEntryService.uploadAcknowledgmentDetails(
+                transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        
+        if (result == null || result.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "PDA documents are already submitted State.",
+                "statusCode", 400
+            ));
+        }
+        
+        return ApiResponse.success("Acknowledgment details loaded successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)

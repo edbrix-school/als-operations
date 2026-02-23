@@ -21,5 +21,4 @@ public class PortCallOperationActTimingDetailResponseDto {
     private Long emailPoid;
     private String details;
     private LocalDateTime sentStatus;
-    private String typeOfRemarks;
 }

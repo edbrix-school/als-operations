@@ -4,6 +4,7 @@ import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.portcalloperation.dto.*;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -41,29 +42,29 @@ public interface PortCallOperationService {
     // EstBertDtl CRUD operations
     PortCallOperationEstBertDetailResponseDto getEstBertDetail(Long transactionPoid, Long detRowId);
 
-    PortCallOperationResponseDto createEstBertDetail(Long transactionPoid, PortCallOperationEstBertDetailRequestDto dto);
+    PortCallOperationEstBertDetailResponseDto createEstBertDetail(Long transactionPoid, PortCallOperationEstBertDetailRequestDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
-    PortCallOperationResponseDto updateEstBertDetail(Long transactionPoid, Long detRowId, PortCallOperationEstBertDetailRequestDto dto);
+    PortCallOperationEstBertDetailResponseDto updateEstBertDetail(Long transactionPoid, Long detRowId, PortCallOperationEstBertDetailRequestDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
     // EstPrearrivalActDtl CRUD operations
-    List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId);
+    Map<String, Object> listEstPrearrivalActDetails(Long transactionPoid);
 
-    PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto);
+    PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, PortCallOperationEstPrearrivalActDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
-    PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto);
+    PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
     // ActTimingsActvtyDtl CRUD operations
     List<PortCallOperationActTimingsActvtyDetailResponseDto> listActTimingsActvtyDetails(Long transactionPoid, Long detRowId);
 
-    PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActvtyDetailDto dto);
+    PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
-    PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActvtyDetailDto dto);
+    PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
     // DocsCopyDtl CRUD operations
     PortCallOperationDocsCopyDetailResponseDto getDocsCopyDetail(Long transactionPoid, Long detRowId);
 
-    PortCallOperationResponseDto createDocsCopyDetail(Long transactionPoid, PortCallOperationDocsCopyDetailRequestDto dto);
+    PortCallOperationDocsCopyDetailResponseDto createDocsCopyDetail(Long transactionPoid, PortCallOperationDocsCopyDetailRequestDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
-    PortCallOperationResponseDto updateDocsCopyDetail(Long transactionPoid, Long detRowId, PortCallOperationDocsCopyDetailRequestDto dto);
+    PortCallOperationDocsCopyDetailResponseDto updateDocsCopyDetail(Long transactionPoid, Long detRowId, PortCallOperationDocsCopyDetailRequestDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
 }

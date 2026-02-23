@@ -49,14 +49,6 @@ public class PortCallReportController {
     private final PortCallReportService portCallReportService;
     private final LoggingService loggingService;
 
-    /**
-     * Retrieves paginated list of port call reports.
-     *
-     * @param page   page number (0-based)
-     * @param size   page size
-     * @param sort   sort field and direction
-     * @return paginated list of port call reports
-     */
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     @Operation(
@@ -73,7 +65,7 @@ public class PortCallReportController {
 
         try {
             Map<String, Object> portActivityPage = portCallReportService.getAllPortCallReportsWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
-            return success("Reports retrieved successfully", portActivityPage);
+            return success("Port call retrieved successfully", portActivityPage);
         }
         catch (Exception ex){
             return internalServerError("Unable to fetch Reports list: " + ex.getMessage());
@@ -99,9 +91,9 @@ public class PortCallReportController {
         PortCallReportResponseDto report = portCallReportService.getReportById(id);
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), id.toString());
         if (report == null) {
-            return ApiResponse.notFound("Report not found");
+            return ApiResponse.notFound("Port call not found");
         }
-        return ApiResponse.success("Report retrieved successfully", report);
+        return ApiResponse.success("Port call retrieved successfully", report);
     }
 
     /**
@@ -120,7 +112,7 @@ public class PortCallReportController {
     public ResponseEntity<?> createReport(
             @Valid @RequestBody PortCallReportDto dto) {
         PortCallReportResponseDto created = portCallReportService.createReport(dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
-        return ApiResponse.success("Report created successfully", created);
+        return ApiResponse.success("Port call created successfully", created);
     }
 
     /**
@@ -141,7 +133,7 @@ public class PortCallReportController {
             @Parameter(description = "Report ID") @PathVariable Long id,
             @Valid @RequestBody PortCallReportDto dto) {
         PortCallReportResponseDto updated = portCallReportService.updateReport(id, dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
-        return ApiResponse.success("Report updated successfully", updated);
+        return ApiResponse.success("Port call updated successfully", updated);
     }
 
     /**
@@ -159,7 +151,7 @@ public class PortCallReportController {
     )
     public ResponseEntity<?> deleteReport(@Parameter(description = "Report ID") @PathVariable Long id,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
         portCallReportService.deleteReport(id,deleteReasonDto);
-        return ApiResponse.success("Report deleted successfully");
+        return ApiResponse.success("Port call deleted successfully");
     }
 
     /**

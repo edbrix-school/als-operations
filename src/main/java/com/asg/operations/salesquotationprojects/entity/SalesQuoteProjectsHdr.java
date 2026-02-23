@@ -1,5 +1,6 @@
 package com.asg.operations.salesquotationprojects.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,17 +21,21 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class SalesQuoteProjectsHdr {
 
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID", nullable = false)
     private Long transactionPoid;
 
+    @AuditIgnore
     @Column(name = "TRANSACTION_DATE")
     private LocalDate transactionDate;
 
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", nullable = false, length = 25)
     private String docRef;
 
@@ -38,7 +43,7 @@ public class SalesQuoteProjectsHdr {
     private String customerType;
 
     @Column(name = "CUSTOMER_POID")
-    private Long customerPoid;
+    private BigDecimal customerPoid;
 
     @Column(name = "CUSTOMER_NAME", length = 300)
     private String customerName;
@@ -151,18 +156,23 @@ public class SalesQuoteProjectsHdr {
     @Column(name = "BANK_ACCOUNT_POID")
     private Long bankAccountPoid;
 
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
 
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 }

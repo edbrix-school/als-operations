@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 public interface ProjectsHdrRepository extends JpaRepository<ProjectsHdr, Long> {
     boolean existsByTransactionPoid(Long transactionPoid);
 
-    boolean existsByProjectReferenceIgnoreCase(String projectReference);
+    boolean existsByDocRefIgnoreCase(String projectReference);
 }

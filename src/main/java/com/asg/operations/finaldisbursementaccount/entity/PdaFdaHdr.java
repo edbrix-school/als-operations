@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @Table(name = "PDA_FDA_HDR")
 public class PdaFdaHdr {
 
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID", nullable = false)
@@ -35,6 +36,7 @@ public class PdaFdaHdr {
     @Column(name = "PRINCIPAL_CONTACT", length = 50)
     private String principalContact;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", length = 25)
     private String docRef;
 

@@ -34,6 +34,7 @@ public class StockUnitMaster {
     @Column(name = "STOCK_UNIT_NAME2", length = 100)
     private String stockUnitName2;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
     @AuditIgnore
@@ -55,6 +56,7 @@ public class StockUnitMaster {
     @Column(name = "SEQNO")
     private Integer seqNo;
 
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 

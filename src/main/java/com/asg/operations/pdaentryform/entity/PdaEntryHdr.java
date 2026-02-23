@@ -18,6 +18,7 @@ import java.util.List;
 @Table(name = "PDA_ENTRY_HDR")
 public class PdaEntryHdr {
 
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pda_entry_hdr_seq")
     @SequenceGenerator(name = "pda_entry_hdr_seq", sequenceName = "PDA_ENTRY_HDR_SEQ", allocationSize = 1)
@@ -34,6 +35,7 @@ public class PdaEntryHdr {
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", unique = true, length = 25)
     @Size(max = 25)
     private String docRef;

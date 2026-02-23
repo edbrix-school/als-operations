@@ -20,6 +20,7 @@ import java.util.Date;
 )
 public class ShipVoyageHdr {
 
+    @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
@@ -119,6 +120,7 @@ public class ShipVoyageHdr {
     @Column(name = "JOBNO_OLD", length = 20)
     private String jobNoOld;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", length = 25)
     private String docRef;
 

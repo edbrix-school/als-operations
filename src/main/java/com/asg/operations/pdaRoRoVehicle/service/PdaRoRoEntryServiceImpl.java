@@ -1,6 +1,7 @@
 package com.asg.operations.pdaRoRoVehicle.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.exception.ValidationException;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
@@ -10,21 +11,17 @@ import com.asg.common.lib.dto.RawSearchResult;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
-import com.asg.operations.commonlov.service.LovService;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryHdr;
 import com.asg.operations.pdaRoRoVehicle.repository.PdaRoroEntryDtlRepository;
 import com.asg.operations.pdaRoRoVehicle.repository.PdaRoRoEntryHdrRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import oracle.jdbc.internal.OracleTypes;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
@@ -32,17 +29,11 @@ import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-
 import java.sql.Date;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +45,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     private final PdaRoRoEntryHdrRepository hdrRepository;
     private final PdaRoroEntryDtlRepository dtlRepository;
     private final JdbcTemplate jdbcTemplate;
-    private final EntityManager entityManager;
     private final com.asg.operations.commonlov.service.LovService lovService;
     private final com.asg.common.lib.service.PrintService printService;
     private final javax.sql.DataSource dataSource;
@@ -302,11 +292,9 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         List<PdaRoRoVehicleDtlResponseDto> vehicleDetails = (List<PdaRoRoVehicleDtlResponseDto>) result.get("OUTDATA");
 
         if (status != null && (status.contains("ERROR") || status.contains("WARNING"))) {
-            return PdaRoroVehicleUploadResponse.builder()
-                    .status(status)
-                    .vehicleDetails(vehicleDetails)
-                    .build();
+            throw new ValidationException(status);
         }
+
 
         List<PdaRoRoVehicleDtlResponseDto> savedDetails = null;
         if (vehicleDetails != null && !vehicleDetails.isEmpty()) {
@@ -391,7 +379,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                         "PDA Ro-Ro Entry not found with ID: " + transactionPoid));
         
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                .withSchemaName("PRODUCTION")
                 .withProcedureName("PROC_PDA_RORO_DTLS_CLEAR")
                 .declareParameters(
                         new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
@@ -414,7 +401,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
 
     private ExcelConfig getExcelConfig(String docId) {
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                .withSchemaName("PRODUCTION")
                 .withProcedureName("PROC_GLOB_EXCEL_IMPORT_SHEETS")
                 .declareParameters(
                         new SqlParameter("P_COMPANY_POID", Types.NUMERIC),
@@ -439,7 +425,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
             throw new RuntimeException("No Excel configuration found for DOC_ID: " + docId);
         }
 
-        Map<String, Object> configRow = configs.get(0);
+        Map<String, Object> configRow = configs.getFirst();
         ExcelConfig config = new ExcelConfig();
         config.startRowNumber = ((Number) configRow.get("START_ROW_NUMBER")).intValue();
         config.startColNumber = ((Number) configRow.get("START_COL_NUMBER")).intValue();
@@ -475,64 +461,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         int startColNumber;
         int endColNumber;
         String tempTableName;
-    }
-
-    private String mapSearchFieldToColumn(String searchField) {
-        if (searchField == null) return null;
-        
-        String normalizedField = searchField.toUpperCase().replace("_", "");
-        switch (normalizedField) {
-            case "TRANSACTIONPOID": return "PRE.TRANSACTION_POID";
-            case "DOCREF": return "PRE.DOC_REF";
-            case "TRANSACTIONDATE": return "PRE.TRANSACTION_DATE";
-            case "VOYAGENO": return "SVH.VOYAGE_NO";
-            case "VESSELNAME": return "SVM.VESSEL_NAME";
-            case "LINENAME": return "SLM.LINE_NAME";
-            case "DELETED": return "PRE.DELETED";
-            default: return "PRE." + searchField.toUpperCase().replace(" ", "_");
-        }
-    }
-
-    private String mapSortFieldToColumn(String sortField) {
-        if (sortField == null) return "PRE.TRANSACTION_DATE";
-        
-        String normalizedField = sortField.toUpperCase().replace("_", "");
-        switch (normalizedField) {
-            case "TRANSACTIONPOID": return "PRE.TRANSACTION_POID";
-            case "DOCREF": return "PRE.DOC_REF";
-            case "TRANSACTIONDATE": return "PRE.TRANSACTION_DATE";
-            case "VOYAGENO": return "SVH.VOYAGE_NO";
-            case "VESSELNAME": return "SVM.VESSEL_NAME";
-            case "LINENAME": return "SLM.LINE_NAME";
-            case "DELETED": return "PRE.DELETED";
-            default: return "PRE." + sortField.toUpperCase().replace(" ", "_");
-        }
-    }
-
-    private RoRoVehicleListResponse mapToRoRoVehicleListResponse(Object[] row) {
-        RoRoVehicleListResponse dto = new RoRoVehicleListResponse();
-        dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setDeleted(convertToString(row[1]));
-        dto.setCompanyPoid(row[2] != null ? ((Number) row[2]).longValue() : null);
-        dto.setTransactionDate(row[3] != null ? ((Timestamp) row[3]).toLocalDateTime().toLocalDate() : null);
-        dto.setDocRef(convertToString(row[4]));
-        dto.setLineName(convertToString(row[5]));
-        dto.setVoyageNo(convertToString(row[6]));
-        dto.setVesselName(convertToString(row[7]));
-        return dto;
-    }
-
-    private String convertToString(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof String) {
-            return (String) value;
-        }
-        if (value instanceof Character) {
-            return String.valueOf(value);
-        }
-        return value.toString();
     }
 
     public static String getCurrentUser() {

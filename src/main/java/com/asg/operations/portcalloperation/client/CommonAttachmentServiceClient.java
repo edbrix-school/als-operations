@@ -33,16 +33,52 @@ public class CommonAttachmentServiceClient {
     public static final String DOC_ID_PORT_CALL_OPERATION = "110-163";
 
     /**
-     * docId used for side drawer attachments (Docs Msgs Dtl1 / EMAIL_DOCUMENTS). Isolated from main screen and list area.
+     * docId for other details screen (OPS_PC_OPERATION_HDR.PDA_FDA_ATTACHMENTS).
      */
-    public static final String DOC_ID_DRAWER = "110-163-DRAWER";
+    public static final String DOC_ID_PDA_FDA = "110-163-PDA-FDA";
+
+    /**
+     * docId for berthing screen side drawer (OPS_PC_EST_BERT_DTL.BERTHING_ATTACHMENTS).
+     */
+    public static final String DOC_ID_BERTHING = "110-163-BERTHING";
+
+    /**
+     * docId for pre-arrival screen side drawer (OPS_PC_EST_PREARRIVAL_DTL.PRE_ARRIVAL_ATTACHMENTS).
+     */
+    public static final String DOC_ID_PREARRIVAL = "110-163-PREARRIVAL";
+
+    /**
+     * docId for actual timing screen (OPS_PC_ACT_TIMING_DTL.TIMING_ATTACHMENTS).
+     */
+    public static final String DOC_ID_TIMING = "110-163-TIMING";
+
+    /**
+     * docId for husbandry crew screen (OPS_PC_HUSBANDRY_CREW_DTL.CREW_ATTACHMENTS).
+     */
+    public static final String DOC_ID_HUSBANDRY_CREW = "110-163-HUSB-CREW";
+
+    /**
+     * docId for husbandry other details screen (OPS_PC_HUSBANDRY_OTH_DTL.ARRNGMNT_ATTACHMENTS).
+     */
+    public static final String DOC_ID_HUSBANDRY_OTH = "110-163-HUSB-OTH";
+
+    /**
+     * docId for docs copy screen (OPS_PC_DOCS_COPY_DTL.DOCUMENT_ATTACHMENTS).
+     */
+    public static final String DOC_ID_DOCS_COPY = "110-163-DOCS-COPY";
+
+
+    /**
+     * Encode (transactionPoid, detRowId) as a unique docKeyPoid for detail tables.
+     */
+    public static long toDetailDocKeyPoid(long transactionPoid, long detRowId) {
+        return transactionPoid * 1_000_000_000L + detRowId;
+    }
 
     private final RestTemplate restTemplate;
     private final String baseUrl;
 
-    public CommonAttachmentServiceClient(
-            RestTemplate restTemplate,
-            @Value("${common.service.attachment.base-url:}") String baseUrl) {
+    public CommonAttachmentServiceClient(RestTemplate restTemplate, @Value("${common.service.attachment.base-url:}") String baseUrl) {
         this.restTemplate = restTemplate;
         this.baseUrl = baseUrl == null ? "" : baseUrl.trim();
     }
@@ -68,17 +104,8 @@ public class CommonAttachmentServiceClient {
     }
 
     /**
-     * Upload files to common attachment service using RestTemplate's FormHttpMessageConverter
-     * so the multipart request is in the format Spring expects on the receiving side.
-     * Automatically renames files to ensure uniqueness if a file with the same name already exists.
-     *
-     * @param docKeyPoid     transactionPoid (used as docKeyPoid)
-     * @param files          files to upload
-     * @param remarks        optional remarks per file (by index)
-     * @param checklistNames optional checklist names per file (by index)
-     * @return upload response with uploaded file list and any errors
+     * Upload for main screen PC Info (docId=110-163, docKeyPoid=transactionPoid).
      */
-    /** Upload for main screen PC Info (docId=110-163, docKeyPoid=transactionPoid). */
     public PcInfoAttachmentUploadResponseDto upload(Long docKeyPoid, MultipartFile[] files, String[] remarks, String[] checklistNames) {
         return upload(DOC_ID_PORT_CALL_OPERATION, docKeyPoid, files, remarks, checklistNames);
     }
@@ -129,11 +156,11 @@ public class CommonAttachmentServiceClient {
                 log.debug("upload: added file part name={} size={}", uniqueFilename, bytes.length);
             }
         }
-        int filesParts = body.get("files") != null ? body.get("files").size() : 0;
+        int filesParts = body.get("files") != null ? Objects.requireNonNull(body.get("files")).size() : 0;
         log.info("upload: docId={}, docKeyPoid={}, body files parts={}, remarks={}, checklistName={}",
                 docId, docKeyPoid, filesParts,
-                body.get("remarks") != null ? body.get("remarks").size() : 0,
-                body.get("checklistName") != null ? body.get("checklistName").size() : 0);
+                body.get("remarks") != null ? Objects.requireNonNull(body.get("remarks")).size() : 0,
+                body.get("checklistName") != null ? Objects.requireNonNull(body.get("checklistName")).size() : 0);
         if (filesReceived > 0 && filesParts == 0) {
             log.warn("upload: received {} file(s) but added 0 parts (all null/empty or failed getBytes?)", filesReceived);
         }
@@ -158,7 +185,8 @@ public class CommonAttachmentServiceClient {
                     url,
                     HttpMethod.POST,
                     entity,
-                    new ParameterizedTypeReference<Map<String, Object>>() {}
+                    new ParameterizedTypeReference<Map<String, Object>>() {
+                    }
             );
             Map<String, Object> responseBody = response.getBody();
             log.info("upload: common-services response status={}, body={}", response.getStatusCode(), responseBody);
@@ -169,7 +197,9 @@ public class CommonAttachmentServiceClient {
         }
     }
 
-    /** Strip path to only the file name (no directory). */
+    /**
+     * Strip path to only the file name (no directory).
+     */
     private static String filenameOnly(String originalFilename) {
         if (originalFilename == null || originalFilename.isEmpty()) return "file";
         int last = Math.max(originalFilename.lastIndexOf('/'), originalFilename.lastIndexOf('\\'));
@@ -188,7 +218,7 @@ public class CommonAttachmentServiceClient {
                 return new HashSet<>();
             }
             log.debug("getExistingFilenames: listResponse keys={}", listResponse.keySet());
-            
+
             // Try different response structures: {content: [...]} or {result: {data: {content: [...]}}}
             Object content = null;
             if (listResponse.containsKey("content")) {
@@ -210,12 +240,12 @@ public class CommonAttachmentServiceClient {
                     content = dataMap.get("content");
                 }
             }
-            
+
             if (!(content instanceof List)) {
                 log.debug("getExistingFilenames: content is not a List, content={}", content);
                 return new HashSet<>();
             }
-            
+
             Set<String> filenames = new HashSet<>();
             for (Object item : (List<?>) content) {
                 if (item instanceof Map) {
@@ -271,7 +301,9 @@ public class CommonAttachmentServiceClient {
         return candidate;
     }
 
-    /** List attachments for main screen PC Info (docId=110-163, docKeyPoid=transactionPoid). */
+    /**
+     * List attachments for main screen PC Info (docId=110-163, docKeyPoid=transactionPoid).
+     */
     public Map<String, Object> listAttachments(Long docKeyPoid, int page, int size) {
         return listAttachments(DOC_ID_PORT_CALL_OPERATION, docKeyPoid, page, size);
     }
@@ -306,7 +338,9 @@ public class CommonAttachmentServiceClient {
         }
     }
 
-    /** Download attachment for main screen PC Info (docId=110-163, docKeyPoid=transactionPoid). */
+    /**
+     * Download attachment for main screen PC Info (docId=110-163, docKeyPoid=transactionPoid).
+     */
     public ResponseEntity<org.springframework.core.io.Resource> downloadAttachment(Long docKeyPoid, String storedFileName) {
         return downloadAttachment(DOC_ID_PORT_CALL_OPERATION, docKeyPoid, storedFileName);
     }
@@ -334,13 +368,15 @@ public class CommonAttachmentServiceClient {
             log.debug("Downloaded attachment storedFileName={} for docId={}, docKeyPoid={}", storedFileName, docId, docKeyPoid);
             return response;
         } catch (Exception e) {
-            log.error("Common attachment service download failed for docId={}, docKeyPoid={}, storedFileName={}: {}", 
+            log.error("Common attachment service download failed for docId={}, docKeyPoid={}, storedFileName={}: {}",
                     docId, docKeyPoid, storedFileName, e.getMessage());
             throw new RuntimeException("Attachment download failed: " + e.getMessage(), e);
         }
     }
 
-    /** Delete attachment for main screen PC Info (for compensating transactions). */
+    /**
+     * Delete attachment for main screen PC Info (for compensating transactions).
+     */
     public void deleteAttachment(Long docKeyPoid, String storedFileName) {
         deleteAttachment(DOC_ID_PORT_CALL_OPERATION, docKeyPoid, storedFileName);
     }
@@ -362,7 +398,7 @@ public class CommonAttachmentServiceClient {
             restTemplate.exchange(url, HttpMethod.DELETE, entity, Void.class);
             log.debug("Deleted attachment storedFileName={} for docId={}, docKeyPoid={}", storedFileName, docId, docKeyPoid);
         } catch (Exception e) {
-            log.error("Common attachment service delete failed for docId={}, docKeyPoid={}, storedFileName={}: {}", 
+            log.error("Common attachment service delete failed for docId={}, docKeyPoid={}, storedFileName={}: {}",
                     docId, docKeyPoid, storedFileName, e.getMessage());
             throw new RuntimeException("Attachment delete failed: " + e.getMessage(), e);
         }

@@ -1,5 +1,6 @@
 package com.asg.operations.salesquotationprojects.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import com.asg.operations.salesquotationprojects.key.SalesQuoteProjectsTcDtlId;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,15 +26,19 @@ public class SalesQuoteProjectsTcDtl {
     @Column(name = "TERMS_DESCRIPTION", length = 500)
     private String termsDescription;
 
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
 
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDate createdDate;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDate lastModifiedDate;
 }

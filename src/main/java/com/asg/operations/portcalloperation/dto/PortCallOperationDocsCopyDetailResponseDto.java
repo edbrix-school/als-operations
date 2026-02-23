@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,6 +18,8 @@ public class PortCallOperationDocsCopyDetailResponseDto {
     private Long detRowId;
     private String documentFrom;
     private String documentList;
+    private Long emailPoid;
+    private LocalDate emailSentOn;
     private String documentSelect;
     private String documentAttachments;
 }

@@ -51,9 +51,6 @@ public class PortCallOperationDto {
     @Size(max = 4000, message = "Terms and Conditions should not exceed 4000 characters")
     private String termsConditions;
 
-    @Size(max = 4000, message = "PC Info Attachments should not exceed 4000 characters")
-    private String pcInfoAttachments;
-
     private Long pdaRefPoid;
 
     private Long fdaRefPoid;
@@ -67,12 +64,6 @@ public class PortCallOperationDto {
     @Size(max = 1000, message = "PDA FDA Remarks should not exceed 1000 characters")
     private String pdaFdaRemarks;
 
-    @Size(max = 4000, message = "PDA FDA Attachments should not exceed 4000 characters")
-    private String pdaFdaAttachments;
-
-    @Size(max = 100,message = "Husbandry Crew Req By should not exceed 100 characters")
-    private String husbandryCrewReqBy;
-
     @Valid
     private List<PortCallOperationCargoDetailDto> cargoDetails;
 
@@ -81,13 +72,7 @@ public class PortCallOperationDto {
     private List<PortCallOperationMailDetailDto> mailDetails;
 
     @Valid
-    private List<PortCallOperationEstBertDetailDto> estBertDetails;
-
-    @Valid
     private List<PortCallOperationEstPrearrivalDetailDto> estPrearrivalDetails;
-
-    @Valid
-    private List<PortCallOperationActTimingDetailDto> actTimingDetails;
 
     @Valid
     private List<PortCallOperationActCondDetailDto> actCondDetails;
@@ -112,10 +97,4 @@ public class PortCallOperationDto {
 
     @Valid
     private List<PortCallOperationDocsCopyDetailDto> docsCopyDetails;
-
-    @Valid
-    private List<PortCallOperationDocsMsgsDtl1DetailDto> docsMsgsDtl1Details;
-
-    @Valid
-    private List<PortCallOperationDocsMsgsDtl2DetailDto> docsMsgsDtl2Details;
 }
