@@ -13,7 +13,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface FreightJobProjectionRepository extends JpaRepository<com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl, Long> {
+public interface FreightJobProjectionRepository extends JpaRepository<com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl, com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl.FFProjectsCtrlSheetDtlId> {
 
     @Query(value = """
         SELECT 
@@ -33,7 +33,6 @@ public interface FreightJobProjectionRepository extends JpaRepository<com.asg.op
         FROM PROJECTS_CTRL_SHEET_DTL cs
         WHERE cs.TRANSACTION_POID = :projectId
         AND cs.FREIGHT_TYPE = 'AIR'
-        AND cs.DELETED = 'N'
         ORDER BY cs.DET_ROW_ID
         """, nativeQuery = true)
     List<AirFreightJobProjection> findAirFreightJobs(@Param("projectId") Long projectId);
@@ -56,7 +55,6 @@ public interface FreightJobProjectionRepository extends JpaRepository<com.asg.op
         FROM PROJECTS_CTRL_SHEET_DTL cs
         WHERE cs.TRANSACTION_POID = :projectId
         AND cs.FREIGHT_TYPE = 'SEA'
-        AND cs.DELETED = 'N'
         ORDER BY cs.DET_ROW_ID
         """, nativeQuery = true)
     List<SeaFreightJobProjection> findSeaFreightJobs(@Param("projectId") Long projectId);
@@ -73,7 +71,6 @@ public interface FreightJobProjectionRepository extends JpaRepository<com.asg.op
         FROM PROJECTS_CTRL_SHEET_DTL cs
         WHERE cs.TRANSACTION_POID = :projectId
         AND cs.FREIGHT_TYPE = 'ROAD'
-        AND cs.DELETED = 'N'
         ORDER BY cs.DET_ROW_ID
         """, nativeQuery = true)
     List<RoadFreightJobProjection> findRoadFreightJobs(@Param("projectId") Long projectId);
@@ -92,7 +89,6 @@ public interface FreightJobProjectionRepository extends JpaRepository<com.asg.op
             cs.JOB_STATUS as jobStatus
         FROM PROJECTS_CTRL_SHEET_DTL cs
         WHERE cs.TRANSACTION_POID = :projectId
-        AND cs.DELETED = 'N'
         ORDER BY cs.DET_ROW_ID
         """, nativeQuery = true)
     List<FreightJobSummaryProjection> findAllFreightJobs(@Param("projectId") Long projectId);
@@ -112,7 +108,6 @@ public interface FreightJobProjectionRepository extends JpaRepository<com.asg.op
         FROM PROJECTS_CTRL_SHEET_DTL cs
         WHERE cs.TRANSACTION_POID = :projectId
         AND cs.ETA BETWEEN :fromDate AND :toDate
-        AND cs.DELETED = 'N'
         ORDER BY cs.DET_ROW_ID
         """, nativeQuery = true)
     List<FreightJobSummaryProjection> findAllFreightJobsByDateRange(

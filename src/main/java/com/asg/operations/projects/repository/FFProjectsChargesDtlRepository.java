@@ -1,7 +1,6 @@
 package com.asg.operations.projects.repository;
 
 import com.asg.operations.projects.entity.FFProjectsChargesDtl;
-import com.asg.operations.projects.key.FFProjectsChargesDtlId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,13 +8,13 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface FFProjectsChargesDtlRepository extends JpaRepository<FFProjectsChargesDtl, FFProjectsChargesDtlId> {
+public interface FFProjectsChargesDtlRepository extends JpaRepository<FFProjectsChargesDtl, FFProjectsChargesDtl.FFProjectsChargesDtlId> {
 
-    List<FFProjectsChargesDtl> findByTransactionPoidAndDeleted(Long transactionPoid, String deleted);
+    List<FFProjectsChargesDtl> findByTransactionPoid(Long transactionPoid);
 
-    Optional<FFProjectsChargesDtl> findByTransactionPoidAndDetRowIdAndDeleted(Long transactionPoid, Long detRowId, String deleted);
+    Optional<FFProjectsChargesDtl> findByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
 
-    void deleteByTransactionPoidAndDeleted(Long transactionPoid, String deleted);
-
-    void deleteByTransactionPoidAndDetRowIdInAndDeleted(Long transactionPoid, List<Long> detRowIds, String deleted);
+//    void deleteByTransactionPoidAndDeleted(Long transactionPoid);
+//
+//    void deleteByTransactionPoidAndDetRowIdInAndDeleted(Long transactionPoid, List<Long> detRowIds);
 }

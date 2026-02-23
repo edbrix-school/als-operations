@@ -16,25 +16,18 @@ public class FFProjectsRequest {
 
     private Long quotationReferencePoid;
 
-    @NotBlank(message = "Project description is required")
     private String projectDescription;
 
-    @NotBlank(message = "Billing to is required")
     private String billingTo;
 
-    @NotNull(message = "Billing party is required")
     private Long billingPartyPoid;
 
-    @NotNull(message = "Project customer is required")
     private Long projectCustomerPoid;
 
-    @NotNull(message = "Principal is required")
     private Long principalPoid;
 
-    @NotBlank(message = "Shipment mode is required")
     private String shipmentMode;
 
-    @NotBlank(message = "Mode is required")
     private String mode;
 
     private String projectReference;
@@ -43,7 +36,6 @@ public class FFProjectsRequest {
 
     private LocalDate periodTo;
 
-    @NotNull(message = "Salesman is required")
     private Long salesmanPoid;
 
     private Long linePoid;

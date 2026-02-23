@@ -33,7 +33,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/v1/ff-projects")
+@RequestMapping("/v1/projects")
 @Tag(name = "FF Projects", description = "APIs for managing Freight Forwarding Projects")
 @RequiredArgsConstructor
 public class FFProjectsController {

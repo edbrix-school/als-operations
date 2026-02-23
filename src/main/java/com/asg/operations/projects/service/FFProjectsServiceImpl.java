@@ -76,8 +76,8 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         FFProjectsHdr projectsHdr = projectsHdrRepository.findByTransactionPoidAndDeleted(transactionPoid, "N")
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + transactionPoid));
 
-        List<FFProjectsChargesDtl> chargeDetails = projectsChargesDtlRepository.findByTransactionPoidAndDeleted(transactionPoid, "N");
-        List<FFProjectsCtrlSheetDtl> ctrlSheetDetails = projectsCtrlSheetDtlRepository.findByTransactionPoidAndDeleted(transactionPoid, "N");
+        List<FFProjectsChargesDtl> chargeDetails = projectsChargesDtlRepository.findByTransactionPoid(transactionPoid);
+        List<FFProjectsCtrlSheetDtl> ctrlSheetDetails = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
 
         return mapToResponse(projectsHdr, chargeDetails, ctrlSheetDetails);
     }
@@ -85,12 +85,11 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     @Override
     @Transactional
     public FFProjectsResponse createProject(FFProjectsRequest request) {
-        String docRef = generateDocRef();
+//        String docRef = generateDocRef();
 
         FFProjectsHdr projectsHdr = FFProjectsHdr.builder()
                 .transactionDate(LocalDate.now())
                 .companyPoid(UserContext.getCompanyPoid())
-                .docRef(docRef)
                 .quotationReferencePoid(request.getQuotationReferencePoid())
                 .projectDescription(request.getProjectDescription())
                 .billingTo(request.getBillingTo())
@@ -98,7 +97,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .projectCustomerPoid(request.getProjectCustomerPoid())
                 .principalPoid(request.getPrincipalPoid())
                 .shipmentMode(request.getShipmentMode())
-                .mode(request.getMode())
+//                .mode(request.getMode())
                 .projectReference(request.getProjectReference())
                 .periodFrom(request.getPeriodFrom())
                 .periodTo(request.getPeriodTo())
@@ -120,7 +119,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {
             for (FFProjectsChargesDetailRequest chargeReq : request.getChargeDetails()) {
                 if ("ISCREATED".equalsIgnoreCase(chargeReq.getActionType())) {
-                    List<FFProjectsChargesDtl> existingCharges = projectsChargesDtlRepository.findByTransactionPoidAndDeleted(transactionPoid, "N");
+                    List<FFProjectsChargesDtl> existingCharges = projectsChargesDtlRepository.findByTransactionPoid(transactionPoid);
                     long nextDetRowId = existingCharges.stream().mapToLong(FFProjectsChargesDtl::getDetRowId).max().orElse(0L) + 1;
                     
                     FFProjectsChargesDtl detail = FFProjectsChargesDtl.builder()
@@ -129,23 +128,23 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                         .quotationReferencePoid(chargeReq.getQuotationReferencePoid())
                         .chargeDetailsPoid(chargeReq.getChargeDetailsPoid())
                         .printableChargeDescription(chargeReq.getPrintableChargeDescription())
-                        .chargeBasis(chargeReq.getChargeBasis())
+//                        .chargeBasis(chargeReq.getChargeBasis())
                         .quantity(chargeReq.getQuantity())
                         .unit(chargeReq.getUnit())
                         .buyingCurrencyCode(chargeReq.getBuyingCurrencyCode())
                         .currencyRate(chargeReq.getCurrencyRate())
                         .buyingUnitRate(chargeReq.getBuyingUnitRate())
-                        .buyingTotalBhd(chargeReq.getBuyingTotalBhd())
-                        .sellingUnitRate(chargeReq.getSellingUnitRate())
-                        .sellingTotal(chargeReq.getSellingTotal())
+//                        .buyingTotalBhd(chargeReq.getBuyingTotalBhd())
+//                        .sellingUnitRate(chargeReq.getSellingUnitRate())
+//                        .sellingTotal(chargeReq.getSellingTotal())
                         .taxIdPoid(chargeReq.getTaxIdPoid())
                         .taxPercentage(chargeReq.getTaxPercentage())
-                        .taxAmount(chargeReq.getTaxAmount())
-                        .sellingGrandTotal(chargeReq.getSellingGrandTotal())
-                        .sellingGrandTotalBhd(chargeReq.getSellingGrandTotalBhd())
-                        .marginBhd(chargeReq.getMarginBhd())
+//                        .taxAmount(chargeReq.getTaxAmount())
+//                        .sellingGrandTotal(chargeReq.getSellingGrandTotal())
+//                        .sellingGrandTotalBhd(chargeReq.getSellingGrandTotalBhd())
+//                        .marginBhd(chargeReq.getMarginBhd())
                         .remarks(chargeReq.getRemarks())
-                        .deleted("N")
+//                        .deleted("N")
                         .createdBy(UserContext.getUserName())
                         .createdDate(LocalDateTime.now())
                         .build();
@@ -160,7 +159,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         if (request.getControlSheetDetails() != null && !request.getControlSheetDetails().isEmpty()) {
             for (FFProjectsCtrlSheetDetailRequest ctrlReq : request.getControlSheetDetails()) {
                 if ("ISCREATED".equals(ctrlReq.getActionType())) {
-                    List<FFProjectsCtrlSheetDtl> existingSheets = projectsCtrlSheetDtlRepository.findByTransactionPoidAndDeleted(transactionPoid, "N");
+                    List<FFProjectsCtrlSheetDtl> existingSheets = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
                     long nextDetRowId = existingSheets.stream().mapToLong(FFProjectsCtrlSheetDtl::getDetRowId).max().orElse(0L) + 1;
                     
                     FFProjectsCtrlSheetDtl detail = FFProjectsCtrlSheetDtl.builder()
@@ -181,8 +180,8 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                         .truckNumber(ctrlReq.getTruckNumber())
                         .description(ctrlReq.getDescription())
                         .sailDate(ctrlReq.getSailDate())
-                        .jobStatus(ctrlReq.getJobStatus())
-                        .deleted("N")
+//                        .jobStatus(ctrlReq.getJobStatus())
+//                        .deleted("N")
                         .createdBy(UserContext.getUserName())
                         .createdDate(LocalDateTime.now())
                         .build();
@@ -217,7 +216,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         newProjectsHdr.setProjectCustomerPoid(request.getProjectCustomerPoid());
         newProjectsHdr.setPrincipalPoid(request.getPrincipalPoid());
         newProjectsHdr.setShipmentMode(request.getShipmentMode());
-        newProjectsHdr.setMode(request.getMode());
+//        newProjectsHdr.setMode(request.getMode());
         newProjectsHdr.setProjectReference(request.getProjectReference());
         newProjectsHdr.setPeriodFrom(request.getPeriodFrom());
         newProjectsHdr.setPeriodTo(request.getPeriodTo());
@@ -242,7 +241,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         oldProjectsHdr.setProjectCustomerPoid(request.getProjectCustomerPoid());
         oldProjectsHdr.setPrincipalPoid(request.getPrincipalPoid());
         oldProjectsHdr.setShipmentMode(request.getShipmentMode());
-        oldProjectsHdr.setMode(request.getMode());
+//        oldProjectsHdr.setMode(request.getMode());
         oldProjectsHdr.setProjectReference(request.getProjectReference());
         oldProjectsHdr.setPeriodFrom(request.getPeriodFrom());
         oldProjectsHdr.setPeriodTo(request.getPeriodTo());
@@ -300,7 +299,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
         updateProjectControlSheets(requests, transactionPoid);
         
-        List<FFProjectsCtrlSheetDtl> details = projectsCtrlSheetDtlRepository.findByTransactionPoidAndDeleted(transactionPoid, "N");
+        List<FFProjectsCtrlSheetDtl> details = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
         return details.stream()
                 .map(this::mapCtrlSheetDetailToResponse)
                 .collect(Collectors.toList());
@@ -312,9 +311,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         List<FFProjectsCtrlSheetDtl> details;
         
         if (freightType != null && !freightType.isEmpty()) {
-            details = projectsCtrlSheetDtlRepository.findByTransactionPoidAndFreightTypeAndDeleted(transactionPoid, freightType, "N");
+            details = projectsCtrlSheetDtlRepository.findByTransactionPoidAndFreightType(transactionPoid, freightType);
         } else {
-            details = projectsCtrlSheetDtlRepository.findByTransactionPoidAndDeleted(transactionPoid, "N");
+            details = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
         }
 
         return details.stream()
@@ -351,7 +350,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .projectCustomerPoid(hdr.getProjectCustomerPoid())
                 .principalPoid(hdr.getPrincipalPoid())
                 .shipmentMode(hdr.getShipmentMode())
-                .mode(hdr.getMode())
+//                .mode(hdr.getMode())
                 .projectReference(hdr.getProjectReference())
                 .periodFrom(hdr.getPeriodFrom())
                 .periodTo(hdr.getPeriodTo())
@@ -362,10 +361,10 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .cargoDetails(hdr.getCargoDetails())
                 .billingCurrencyCode(hdr.getBillingCurrencyCode())
                 .projectStatus(hdr.getProjectStatus())
-                .totalBuyingRateBhd(hdr.getTotalBuyingRateBhd())
-                .totalVatBhd(hdr.getTotalVatBhd())
-                .grandTotalSellRateBhd(hdr.getGrandTotalSellRateBhd())
-                .grandTotalSellRateFc(hdr.getGrandTotalSellRateFc())
+//                .totalBuyingRateBhd(hdr.getTotalBuyingRateBhd())
+//                .totalVatBhd(hdr.getTotalVatBhd())
+//                .grandTotalSellRateBhd(hdr.getGrandTotalSellRateBhd())
+//                .grandTotalSellRateFc(hdr.getGrandTotalSellRateFc())
                 .createdBy(hdr.getCreatedBy())
                 .createdDate(hdr.getCreatedDate())
                 .lastModifiedBy(hdr.getLastModifiedBy())
@@ -382,21 +381,21 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .quotationReferencePoid(dtl.getQuotationReferencePoid())
                 .chargeDetailsPoid(dtl.getChargeDetailsPoid())
                 .printableChargeDescription(dtl.getPrintableChargeDescription())
-                .chargeBasis(dtl.getChargeBasis())
+//                .chargeBasis(dtl.getChargeBasis())
                 .quantity(dtl.getQuantity())
                 .unit(dtl.getUnit())
                 .buyingCurrencyCode(dtl.getBuyingCurrencyCode())
                 .currencyRate(dtl.getCurrencyRate())
                 .buyingUnitRate(dtl.getBuyingUnitRate())
-                .buyingTotalBhd(dtl.getBuyingTotalBhd())
-                .sellingUnitRate(dtl.getSellingUnitRate())
-                .sellingTotal(dtl.getSellingTotal())
+//                .buyingTotalBhd(dtl.getBuyingTotalBhd())
+//                .sellingUnitRate(dtl.getSellingUnitRate())
+//                .sellingTotal(dtl.getSellingTotal())
                 .taxIdPoid(dtl.getTaxIdPoid())
                 .taxPercentage(dtl.getTaxPercentage())
-                .taxAmount(dtl.getTaxAmount())
-                .sellingGrandTotal(dtl.getSellingGrandTotal())
-                .sellingGrandTotalBhd(dtl.getSellingGrandTotalBhd())
-                .marginBhd(dtl.getMarginBhd())
+//                .taxAmount(dtl.getTaxAmount())
+//                .sellingGrandTotal(dtl.getSellingGrandTotal())
+//                .sellingGrandTotalBhd(dtl.getSellingGrandTotalBhd())
+//                .marginBhd(dtl.getMarginBhd())
                 .remarks(dtl.getRemarks())
                 .createdBy(dtl.getCreatedBy())
                 .createdDate(dtl.getCreatedDate())
@@ -424,7 +423,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .truckNumber(dtl.getTruckNumber())
                 .description(dtl.getDescription())
                 .sailDate(dtl.getSailDate())
-                .jobStatus(dtl.getJobStatus())
+//                .jobStatus(dtl.getJobStatus())
                 .createdBy(dtl.getCreatedBy())
                 .createdDate(dtl.getCreatedDate())
                 .lastModifiedBy(dtl.getLastModifiedBy())
@@ -441,7 +440,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .projectStatus(hdr.getProjectStatus())
                 .periodFrom(hdr.getPeriodFrom())
                 .periodTo(hdr.getPeriodTo())
-                .grandTotalSellRateBhd(hdr.getGrandTotalSellRateBhd())
+//                .grandTotalSellRateBhd(hdr.getGrandTotalSellRateBhd())
                 .build();
     }
 
@@ -483,32 +482,35 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         List<Long> toDelete = new ArrayList<>();
         List<LogRequestDto<FFProjectsChargesDtl>> logRequests = new ArrayList<>();
 
+        List<FFProjectsChargesDtl> existingCharges = projectsChargesDtlRepository.findByTransactionPoid(transactionPoid);
+        long nextChargeDetRowId = existingCharges.stream().mapToLong(FFProjectsChargesDtl::getDetRowId).max().orElse(0L);
+
         for (FFProjectsChargesDetailRequest charge : charges) {
             switch (charge.getActionType().toUpperCase()) {
                 case "ISCREATED":
                     toSave.add(FFProjectsChargesDtl.builder()
                             .transactionPoid(transactionPoid)
-                            .detRowId(charge.getDetRowId())
+                            .detRowId(++nextChargeDetRowId)
                             .quotationReferencePoid(charge.getQuotationReferencePoid())
                             .chargeDetailsPoid(charge.getChargeDetailsPoid())
                             .printableChargeDescription(charge.getPrintableChargeDescription())
-                            .chargeBasis(charge.getChargeBasis())
+//                            .chargeBasis(charge.getChargeBasis())
                             .quantity(charge.getQuantity())
                             .unit(charge.getUnit())
                             .buyingCurrencyCode(charge.getBuyingCurrencyCode())
                             .currencyRate(charge.getCurrencyRate())
                             .buyingUnitRate(charge.getBuyingUnitRate())
-                            .buyingTotalBhd(charge.getBuyingTotalBhd())
-                            .sellingUnitRate(charge.getSellingUnitRate())
-                            .sellingTotal(charge.getSellingTotal())
+//                            .buyingTotalBhd(charge.getBuyingTotalBhd())
+//                            .sellingUnitRate(charge.getSellingUnitRate())
+//                            .sellingTotal(charge.getSellingTotal())
                             .taxIdPoid(charge.getTaxIdPoid())
                             .taxPercentage(charge.getTaxPercentage())
-                            .taxAmount(charge.getTaxAmount())
-                            .sellingGrandTotal(charge.getSellingGrandTotal())
-                            .sellingGrandTotalBhd(charge.getSellingGrandTotalBhd())
-                            .marginBhd(charge.getMarginBhd())
+//                            .taxAmount(charge.getTaxAmount())
+//                            .sellingGrandTotal(charge.getSellingGrandTotal())
+//                            .sellingGrandTotalBhd(charge.getSellingGrandTotalBhd())
+//                            .marginBhd(charge.getMarginBhd())
                             .remarks(charge.getRemarks())
-                            .deleted("N")
+//                            .deleted("N")
                             .createdBy(currentUser)
                             .createdDate(now)
                             .lastModifiedBy(currentUser)
@@ -518,7 +520,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
                 case "ISUPDATED":
                     FFProjectsChargesDtl existingCharge = projectsChargesDtlRepository
-                            .findByTransactionPoidAndDetRowIdAndDeleted(transactionPoid, charge.getDetRowId(), "N")
+                            .findByTransactionPoidAndDetRowId(transactionPoid, charge.getDetRowId())
                             .orElseThrow(() -> new ResourceNotFoundException("Charge not found"));
 
                     FFProjectsChargesDtl oldCharge = new FFProjectsChargesDtl();
@@ -527,21 +529,21 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                     existingCharge.setQuotationReferencePoid(charge.getQuotationReferencePoid());
                     existingCharge.setChargeDetailsPoid(charge.getChargeDetailsPoid());
                     existingCharge.setPrintableChargeDescription(charge.getPrintableChargeDescription());
-                    existingCharge.setChargeBasis(charge.getChargeBasis());
+//                    existingCharge.setChargeBasis(charge.getChargeBasis());
                     existingCharge.setQuantity(charge.getQuantity());
                     existingCharge.setUnit(charge.getUnit());
                     existingCharge.setBuyingCurrencyCode(charge.getBuyingCurrencyCode());
                     existingCharge.setCurrencyRate(charge.getCurrencyRate());
                     existingCharge.setBuyingUnitRate(charge.getBuyingUnitRate());
-                    existingCharge.setBuyingTotalBhd(charge.getBuyingTotalBhd());
-                    existingCharge.setSellingUnitRate(charge.getSellingUnitRate());
-                    existingCharge.setSellingTotal(charge.getSellingTotal());
+//                    existingCharge.setBuyingTotalBhd(charge.getBuyingTotalBhd());
+//                    existingCharge.setSellingUnitRate(charge.getSellingUnitRate());
+//                    existingCharge.setSellingTotal(charge.getSellingTotal());
                     existingCharge.setTaxIdPoid(charge.getTaxIdPoid());
                     existingCharge.setTaxPercentage(charge.getTaxPercentage());
-                    existingCharge.setTaxAmount(charge.getTaxAmount());
-                    existingCharge.setSellingGrandTotal(charge.getSellingGrandTotal());
-                    existingCharge.setSellingGrandTotalBhd(charge.getSellingGrandTotalBhd());
-                    existingCharge.setMarginBhd(charge.getMarginBhd());
+//                    existingCharge.setTaxAmount(charge.getTaxAmount());
+//                    existingCharge.setSellingGrandTotal(charge.getSellingGrandTotal());
+//                    existingCharge.setSellingGrandTotalBhd(charge.getSellingGrandTotalBhd());
+//                    existingCharge.setMarginBhd(charge.getMarginBhd());
                     existingCharge.setRemarks(charge.getRemarks());
                     existingCharge.setLastModifiedBy(currentUser);
                     existingCharge.setLastModifiedDate(now);
@@ -576,9 +578,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         if (!toDelete.isEmpty()) {
             toDelete.forEach(detRowId -> {
                 FFProjectsChargesDtl detail = projectsChargesDtlRepository
-                        .findByTransactionPoidAndDetRowIdAndDeleted(transactionPoid, detRowId, "N")
+                        .findByTransactionPoidAndDetRowId(transactionPoid, detRowId)
                         .orElseThrow(() -> new ResourceNotFoundException("Charge detail not found"));
-                detail.setDeleted("Y");
+//                detail.setDeleted("Y");
                 detail.setLastModifiedBy(currentUser);
                 detail.setLastModifiedDate(now);
                 projectsChargesDtlRepository.save(detail);
@@ -597,12 +599,15 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         List<Long> toDelete = new ArrayList<>();
         List<LogRequestDto<FFProjectsCtrlSheetDtl>> logRequests = new ArrayList<>();
 
+        List<FFProjectsCtrlSheetDtl> existingSheets = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
+        long nextSheetDetRowId = existingSheets.stream().mapToLong(FFProjectsCtrlSheetDtl::getDetRowId).max().orElse(0L);
+
         for (FFProjectsCtrlSheetDetailRequest ctrl : controlSheets) {
             switch (ctrl.getActionType().toUpperCase()) {
                 case "ISCREATED":
                     toSave.add(FFProjectsCtrlSheetDtl.builder()
                             .transactionPoid(transactionPoid)
-                            .detRowId(ctrl.getDetRowId())
+                            .detRowId(++nextSheetDetRowId)
                             .freightType(ctrl.getFreightType())
                             .jobNoPoid(ctrl.getJobNoPoid())
                             .origin(ctrl.getOriginPoid())
@@ -618,8 +623,8 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                             .truckNumber(ctrl.getTruckNumber())
                             .description(ctrl.getDescription())
                             .sailDate(ctrl.getSailDate())
-                            .jobStatus(ctrl.getJobStatus())
-                            .deleted("N")
+//                            .jobStatus(ctrl.getJobStatus())
+//                            .deleted("N")
                             .createdBy(currentUser)
                             .createdDate(now)
                             .lastModifiedBy(currentUser)
@@ -629,7 +634,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
                 case "ISUPDATED":
                     FFProjectsCtrlSheetDtl existingCtrl = projectsCtrlSheetDtlRepository
-                            .findByTransactionPoidAndDetRowIdAndDeleted(transactionPoid, ctrl.getDetRowId(), "N")
+                            .findByTransactionPoidAndDetRowId(transactionPoid, ctrl.getDetRowId())
                             .orElseThrow(() -> new ResourceNotFoundException("Control sheet not found"));
 
                     FFProjectsCtrlSheetDtl oldCtrl = new FFProjectsCtrlSheetDtl();
@@ -650,7 +655,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                     existingCtrl.setTruckNumber(ctrl.getTruckNumber());
                     existingCtrl.setDescription(ctrl.getDescription());
                     existingCtrl.setSailDate(ctrl.getSailDate());
-                    existingCtrl.setJobStatus(ctrl.getJobStatus());
+//                    existingCtrl.setJobStatus(ctrl.getJobStatus());
                     existingCtrl.setLastModifiedBy(currentUser);
                     existingCtrl.setLastModifiedDate(now);
                     toUpdate.add(existingCtrl);
@@ -684,9 +689,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         if (!toDelete.isEmpty()) {
             toDelete.forEach(detRowId -> {
                 FFProjectsCtrlSheetDtl detail = projectsCtrlSheetDtlRepository
-                        .findByTransactionPoidAndDetRowIdAndDeleted(transactionPoid, detRowId, "N")
+                        .findByTransactionPoidAndDetRowId(transactionPoid, detRowId)
                         .orElseThrow(() -> new ResourceNotFoundException("Control sheet detail not found"));
-                detail.setDeleted("Y");
+//                detail.setDeleted("Y");
                 detail.setLastModifiedBy(currentUser);
                 detail.setLastModifiedDate(now);
                 projectsCtrlSheetDtlRepository.save(detail);

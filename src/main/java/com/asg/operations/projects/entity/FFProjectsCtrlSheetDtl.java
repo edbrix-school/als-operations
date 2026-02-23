@@ -1,20 +1,20 @@
 package com.asg.operations.projects.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
-import com.asg.operations.projects.key.FFProjectsCtrlSheetDtlId;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "PROJECTS_CTRL_SHEET_DTL")
+@IdClass(FFProjectsCtrlSheetDtl.FFProjectsCtrlSheetDtlId.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@IdClass(FFProjectsCtrlSheetDtlId.class)
 public class FFProjectsCtrlSheetDtl {
 
     @Id
@@ -24,7 +24,6 @@ public class FFProjectsCtrlSheetDtl {
 
     @Id
     @Column(name = "DET_ROW_ID", nullable = false)
-    @AuditIgnore
     private Long detRowId;
 
     @Column(name = "FREIGHT_TYPE", length = 50)
@@ -72,12 +71,8 @@ public class FFProjectsCtrlSheetDtl {
     @Column(name = "SAIL_DATE")
     private LocalDate sailDate;
 
-    @Column(name = "JOB_STATUS", length = 50)
-    private String jobStatus;
-
-    @Column(name = "DELETED", length = 1)
-    @AuditIgnore
-    private String deleted = "N";
+//    @Column(name = "JOB_STATUS", length = 50)
+//    private String jobStatus;
 
     @Column(name = "CREATED_BY", length = 20)
     @AuditIgnore
@@ -94,4 +89,13 @@ public class FFProjectsCtrlSheetDtl {
     @Column(name = "LASTMODIFIED_DATE")
     @AuditIgnore
     private LocalDateTime lastModifiedDate;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode
+    public static class FFProjectsCtrlSheetDtlId implements Serializable {
+        private Long transactionPoid;
+        private Long detRowId;
+    }
 }

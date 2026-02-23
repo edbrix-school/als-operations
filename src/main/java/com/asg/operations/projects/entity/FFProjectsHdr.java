@@ -15,8 +15,7 @@ import java.time.LocalDateTime;
 public class FFProjectsHdr {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "projects_seq")
-    @SequenceGenerator(name = "projects_seq", sequenceName = "PROJECTS_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID", nullable = false)
     private Long transactionPoid;
 
@@ -29,7 +28,7 @@ public class FFProjectsHdr {
     @Column(name = "DOC_REF", length = 50)
     private String docRef;
 
-    @Column(name = "QUOTATION_REFERENCE_POID")
+    @Column(name = "PROJECT_QUOTATION_POID")
     private Long quotationReferencePoid;
 
     @Column(name = "PROJECT_DESCRIPTION", length = 500)
@@ -50,8 +49,8 @@ public class FFProjectsHdr {
     @Column(name = "SHIPMENT_MODE", length = 100)
     private String shipmentMode;
 
-    @Column(name = "MODE", length = 50)
-    private String mode;
+//    @Column(name = "MODE", length = 50)
+//    private String mode;               // Not in DB
 
     @Column(name = "PROJECT_REFERENCE", length = 100)
     private String projectReference;
@@ -68,13 +67,13 @@ public class FFProjectsHdr {
     @Column(name = "LINE_POID")
     private Long linePoid;
 
-    @Column(name = "CARRIER_CODE_POID")
+    @Column(name = "CARRIER_POID")
     private Long carrierCodePoid;
 
     @Column(name = "COMMODITY", length = 500)
     private String commodity;
 
-    @Column(name = "CARGO_DETAILS", length = 1000)
+    @Column(name = "PROJECT_DETAILS", length = 1000)
     private String cargoDetails;
 
     @Column(name = "BILLING_CURRENCY_CODE", length = 10)
@@ -83,17 +82,17 @@ public class FFProjectsHdr {
     @Column(name = "PROJECT_STATUS", length = 50)
     private String projectStatus;
 
-    @Column(name = "TOTAL_BUYING_RATE_BHD")
-    private Double totalBuyingRateBhd;
+//    @Column(name = "TOTAL_BUYING_RATE_BHD")
+//    private Double totalBuyingRateBhd;
 
-    @Column(name = "TOTAL_VAT_BHD")
-    private Double totalVatBhd;
+//    @Column(name = "TOTAL_VAT_BHD")
+//    private Double totalVatBhd;
 
-    @Column(name = "GRAND_TOTAL_SELL_RATE_BHD")
-    private Double grandTotalSellRateBhd;
-
-    @Column(name = "GRAND_TOTAL_SELL_RATE_FC")
-    private Double grandTotalSellRateFc;
+//    @Column(name = "GRAND_TOTAL_SELL_RATE_BHD")
+//    private Double grandTotalSellRateBhd;
+//
+//    @Column(name = "GRAND_TOTAL_SELL_RATE_FC")
+//    private Double grandTotalSellRateFc;
 
     @Column(name = "DELETED", length = 1)
     private String deleted = "N";

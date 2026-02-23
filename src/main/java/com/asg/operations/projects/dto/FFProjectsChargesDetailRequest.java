@@ -13,20 +13,20 @@ public class FFProjectsChargesDetailRequest {
     private Long quotationReferencePoid;
     private Long chargeDetailsPoid;
     private String printableChargeDescription;
-    private String chargeBasis;
+//    private String chargeBasis;
     private Double quantity;
     private String unit;
     private String buyingCurrencyCode;
     private Double currencyRate;
     private Double buyingUnitRate;
-    private Double buyingTotalBhd;
-    private Double sellingUnitRate;
-    private Double sellingTotal;
+//    private Double buyingTotalBhd;
+//    private Double sellingUnitRate;
+//    private Double sellingTotal;
     private Long taxIdPoid;
     private Double taxPercentage;
-    private Double taxAmount;
-    private Double sellingGrandTotal;
-    private Double sellingGrandTotalBhd;
-    private Double marginBhd;
+//    private Double taxAmount;
+//    private Double sellingGrandTotal;
+//    private Double sellingGrandTotalBhd;
+//    private Double marginBhd;
     private String remarks;
 }
