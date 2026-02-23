@@ -247,13 +247,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             }
         }
 
-        if (principal.getGlCodePoid() == null) {
-            CreateLedgerResponseDto result = createLedger(principal.getPrincipalPoid(), principal.getGroupPoid(), principal.getCompanyPoid(), user.getUserPoid());
-            principal.setGlCodePoid(result.getGlCodePoid());
-            principalRepository.save(principal);
-            log.info("Successfully created GL account with POID: {} for principal: {}", result.getGlCodePoid(), principalId);
-        }
-
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), principalId.toString());
         log.info("Successfully created principal with id: {}", principalId);
         return getPrincipal(principalId);

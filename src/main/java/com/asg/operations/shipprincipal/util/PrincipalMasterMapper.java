@@ -182,6 +182,7 @@ public class PrincipalMasterMapper {
         entity.setTinNumber(dto.getTinNumber());
         entity.setTaxSlab(dto.getTaxSlab());
         entity.setExemptionReason(dto.getExemptionReason());
+        entity.setGlCodePoid(dto.getGlCodePoid());
     }
 
     public void mapUpdateDTOToEntity(PrincipalUpdateDTO dto, ShipPrincipalMaster entity, Long groupPoid) {
