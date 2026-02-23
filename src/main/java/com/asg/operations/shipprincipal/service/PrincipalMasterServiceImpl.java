@@ -98,7 +98,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         dto.setCountryDet(lovService.getLovItemByPoid(principal.getCountryPoid(), "COUNTRY",
                 principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
 
-        dto.setGlCodeDet(lovService.getLovItemByPoid(principal.getGlCodePoid(), "GL_CODE",
+        dto.setGlCodeDet(lovService.getLovItemByPoid(principal.getGlCodePoid(), "GL_MASTER_LEDGERS",
                 principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
 
         dto.setCompanyDet(lovService.getLovItemByPoid(principal.getCompanyPoid(), "COMPANY",
