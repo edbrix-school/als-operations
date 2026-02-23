@@ -60,7 +60,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         String operator = documentSearchService.resolveOperator(filterRequest);
         String isDeleted = documentSearchService.resolveIsDeleted(filterRequest);
-        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequest,"TRANSACTION_DATE", periodFrom, periodTo);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequest, "TRANSACTION_DATE", periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
                 "CREW_NAME",
@@ -205,7 +205,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         newDetail.getId().setDetRowId(next);
         crewDtlRepository.save(newDetail);
         String logDetail = String.format("Row Created on Contract Crew details with detRowId: %s", newDetail.getId().getDetRowId());
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), crewPoid.toString() , logDetail);
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), crewPoid.toString(), logDetail);
 
     }
 
@@ -328,7 +328,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
     @Override
     public void deleteCrewDetail(Long companyPoid, Long crewPoid, Long detRowId) {
         log.info("Deleting crew detail with crewPoid: {}, detRowId: {}", crewPoid, detRowId);
-        
+
         // Verify crew exists
         boolean crewExists = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid).isPresent();
         if (!crewExists) {
@@ -346,32 +346,18 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         }
 
         crewDtlRepository.deleteById(contractCrewDtl.getId());
-        
+
         String logDetail = String.format("Row Deleted on Contract Crew details with detRowId: %s", detRowId);
         loggingService.createLogSummaryEntry(UserContext.getDocumentId(), crewPoid.toString(), logDetail);
-        
+
         log.info("Successfully deleted crew detail with crewPoid: {}, detRowId: {}", crewPoid, detRowId);
     }
 
     private void validateCrewRequest(ContractCrewRequest request) {
-        List<ValidationError> errors = new ArrayList<>();
-
-        // Validate passport dates
-        ValidationError dateError = ValidationUtil.validatePassportDates(
+        ValidationUtil.validatePassportDates(
                 request.getCrewPassportIssueDate(),
-                request.getCrewPassportExpiryDate()
-        );
-        if (dateError != null) {
-            errors.add(dateError);
-        }
+                request.getCrewPassportExpiryDate());
 
-        // If validation errors exist, throw exception
-        if (!errors.isEmpty()) {
-            throw new ValidationException(
-                    "Validation errors occurred",
-                    errors
-            );
-        }
     }
 }
 
