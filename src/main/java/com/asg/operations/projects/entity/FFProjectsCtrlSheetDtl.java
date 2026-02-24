@@ -32,47 +32,56 @@ public class FFProjectsCtrlSheetDtl {
     @Column(name = "FF_JOB_POID")
     private Long jobNoPoid;
 
+    // common
+    @Column(name = "DESCRIPTION", length = 1000)
+    private String description;
+
+    @Column(name = "CBM")
+    private Double cbm;
+
+    @Column(name = "ETA")
+    private LocalDate etaAta;
+
+    @Column(name = "WEIGHT")
+    private Double weight;
+
+    //    AIR
     @Column(name = "AF_ORIGIN")
     private Long origin;
 
     @Column(name = "AF_DESTINATION")
     private Long destination;
 
-    @Column(name = "ETD")
-    private LocalDate etd;
-
-    @Column(name = "ETA")
-    private LocalDate etaAta;
-
-    @Column(name = "ARRIVAL_DATE")
-    private LocalDate arrivalDate;
-
     @Column(name = "AF_NO_OF_PACKAGES")
     private Double noOfPackages;
 
-    @Column(name = "WEIGHT")
-    private Double weight;
-
-    @Column(name = "CBM")
-    private Double cbm;
-
     @Column(name = "AF_CARRIER_POID")
-    private Long carrierCode;
+    private Long carrierPoid;
+
+    //  SEA
+    @Column(name = "SF_POL")
+    private String pol;
+
+    @Column(name = "SF_POD")
+    private String pod;
 
     @Column(name = "SF_LINE_POID")
     private Long line;
 
-    @Column(name = "RF_TRUCK_NUMBER", length = 100)
-    private String truckNumber;
-
-    @Column(name = "DESCRIPTION", length = 1000)
-    private String description;
-
     @Column(name = "SAIL_DATE")
     private LocalDate sailDate;
 
-//    @Column(name = "JOB_STATUS", length = 50)
-//    private String jobStatus;
+    // AIR and SEA
+    @Column(name = "ETD")
+    private LocalDate etd;
+
+    @Column(name = "ARRIVAL_DATE")
+    private LocalDate arrivalDate;
+
+   // ROAD
+    @Column(name = "RF_TRUCK_NUMBER", length = 100)
+    private String truckNumber;
+
 
     @Column(name = "CREATED_BY", length = 20)
     @AuditIgnore

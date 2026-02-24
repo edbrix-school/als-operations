@@ -27,4 +27,6 @@ public class FFProjectsCtrlSheetDetailRequest {
     private String truckNumber; // For Road Freight
     private String description;
     private LocalDate sailDate; // For Sea Freight
+    private String sfPOL;
+    private String sfPOD;
 }

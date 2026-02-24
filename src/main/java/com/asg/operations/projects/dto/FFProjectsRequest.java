@@ -42,13 +42,13 @@ public class FFProjectsRequest {
 
     private Long carrierCodePoid;
 
-    private String commodity;
+    private List<String> commodity;
 
     private String cargoDetails;
 
     private String billingCurrencyCode;
 
-    private String projectStatus;
+    private String projectStatus = "OPEN";
 
     @Valid
     private List<FFProjectsChargesDetailRequest> chargeDetails;

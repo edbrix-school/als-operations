@@ -34,9 +34,6 @@ public class FFProjectsChargesDtl {
     @Column(name = "PRINTABLE_CHARGE_DESC", length = 500)
     private String printableChargeDescription;
 
-//    @Column(name = "CHARGE_BASIS", length = 100)
-//    private String chargeBasis;
-
     @Column(name = "QUANTITY")
     private Double quantity;
 
@@ -52,14 +49,14 @@ public class FFProjectsChargesDtl {
     @Column(name = "BUY_UNIT_RATE")
     private Double buyingUnitRate;
 
-//    @Column(name = "BUYING_TOTAL_BHD")
-//    private Double buyingTotalBhd;
+    @Column(name = "BUY_TOTAL_LC")
+    private Double buyingTotalBhd;
 
-//    @Column(name = "SELLING_UNIT_RATE")
-//    private Double sellingUnitRate;
-//
-//    @Column(name = "SELLING_TOTAL")
-//    private Double sellingTotal;
+    @Column(name = "SELL_UNIT_RATE_FC")
+    private Double sellingUnitRate;
+
+    @Column(name = "SELL_TOTAL_FC")
+    private Double sellingTotal;
 
     @Column(name = "TAX_POID")
     private Long taxIdPoid;
@@ -67,17 +64,17 @@ public class FFProjectsChargesDtl {
     @Column(name = "TAX_PERCENTAGE")
     private Double taxPercentage;
 
-//    @Column(name = "TAX_AMOUNT")
-//    private Double taxAmount;
+    @Column(name = "TAX_AMOUNT_FC")
+    private Double taxAmount;
 
-//    @Column(name = "SELLING_GRAND_TOTAL")
-//    private Double sellingGrandTotal;
-//
-//    @Column(name = "SELLING_GRAND_TOTAL_BHD")
-//    private Double sellingGrandTotalBhd;
+    @Column(name = "SELL_GRAND_TOTAL_FC")
+    private Double sellingGrandTotal;
 
-//    @Column(name = "MARGIN_BHD")
-//    private Double marginBhd;
+    @Column(name = "SELL_GRAND_TOTAL_LC")
+    private Double sellingGrandTotalBhd;
+
+    @Column(name = "MARGIN_AMOUNT_LC")
+    private Double marginBhd;
 
     @Column(name = "REMARKS", length = 500)
     private String remarks;

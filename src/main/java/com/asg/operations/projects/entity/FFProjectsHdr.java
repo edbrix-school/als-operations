@@ -49,8 +49,8 @@ public class FFProjectsHdr {
     @Column(name = "SHIPMENT_MODE", length = 100)
     private String shipmentMode;
 
-//    @Column(name = "MODE", length = 50)
-//    private String mode;               // Not in DB
+    @Column(name = "TRANSPORTATION_MODE", length = 50)
+    private String mode;               // Not in DB
 
     @Column(name = "PROJECT_REFERENCE", length = 100)
     private String projectReference;
@@ -81,18 +81,6 @@ public class FFProjectsHdr {
 
     @Column(name = "PROJECT_STATUS", length = 50)
     private String projectStatus;
-
-//    @Column(name = "TOTAL_BUYING_RATE_BHD")
-//    private Double totalBuyingRateBhd;
-
-//    @Column(name = "TOTAL_VAT_BHD")
-//    private Double totalVatBhd;
-
-//    @Column(name = "GRAND_TOTAL_SELL_RATE_BHD")
-//    private Double grandTotalSellRateBhd;
-//
-//    @Column(name = "GRAND_TOTAL_SELL_RATE_FC")
-//    private Double grandTotalSellRateFc;
 
     @Column(name = "DELETED", length = 1)
     private String deleted = "N";
