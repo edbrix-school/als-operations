@@ -431,13 +431,13 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         SalesQuoteProjectsHdr savedEntity = repository.save(existingEntity);
 
         // Update child details with action types
-        if (request.getChargeDetails() != null) {
+        if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {
             updateChargeDetails(existingEntity.getTransactionPoid(), request.getChargeDetails());
         }
-        if (request.getNotesDetails() != null) {
+        if (request.getNotesDetails() != null && !request.getNotesDetails().isEmpty()) {
             updateNotesDetails(existingEntity.getTransactionPoid(), request.getNotesDetails());
         }
-        if (request.getTcDetails() != null) {
+        if (request.getTcDetails() != null && !request.getTcDetails().isEmpty()) {
             updateTcDetails(existingEntity, request.getTcDetails());
         }
 
@@ -723,7 +723,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         String docId = UserContext.getDocumentId();
         Long companyPoid = UserContext.getCompanyPoid();
         Long refTermsPoid = existingEntity.getTermsPoid();
-        
+
         if (refTermsPoid == null) {
             throw new CustomException("Terms POID is required to update TC details", 400);
         }
@@ -733,11 +733,11 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         List<GlobalTermsCustomChanges> existingRecords = globalTermsCustomChangesRepository.findByIdDocIdAndIdDocKeyPoid(docId, existingEntity.getTransactionPoid());
         boolean hasDifferentTermsPoid = existingRecords.stream()
                 .anyMatch(record -> !refTermsPoid.equals(record.getId().getRefTermsPoid()));
-        
+
         if (hasDifferentTermsPoid) {
             // Terms POID changed - delete all old records
             globalTermsCustomChangesRepository.deleteAll(existingRecords);
-            log.info("Terms POID changed. Deleted {} old Global Terms Custom Changes records for DOC_ID: {}, DOC_KEY_POID: {}, old REF_TERMS_POID(s) replaced with: {}", 
+            log.info("Terms POID changed. Deleted {} old Global Terms Custom Changes records for DOC_ID: {}, DOC_KEY_POID: {}, old REF_TERMS_POID(s) replaced with: {}",
                     existingRecords.size(), docId, existingEntity.getTransactionPoid(), refTermsPoid);
         }
 
@@ -955,7 +955,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         String docId = UserContext.getDocumentId();
         Long companyPoid = UserContext.getCompanyPoid();
         Long refTermsPoid = savedEntity.getTermsPoid();
-        
+
         if (refTermsPoid == null) {
             throw new CustomException("Terms POID is required to save TC details", 400);
         }
@@ -965,7 +965,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         List<GlobalTermsCustomChanges> existingRecords = globalTermsCustomChangesRepository.findByIdDocIdAndIdDocKeyPoid(docId, savedEntity.getTransactionPoid());
         if (!existingRecords.isEmpty()) {
             globalTermsCustomChangesRepository.deleteAll(existingRecords);
-            log.info("Deleted {} old Global Terms Custom Changes records for DOC_ID: {}, DOC_KEY_POID: {}", 
+            log.info("Deleted {} old Global Terms Custom Changes records for DOC_ID: {}, DOC_KEY_POID: {}",
                     existingRecords.size(), docId, savedEntity.getTransactionPoid());
         }
 
