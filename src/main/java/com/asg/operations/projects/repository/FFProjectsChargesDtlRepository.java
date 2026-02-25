@@ -14,7 +14,5 @@ public interface FFProjectsChargesDtlRepository extends JpaRepository<FFProjects
 
     Optional<FFProjectsChargesDtl> findByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
 
-//    void deleteByTransactionPoidAndDeleted(Long transactionPoid);
-//
-//    void deleteByTransactionPoidAndDetRowIdInAndDeleted(Long transactionPoid, List<Long> detRowIds);
+    void deleteByTransactionPoidAndDetRowIdIn(Long transactionPoid, List<Long> detRowIds);
 }

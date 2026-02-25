@@ -15,8 +15,6 @@ public interface FFProjectsCtrlSheetDtlRepository extends JpaRepository<FFProjec
     Optional<FFProjectsCtrlSheetDtl> findByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
 
     List<FFProjectsCtrlSheetDtl> findByTransactionPoidAndFreightType(Long transactionPoid, String freightType);
-//
-//    void deleteByTransactionPoid(Long transactionPoid);
-//
-//    void deleteByTransactionPoidAndDetRowId(Long transactionPoid, List<Long> detRowIds);
+
+    void deleteByTransactionPoidAndDetRowIdIn(Long transactionPoid, List<Long> detRowIds);
 }

@@ -354,15 +354,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         }
 
         if (!toDelete.isEmpty()) {
-            toDelete.forEach(detRowId -> {
-                FFProjectsChargesDtl detail = projectsChargesDtlRepository
-                        .findByTransactionPoidAndDetRowId(transactionPoid, detRowId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Charge detail not found"));
-//                detail.setDeleted("Y");
-                detail.setLastModifiedBy(currentUser);
-                detail.setLastModifiedDate(now);
-                projectsChargesDtlRepository.save(detail);
-            });
+            projectsChargesDtlRepository.deleteByTransactionPoidAndDetRowIdIn(transactionPoid, toDelete);
         }
     }
 
@@ -464,15 +456,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         }
 
         if (!toDelete.isEmpty()) {
-            toDelete.forEach(detRowId -> {
-                FFProjectsCtrlSheetDtl detail = projectsCtrlSheetDtlRepository
-                        .findByTransactionPoidAndDetRowId(transactionPoid, detRowId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Control sheet detail not found"));
-//                detail.setDeleted("Y");
-                detail.setLastModifiedBy(currentUser);
-                detail.setLastModifiedDate(now);
-                projectsCtrlSheetDtlRepository.save(detail);
-            });
+            projectsCtrlSheetDtlRepository.deleteByTransactionPoidAndDetRowIdIn(transactionPoid, toDelete);
         }
     }
 }
