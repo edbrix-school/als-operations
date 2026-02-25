@@ -132,7 +132,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
         if (principalRepository.existsByPrincipalName(dto.getPrincipalName())) {
             log.error("Principal name already exists: {}", dto.getPrincipalName());
-            throw new ResourceAlreadyExistsException("Principal Name already exists", "DUPLICATE_PRINCIPAL_NAME");
+            throw new ResourceAlreadyExistsException("Principal Name already exists", dto.getPrincipalName());
         }
 
         User user = userRepository.findByUserPoid(userPoid).orElseThrow(() -> new ResourceNotFoundException("User", "user poid", userPoid));
