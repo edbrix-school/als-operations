@@ -245,15 +245,13 @@ public class ProjectMapper {
     }
 
     private LovGetListDto getLov(Long poid, String lovName) {
-        return null;
-//        if (poid == null) return null;
-//        return lovDataService.getDetailsByPoidAndLovNameFast(poid, lovName);
+        if (poid == null) return null;
+        return lovDataService.getDetailsByPoidAndLovNameFast(poid, lovName);
     }
 
     private LovGetListDto getLovByCode(String code, String lovName) {
-        return null;
-//        if (code == null || code.isEmpty()) return null;
-//        return lovDataService.getLovItemByCodeFast(code, lovName);
+        if (code == null || code.isEmpty()) return null;
+        return lovDataService.getLovItemByCodeFast(code, lovName);
     }
 
     public FFProjectsListResponse mapToListResponse(FFProjectsHdr hdr) {
