@@ -1,10 +1,13 @@
 package com.asg.operations.projects.util;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LovDataService;
 import com.asg.operations.projects.dto.*;
 import com.asg.operations.projects.entity.FFProjectsChargesDtl;
 import com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl;
 import com.asg.operations.projects.entity.FFProjectsHdr;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -14,6 +17,9 @@ import java.util.stream.Collectors;
 
 @Component
 public class ProjectMapper {
+
+    @Autowired
+    private LovDataService lovDataService;
 
     public static void applyUpdate(FFProjectsRequest request, FFProjectsHdr existingProjectsHdr) {
         existingProjectsHdr.setQuotationReferencePoid(request.getQuotationReferencePoid());
@@ -137,23 +143,35 @@ public class ProjectMapper {
                 .companyPoid(hdr.getCompanyPoid())
                 .docRef(hdr.getDocRef())
                 .quotationReferencePoid(hdr.getQuotationReferencePoid())
+                .quotationReferenceLov(getLov(hdr.getQuotationReferencePoid(), "PROJECTS_QUOTATIONS"))
                 .projectDescription(hdr.getProjectDescription())
                 .billingTo(hdr.getBillingTo())
+                .billingToLov(getLovByCode(hdr.getBillingTo(), "FF_BILLING_TO"))
                 .billingPartyPoid(hdr.getBillingPartyPoid())
+                .billingPartyLov(getLov(hdr.getBillingPartyPoid(), "CUSTOMER_SUPPLIER_MASTER"))
                 .projectCustomerPoid(hdr.getProjectCustomerPoid())
+                .projectCustomerLov(getLov(hdr.getProjectCustomerPoid(), "CUSTOMER_SUPPLIER_MASTER"))
                 .principalPoid(hdr.getPrincipalPoid())
+                .principalLov(getLov(hdr.getPrincipalPoid(), "PRINCIPAL_MASTER"))
                 .shipmentMode(hdr.getShipmentMode())
+                .shipmentModeLov(getLovByCode(hdr.getShipmentMode(), "PROJECTS_SHIPMENT_MODE"))
                 .mode(hdr.getMode())
+                .modeLov(getLovByCode(hdr.getMode(), "PROJECTS_MODE"))
                 .projectReference(hdr.getProjectReference())
                 .periodFrom(hdr.getPeriodFrom())
                 .periodTo(hdr.getPeriodTo())
                 .salesmanPoid(hdr.getSalesmanPoid())
+                .salesmanLov(getLov(hdr.getSalesmanPoid(), "SALESMAN"))
                 .linePoid(hdr.getLinePoid())
+                .lineLov(getLov(hdr.getLinePoid(), "LINE_MASTER"))
                 .carrierCodePoid(hdr.getCarrierCodePoid())
+                .carrierCodeLov(getLov(hdr.getCarrierCodePoid(), "AIRLINE"))
                 .commodity(hdr.getCommodity())
                 .cargoDetails(hdr.getCargoDetails())
                 .billingCurrencyCode(hdr.getBillingCurrencyCode())
+                .billingCurrencyLov(getLovByCode(hdr.getBillingCurrencyCode(), "CURRENCY"))
                 .projectStatus(hdr.getProjectStatus())
+                .projectStatusLov(getLovByCode(hdr.getProjectStatus(), "PROJECTS_STATUS"))
                 .createdBy(hdr.getCreatedBy())
                 .createdDate(hdr.getCreatedDate())
                 .lastModifiedBy(hdr.getLastModifiedBy())
@@ -169,16 +187,20 @@ public class ProjectMapper {
                 .detRowId(dtl.getDetRowId())
                 .quotationReferencePoid(dtl.getQuotationReferencePoid())
                 .chargeDetailsPoid(dtl.getChargeDetailsPoid())
+                .chargeDetailsLov(getLov(dtl.getChargeDetailsPoid(), "CHARGE_MASTER_FF"))
                 .printableChargeDescription(dtl.getPrintableChargeDescription())
                 .quantity(dtl.getQuantity())
                 .unit(dtl.getUnit())
+                .unitLov(getLov(Long.valueOf(dtl.getUnit()), "PROJECTS_CHARGES_UNIT"))
                 .buyingCurrencyCode(dtl.getBuyingCurrencyCode())
+                .buyingCurrencyLov(getLovByCode(dtl.getBuyingCurrencyCode(), "CURRENCY"))
                 .currencyRate(dtl.getCurrencyRate())
                 .buyingUnitRate(dtl.getBuyingUnitRate())
                 .buyingTotalBhd(dtl.getBuyingTotalBhd())
                 .sellingUnitRate(dtl.getSellingUnitRate())
                 .sellingTotal(dtl.getSellingTotal())
                 .taxIdPoid(dtl.getTaxIdPoid())
+                .taxIdLov(getLov(dtl.getTaxIdPoid(), "TAX_MASTER"))
                 .taxPercentage(dtl.getTaxPercentage())
                 .taxAmount(dtl.getTaxAmount())
                 .sellingGrandTotal(dtl.getSellingGrandTotal())
@@ -199,7 +221,9 @@ public class ProjectMapper {
                 .freightType(dtl.getFreightType())
                 .jobNoPoid(dtl.getJobNoPoid())
                 .originPoid(dtl.getOrigin())
+                .originLov(getLov(dtl.getOrigin(), "FF_AIRPORTS"))
                 .destinationPoid(dtl.getDestination())
+                .destinationLov(getLov(dtl.getDestination(), "FF_AIRPORTS"))
                 .etd(dtl.getEtd())
                 .etaAta(dtl.getEtaAta())
                 .arrivalDate(dtl.getArrivalDate())
@@ -207,7 +231,9 @@ public class ProjectMapper {
                 .weight(dtl.getWeight())
                 .cbm(dtl.getCbm())
                 .carrierPoid(dtl.getCarrierPoid())
+                .carrierLov(getLov(dtl.getCarrierPoid(), "AIRLINE"))
                 .linePoid(dtl.getLine())
+                .lineLov(getLov(dtl.getLine(), "LINE_MASTER"))
                 .truckNumber(dtl.getTruckNumber())
                 .description(dtl.getDescription())
                 .sailDate(dtl.getSailDate())
@@ -216,6 +242,18 @@ public class ProjectMapper {
                 .lastModifiedBy(dtl.getLastModifiedBy())
                 .lastModifiedDate(dtl.getLastModifiedDate())
                 .build();
+    }
+
+    private LovGetListDto getLov(Long poid, String lovName) {
+        return null;
+//        if (poid == null) return null;
+//        return lovDataService.getDetailsByPoidAndLovNameFast(poid, lovName);
+    }
+
+    private LovGetListDto getLovByCode(String code, String lovName) {
+        return null;
+//        if (code == null || code.isEmpty()) return null;
+//        return lovDataService.getLovItemByCodeFast(code, lovName);
     }
 
     public FFProjectsListResponse mapToListResponse(FFProjectsHdr hdr) {

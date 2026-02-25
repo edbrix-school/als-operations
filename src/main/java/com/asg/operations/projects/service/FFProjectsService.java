@@ -33,6 +33,8 @@ public interface FFProjectsService {
 
     List<FFProjectsCtrlSheetDetailResponse> getControlSheetsByProject(Long transactionPoid, String freightType);
 
+    FFProjectsCtrlSheetDetailResponse createControlSheet(Long transactionPoid, FFProjectsCtrlSheetDetailRequest request);
+
     // Projection methods for control sheet views
     List<?> getAirFreightJobs(Long transactionPoid);
 

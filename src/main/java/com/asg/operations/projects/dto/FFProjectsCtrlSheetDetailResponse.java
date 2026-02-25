@@ -1,5 +1,6 @@
 package com.asg.operations.projects.dto;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -16,7 +17,9 @@ public class FFProjectsCtrlSheetDetailResponse {
     private String freightType;
     private Long jobNoPoid;
     private Long originPoid;
+    private LovGetListDto originLov;
     private Long destinationPoid;
+    private LovGetListDto destinationLov;
     private LocalDate etd;
     private LocalDate etaAta;
     private LocalDate arrivalDate;
@@ -24,7 +27,9 @@ public class FFProjectsCtrlSheetDetailResponse {
     private Double weight;
     private Double cbm;
     private Long carrierPoid;
+    private LovGetListDto carrierLov;
     private Long linePoid;
+    private LovGetListDto lineLov;
     private String truckNumber;
     private String description;
     private LocalDate sailDate;

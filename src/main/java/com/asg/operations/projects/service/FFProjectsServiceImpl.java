@@ -165,7 +165,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
     @Override
     public Map<String, Object> loadQuotationDetails(Long quotationPoid) {
-        return projectsStoredProcRepository.loadProjectsQuotation(quotationPoid);
+        return projectsStoredProcRepository.loadProjectsQuotation(quotationPoid, null);
     }
 
     @Override
@@ -201,6 +201,28 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         return details.stream()
                 .map(mapper::mapCtrlSheetDetailToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public FFProjectsCtrlSheetDetailResponse createControlSheet(Long transactionPoid, FFProjectsCtrlSheetDetailRequest request) {
+        FFProjectsHdr projectsHdr = projectsHdrRepository.findById(transactionPoid)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + transactionPoid));
+        
+        if ("Y".equals(projectsHdr.getDeleted())) {
+            throw new ResourceNotFoundException("Project not found with ID: " + transactionPoid);
+        }
+
+        List<FFProjectsCtrlSheetDtl> existingSheets = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
+        long nextDetRowId = existingSheets.stream().mapToLong(FFProjectsCtrlSheetDtl::getDetRowId).max().orElse(0L) + 1;
+
+        FFProjectsCtrlSheetDtl detail = ProjectMapper.createCtrlSheet(request, transactionPoid, nextDetRowId);
+        projectsCtrlSheetDtlRepository.save(detail);
+
+        String logDetails = String.format("Control Sheet Row - Det Row ID: %s, Freight Type: %s", detail.getDetRowId(), detail.getFreightType());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetails);
+
+        return mapper.mapCtrlSheetDetailToResponse(detail);
     }
 
     @Override
