@@ -194,7 +194,7 @@ public interface PdaEntryService {
     /**
      * Upload TDR details
      */
-    String uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file);
+    List<PdaEntryTdrDetailResponse> uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file);
 
     /**
      * Clear TDR details
