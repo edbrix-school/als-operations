@@ -918,8 +918,8 @@ public class PdaEntryController {
             @PathVariable Long transactionPoid,
             @RequestParam(value = "file", required = false) org.springframework.web.multipart.MultipartFile file
     ) {
-        String result = pdaEntryService.uploadTdrDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), file);
-        return ApiResponse.success(result, null);
+        List<PdaEntryTdrDetailResponse> result = pdaEntryService.uploadTdrDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), file);
+        return ApiResponse.success("Successfully loaded TDR Details...", result);
     }
 
     @Operation(

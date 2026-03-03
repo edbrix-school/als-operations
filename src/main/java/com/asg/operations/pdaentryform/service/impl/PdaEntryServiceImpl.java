@@ -1327,7 +1327,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             inParams.put("P_PRINCIPAL_POID", principalPoid.toString()); // VARCHAR2
             inParams.put("P_LINE_POID", linePoid.toString()); // VARCHAR2
-            inParams.put("P_VESSEL_POID", vesselPoid.toString()); // VARCHAR2
+            inParams.put("P_VESSEL_POID", vesselPoid.toString()); // VARCListHAR2
             inParams.put("P_VOYAGE_NO", voyageNo);
             inParams.put("P_VESSEL_VOYAGE_POID", voyagePoid.toString()); // VARCHAR2
 
@@ -2059,6 +2059,12 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                         "TDR detail not found with id: " + request.getDetRowId()
                 ));
 
+        // Create old detail copy for logging
+        PdaEntryTdrDetail oldDetail = new PdaEntryTdrDetail();
+        oldDetail.setTransactionPoid(detail.getTransactionPoid());
+        oldDetail.setDetRowId(detail.getDetRowId());
+        BeanUtils.copyProperties(detail, oldDetail);
+
         // Map request to entity
         mapTdrDetailRequestToEntity(request, detail);
 
@@ -2066,8 +2072,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         detail.setLastModifiedBy(userId);
         detail.setLastModifiedDate(now);
 
-        // Save
+        // Save and log
         tdrDetailRepository.save(detail);
+        
+        String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", detail.getTransactionPoid(), detail.getDetRowId());
+        loggingService.createLog(oldDetail, detail, PdaEntryTdrDetail.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
     }
 
     private void deleteTdrDetailRecord(Long transactionPoid, Long detRowId) {
@@ -3102,11 +3111,17 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        return uploadTdrDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file);
+        String result = uploadTdrDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file, false);
+        
+        // Log TDR file import action
+        String logDetail = String.format("TDR file imported: %s", file.getOriginalFilename());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+        
+        return result;
     }
 
     @Override
-    public String uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+    public List<PdaEntryTdrDetailResponse> uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
@@ -3118,26 +3133,42 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        if (file != null && !file.isEmpty()) {
-            // Process async for large files
-            processTdrFileAsync(transactionPoid, groupPoid, companyPoid, userPoid, file);
-            return "TDR file upload started. Processing in background...";
-        } else {
-            return callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
-        }
+        // Clear existing TDR details before importing new data
+        callClearTdrDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+        
+        callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
+        
+        // Log TDR details upload action
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), "TDR details uploaded");
+        
+        // Fetch and return the loaded TDR details
+        List<PdaEntryTdrDetail> details = tdrDetailRepository.findByTransactionPoidOrderByDetRowIdAsc(transactionPoid);
+        return details.stream()
+                .map(this::toTdrDetailResponse)
+                .collect(Collectors.toList());
     }
 
     @org.springframework.scheduling.annotation.Async
     public void processTdrFileAsync(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
         try {
-            uploadTdrDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file);
+            uploadTdrDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file, true);
+            
+            // Log successful async processing completion
+            String logDetail = String.format("TDR file processing completed successfully: %s", file.getOriginalFilename());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+            
         } catch (Exception e) {
             logger.error("Async TDR file processing failed for transaction {}: {}", transactionPoid, e.getMessage(), e);
+            
+            // Log failed async processing
+            String logDetail = String.format("TDR file processing failed: %s - Error: %s", 
+                    file.getOriginalFilename(), e.getMessage());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
         }
     }
 
     @org.springframework.transaction.annotation.Transactional(timeout = 600)
-    public String uploadTdrDetailsFromExcel(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+    public String uploadTdrDetailsFromExcel(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file, boolean callStoredProcedure) {
         if (file.isEmpty()) {
             throw new ValidationException(
                     "File is empty",
@@ -3156,6 +3187,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         String docId = "110-160_1";
         ExcelConfig config = getExcelConfig(docId);
+        logger.info("Excel config - startRowNumber: {}, startColNumber: {}, endColNumber: {}, tempTable: {}", 
+                config.startRowNumber, config.startColNumber, config.endColNumber, config.tempTableName);
 
         jdbcTemplate.update("DELETE FROM " + config.tempTableName);
 
@@ -3184,17 +3217,28 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
+        logger.info("Total rows read from Excel: {}, Rows to be inserted (after startRowNumber {}): {}", 
+                rowsCollection.size(), config.startRowNumber, Math.max(0, rowsCollection.size() - config.startRowNumber + 1));
+        
         saveImportedDataAsync(config.startRowNumber, rowsCollection, config.tempTableName);
-        String result = callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
+        
+        // Verify data was inserted
+        Integer insertedCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM " + config.tempTableName, Integer.class);
+        logger.info("Rows inserted into temp table {}: {}", config.tempTableName, insertedCount);
 
-        if (result != null && result.startsWith("ERROR")) {
-            throw new ValidationException(
-                    "Failed to upload TDR details from Excel",
-                    List.of(new ValidationError("file", result))
-            );
+        if (callStoredProcedure) {
+            String result = callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
+            if (result != null && result.startsWith("ERROR")) {
+                throw new ValidationException(
+                        "Failed to upload TDR details from Excel",
+                        List.of(new ValidationError("file", result))
+                );
+            }
+            return result != null ? result : "TDR details uploaded successfully from Excel";
+        } else {
+            return String.format("Successfully imported %d rows to temp table. Click 'Load Details' to process.", insertedCount);
         }
-
-        return result != null ? result : "TDR details uploaded successfully from Excel";
     }
 
     @Override
@@ -3210,7 +3254,12 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        return callClearTdrDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+        String result = callClearTdrDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+        
+        // Log TDR details clear action
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), "TDR details cleared");
+        
+        return result;
     }
 
     @Override
@@ -3226,7 +3275,13 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        return callDefaultChargesFromTdr(groupPoid, userPoid, companyPoid, transactionPoid, entry.getArrivalDate());
+        String result = callDefaultChargesFromTdr(groupPoid, userPoid, companyPoid, transactionPoid, entry.getArrivalDate());
+        
+        // Log TDR charges processing action
+        logger.info("TDR charges processed for transactionPoid: {}", transactionPoid);
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), "TDR charges processed");
+        
+        return result;
     }
 }
 
