@@ -61,9 +61,11 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         FFManifestHdr hdr = new FFManifestHdr();
         ProjectJobMapper.mapHdrFromDto((FFManifestHdrDto) request, hdr);
         Long groupPoid = UserContext.getGroupPoid();
+        Long companyPoid = UserContext.getCompanyPoid();
         String currentUser = UserContext.getUserId();
         LocalDateTime now = LocalDateTime.now();
 
+        hdr.setCompanyPoid(companyPoid);
         hdr.setGroupPoid(groupPoid);
         hdr.setCreatedBy(currentUser);
         hdr.setCreatedDate(now);
