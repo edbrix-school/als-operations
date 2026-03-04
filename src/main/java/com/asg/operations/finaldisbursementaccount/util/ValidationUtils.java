@@ -23,7 +23,6 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -206,8 +205,6 @@ public class ValidationUtils {
 
         hdr.setTotalAmount(totalFda);
         hdr.setProfitLossAmount(totalFda.subtract(totalCost));
-        hdr.setLastModifiedBy(userId);
-        hdr.setLastModifiedDate(LocalDateTime.now());
 
         pdaFdaHdrRepository.save(hdr);
     }

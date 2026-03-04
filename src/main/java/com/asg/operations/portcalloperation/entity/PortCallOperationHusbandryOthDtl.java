@@ -1,6 +1,7 @@
 package com.asg.operations.portcalloperation.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +10,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "OPS_PC_HUSBANDRY_OTH_DTL")
@@ -19,11 +19,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @IdClass(PortCallOperationHusbandryOthDtlId.class)
-public class PortCallOperationHusbandryOthDtl {
-   @AuditIgnore
+public class PortCallOperationHusbandryOthDtl extends BaseEntity {
+
+    @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
+
     @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID")
@@ -52,7 +54,7 @@ public class PortCallOperationHusbandryOthDtl {
 
     @Column(name = "CURRENCY_CODE", length = 50)
     private String currencyCode;
-    @AuditIgnore
+
     @Column(name = "TOTAL_PRICE")
     private BigDecimal totalPrice;
 
@@ -67,28 +69,4 @@ public class PortCallOperationHusbandryOthDtl {
 
     @Column(name = "PAYMENT_MODE", length = 300)
     private String paymentMode;
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-   @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
-    @PrePersist
-    protected void onCreate() {
-        if (createdDate == null) {
-            createdDate = LocalDateTime.now();
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        lastModifiedDate = LocalDateTime.now();
-    }
 }

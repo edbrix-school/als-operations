@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -78,10 +77,6 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
                 .active(StringUtils.isNotBlank(request.getActive()) ? request.getActive() : "Y")
                 .seqno(request.getSeqno())
                 .remarks(request.getRemarks())
-                .createdBy(userId)
-                .createdDate(LocalDateTime.now())
-                .lastModifiedBy(userId)
-                .lastModifiedDate(LocalDateTime.now())
                 .deleted("N")
                 .build();
 
@@ -103,8 +98,6 @@ public class PortActivityMasterServiceImpl implements PortActivityMasterService 
         entity.setActive(StringUtils.isNotBlank(request.getActive()) ? request.getActive() : entity.getActive());
         entity.setSeqno(request.getSeqno());
         entity.setRemarks(request.getRemarks());
-        entity.setLastModifiedBy(userId);
-        entity.setLastModifiedDate(LocalDateTime.now());
 
         entity = repository.save(entity);
         loggingService.logChanges(oldEntity, entity, PortActivityMaster.class, UserContext.getDocumentId(), entity.getPortActivityTypePoid().toString(), LogDetailsEnum.MODIFIED, "PORT_ACTIVITY_TYPE_POID");

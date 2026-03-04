@@ -1,19 +1,21 @@
 package com.asg.operations.pdaentryform.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "PDA_ENTRY_DTL")
 @IdClass(PdaEntryDtlId.class)
-public class PdaEntryDtl {
+public class PdaEntryDtl extends BaseEntity {
 
     @AuditIgnore
     @Id
@@ -104,26 +106,9 @@ public class PdaEntryDtl {
     @Column(name = "OLD_CHARGE_CODE", length = 100)
     @Size(max = 100)
     private String oldChargeCode;
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    @Size(max = 20)
-    private String createdBy;
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    @Size(max = 20)
-    private String lastModifiedBy;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TRANSACTION_POID", insertable = false, updatable = false)
     private PdaEntryHdr entryHdr;
-
-    // Getters and Setters
-
 }
 

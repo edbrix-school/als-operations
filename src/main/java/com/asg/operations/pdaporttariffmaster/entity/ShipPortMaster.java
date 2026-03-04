@@ -1,11 +1,11 @@
 package com.asg.operations.pdaporttariffmaster.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import com.asg.operations.pdaporttariffmaster.key.ShipPortMasterId;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ShipPortMaster {
+public class ShipPortMaster extends BaseEntity {
 
     @EmbeddedId
     private ShipPortMasterId id;
@@ -41,24 +41,13 @@ public class ShipPortMaster {
 
     @Column(name = "SEQNO")
     private BigDecimal seqNo;
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
 
     @Column(name = "TRADELANE_POID", nullable = false)
     private BigDecimal tradelanePoid;
 
     @Column(name = "GLOBAL_PORT_CODE", length = 20)
     private String globalPortCode;
+
     @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;

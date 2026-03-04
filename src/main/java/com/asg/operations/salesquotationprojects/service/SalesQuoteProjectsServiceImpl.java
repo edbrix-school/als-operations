@@ -218,10 +218,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         SalesQuoteProjectsHdr entity = mapToEntity(request);
         entity.setCompanyPoid(UserContext.getCompanyPoid());
         entity.setDeleted("N");
-        entity.setCreatedBy(UserContext.getUserId());
-        entity.setCreatedDate(LocalDateTime.now());
-        entity.setLastModifiedBy(UserContext.getUserId());
-        entity.setLastModifiedDate(LocalDateTime.now());
         entity.setTransactionDate(LocalDate.now());
 
         SalesQuoteProjectsHdr savedEntity = repository.saveAndFlush(entity);
@@ -272,7 +268,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
 
                 // Per agreed REST contract: store returned temp id into customerPoid (ADF binding-style)
                 savedEntity.setCustomerPoid(BigDecimal.valueOf(tempAddrResp.getNewAddressPoid()));
-                savedEntity.setLastModifiedBy(UserContext.getUserId());
                 savedEntity = repository.save(savedEntity);
                 repository.flush();
                 log.info("createSalesQuotationSch updated customerPoid to temp newAddressPoid={} for transactionPoid={}", tempAddrResp.getNewAddressPoid(), savedEntity.getTransactionPoid());
@@ -424,8 +419,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         }
 
         updateEntityFromRequest(existingEntity, request);
-        existingEntity.setLastModifiedBy(UserContext.getUserId());
-        existingEntity.setLastModifiedDate(LocalDateTime.now());
         existingEntity.setTransactionDate(LocalDate.now());
 
         SalesQuoteProjectsHdr savedEntity = repository.save(existingEntity);
@@ -599,9 +592,9 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setSellGrandTotalLc(entity.getSellGrandTotalLc());
         response.setRemarks(entity.getRemarks());
         response.setCreatedBy(entity.getCreatedBy());
-        response.setCreatedDate(entity.getCreatedDate());
+        response.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate().toLocalDate() : null);
         response.setLastModifiedBy(entity.getLastModifiedBy());
-        response.setLastModifiedDate(entity.getLastModifiedDate());
+        response.setLastModifiedDate(entity.getLastModifiedDate() != null ? entity.getLastModifiedDate().toLocalDate() : null);
         return response;
     }
 
@@ -611,9 +604,9 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setDetRowId(entity.getId().getDetRowId());
         response.setNotes(entity.getNotes());
         response.setCreatedBy(entity.getCreatedBy());
-        response.setCreatedDate(entity.getCreatedDate());
+        response.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate().toLocalDate() : null);
         response.setLastModifiedBy(entity.getLastModifiedBy());
-        response.setLastModifiedDate(entity.getLastModifiedDate());
+        response.setLastModifiedDate(entity.getLastModifiedDate() != null ? entity.getLastModifiedDate().toLocalDate() : null);
         return response;
     }
 
@@ -658,8 +651,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 SalesQuoteProjectsChargeDtlId id = new SalesQuoteProjectsChargeDtlId(transactionPoid, nextDetRowId);
                 entity.setId(id);
                 mapChargeRequestToEntity(request, entity);
-                entity.setCreatedBy(UserContext.getUserId());
-                entity.setCreatedDate(java.time.LocalDate.now());
                 SalesQuoteProjectsChargeDtl saved = chargeDtlRepository.save(entity);
                 String logDetail = String.format("Row Created on [Sales Quote Projects Charge Details] with detRowId: %s", saved.getId().getDetRowId());
                 loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
@@ -669,8 +660,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                     SalesQuoteProjectsChargeDtl oldDetail = new SalesQuoteProjectsChargeDtl();
                     BeanUtils.copyProperties(existing, oldDetail);
                     mapChargeRequestToEntity(request, existing);
-                    existing.setLastModifiedBy(UserContext.getUserId());
-                    existing.setLastModifiedDate(java.time.LocalDate.now());
                     chargeDtlRepository.save(existing);
                     String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getDetRowId());
                     loggingService.createLog(oldDetail, existing, SalesQuoteProjectsChargeDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
@@ -694,8 +683,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 SalesQuoteProjectsNotesDtlId id = new SalesQuoteProjectsNotesDtlId(transactionPoid, nextDetRowId);
                 entity.setId(id);
                 entity.setNotes(request.getNotes());
-                entity.setCreatedBy(UserContext.getUserId());
-                entity.setCreatedDate(java.time.LocalDate.now());
                 SalesQuoteProjectsNotesDtl saved = notesDtlRepository.save(entity);
                 String logDetail = String.format("Row Created on [Sales Quote Projects Notes Details] with detRowId: %s", saved.getId().getDetRowId());
                 loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
@@ -705,8 +692,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                     SalesQuoteProjectsNotesDtl oldDetail = new SalesQuoteProjectsNotesDtl();
                     BeanUtils.copyProperties(existing, oldDetail);
                     existing.setNotes(request.getNotes());
-                    existing.setLastModifiedBy(UserContext.getUserId());
-                    existing.setLastModifiedDate(java.time.LocalDate.now());
                     notesDtlRepository.save(existing);
                     String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getDetRowId());
                     loggingService.createLog(oldDetail, existing, SalesQuoteProjectsNotesDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
@@ -924,10 +909,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             SalesQuoteProjectsChargeDtlId id = new SalesQuoteProjectsChargeDtlId(savedEntity.getTransactionPoid(), nextDetRowId);
             entity.setId(id);
             mapChargeRequestToEntity(request, entity);
-            entity.setCreatedBy(UserContext.getUserId());
-            entity.setCreatedDate(java.time.LocalDate.now());
-            entity.setLastModifiedBy(UserContext.getUserId());
-            entity.setLastModifiedDate(java.time.LocalDate.now());
             chargeDtlRepository.save(entity);
             String logDetail = String.format("Row Created on [Sales Quote Projects Charge Details] with detRowId: %s", entity.getId().getDetRowId());
             loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
@@ -941,10 +922,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             SalesQuoteProjectsNotesDtlId id = new SalesQuoteProjectsNotesDtlId(savedEntity.getTransactionPoid(), nextDetRowId);
             entity.setId(id);
             entity.setNotes(request.getNotes());
-            entity.setCreatedBy(UserContext.getUserId());
-            entity.setCreatedDate(java.time.LocalDate.now());
-            entity.setLastModifiedBy(UserContext.getUserId());
-            entity.setLastModifiedDate(java.time.LocalDate.now());
             notesDtlRepository.save(entity);
             String logDetail = String.format("Row Created on [Sales Quote Projects Notes Details] with detRowId: %s", entity.getId().getDetRowId());
             loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);

@@ -5,8 +5,6 @@ import com.asg.operations.finaldisbursementaccount.dto.FdaHeaderDto;
 import com.asg.operations.finaldisbursementaccount.dto.UpdateFdaHeaderRequest;
 import com.asg.operations.finaldisbursementaccount.entity.PdaFdaHdr;
 
-import java.time.LocalDateTime;
-
 public class HeaderMapper {
 
     public static FdaHeaderDto mapHeaderEntityToDto(PdaFdaHdr entity) {
@@ -170,8 +168,6 @@ public class HeaderMapper {
 
         // Set default values for system-managed fields
         entity.setDeleted("N");
-        entity.setCreatedBy(userId);
-        entity.setCreatedDate(LocalDateTime.now());
     }
 
     public static void mapHeaderDtoToEntity(FdaHeaderDto dto, PdaFdaHdr entity, String userId) {
@@ -257,9 +253,6 @@ public class HeaderMapper {
         entity.setOpsCorrectionRemarks(dto.getOpsCorrectionRemarks());
         entity.setOpsReturnedDate(dto.getOpsReturnedDate());
 
-        entity.setLastModifiedBy(userId);
-        entity.setLastModifiedDate(LocalDateTime.now());
-
         if (entity.getDeleted() == null)
             entity.setDeleted("N");
     }
@@ -282,9 +275,6 @@ public class HeaderMapper {
         entity.setPortDescription(dto.getPortDescription());
         entity.setFdaSubType(dto.getFdaSubType());
         entity.setSubCategory(dto.getSubCategory());
-
-        entity.setLastModifiedBy(userId);
-        entity.setLastModifiedDate(LocalDateTime.now());
 
         if (entity.getDeleted() == null) {
             entity.setDeleted("N");

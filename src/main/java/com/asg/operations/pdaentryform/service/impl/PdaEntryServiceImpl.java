@@ -142,13 +142,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             setDefaultCurrency(groupPoid, companyPoid, userPoid, entry.getTransactionPoid(), request.getPrincipalPoid(), entry);
         }
 
-        // Set audit fields
-        LocalDateTime now = LocalDateTime.now();
-        entry.setCreatedBy(UserContext.getUserId());
-        entry.setCreatedDate(now);
-        entry.setLastModifiedBy(UserContext.getUserId());
-        entry.setLastModifiedDate(now);
-
         // Save entity
         entry = entryHdrRepository.save(entry);
         logger.info("After initial save - salesmanPoid: {}", entry.getSalesmanPoid());
@@ -239,10 +232,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 !Objects.equals(entry.getPrincipalPoid(), request.getPrincipalPoid())) {
             setDefaultCurrency(groupPoid, companyPoid, userPoid, transactionPoid, request.getPrincipalPoid(), entry);
         }
-
-        // Update audit fields
-        entry.setLastModifiedBy(UserContext.getUserId());
-        entry.setLastModifiedDate(LocalDateTime.now());
 
         // Save entity
         entry = entryHdrRepository.save(entry);
@@ -461,8 +450,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Update header total amount to 0
         entry.setTotalAmount(BigDecimal.ZERO);
-        entry.setLastModifiedBy(UserContext.getUserId());
-        entry.setLastModifiedDate(LocalDateTime.now());
+        // Audit is handled by BaseEntity
         entryHdrRepository.save(entry);
     }
 
@@ -1394,10 +1382,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         calculateAmounts(detail);
 
         // Set audit fields
-        detail.setCreatedBy(userId);
-        detail.setCreatedDate(now);
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
 
         // Save
         PdaEntryDtl saved = entryDtlRepository.save(detail);
@@ -1466,8 +1450,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
 
         // Update audit fields
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
 
         // Save and log
         detail = entryDtlRepository.save(detail);
@@ -1618,8 +1600,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 ));
 
         entry.setTotalAmount(totalAmount);
-        entry.setLastModifiedBy(userId);
-        entry.setLastModifiedDate(LocalDateTime.now());
         entryHdrRepository.save(entry);
     }
 
@@ -1846,10 +1826,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapVehicleDetailRequestToEntity(request, detail);
 
         // Set audit fields
-        detail.setCreatedBy(userId);
-        detail.setCreatedDate(now);
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
 
         // Save
         PdaEntryVehicleDtl saved = vehicleDtlRepository.save(detail);
@@ -1870,8 +1846,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapVehicleDetailRequestToEntity(request, detail);
 
         // Update audit fields
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
+        // Audit is handled by BaseEntity
 
         // Save
         vehicleDtlRepository.save(detail);
@@ -2039,10 +2014,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapTdrDetailRequestToEntity(request, detail);
 
         // Set audit fields
-        detail.setCreatedBy(userId);
-        detail.setCreatedDate(now);
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
+        // Audit is handled by BaseEntity
 
         // Save
         PdaEntryTdrDetail saved = tdrDetailRepository.save(detail);
@@ -2069,8 +2041,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapTdrDetailRequestToEntity(request, detail);
 
         // Update audit fields
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
+        // Audit is handled by BaseEntity
 
         // Save and log
         tdrDetailRepository.save(detail);
@@ -2238,10 +2209,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapAcknowledgmentDetailRequestToEntity(request, detail);
 
         // Set audit fields
-        detail.setCreatedBy(userId);
-        detail.setCreatedDate(now);
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
+        // Audit is handled by BaseEntity
 
         // Save
         PdaEntryAcknowledgmentDtl saved = acknowledgmentDtlRepository.save(detail);
@@ -2262,8 +2230,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapAcknowledgmentDetailRequestToEntity(request, detail);
 
         // Update audit fields
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
+        // Audit is handled by BaseEntity
 
         // Save
         acknowledgmentDtlRepository.save(detail);
@@ -2886,8 +2853,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entry.setVerificationAcceptedDate(LocalDate.now());
         entry.setVerificationAcceptedBy(UserContext.getUserId());
         entry.setDocumentReceivedStatus("ACCEPTED");
-        entry.setLastModifiedBy(UserContext.getUserId());
-        entry.setLastModifiedDate(LocalDateTime.now());
+        // Audit is handled by BaseEntity
 
         entryHdrRepository.save(entry);
     }
@@ -2953,8 +2919,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Update entity status
         entry.setCancelRemark(cancelRemark);
         entry.setStatus("CANCELLED");
-        entry.setLastModifiedBy(UserContext.getUserId());
-        entry.setLastModifiedDate(LocalDateTime.now());
+        // Audit is handled by BaseEntity
         entryHdrRepository.save(entry);
 
         // Return the actual stored procedure result or success message

@@ -1,6 +1,7 @@
 package com.asg.operations.pdaentryform.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -9,14 +10,12 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "PDA_ENTRY_HDR")
-public class PdaEntryHdr {
+public class PdaEntryHdr extends BaseEntity {
 
     @AuditIgnore
     @Id
@@ -28,9 +27,11 @@ public class PdaEntryHdr {
     @Column(name = "TRANSACTION_DATE", nullable = false)
     @NotNull
     private LocalDate transactionDate;
+
     @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
+
     @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
@@ -314,36 +315,10 @@ public class PdaEntryHdr {
 
     @Column(name = "ACCTS_RETURNED_DATE")
     private LocalDate acctsReturnedDate;
+
     @AuditIgnore
     @Column(name = "DELETED", length = 1)
     @Size(max = 1)
     private String deleted;
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    @Size(max = 20)
-    private String createdBy;
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    @Size(max = 20)
-    private String lastModifiedBy;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
-    @OneToMany(mappedBy = "entryHdr", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<PdaEntryDtl> chargeDetails;
-
-    @OneToMany(mappedBy = "entryHdr", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<PdaEntryVehicleDtl> vehicleDetails;
-
-    @OneToMany(mappedBy = "entryHdr", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<PdaEntryTdrDetail> tdrDetails;
-
-    @OneToMany(mappedBy = "entryHdr", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<PdaEntryAcknowledgmentDtl> acknowledgmentDetails;
-
 }
 

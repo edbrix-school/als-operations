@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -43,16 +43,11 @@ import static com.asg.common.lib.dto.response.ApiResponse.success;
 @RestController
 @RequestMapping("/v1/pda-entries")
 @Tag(name = "PDA Entry", description = "APIs for managing PDA Entry forms and related details")
+@RequiredArgsConstructor
 public class PdaEntryController {
 
     private final PdaEntryService pdaEntryService;
     private final LoggingService loggingService;
-
-    @Autowired
-    public PdaEntryController(PdaEntryService pdaEntryService, LoggingService loggingService) {
-        this.pdaEntryService = pdaEntryService;
-        this.loggingService = loggingService;
-    }
 
     // ==================== Header CRUD Operations ====================
 
