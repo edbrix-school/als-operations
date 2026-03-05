@@ -89,8 +89,6 @@ public class AddressMasterServiceImpl implements AddressMasterService {
         master.setIsForwarder(Boolean.TRUE.equals(req.getIsForwarder()) ? "Y" : "N");
         master.setActive(req.getActive());
         master.setSeqno(req.getSeqno());
-        master.setLastModifiedBy(currentUser);
-        master.setLastModifiedDate(LocalDateTime.now());
 
         return master;
     }
@@ -189,8 +187,6 @@ public class AddressMasterServiceImpl implements AddressMasterService {
         entity.setVerified(dto.getVerified());
         entity.setVerifiedBy(dto.getVerifiedBy());
         entity.setVerifiedDate(dto.getVerifiedDate());
-        entity.setLastModifiedBy(currentUser);
-        entity.setLastModifiedDate(LocalDateTime.now());
 
         entity.setWhatsappNo(dto.getWhatsappNo());
         entity.setLinkedIn(dto.getLinkedIn());
@@ -254,8 +250,6 @@ public class AddressMasterServiceImpl implements AddressMasterService {
         detail.setVerifiedDate(dto.getVerifiedDate());
         detail.setCreatedBy(currentUser);
         detail.setCreatedDate(LocalDateTime.now());
-        detail.setLastModifiedBy(currentUser);
-        detail.setLastModifiedDate(LocalDateTime.now());
         detail.setWhatsappNo(dto.getWhatsappNo());
         detail.setLinkedIn(dto.getLinkedIn());
         detail.setInstagram(dto.getInstagram());
