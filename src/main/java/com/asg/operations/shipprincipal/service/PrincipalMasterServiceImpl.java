@@ -270,13 +270,13 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         User user = userRepository.findByUserPoid(userPoid).orElseThrow(() -> new ResourceNotFoundException("User", "user poid", userPoid));
         Long addressPoid = null;
         if (dto.getAddressPoid() == null) {
-            if (StringUtils.isBlank(dto.getAddressName())) {
-                throw new CustomException("Address Name is required for creating new address", 400);
-            }
-            boolean addressExists = addressMasterRepository.existsByAddressNameIgnoreCaseAndGroupPoid(dto.getAddressName(), groupPoid);
-            if (addressExists) {
-                throw new ResourceAlreadyExistsException("Address Name", dto.getAddressName());
-            }
+//            if (StringUtils.isBlank(dto.getAddressName())) {
+//                throw new CustomException("Address Name is required for creating new address", 400);
+//            }
+//            boolean addressExists = addressMasterRepository.existsByAddressNameIgnoreCaseAndGroupPoid(dto.getAddressName(), groupPoid);
+//            if (addressExists) {
+//                throw new ResourceAlreadyExistsException("Address Name", dto.getAddressName());
+//            }
             AddressMaster newAddressMaster = new AddressMaster();
             newAddressMaster.setAddressName(dto.getAddressName());
             newAddressMaster.setGroupPoid(groupPoid);
