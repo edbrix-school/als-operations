@@ -108,6 +108,8 @@ public class ChargesMapper {
         dto.setPdaPoid(entity.getPdaPoid());
         dto.setPdaDetRowId(entity.getPdaDetRowId());
         dto.setPrintSeqNo(entity.getPrintSeqNo());
+        dto.setLastModifiedBy(entity.getLastModifiedBy());
+        dto.setLastModifiedDate(entity.getLastModifiedDate());
         return dto;
     }
 

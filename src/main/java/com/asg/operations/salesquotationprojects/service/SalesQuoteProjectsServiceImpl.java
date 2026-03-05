@@ -592,9 +592,9 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setSellGrandTotalLc(entity.getSellGrandTotalLc());
         response.setRemarks(entity.getRemarks());
         response.setCreatedBy(entity.getCreatedBy());
-        response.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate().toLocalDate() : null);
+        response.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate() : null);
         response.setLastModifiedBy(entity.getLastModifiedBy());
-        response.setLastModifiedDate(entity.getLastModifiedDate() != null ? entity.getLastModifiedDate().toLocalDate() : null);
+        response.setLastModifiedDate(entity.getLastModifiedDate() != null ? entity.getLastModifiedDate() : null);
         return response;
     }
 
@@ -604,9 +604,9 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setDetRowId(entity.getId().getDetRowId());
         response.setNotes(entity.getNotes());
         response.setCreatedBy(entity.getCreatedBy());
-        response.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate().toLocalDate() : null);
+        response.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate() : null);
         response.setLastModifiedBy(entity.getLastModifiedBy());
-        response.setLastModifiedDate(entity.getLastModifiedDate() != null ? entity.getLastModifiedDate().toLocalDate() : null);
+        response.setLastModifiedDate(entity.getLastModifiedDate() != null ? entity.getLastModifiedDate() : null);
         return response;
     }
 
@@ -617,9 +617,9 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         response.setClauseRef(entity.getClauseNo());
         response.setTermsDescription(entity.getClauseDetails());
         response.setCreatedBy(entity.getCreatedBy());
-        response.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate().toLocalDate() : null);
+        response.setCreatedDate(entity.getCreatedDate() != null ? entity.getCreatedDate() : null);
         response.setLastModifiedBy(entity.getLastModifiedBy());
-        response.setLastModifiedDate(entity.getLastModifiedDate() != null ? entity.getLastModifiedDate().toLocalDate() : null);
+        response.setLastModifiedDate(entity.getLastModifiedDate() != null ? entity.getLastModifiedDate() : null);
         return response;
     }
 

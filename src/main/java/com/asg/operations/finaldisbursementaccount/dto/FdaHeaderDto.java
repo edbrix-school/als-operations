@@ -86,10 +86,8 @@ public class FdaHeaderDto {
     private String remarks;
     private BigDecimal totalAmount;
     private String createdBy;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime createdDate;
     private String lastModifiedBy;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime lastModifiedDate;
     @Size(max = 1, message = "Deleted cannot exceed 1 character")
     private String deleted;
