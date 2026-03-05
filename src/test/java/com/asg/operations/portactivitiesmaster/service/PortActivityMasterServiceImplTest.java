@@ -81,8 +81,6 @@ class PortActivityMasterServiceImplTest {
                 .portActivityTypeName2("Test Activity 2")
                 .active("Y")
                 .seqno(1L)
-                .createdBy(userId)
-                .createdDate(LocalDateTime.now())
                 .deleted("N")
                 .remarks("Test remarks")
                 .build();

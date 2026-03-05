@@ -71,8 +71,6 @@ public class PdaRateTypeServiceImplTest {
                 .seqno(BigInteger.ONE)
                 .active("Y")
                 .deleted("N")
-                .createdBy("SYSTEM")
-                .createdDate(LocalDateTime.now())
                 .build();
     }
 
