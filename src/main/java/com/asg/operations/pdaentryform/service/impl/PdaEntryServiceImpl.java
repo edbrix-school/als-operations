@@ -122,8 +122,49 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entry.setDocRef(docRef);
         logger.info("Generated unique docRef: {}", docRef);
 
-        // Auto-populate vessel details if vesselPoid is provided
-        if (request.getVesselPoid() != null) {
+        // Auto-populate voyage details if voyagePoid is provided
+        if (request.getVoyagePoid() != null) {
+            Map<String, Object> voyageDetails = getVoyageDetails(request.getVoyagePoid(), groupPoid, companyPoid, userPoid);
+            if (!voyageDetails.isEmpty()) {
+                // Auto-populate voyage number if not provided in request
+                if (request.getVoyageNo() == null || request.getVoyageNo().trim().isEmpty()) {
+                    entry.setVoyageNo((String) voyageDetails.get("voyageNo"));
+                }
+                // Auto-populate vessel details
+                if (voyageDetails.get("vesselPoid") != null) {
+                    entry.setVesselPoid((BigDecimal) voyageDetails.get("vesselPoid"));
+                    entry.setVesselTypePoid((BigDecimal) voyageDetails.get("vesselTypePoid"));
+                    if (request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) {
+                        entry.setImoNumber((String) voyageDetails.get("imoNumber"));
+                    }
+                    entry.setGrt((BigDecimal) voyageDetails.get("grt"));
+                    entry.setNrt((BigDecimal) voyageDetails.get("nrt"));
+                    entry.setDwt((BigDecimal) voyageDetails.get("dwt"));
+                }
+                // Auto-populate other voyage details
+                if (voyageDetails.get("linePoid") != null) {
+                    entry.setLinePoid((BigDecimal) voyageDetails.get("linePoid"));
+                }
+                if (voyageDetails.get("portPoid") != null) {
+                    entry.setPortPoid((BigDecimal) voyageDetails.get("portPoid"));
+                }
+                if (voyageDetails.get("arrivalDate") != null) {
+                    entry.setArrivalDate(((java.sql.Date) voyageDetails.get("arrivalDate")).toLocalDate());
+                }
+                if (voyageDetails.get("sailDate") != null) {
+                    entry.setSailDate(((java.sql.Date) voyageDetails.get("sailDate")).toLocalDate());
+                }
+                if (voyageDetails.get("totalQuantity") != null) {
+                    entry.setTotalQuantity((BigDecimal) voyageDetails.get("totalQuantity"));
+                }
+                if (voyageDetails.get("numberOfDays") != null) {
+                    entry.setNumberOfDays((BigDecimal) voyageDetails.get("numberOfDays"));
+                }
+            }
+        }
+
+        // Auto-populate vessel details if vesselPoid is provided (fallback if not from voyage)
+        if (request.getVesselPoid() != null && entry.getVesselTypePoid() == null) {
             VesselDetailsResponse vesselDetails = getVesselDetails(request.getVesselPoid(), groupPoid, companyPoid, userPoid);
             if (vesselDetails != null) {
                 entry.setVesselTypePoid(vesselDetails.getVesselTypePoid());
@@ -218,9 +259,52 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Map request to entity (preserve read-only fields)
         mapRequestToEntity(request, entry);
 
-        // Auto-populate vessel details if vesselPoid changed
+        // Auto-populate voyage details if voyagePoid changed
+        if (request.getVoyagePoid() != null &&
+                !Objects.equals(entry.getVoyagePoid(), request.getVoyagePoid())) {
+            Map<String, Object> voyageDetails = getVoyageDetails(request.getVoyagePoid(), groupPoid, companyPoid, userPoid);
+            if (!voyageDetails.isEmpty()) {
+                // Auto-populate voyage number if not provided in request
+                if (request.getVoyageNo() == null || request.getVoyageNo().trim().isEmpty()) {
+                    entry.setVoyageNo((String) voyageDetails.get("voyageNo"));
+                }
+                // Auto-populate vessel details
+                if (voyageDetails.get("vesselPoid") != null) {
+                    entry.setVesselPoid((BigDecimal) voyageDetails.get("vesselPoid"));
+                    entry.setVesselTypePoid((BigDecimal) voyageDetails.get("vesselTypePoid"));
+                    if (request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) {
+                        entry.setImoNumber((String) voyageDetails.get("imoNumber"));
+                    }
+                    entry.setGrt((BigDecimal) voyageDetails.get("grt"));
+                    entry.setNrt((BigDecimal) voyageDetails.get("nrt"));
+                    entry.setDwt((BigDecimal) voyageDetails.get("dwt"));
+                }
+                // Auto-populate other voyage details
+                if (voyageDetails.get("linePoid") != null) {
+                    entry.setLinePoid((BigDecimal) voyageDetails.get("linePoid"));
+                }
+                if (voyageDetails.get("portPoid") != null) {
+                    entry.setPortPoid((BigDecimal) voyageDetails.get("portPoid"));
+                }
+                if (voyageDetails.get("arrivalDate") != null) {
+                    entry.setArrivalDate(((java.sql.Date) voyageDetails.get("arrivalDate")).toLocalDate());
+                }
+                if (voyageDetails.get("sailDate") != null) {
+                    entry.setSailDate(((java.sql.Date) voyageDetails.get("sailDate")).toLocalDate());
+                }
+                if (voyageDetails.get("totalQuantity") != null) {
+                    entry.setTotalQuantity((BigDecimal) voyageDetails.get("totalQuantity"));
+                }
+                if (voyageDetails.get("numberOfDays") != null) {
+                    entry.setNumberOfDays((BigDecimal) voyageDetails.get("numberOfDays"));
+                }
+            }
+        }
+
+        // Auto-populate vessel details if vesselPoid changed (fallback if not from voyage)
         if (request.getVesselPoid() != null &&
-                !Objects.equals(entry.getVesselPoid(), request.getVesselPoid())) {
+                !Objects.equals(entry.getVesselPoid(), request.getVesselPoid()) &&
+                entry.getVesselTypePoid() == null) {
             VesselDetailsResponse vesselDetails = getVesselDetails(request.getVesselPoid(), groupPoid, companyPoid, userPoid);
             if (vesselDetails != null) {
                 entry.setVesselTypePoid(vesselDetails.getVesselTypePoid());
@@ -966,6 +1050,65 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         } catch (Exception e) {
             logger.error("[SP-20] PROC_PDA_DEFAULT_VESSEL_DTLS - Error: {}", e.getMessage(), e);
             return new VesselDetailsResponse();
+        }
+    }
+
+    @Override
+    public Map<String, Object> getVoyageDetails(BigDecimal voyagePoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        if (voyagePoid == null) {
+            throw new ValidationException(
+                    "Voyage POID is required",
+                    List.of(new ValidationError("voyagePoid", "Voyage POID is mandatory"))
+            );
+        }
+
+        try {
+            logger.info("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - voyagePoid: {}", voyagePoid);
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_VOYAGE_DEFAULT_DTLS")
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_VOYAGE_POID", Types.NUMERIC),
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
+                    );
+
+            Map<String, Object> inParams = new HashMap<>();
+            inParams.put("P_LOGIN_GROUP_POID", groupPoid);
+            inParams.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inParams.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inParams.put("P_VOYAGE_POID", voyagePoid);
+
+            Map<String, Object> result = jdbcCall.execute(inParams);
+
+            List<Map<String, Object>> rows = (List<Map<String, Object>>) result.get("OUTDATA");
+
+            Map<String, Object> response = new HashMap<>();
+            if (!rows.isEmpty()) {
+                Map<String, Object> row = rows.getFirst();
+                response.put("voyageNo", row.get("VOYAGE_NO"));
+                response.put("vesselPoid", row.get("VESSEL_POID"));
+                response.put("linePoid", row.get("LINE_POID"));
+                response.put("portPoid", row.get("PORT_POID"));
+                response.put("arrivalDate", row.get("ARRIVAL_DATE"));
+                response.put("sailDate", row.get("SAIL_DATE"));
+                response.put("vesselTypePoid", row.get("VESSEL_TYPE_POID"));
+                response.put("imoNumber", row.get("IMO_NUMBER"));
+                response.put("grt", row.get("GRT"));
+                response.put("nrt", row.get("NRT"));
+                response.put("dwt", row.get("DWT"));
+                response.put("totalQuantity", row.get("TOTAL_QUANTITY"));
+                response.put("numberOfDays", row.get("NUMBER_OF_DAYS"));
+            }
+
+            logger.info("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - Completed");
+            return response;
+
+        } catch (Exception e) {
+            logger.error("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - Error: {}", e.getMessage(), e);
+            return new HashMap<>();
         }
     }
 

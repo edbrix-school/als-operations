@@ -11,6 +11,7 @@ import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
 import com.asg.operations.pdaentryform.service.impl.PdaEntryServiceImpl.TaxInfo;
+import java.util.Map;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -1229,6 +1230,42 @@ public class PdaEntryController {
     ) {
         VesselDetailsResponse response = pdaEntryService.getVesselDetails(vesselPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Vessel details retrieved successfully", response);
+    }
+
+    @Operation(
+            summary = "Get voyage details",
+            description = "Gets voyage details when voyage LOV is changed (auto-population). " +
+                    "Calls stored procedure to retrieve voyage number, vessel, line, port, dates, and other voyage details. " +
+                    "Transaction POID is optional (can be null for new records).",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved voyage details",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid input parameters - Voyage POID is required",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/voyage-details")
+    public ResponseEntity<?> getVoyageDetails(
+            @Parameter(description = "Voyage POID", required = true)
+            @RequestParam BigDecimal voyagePoid,
+            @Parameter(description = "Transaction POID (optional, for existing records)")
+            @RequestParam(required = false) Long transactionPoid
+    ) {
+        Map<String, Object> response = pdaEntryService.getVoyageDetails(voyagePoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return ApiResponse.success("Voyage details retrieved successfully", response);
     }
 
     @Operation(

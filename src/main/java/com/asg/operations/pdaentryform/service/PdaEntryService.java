@@ -132,6 +132,11 @@ public interface PdaEntryService {
     VesselDetailsResponse getVesselDetails(BigDecimal vesselPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
+     * Get voyage details (auto-population from LOV change)
+     */
+    Map<String, Object> getVoyageDetails(BigDecimal voyagePoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
      * Create FDA from PDA entry
      */
     String createFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
