@@ -1,12 +1,11 @@
 package com.asg.operations.salesquotationprojects.entity;
 
-import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import com.asg.operations.salesquotationprojects.key.SalesQuoteProjectsChargeDtlId;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Entity
 @Table(name = "SALES_QUOTE_PROJECTS_CHARGE_DTL")
@@ -14,7 +13,7 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SalesQuoteProjectsChargeDtl {
+public class SalesQuoteProjectsChargeDtl extends BaseEntity {
 
     @EmbeddedId
     private SalesQuoteProjectsChargeDtlId id;
@@ -69,20 +68,4 @@ public class SalesQuoteProjectsChargeDtl {
 
     @Column(name = "REMARKS", length = 100)
     private String remarks;
-
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDate createdDate;
-
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDate lastModifiedDate;
 }

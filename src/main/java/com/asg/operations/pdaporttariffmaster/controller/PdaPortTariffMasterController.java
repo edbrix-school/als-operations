@@ -26,8 +26,6 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Page;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
@@ -36,15 +34,11 @@ import static com.asg.common.lib.dto.response.ApiResponse.success;
 @RestController
 @RequestMapping("/v1/pda-port-tariffs")
 @Tag(name = "PDA Port Tariff Master", description = "APIs for managing PDA Port Tariff Master records")
+@RequiredArgsConstructor
 public class PdaPortTariffMasterController {
 
     private final PdaPortTariffHdrService tariffService;
     private final LoggingService loggingService;
-
-    public PdaPortTariffMasterController(PdaPortTariffHdrService tariffService, LoggingService loggingService) {
-        this.tariffService = tariffService;
-        this.loggingService = loggingService;
-    }
 
     @Operation(summary = "Get all Tariffs", description = "Returns paginated list of Tariffs with optional filters. Supports pagination with page and size parameters.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Tariff list fetched successfully", content = @Content(schema = @Schema(implementation = Page.class)))

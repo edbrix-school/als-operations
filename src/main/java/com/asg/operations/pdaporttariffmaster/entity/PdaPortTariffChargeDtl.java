@@ -1,13 +1,12 @@
 package com.asg.operations.pdaporttariffmaster.entity;
 
-import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import com.asg.operations.pdaporttariffmaster.key.PdaPortTariffChargeDtlId;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -17,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "PDA_PORT_TARIFF_CHARGE_DTL")
-public class PdaPortTariffChargeDtl {
+public class PdaPortTariffChargeDtl extends BaseEntity {
 
     @EmbeddedId
     private PdaPortTariffChargeDtlId id;
@@ -49,20 +48,6 @@ public class PdaPortTariffChargeDtl {
 
     @Column(name = "SEQNO")
     private Integer seqNo;
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    @Size(max = 20)
-    private String createdBy;
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    @Size(max = 20)
-    private String lastModifiedBy;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
 
     @MapsId("transactionPoid")
     @ManyToOne(fetch = FetchType.LAZY)

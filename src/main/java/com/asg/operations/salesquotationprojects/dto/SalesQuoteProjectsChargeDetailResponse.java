@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -29,7 +29,7 @@ public class SalesQuoteProjectsChargeDetailResponse {
     private BigDecimal sellGrandTotalLc;
     private String remarks;
     private String createdBy;
-    private LocalDate createdDate;
+    private LocalDateTime createdDate;
     private String lastModifiedBy;
-    private LocalDate lastModifiedDate;
+    private LocalDateTime lastModifiedDate;
 }

@@ -274,6 +274,8 @@ public class PrincipalMasterMapper {
         dto.setLinkedIn(entity.getLinkedIn());
         dto.setInstagram(entity.getInstagram());
         dto.setFacebook(entity.getFacebook());
+        dto.setLastModifiedBy(entity.getLastModifiedBy());
+        dto.setLastModifiedDate(entity.getLastModifiedDate());
         return dto;
     }
 

@@ -43,7 +43,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.Map;
@@ -377,8 +376,6 @@ public class FdaServiceImpl implements FdaService {
         }
 
         hdr.setAccountsVerified("Y");
-        hdr.setLastModifiedBy(String.valueOf(userPoid));
-        hdr.setLastModifiedDate(LocalDateTime.now());
         pdaFdaHdrRepository.save(hdr);
 
         return fdaCustomRepository.verifyFda(groupPoid, companyPoid, userPoid, transactionPoid);
@@ -398,8 +395,6 @@ public class FdaServiceImpl implements FdaService {
         hdr.setOpsCorrectionRemarks(correctionRemarks);
         hdr.setOpsReturnedDate(LocalDate.now());
         hdr.setAccountsVerified("N");
-        hdr.setLastModifiedBy("SYSTEM");
-        hdr.setLastModifiedDate(LocalDateTime.now());
 
         pdaFdaHdrRepository.save(hdr);
 

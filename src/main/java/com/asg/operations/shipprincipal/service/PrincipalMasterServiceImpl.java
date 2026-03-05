@@ -151,10 +151,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             newAddressMaster.setAddressName(dto.getAddressName());
             newAddressMaster.setGroupPoid(groupPoid);
             newAddressMaster.setSeqno(Long.valueOf(dto.getSeqNo()));
-            newAddressMaster.setCreatedBy(user.getUserName());
-            newAddressMaster.setCreatedDate(LocalDateTime.now());
-            newAddressMaster.setLastModifiedBy(user.getUserName());
-            newAddressMaster.setLastModifiedDate(LocalDateTime.now());
             addressMasterRepository.save(newAddressMaster);
 
             dto.setAddressPoid(newAddressMaster.getAddressMasterPoid());
@@ -174,9 +170,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         ShipPrincipalMaster principal = new ShipPrincipalMaster();
         mapper.mapCreateDTOToEntity(dto, principal, groupPoid);
 
-        principal.setCreatedBy(user.getUserName());
         principal.setAddressPoid(addressPoid);
-        principal.setCreatedDate(LocalDateTime.now());
         principal = principalRepository.save(principal);
 
         Long principalId = principal.getPrincipalPoid();
@@ -190,7 +184,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 entity.setChargePoid(charge.getChargePoid());
                 entity.setRate(charge.getRate());
                 entity.setRemarks(charge.getRemarks());
-                entity.setCreatedDate(LocalDateTime.now());
                 chargeRepository.save(entity);
                 String logDetail = String.format("Row Created on Principal Charge with detRowId: %s", entity.getDetRowId());
                 loggingService.createLogSummaryEntry(UserContext.getDocumentId(), principalId.toString() , logDetail);
@@ -204,7 +197,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 entity.setPrincipalPoid(principalId);
                 entity.setDetRowId(nextDetRowId++);
                 mapper.mapPaymentDTOToEntity(payment, entity);
-                entity.setCreatedDate(LocalDateTime.now());
                 paymentRepository.save(entity);
                 String logDetail = String.format("Row Created on Principal Payment with detRowId: %s", entity.getDetRowId());
                 loggingService.createLogSummaryEntry(UserContext.getDocumentId(), principalId.toString() , logDetail);
@@ -239,8 +231,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 entity.setEscalationRole1(paRptDetail.getEscalationRole1());
                 entity.setEscalationRole2(paRptDetail.getEscalationRole2());
                 entity.setRemarks(paRptDetail.getRemarks());
-                entity.setCreatedBy(user.getUserName());
-                entity.setCreatedDate(LocalDateTime.now());
                 paRptDtlRepository.save(entity);
                 String logDetail = String.format("Row Created on Principal Port Report Activity with detRowId: %s", entity.getDetRowId());
                 loggingService.createLogSummaryEntry(UserContext.getDocumentId(), principalId.toString() , logDetail);
@@ -281,10 +271,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             newAddressMaster.setAddressName(dto.getAddressName());
             newAddressMaster.setGroupPoid(groupPoid);
             newAddressMaster.setSeqno(Long.valueOf(dto.getSeqNo()));
-            newAddressMaster.setCreatedBy(user.getUserName());
-            newAddressMaster.setCreatedDate(LocalDateTime.now());
-            newAddressMaster.setLastModifiedBy(user.getUserName());
-            newAddressMaster.setLastModifiedDate(LocalDateTime.now());
             addressMasterRepository.save(newAddressMaster);
 
             dto.setAddressPoid(newAddressMaster.getAddressMasterPoid());
@@ -302,8 +288,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         }
 
         principal.setAddressPoid(addressPoid);
-        principal.setLastModifiedBy(user.getUserName());
-        principal.setLastModifiedDate(LocalDateTime.now());
         principalRepository.save(principal);
 
         if (dto.getCharges() != null) {
@@ -322,7 +306,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     entity.setChargePoid(charge.getChargePoid());
                     entity.setRate(charge.getRate());
                     entity.setRemarks(charge.getRemarks());
-                    entity.setCreatedDate(LocalDateTime.now());
                     chargeRepository.save(entity);
                     String logDetail = String.format("Row Created on Principal Charge Detail with detRowId: %s", nextDetRowId);
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
@@ -334,7 +317,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                                 existing.setChargePoid(charge.getChargePoid());
                                 existing.setRate(charge.getRate());
                                 existing.setRemarks(charge.getRemarks());
-                                existing.setLastModifiedDate(LocalDateTime.now());
                                 existing = chargeRepository.save(existing);
                                 String logDetail = String.format("KeyId = PRINCIPAL_POID %s: DET_ROW_ID %s", existing.getPrincipalPoid(), existing.getDetRowId());
                                 loggingService.createLog(oldCharge, existing, ShipPrincipalMasterDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
@@ -356,7 +338,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     entity.setPrincipalPoid(id);
                     entity.setDetRowId(nextDetRowId);
                     mapper.mapPaymentDTOToEntity(payment, entity);
-                    entity.setCreatedDate(LocalDateTime.now());
                     paymentRepository.save(entity);
                     String logDetail = String.format("Row Created on Principal Payment Detail with detRowId: %s", nextDetRowId);
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
@@ -366,7 +347,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                                 ShipPrincipalMasterPymtDtl oldPayment = new ShipPrincipalMasterPymtDtl();
                                 BeanUtils.copyProperties(existing, oldPayment);
                                 mapper.mapPaymentDTOToEntity(payment, existing);
-                                existing.setLastModifiedDate(LocalDateTime.now());
                                 existing = paymentRepository.save(existing);
                                 String logDetail = String.format("KeyId = PRINCIPAL_POID %s: DET_ROW_ID %s", existing.getPrincipalPoid(), existing.getDetRowId());
                                 loggingService.createLog(oldPayment, existing, ShipPrincipalMasterPymtDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
@@ -413,8 +393,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     entity.setEscalationRole1(paRptDetail.getEscalationRole1());
                     entity.setEscalationRole2(paRptDetail.getEscalationRole2());
                     entity.setRemarks(paRptDetail.getRemarks());
-                    entity.setCreatedBy(user.getUserName());
-                    entity.setCreatedDate(LocalDateTime.now());
                     paRptDtlRepository.save(entity);
                     String logDetail = String.format("Row Created on Principal Port Activity Report Detail with detRowId: %s", nextDetRowId);
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
@@ -433,8 +411,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                                 existing.setEscalationRole1(paRptDetail.getEscalationRole1());
                                 existing.setEscalationRole2(paRptDetail.getEscalationRole2());
                                 existing.setRemarks(paRptDetail.getRemarks());
-                                existing.setLastModifiedBy(user.getUserName());
-                                existing.setLastModifiedDate(LocalDateTime.now());
                                 existing = paRptDtlRepository.save(existing);
                                 String logDetail = String.format("KeyId = PRINCIPAL_POID %s: DET_ROW_ID %s", existing.getPrincipalPoid(), existing.getDetRowId());
                                 loggingService.createLog(oldPaRpt, existing, ShipPrincipalPaRptDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
@@ -470,7 +446,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 });
         String newStatus = "Y".equals(principal.getActive()) ? "N" : "Y";
         principal.setActive(newStatus);
-        principal.setLastModifiedDate(LocalDateTime.now());
         principalRepository.save(principal);
         log.info("Successfully toggled active status to {} for principal with id: {}", newStatus, id);
     }
@@ -551,7 +526,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             // Update principal with GL Code
             principal.setGlCodePoid(result.getNewGlPoid());
             principal.setGlAcctno(result.getGlAcctno());
-            principal.setLastModifiedBy(user.getUserName());
             principalRepository.save(principal);
 
             return CreateLedgerResponseDto.builder()

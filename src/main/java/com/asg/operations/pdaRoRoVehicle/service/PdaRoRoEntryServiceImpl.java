@@ -32,7 +32,6 @@ import org.springframework.stereotype.Service;
 import java.sql.Date;
 import java.sql.Types;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -64,10 +63,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                 .deleted("N")
                 .companyPoid(UserContext.getCompanyPoid())
                 .groupPoid(UserContext.getGroupPoid())
-                .createdBy(getCurrentUser())
-                .createdDate(LocalDateTime.now())
-                .lastModifiedBy(getCurrentUser())
-                .lastModifiedDate(LocalDateTime.now())
                 .remarks(request.getRemarks())
                 .build();
 
@@ -111,8 +106,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         entity.setVoyageNo((String) voyageDetails.get("VOYAGE_NO"));
         entity.setRemarks(request.getRemarks());
         entity.setDeleted("N");
-        entity.setLastModifiedBy(getCurrentUser());
-        entity.setLastModifiedDate(LocalDateTime.now());
         entity = hdrRepository.save(entity);
         loggingService.logChanges(oldEntity, entity, PdaRoRoEntryHdr.class, UserContext.getDocumentId(), entity.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return mapToResponse(entity);
@@ -327,8 +320,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
             } else {
                 entity = new com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl();
                 entity.setId(id);
-                entity.setCreatedBy(getCurrentUser());
-                entity.setCreatedDate(LocalDateTime.now());
             }
             
             entity.setBlNumber(detail.getBlNumber());
@@ -340,8 +331,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
             entity.setBlCbm(detail.getBlCbm());
             entity.setPortOfLoad(detail.getPortOfLoad());
             entity.setAgent(detail.getAgent());
-            entity.setLastModifiedBy(getCurrentUser());
-            entity.setLastModifiedDate(LocalDateTime.now());
             
             entity = dtlRepository.save(entity);
             
@@ -461,10 +450,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         int startColNumber;
         int endColNumber;
         String tempTableName;
-    }
-
-    public static String getCurrentUser() {
-        return UserContext.getUserId() != null ? String.valueOf(UserContext.getUserId()) : "SYSTEM";
     }
 
     @Override
