@@ -151,8 +151,6 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             newAddressMaster.setAddressName(dto.getAddressName());
             newAddressMaster.setGroupPoid(groupPoid);
             newAddressMaster.setSeqno(Long.valueOf(dto.getSeqNo()));
-            newAddressMaster.setCreatedBy(user.getUserName());
-            newAddressMaster.setCreatedDate(LocalDateTime.now());
             addressMasterRepository.save(newAddressMaster);
 
             dto.setAddressPoid(newAddressMaster.getAddressMasterPoid());
