@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -254,23 +255,23 @@ class SalesQuoteProjectsControllerTest {
 
     @Test
     void getChargeTaxDetails_ok() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
         Long companyPoid = 1L;
-        String partyType = "CUSTOMER";
         Long partyPoid = 123L;
         Long chargePoid = 789L;
         Map<String, Object> mockResponse = new HashMap<>();
         mockResponse.put("taxRate", "15.0");
         mockResponse.put("taxAmount", "150.00");
 
-        when(salesQuoteProjectsService.getChargeTaxDetails(companyPoid, partyType, partyPoid, chargePoid))
+        when(salesQuoteProjectsService.getChargeTaxDetails(now, companyPoid, partyPoid, chargePoid))
                 .thenReturn(mockResponse);
 
-        mockMvc.perform(get("/v1/sales-quotation-projects/charge-tax-details/{companyPoid}/{partyType}/{partyPoid}/{chargePoid}", 
-                        companyPoid, partyType, partyPoid, chargePoid))
+        mockMvc.perform(get("/v1/sales-quotation-projects/charge-tax-details/{transactionDate}/{companyPoid}/{partyPoid}/{chargePoid}",
+                        now, companyPoid, partyPoid, chargePoid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Charge tax details retrieved successfully"))
                 .andExpect(jsonPath("$.result.data.taxRate").value("15.0"));
 
-        then(salesQuoteProjectsService).should().getChargeTaxDetails(companyPoid, partyType, partyPoid, chargePoid);
+        then(salesQuoteProjectsService).should().getChargeTaxDetails(now, companyPoid, partyPoid, chargePoid);
     }
 }

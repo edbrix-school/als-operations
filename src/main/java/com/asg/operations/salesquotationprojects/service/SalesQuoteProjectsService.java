@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 public interface SalesQuoteProjectsService {
@@ -28,7 +29,7 @@ public interface SalesQuoteProjectsService {
 
     Map<String, Object> getTermsAndConditions(Long templatePoid, Long docKeyPoid);
 
-    Map<String, Object> getChargeTaxDetails(Long companyPoid, String partyType, Long partyPoid, Long chargePoid);
+    Map<String, Object> getChargeTaxDetails(LocalDateTime transactionDate, Long companyPoid, Long partyPoid, Long chargePoid);
 
     AddressDetailsDto getCustomerDetailsById(BigDecimal addressPoid);
 }

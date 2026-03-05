@@ -31,6 +31,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import static com.asg.common.lib.dto.response.ApiResponse.success;
@@ -103,9 +104,9 @@ public class SalesQuoteProjectsController {
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/charge-tax-details/{companyPoid}/{partyType}/{partyPoid}/{chargePoid}")
-    public ResponseEntity<?> getChargeTaxDetails(@PathVariable Long companyPoid, @PathVariable String partyType, @PathVariable Long partyPoid, @PathVariable Long chargePoid) {
-        Map<String, Object> result = salesQuoteProjectsService.getChargeTaxDetails(companyPoid, partyType, partyPoid, chargePoid);
+    @GetMapping("/charge-tax-details/{transactionDate}/{companyPoid}/{partyPoid}/{chargePoid}")
+    public ResponseEntity<?> getChargeTaxDetails(@PathVariable LocalDateTime transactionDate, @PathVariable Long companyPoid, @PathVariable(required = false) Long partyPoid, @PathVariable Long chargePoid) {
+        Map<String, Object> result = salesQuoteProjectsService.getChargeTaxDetails(transactionDate, companyPoid, partyPoid, chargePoid);
         return success("Charge tax details retrieved successfully", result);
     }
 
