@@ -833,12 +833,13 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         }
     }
 
-    public Map<String, Object> getChargeTaxDetails(Long companyPoid, String partyType, Long partyPoid, Long chargePoid) {
+    public Map<String, Object> getChargeTaxDetails(LocalDateTime transactionDate, Long companyPoid, Long partyPoid, Long chargePoid) {
         try {
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                    .withProcedureName("PROC_GET_CHARGE_TAX_PER_V2")
+                    .withProcedureName("PROC_GET_CHARGE_TAX_PER_V3")
                     .declareParameters(
                             new SqlParameter("P_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_TRANSACTION_DATE", Types.DATE),
                             new SqlParameter("P_PARTY_TYPE", Types.VARCHAR),
                             new SqlParameter("P_PARTY_POID", Types.NUMERIC),
                             new SqlParameter("P_CHARGE_POID", Types.NUMERIC),
@@ -846,7 +847,8 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                     );
             Map<String, Object> params = new HashMap<>();
             params.put("P_COMPANY_POID", companyPoid);
-            params.put("P_PARTY_TYPE", partyType);
+            params.put("P_TRANSACTION_DATE", transactionDate);
+            params.put("P_PARTY_TYPE", "CUSTOMER");
             params.put("P_PARTY_POID", partyPoid);
             params.put("P_CHARGE_POID", chargePoid);
             return jdbcCall.execute(params);
