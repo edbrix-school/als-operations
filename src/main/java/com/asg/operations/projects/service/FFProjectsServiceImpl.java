@@ -15,12 +15,15 @@ import com.asg.operations.projects.dto.*;
 import com.asg.operations.projects.entity.FFProjectsChargesDtl;
 import com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl;
 import com.asg.operations.projects.entity.FFProjectsHdr;
+import com.asg.operations.projects.projection.*;
 import com.asg.operations.projects.repository.FFProjectsChargesDtlRepository;
 import com.asg.operations.projects.repository.FFProjectsCtrlSheetDtlRepository;
 import com.asg.operations.projects.repository.FFProjectsHdrRepository;
 import com.asg.operations.projects.repository.FFProjectsStoredProcRepository;
 import com.asg.operations.projects.repository.FreightJobProjectionRepository;
 import com.asg.operations.projects.util.ProjectMapper;
+import com.asg.operations.projectjob.entity.*;
+import com.asg.operations.projectjob.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -30,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -45,6 +49,12 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     private final FFProjectsCtrlSheetDtlRepository projectsCtrlSheetDtlRepository;
     private final FFProjectsStoredProcRepository projectsStoredProcRepository;
     private final FreightJobProjectionRepository freightJobProjectionRepository;
+    private final FFManifestHdrRepository manifestHdrRepository;
+    private final FFManifestAirPkgDtlRepository airPkgRepository;
+    private final FFManifestContainerDtlRepository containerRepository;
+    private final FFManifestTruckDtlRepository truckRepository;
+    private final FFManifestChargesDtlRepository manifestChargesRepository;
+    private final FFManifestBayanDtlRepository bayanRepository;
     private final LoggingService loggingService;
     private final ProjectMapper mapper;
     private final DocumentSearchService documentSearchService;
@@ -227,29 +237,422 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<?> getAirFreightJobs(Long transactionPoid) {
-        return freightJobProjectionRepository.findAirFreightJobs(transactionPoid);
+    public List<UpcomingJobDTO> getUpcomingJobsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate) {
+        LocalDate from = fromDate != null ? fromDate : LocalDate.now();
+        LocalDate to = toDate != null ? toDate : from.plusDays(30);
+        return freightJobProjectionRepository.findUpcomingJobs(transactionPoid, from, to).stream()
+                .map(this::mapToUpcomingJobDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<?> getSeaFreightJobs(Long transactionPoid) {
-        return freightJobProjectionRepository.findSeaFreightJobs(transactionPoid);
+    public FreightJobsSummaryDTO getAllFreightsSummary(Long transactionPoid, FreightFilterRequest filter) {
+        List<FreightJobSummaryProjection> allJobs = freightJobProjectionRepository.findAllFreightJobs(transactionPoid);
+        
+        List<FreightSummaryDTO> allFreights = allJobs.stream().map(this::mapToFreightSummaryDTO).collect(Collectors.toList());
+        List<AirFreightSummaryDTO> airFreights = getAirFreightsSummary(transactionPoid);
+        List<SeaFreightSummaryDTO> seaFreights = getSeaFreightsSummary(transactionPoid);
+        List<RoadFreightSummaryDTO> roadFreights = getRoadFreightsSummary(transactionPoid);
+        List<UpcomingJobDTO> upcomingJobs = getUpcomingJobsList(transactionPoid, null, null);
+        
+        FreightJobsSummaryDTO.SummaryTotalsDTO totals = new FreightJobsSummaryDTO.SummaryTotalsDTO(
+                allJobs.size(),
+                airFreights.size(),
+                seaFreights.size(),
+                roadFreights.size(),
+                upcomingJobs.size(),
+                allJobs.stream().mapToDouble(j -> j.getWeight() != null ? j.getWeight() : 0.0).sum(),
+                allJobs.stream().mapToDouble(j -> j.getCbm() != null ? j.getCbm() : 0.0).sum()
+        );
+        
+        return new FreightJobsSummaryDTO(allFreights, airFreights, seaFreights, roadFreights, upcomingJobs, totals);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<?> getRoadFreightJobs(Long transactionPoid) {
-        return freightJobProjectionRepository.findRoadFreightJobs(transactionPoid);
+    public List<AirFreightSummaryDTO> getAirFreightsSummary(Long transactionPoid) {
+        return freightJobProjectionRepository.findAirFreightJobs(transactionPoid).stream()
+                .map(this::mapToAirSummaryDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<?> getAllFreightJobs(Long transactionPoid, LocalDate fromDate, LocalDate toDate) {
-        if (fromDate != null && toDate != null) {
-            return freightJobProjectionRepository.findAllFreightJobsByDateRange(transactionPoid, fromDate, toDate);
+    public List<SeaFreightSummaryDTO> getSeaFreightsSummary(Long transactionPoid) {
+        return freightJobProjectionRepository.findSeaFreightJobs(transactionPoid).stream()
+                .map(this::mapToSeaSummaryDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RoadFreightSummaryDTO> getRoadFreightsSummary(Long transactionPoid) {
+        return freightJobProjectionRepository.findRoadFreightJobs(transactionPoid).stream()
+                .map(this::mapToRoadSummaryDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AirFreightDetailedDTO getAirFreightDetails(Long projectId, Long jobId) {
+        FFManifestHdr job = manifestHdrRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+        
+        if (!projectId.equals(job.getProjectPoid() != null ? job.getProjectPoid().longValue() : null)) {
+            throw new ResourceNotFoundException("Job does not belong to this project");
         }
-        return freightJobProjectionRepository.findAllFreightJobs(transactionPoid);
+        
+        AirFreightDetailedDTO dto = new AirFreightDetailedDTO();
+        dto.setFlightNo(job.getFlightNo());
+        dto.setFlightDate(job.getFlightDate());
+        dto.setFlightNo2(job.getFlightNo2());
+        dto.setFlightDate2(job.getFlightDate2());
+        dto.setCarrier(job.getCarrierCode());
+        dto.setHawbNo(job.getHouseBlNo());
+        dto.setAgentPoid(job.getAgentPoid() != null ? job.getAgentPoid().longValue() : null);
+        dto.setAgentAcctNo(job.getAgentAcctNo());
+        dto.setAgentIataNo(job.getAgentIataNo());
+        dto.setPackages(airPkgRepository.findByTransactionPoid(jobId).stream()
+                .map(this::mapAirPkgToDTO).collect(Collectors.toList()));
+        dto.setBayanDetails(bayanRepository.findByTransactionPoid(jobId).stream()
+                .map(this::mapBayanToDTO).collect(Collectors.toList()));
+        dto.setCharges(getJobCharges(jobId));
+        return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SeaFreightDetailedDTO getSeaFreightDetails(Long projectId, Long jobId) {
+        FFManifestHdr job = manifestHdrRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+        
+        if (!projectId.equals(job.getProjectPoid() != null ? job.getProjectPoid().longValue() : null)) {
+            throw new ResourceNotFoundException("Job does not belong to this project");
+        }
+        
+        SeaFreightDetailedDTO dto = new SeaFreightDetailedDTO();
+        dto.setFeederVesselName(job.getFeederVslName());
+        dto.setFeederVoyageNo(job.getFeederVoyageNo());
+        dto.setFeederSailDate(job.getFeederVslSailDate());
+        dto.setFeederEta(job.getFeederVslEta());
+        dto.setFeederArrivalDate(job.getFeederVslArrivalDate());
+        dto.setMotherVesselName(job.getMotherVslName());
+        dto.setMotherVoyageNo(job.getMotherVslVoyageNo());
+        dto.setMotherSailDate(job.getMotherVslSailDate());
+        dto.setMotherEta(job.getMotherVslEta());
+        dto.setMasterBlNo(job.getMasterBlNo());
+        dto.setHouseBlNo(job.getHouseBlNo());
+        dto.setHouseBlNo2(job.getHouseBlNo2());
+        dto.setBlStatus(job.getBlStatus());
+        dto.setBlIssueDate(job.getBlIssueDate());
+        dto.setReleasedType(job.getReleasedType());
+        dto.setOfoqManifestRef(job.getOfoqMnfRef());
+        dto.setRadioActive(job.getRadioAction());
+        dto.setContainers(containerRepository.findByTransactionPoid(jobId).stream()
+                .map(this::mapContainerToDTO).collect(Collectors.toList()));
+        dto.setBayanDetails(bayanRepository.findByTransactionPoid(jobId).stream()
+                .map(this::mapBayanToDTO).collect(Collectors.toList()));
+        dto.setCharges(getJobCharges(jobId));
+        return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RoadFreightDetailedDTO getRoadFreightDetails(Long projectId, Long jobId) {
+        FFManifestHdr job = manifestHdrRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found"));
+        
+        if (!projectId.equals(job.getProjectPoid() != null ? job.getProjectPoid().longValue() : null)) {
+            throw new ResourceNotFoundException("Job does not belong to this project");
+        }
+        
+        RoadFreightDetailedDTO dto = new RoadFreightDetailedDTO();
+        dto.setTransportFrom(job.getTruckTransportFrom());
+        dto.setTransportTo(job.getTruckTransportTo());
+        dto.setTruckCargoDetails(truckRepository.findByTransactionPoid(jobId).stream()
+                .map(this::mapTruckToDTO).collect(Collectors.toList()));
+        dto.setCharges(getJobCharges(jobId));
+        return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public JobChargesDTO getJobCharges(Long jobId) {
+        List<FFManifestChargesDtl> charges = manifestChargesRepository.findByTransactionPoid(jobId);
+        List<ChargeDTO> chargeDTOs = charges.stream().map(this::mapChargeToDTO).collect(Collectors.toList());
+        
+        BigDecimal totalBuying = charges.stream()
+                .map(c -> c.getTotalBuyingCharge() != null ? c.getTotalBuyingCharge() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalSelling = charges.stream()
+                .map(c -> c.getTotalSellingCharge() != null ? c.getTotalSellingCharge() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalTax = charges.stream()
+                .map(c -> c.getTaxAmount() != null ? c.getTaxAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal grandTotal = totalSelling.add(totalTax);
+        BigDecimal margin = totalSelling.subtract(totalBuying);
+        
+        return new JobChargesDTO(chargeDTOs, totalBuying, totalSelling, totalTax, grandTotal, margin);
+    }
+
+    @Override
+    public byte[] exportControlSheetToExcel(Long transactionPoid, String freightType, LocalDate fromDate, LocalDate toDate) {
+        throw new UnsupportedOperationException("Excel export not yet implemented");
+    }
+
+    @Override
+    public byte[] exportControlSheetToPdf(Long transactionPoid, String freightType, LocalDate fromDate, LocalDate toDate) {
+        throw new UnsupportedOperationException("PDF export not yet implemented");
+    }
+
+    @Override
+    public void emailControlSheet(Long transactionPoid, String emailAddress, String freightType, LocalDate fromDate, LocalDate toDate) {
+        throw new UnsupportedOperationException("Email functionality not yet implemented");
+    }
+
+    @Override
+    public Long createJobFromUpcoming(Long transactionPoid, Long controlSheetDetRowId) {
+        throw new UnsupportedOperationException("Create job from control sheet not applicable for freight jobs");
+    }
+
+//    private AirPackageDTO mapAirPkgToDTO(FFManifestAirPkgDtl e) {
+//        AirPackageDTO dto = new AirPackageDTO();
+//        dto.setDetRowId(e.getDetRowId());
+//        dto.setNoOfPacks(e.getNoOfPacks());
+//        dto.setPackUnit(e.getPackUnit());
+//        dto.setTotalWeight(e.getTotalWeight());
+//        dto.setTotalVolume(e.getTotalVolume());
+//        dto.setChargeableWeight(e.getChargeableWeight());
+//        dto.setDescription(e.getDescription());
+//        return dto;
+//    }
+//
+//    private ContainerDTO mapContainerToDTO(FFManifestContainerDtl e) {
+//        ContainerDTO dto = new ContainerDTO();
+//        dto.setDetRowId(e.getDetRowId());
+//        dto.setContainerNo(e.getContainerNo());
+//        dto.setContainerSealNo(e.getContainerSealNo());
+//        dto.setContainerIsoCode(e.getContainerIsoCode());
+//        dto.setContainerSize(e.getContainerSize());
+//        dto.setGrossWeight(e.getGrossWeight());
+//        dto.setGrossVolume(e.getGrossVolume());
+//        dto.setNoOfPacks(e.getNoOfPacks());
+//        dto.setPackUnit(e.getPackUnit());
+//        return dto;
+//    }
+//
+//    private BayanDTO mapBayanToDTO(FFManifestBayanDtl e) {
+//        BayanDTO dto = new BayanDTO();
+//        dto.setDetRowId(e.getDetRowId());
+//        dto.setBayanNumber(e.getBayanNumber());
+//        dto.setBayanMode(e.getBayanMode());
+//        dto.setDutyAmount(e.getDutyAmount());
+//        dto.setVatAmount(e.getVatAmount());
+//        dto.setTotalPaidAmount(e.getTotalPaidAmount());
+//        return dto;
+//    }
+//
+//    private TruckCargoDTO mapTruckToDTO(FFManifestTruckDtl e) {
+//        TruckCargoDTO dto = new TruckCargoDTO();
+//        dto.setDetRowId(e.getDetRowId());
+//        dto.setTruckNumber(e.getTruckNumber());
+//        dto.setBayanNumber(e.getBayanNumber());
+//        dto.setBayanCode(e.getBayanCode());
+//        return dto;
+//    }
+
+    private FreightSummaryDTO mapToFreightSummaryDTO(FreightJobSummaryProjection p) {
+        FreightSummaryDTO dto = new FreightSummaryDTO();
+        dto.setJobId(p.getJobId());
+        dto.setJobNo(p.getJobNo());
+        dto.setFreightType(p.getFreightMode());
+        dto.setDescription(p.getDescription());
+        dto.setWeight(p.getWeight());
+        dto.setCbm(p.getCbm());
+        dto.setEta(p.getEtaAta());
+        dto.setJobStatus(p.getJobStatus());
+        return dto;
+    }
+
+    private UpcomingJobDTO mapToUpcomingJobDTO(FreightJobSummaryProjection p) {
+        UpcomingJobDTO dto = new UpcomingJobDTO();
+        dto.setJobId(p.getJobId());
+        dto.setJobNo(p.getJobNo());
+        dto.setFreightType(p.getFreightMode());
+        dto.setLine(p.getLine());
+        dto.setEta(p.getEtaAta());
+        dto.setPol(p.getPol());
+        dto.setPod(p.getPod());
+        dto.setDescription(p.getDescription());
+        dto.setCbm(p.getCbm());
+        dto.setPackages(p.getPackages());
+        dto.setWeight(p.getWeight());
+        dto.setJobStatus(p.getJobStatus());
+        dto.setCanCreateJob(false);
+        return dto;
+    }
+
+    private AirFreightSummaryDTO mapToAirSummaryDTO(AirFreightJobProjection p) {
+        AirFreightSummaryDTO dto = new AirFreightSummaryDTO();
+        dto.setJobId(p.getJobId());
+        dto.setJobNo(p.getJobNo());
+        dto.setMawbNo(p.getMawbNo());
+        dto.setHawbNo(p.getHawbNo());
+        dto.setFlightNo(p.getFlightNo());
+        dto.setEtd(p.getEtd());
+        dto.setEta(p.getEtaAta());
+        dto.setNoOfPackages(p.getNoOfPackages());
+        dto.setWeight(p.getWeight());
+        dto.setCbm(p.getCbm());
+        dto.setDescription(p.getDescription());
+        dto.setJobStatus(p.getJobStatus());
+        dto.setDocumentStatus(p.getDocumentStatus());
+        return dto;
+    }
+
+    private SeaFreightSummaryDTO mapToSeaSummaryDTO(SeaFreightJobProjection p) {
+        SeaFreightSummaryDTO dto = new SeaFreightSummaryDTO();
+        dto.setJobId(p.getJobId());
+        dto.setJobNo(p.getJobNo());
+        dto.setVesselName(p.getVesselName());
+        dto.setPol(p.getPol());
+        dto.setPod(p.getPod());
+        dto.setMasterBlNo(p.getMasterBlNo());
+        dto.setHouseBlNo(p.getHouseBlNo());
+        dto.setEta(p.getEtaAta());
+        dto.setEtd(p.getEtd());
+        dto.setArrivalDate(p.getArrivalDate());
+        dto.setSailDate(p.getSailDate());
+        dto.setWeight(p.getWeight());
+        dto.setCbm(p.getCbm());
+        dto.setDescription(p.getDescription());
+        dto.setJobStatus(p.getJobStatus());
+        dto.setDocumentStatus(p.getDocumentStatus());
+        return dto;
+    }
+
+    private RoadFreightSummaryDTO mapToRoadSummaryDTO(RoadFreightJobProjection p) {
+        RoadFreightSummaryDTO dto = new RoadFreightSummaryDTO();
+        dto.setJobId(p.getJobId());
+        dto.setJobNo(p.getJobNo());
+        dto.setBlAwbNumber(p.getBlAwbNumber());
+        dto.setTransportFrom(p.getTransportFrom());
+        dto.setTransportTo(p.getTransportTo());
+        dto.setEta(p.getEta());
+        dto.setWeight(p.getWeight());
+        dto.setCbm(p.getCbm());
+        dto.setDescription(p.getDescription());
+        dto.setJobStatus(p.getJobStatus());
+        dto.setDocumentStatus(p.getDocumentStatus());
+        return dto;
+    }
+
+    private AirControlSheetDTO mapCtrlSheetToAirDTO(FFProjectsCtrlSheetDtl cs) {
+        AirControlSheetDTO dto = new AirControlSheetDTO();
+        dto.setDetRowId(cs.getDetRowId());
+        dto.setJobId(cs.getJobNoPoid());
+        dto.setEtd(cs.getEtd());
+        dto.setEta(cs.getEtaAta());
+        dto.setArrivalDate(cs.getArrivalDate());
+        dto.setNoOfPackages(cs.getNoOfPackages());
+        dto.setWeight(cs.getWeight());
+        dto.setCbm(cs.getCbm());
+        dto.setDescription(cs.getDescription());
+        return dto;
+    }
+
+    private SeaControlSheetDTO mapCtrlSheetToSeaDTO(FFProjectsCtrlSheetDtl cs) {
+        SeaControlSheetDTO dto = new SeaControlSheetDTO();
+        dto.setDetRowId(cs.getDetRowId());
+        dto.setJobId(cs.getJobNoPoid());
+        dto.setPol(cs.getPol());
+        dto.setPod(cs.getPod());
+        dto.setEtd(cs.getEtd());
+        dto.setEta(cs.getEtaAta());
+        dto.setArrivalDate(cs.getArrivalDate());
+        dto.setSailDate(cs.getSailDate());
+        dto.setWeight(cs.getWeight());
+        dto.setCbm(cs.getCbm());
+        dto.setDescription(cs.getDescription());
+        return dto;
+    }
+
+    private RoadControlSheetDTO mapCtrlSheetToRoadDTO(FFProjectsCtrlSheetDtl cs) {
+        RoadControlSheetDTO dto = new RoadControlSheetDTO();
+        dto.setDetRowId(cs.getDetRowId());
+        dto.setJobId(cs.getJobNoPoid());
+        dto.setTruckNumber(cs.getTruckNumber());
+        dto.setEta(cs.getEtaAta());
+        dto.setWeight(cs.getWeight());
+        dto.setCbm(cs.getCbm());
+        dto.setDescription(cs.getDescription());
+        return dto;
+    }
+
+    private AirPackageDTO mapAirPkgToDTO(FFManifestAirPkgDtl e) {
+        AirPackageDTO dto = new AirPackageDTO();
+        dto.setDetRowId(e.getDetRowId());
+//        dto.setNoOfPacks(e.getNoOfPacks());
+        dto.setPackUnit(e.getPackUnit());
+        dto.setTotalWeight(e.getTotalWeight());
+        dto.setTotalVolume(e.getTotalVolume());
+        dto.setChargeableWeight(e.getChargeableWeight());
+        dto.setDescription(e.getDescription());
+        return dto;
+    }
+
+    private ContainerDTO mapContainerToDTO(FFManifestContainerDtl e) {
+        ContainerDTO dto = new ContainerDTO();
+        dto.setDetRowId(e.getDetRowId());
+        dto.setContainerNo(e.getContainerNo());
+        dto.setContainerSealNo(e.getContainerSealNo());
+        dto.setContainerIsoCode(e.getContainerIsoCode());
+        dto.setContainerSize(e.getContainerSize());
+//        dto.setGrossWeight(e.getGrossWeight());
+//        dto.setGrossVolume(e.getGrossVolume());
+        dto.setNoOfPacks(e.getNoOfPacks());
+        dto.setPackUnit(e.getPackUnit());
+        return dto;
+    }
+
+    private BayanDTO mapBayanToDTO(FFManifestBayanDtl e) {
+        BayanDTO dto = new BayanDTO();
+        dto.setDetRowId(e.getDetRowId());
+        dto.setBayanNumber(e.getBayanNumber());
+        dto.setBayanMode(e.getBayanMode());
+        dto.setDutyAmount(e.getDutyAmount());
+//        dto.setVatAmount(e.getVatAmount());
+        dto.setTotalPaidAmount(e.getTotalPaidAmount());
+        return dto;
+    }
+
+    private TruckCargoDTO mapTruckToDTO(FFManifestTruckDtl e) {
+        TruckCargoDTO dto = new TruckCargoDTO();
+        dto.setDetRowId(e.getDetRowId());
+        dto.setTruckNumber(e.getTruckNumber());
+        dto.setBayanNumber(e.getBayanNumber());
+        dto.setBayanCode(e.getBayanCode());
+        return dto;
+    }
+
+    private ChargeDTO mapChargeToDTO(FFManifestChargesDtl e) {
+        ChargeDTO dto = new ChargeDTO();
+        dto.setDetRowId(e.getDetRowId());
+        dto.setChargePoid(e.getChargePoid() != null ? e.getChargePoid().longValue() : null);
+        dto.setQuantity(e.getQuantity());
+        dto.setBuyingCurrencyCode(e.getCurrencyCode());
+        dto.setCurrencyRate(e.getCurrencyExchange());
+        dto.setBuyingUnitRate(e.getBuyingPercharge());
+        dto.setBuyingTotalBhd(e.getTotalBuyingCharge());
+        dto.setSellingUnitRate(e.getBillingPrecharge());
+        dto.setSellingTotal(e.getTotalSellingCharge());
+        dto.setTaxPoid(e.getTaxPoid() != null ? e.getTaxPoid().longValue() : null);
+        dto.setTaxPercentage(e.getTaxPercentage());
+        dto.setTaxAmount(e.getTaxAmount());
+        dto.setRemarks(e.getRemarks());
+        return dto;
     }
 
     public void updateProjectCharges(List<FFProjectsChargesDetailRequest> charges, Long transactionPoid) {

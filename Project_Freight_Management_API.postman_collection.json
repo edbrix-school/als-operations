@@ -1,0 +1,325 @@
+{
+	"info": {
+		"name": "Project Freight Management API",
+		"description": "API collection for managing freight jobs in projects",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get All Freights Summary",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/summary?freightType=AIR&fromDate=2024-01-01&toDate=2024-12-31",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "summary"],
+					"query": [
+						{
+							"key": "freightType",
+							"value": "AIR",
+							"description": "Filter by freight type (AIR/SEA/ROAD)"
+						},
+						{
+							"key": "fromDate",
+							"value": "2024-01-01",
+							"description": "From date (YYYY-MM-DD)"
+						},
+						{
+							"key": "toDate",
+							"value": "2024-12-31",
+							"description": "To date (YYYY-MM-DD)"
+						}
+					],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Air Freight Jobs",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/air",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "air"],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Air Freight Details",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/air/:jobId",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "air", ":jobId"],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						},
+						{
+							"key": "jobId",
+							"value": "100"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Sea Freight Jobs",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/sea",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "sea"],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Sea Freight Details",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/sea/:jobId",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "sea", ":jobId"],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						},
+						{
+							"key": "jobId",
+							"value": "200"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Road Freight Jobs",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/road",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "road"],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Road Freight Details",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/road/:jobId",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "road", ":jobId"],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						},
+						{
+							"key": "jobId",
+							"value": "300"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Upcoming Jobs",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/upcoming?fromDate=2024-01-01&toDate=2024-12-31",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "upcoming"],
+					"query": [
+						{
+							"key": "fromDate",
+							"value": "2024-01-01"
+						},
+						{
+							"key": "toDate",
+							"value": "2024-12-31"
+						}
+					],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Job Charges",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/jobs/:jobId/charges",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "jobs", ":jobId", "charges"],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						},
+						{
+							"key": "jobId",
+							"value": "100"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Export Control Sheet to Excel",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/export/excel?freightType=AIR&fromDate=2024-01-01&toDate=2024-12-31",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "export", "excel"],
+					"query": [
+						{
+							"key": "freightType",
+							"value": "AIR"
+						},
+						{
+							"key": "fromDate",
+							"value": "2024-01-01"
+						},
+						{
+							"key": "toDate",
+							"value": "2024-12-31"
+						}
+					],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Export Control Sheet to PDF",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/export/pdf?freightType=SEA",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "export", "pdf"],
+					"query": [
+						{
+							"key": "freightType",
+							"value": "SEA"
+						}
+					],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Email Control Sheet",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/v1/projects/:projectId/freights/email?emailAddress=user@example.com&freightType=ROAD&fromDate=2024-01-01&toDate=2024-12-31",
+					"host": ["{{baseUrl}}"],
+					"path": ["v1", "projects", ":projectId", "freights", "email"],
+					"query": [
+						{
+							"key": "emailAddress",
+							"value": "user@example.com"
+						},
+						{
+							"key": "freightType",
+							"value": "ROAD"
+						},
+						{
+							"key": "fromDate",
+							"value": "2024-01-01"
+						},
+						{
+							"key": "toDate",
+							"value": "2024-12-31"
+						}
+					],
+					"variable": [
+						{
+							"key": "projectId",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}

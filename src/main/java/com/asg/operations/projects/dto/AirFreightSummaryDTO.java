@@ -1,0 +1,43 @@
+package com.asg.operations.projects.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class AirFreightSummaryDTO {
+    private Long detRowId;
+    private Long jobId;
+    private String jobNo;
+    private String mawbNo;
+    private String hawbNo;
+    private String flightNo;
+    private String flightNo2;
+    private String origin;
+    private String destination;
+    private String carrier;
+    private LocalDate etd;
+    private LocalDate eta;
+    private LocalDate actualArrivalDate;
+    private Double noOfPackages;
+    private Double weight;
+    private Double cbm;
+    private Double chargeableWeight;
+    private String description;
+    private String jobStatus;
+    private String documentStatus;
+    private String bayanNumber;
+    private String bayanMode;
+    private Double duty;
+    private Double vat;
+    private Double totalPaid;
+    private LocalDate expiryDate;
+    private LocalDate submittedDate;
+    private LocalDate paymentDate;
+    private String detention;
+    private String remarks;
+}
