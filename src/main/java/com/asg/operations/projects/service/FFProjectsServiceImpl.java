@@ -251,9 +251,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         List<FreightJobSummaryProjection> allJobs = freightJobProjectionRepository.findAllFreightJobs(transactionPoid);
         
         List<FreightSummaryDTO> allFreights = allJobs.stream().map(this::mapToFreightSummaryDTO).collect(Collectors.toList());
-        List<AirFreightSummaryDTO> airFreights = getAirFreightsSummary(transactionPoid);
-        List<SeaFreightSummaryDTO> seaFreights = getSeaFreightsSummary(transactionPoid);
-        List<RoadFreightSummaryDTO> roadFreights = getRoadFreightsSummary(transactionPoid);
+        List<AirFreightSummaryDTO> airFreights = getAirFreightsSummary(transactionPoid, null, null);
+        List<SeaFreightSummaryDTO> seaFreights = getSeaFreightsSummary(transactionPoid, null, null);
+        List<RoadFreightSummaryDTO> roadFreights = getRoadFreightsSummary(transactionPoid, null, null);
         List<UpcomingJobDTO> upcomingJobs = getUpcomingJobsList(transactionPoid, null, null);
         
         FreightJobsSummaryDTO.SummaryTotalsDTO totals = new FreightJobsSummaryDTO.SummaryTotalsDTO(
@@ -271,26 +271,237 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AirFreightSummaryDTO> getAirFreightsSummary(Long transactionPoid) {
-        return freightJobProjectionRepository.findAirFreightJobs(transactionPoid).stream()
-                .map(this::mapToAirSummaryDTO)
-                .collect(Collectors.toList());
+    public List<AirFreightSummaryDTO> getAirFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate) {
+        List<AirFreightJobProjection> airJobs = freightJobProjectionRepository.findAirFreightJobsFiltered(transactionPoid, fromDate, toDate);
+        if (airJobs.isEmpty()) return Collections.emptyList();
+
+        List<Long> jobIds = airJobs.stream().map(AirFreightJobProjection::getJobId).collect(Collectors.toList());
+
+        // Batch fetch bayan and air package details
+        Map<Long, List<FFManifestBayanDtl>> bayanMap = bayanRepository.findByTransactionPoidIn(jobIds)
+                .stream().collect(Collectors.groupingBy(FFManifestBayanDtl::getTransactionPoid));
+        Map<Long, List<FFManifestAirPkgDtl>> airPkgMap = airPkgRepository.findByTransactionPoidIn(jobIds)
+                .stream().collect(Collectors.groupingBy(FFManifestAirPkgDtl::getTransactionPoid));
+
+        List<AirFreightSummaryDTO> result = new ArrayList<>();
+        for (AirFreightJobProjection job : airJobs) {
+            Long jobId = job.getJobId();
+            List<FFManifestBayanDtl> bayans = bayanMap.getOrDefault(jobId, Collections.emptyList());
+            List<FFManifestAirPkgDtl> airPkgs = airPkgMap.getOrDefault(jobId, Collections.emptyList());
+            FFManifestBayanDtl firstBayan = bayans.isEmpty() ? null : bayans.get(0);
+
+            if (airPkgs.isEmpty()) {
+                // No air packages - still create one row with header + bayan data
+                result.add(buildAirFreightRow(job, firstBayan, null));
+            } else {
+                // One row per air package
+                for (FFManifestAirPkgDtl pkg : airPkgs) {
+                    result.add(buildAirFreightRow(job, firstBayan, pkg));
+                }
+            }
+        }
+        return result;
+    }
+
+    private AirFreightSummaryDTO buildAirFreightRow(AirFreightJobProjection job, FFManifestBayanDtl bayan, FFManifestAirPkgDtl pkg) {
+        AirFreightSummaryDTO dto = new AirFreightSummaryDTO();
+        // Header fields
+        dto.setJobId(job.getJobId());
+        dto.setJobNo(job.getJobNo());
+        dto.setMawbNo(job.getMawbNo());
+        dto.setHawbNo(job.getHawbNo());
+        dto.setFlightNo(job.getFlightNo());
+        dto.setOrigin(job.getOrigin() != null ? String.valueOf(job.getOrigin()) : null);
+        dto.setDestination(job.getDestination() != null ? String.valueOf(job.getDestination()) : null);
+        dto.setCarrier(job.getCarrierCode() != null ? String.valueOf(job.getCarrierCode()) : null);
+        dto.setEtd(job.getEtd());
+        dto.setEta(job.getEtaAta());
+        dto.setJobStatus(job.getJobStatus());
+        dto.setDocumentStatus(job.getDocumentStatus());
+
+        // Bayan fields
+        if (bayan != null) {
+            dto.setBayanNumber(bayan.getBayanNumber());
+            dto.setBayanMode(bayan.getBayanMode());
+            dto.setDuty(bayan.getDutyAmount() != null ? bayan.getDutyAmount().doubleValue() : null);
+            dto.setVat(bayan.getVatAmount() != null ? bayan.getVatAmount().doubleValue() : null);
+            dto.setTotalPaid(bayan.getTotalPaidAmount() != null ? bayan.getTotalPaidAmount().doubleValue() : null);
+            dto.setExpiryDate(bayan.getExpiryDate() != null ? bayan.getExpiryDate().toLocalDate() : null);
+            dto.setSubmittedDate(bayan.getSubmittedDate() != null ? bayan.getSubmittedDate().toLocalDate() : null);
+            dto.setPaymentDate(bayan.getPaymentDate() != null ? bayan.getPaymentDate().toLocalDate() : null);
+        }
+
+        // Air package fields
+        if (pkg != null) {
+            dto.setNoOfPackages(pkg.getNoOfPacks() != null ? pkg.getNoOfPacks().doubleValue() : null);
+            dto.setWeight(pkg.getTotalWeight() != null ? pkg.getTotalWeight().doubleValue() : null);
+            dto.setCbm(pkg.getTotalVolume() != null ? pkg.getTotalVolume().doubleValue() : null);
+            dto.setChargeableWeight(pkg.getChargeableWeight() != null ? pkg.getChargeableWeight().doubleValue() : null);
+            dto.setDescription(pkg.getDescription());
+            dto.setDetention(pkg.getDetention());
+            dto.setRemarks(pkg.getRemarks());
+            dto.setActualArrivalDate(pkg.getDeliveryDate() != null ? pkg.getDeliveryDate().toLocalDate() : null);
+        } else {
+            // Use header-level totals if no air packages
+            dto.setNoOfPackages(job.getNoOfPackages());
+            dto.setWeight(job.getWeight());
+            dto.setCbm(job.getCbm());
+            dto.setDescription(job.getDescription());
+        }
+
+        return dto;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<SeaFreightSummaryDTO> getSeaFreightsSummary(Long transactionPoid) {
-        return freightJobProjectionRepository.findSeaFreightJobs(transactionPoid).stream()
-                .map(this::mapToSeaSummaryDTO)
-                .collect(Collectors.toList());
+    public List<SeaFreightSummaryDTO> getSeaFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate) {
+        List<SeaFreightJobProjection> seaJobs = freightJobProjectionRepository.findSeaFreightJobsFiltered(transactionPoid, fromDate, toDate);
+        if (seaJobs.isEmpty()) return Collections.emptyList();
+
+        List<Long> jobIds = seaJobs.stream().map(SeaFreightJobProjection::getJobId).collect(Collectors.toList());
+
+        // Batch fetch bayan and container details
+        Map<Long, List<FFManifestBayanDtl>> bayanMap = bayanRepository.findByTransactionPoidIn(jobIds)
+                .stream().collect(Collectors.groupingBy(FFManifestBayanDtl::getTransactionPoid));
+        Map<Long, List<FFManifestContainerDtl>> containerMap = containerRepository.findByTransactionPoidIn(jobIds)
+                .stream().collect(Collectors.groupingBy(FFManifestContainerDtl::getTransactionPoid));
+
+        List<SeaFreightSummaryDTO> result = new ArrayList<>();
+        for (SeaFreightJobProjection job : seaJobs) {
+            Long jobId = job.getJobId();
+            List<FFManifestBayanDtl> bayans = bayanMap.getOrDefault(jobId, Collections.emptyList());
+            List<FFManifestContainerDtl> containers = containerMap.getOrDefault(jobId, Collections.emptyList());
+            FFManifestBayanDtl firstBayan = bayans.isEmpty() ? null : bayans.get(0);
+
+            if (containers.isEmpty()) {
+                // No containers - still create one row with header + bayan data
+                result.add(buildSeaFreightRow(job, firstBayan, null));
+            } else {
+                // One row per container
+                for (FFManifestContainerDtl container : containers) {
+                    result.add(buildSeaFreightRow(job, firstBayan, container));
+                }
+            }
+        }
+        return result;
+    }
+
+    private SeaFreightSummaryDTO buildSeaFreightRow(SeaFreightJobProjection job, FFManifestBayanDtl bayan, FFManifestContainerDtl container) {
+        SeaFreightSummaryDTO dto = new SeaFreightSummaryDTO();
+        // Header fields
+        dto.setJobId(job.getJobId());
+        dto.setJobNo(job.getJobNo());
+        dto.setVesselName(job.getVesselName());
+        dto.setPol(job.getPol());
+        dto.setPod(job.getPod());
+        dto.setMasterBlNo(job.getMasterBlNo());
+        dto.setHouseBlNo(job.getHouseBlNo());
+        dto.setEta(job.getEtaAta());
+        dto.setEtd(job.getEtd());
+        dto.setArrivalDate(job.getArrivalDate());
+        dto.setSailDate(job.getSailDate());
+        dto.setJobStatus(job.getJobStatus());
+        dto.setDocumentStatus(job.getDocumentStatus());
+        dto.setDescription(job.getDescription());
+        dto.setLine(job.getLine() != null ? String.valueOf(job.getLine()) : null);
+
+        // Bayan fields
+        if (bayan != null) {
+            dto.setBayanNumber(bayan.getBayanNumber());
+            dto.setBayanMode(bayan.getBayanMode());
+            dto.setDuty(bayan.getDutyAmount() != null ? bayan.getDutyAmount().doubleValue() : null);
+            dto.setVat(bayan.getVatAmount() != null ? bayan.getVatAmount().doubleValue() : null);
+            dto.setTotalPaid(bayan.getTotalPaidAmount() != null ? bayan.getTotalPaidAmount().doubleValue() : null);
+            dto.setExpiryDate(bayan.getExpiryDate() != null ? bayan.getExpiryDate().toLocalDate() : null);
+            dto.setSubmittedDate(bayan.getSubmittedDate() != null ? bayan.getSubmittedDate().toLocalDate() : null);
+            dto.setPaymentDate(bayan.getPaymentDate() != null ? bayan.getPaymentDate().toLocalDate() : null);
+        }
+
+        // Container fields
+        if (container != null) {
+            dto.setContainerNo(container.getContainerNo());
+            dto.setContainerType(container.getContainerSize());
+            dto.setSealNumber(container.getSealNo());
+            dto.setQtyPackages(container.getNoOfPacks() != null ? container.getNoOfPacks().doubleValue() : null);
+            dto.setWeight(container.getGrsWeight() != null ? container.getGrsWeight().doubleValue() : null);
+            dto.setCbm(container.getGrsVolume() != null ? container.getGrsVolume().doubleValue() : null);
+            dto.setAppointmentDate(container.getCargoCollectionDate() != null ? container.getCargoCollectionDate().toLocalDate() : null);
+            dto.setDeliveryDate(container.getDeliveryDate() != null ? container.getDeliveryDate().toLocalDate() : null);
+            dto.setDetention(container.getDetention());
+            dto.setDocStatus(container.getDocStatus());
+            dto.setRemarks(container.getRemarks());
+        } else {
+            // Use header-level totals
+            dto.setWeight(job.getWeight());
+            dto.setCbm(job.getCbm());
+        }
+
+        return dto;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<RoadFreightSummaryDTO> getRoadFreightsSummary(Long transactionPoid) {
-        return freightJobProjectionRepository.findRoadFreightJobs(transactionPoid).stream()
-                .map(this::mapToRoadSummaryDTO)
-                .collect(Collectors.toList());
+    public List<RoadFreightSummaryDTO> getRoadFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate) {
+        List<RoadFreightJobProjection> roadJobs = freightJobProjectionRepository.findRoadFreightJobsFiltered(transactionPoid, fromDate, toDate);
+        if (roadJobs.isEmpty()) return Collections.emptyList();
+
+        List<Long> jobIds = roadJobs.stream().map(RoadFreightJobProjection::getJobId).collect(Collectors.toList());
+
+        // Batch fetch truck details (truck details already contain bayan data)
+        Map<Long, List<FFManifestTruckDtl>> truckMap = truckRepository.findByTransactionPoidIn(jobIds)
+                .stream().collect(Collectors.groupingBy(FFManifestTruckDtl::getTransactionPoid));
+
+        List<RoadFreightSummaryDTO> result = new ArrayList<>();
+        for (RoadFreightJobProjection job : roadJobs) {
+            Long jobId = job.getJobId();
+            List<FFManifestTruckDtl> trucks = truckMap.getOrDefault(jobId, Collections.emptyList());
+
+            if (trucks.isEmpty()) {
+                // No truck details - still create one row with header data
+                result.add(buildRoadFreightRow(job, null));
+            } else {
+                // One row per truck
+                for (FFManifestTruckDtl truck : trucks) {
+                    result.add(buildRoadFreightRow(job, truck));
+                }
+            }
+        }
+        return result;
+    }
+
+    private RoadFreightSummaryDTO buildRoadFreightRow(RoadFreightJobProjection job, FFManifestTruckDtl truck) {
+        RoadFreightSummaryDTO dto = new RoadFreightSummaryDTO();
+        // Header fields
+        dto.setJobId(job.getJobId());
+        dto.setJobNo(job.getJobNo());
+        dto.setTransportFrom(job.getTransportFrom());
+        dto.setTransportTo(job.getTransportTo());
+        dto.setWeight(job.getWeight());
+        dto.setCbm(job.getCbm());
+        dto.setDescription(job.getDescription());
+        dto.setJobStatus(job.getJobStatus());
+        dto.setDocumentStatus(job.getDocumentStatus());
+        dto.setOrigin(job.getTransportFrom());
+
+        // Truck detail fields (include bayan data from truck entity)
+        if (truck != null) {
+            dto.setBlAwbNumber(truck.getBlAwbNumber());
+            dto.setTruckNumber(truck.getTruckNumber());
+            dto.setBayanNumber(truck.getBayanNumber());
+            dto.setBayanMode(truck.getBayanCode());
+            dto.setEta(truck.getEta() != null ? truck.getEta().toLocalDate() : job.getEta());
+            dto.setDuty(truck.getDutyAmount() != null ? truck.getDutyAmount().doubleValue() : null);
+            dto.setVat(truck.getVatAmount() != null ? truck.getVatAmount().doubleValue() : null);
+            dto.setTotalPaid(truck.getTotalPaidAmount() != null ? truck.getTotalPaidAmount().doubleValue() : null);
+            dto.setExpiryDate(truck.getExpiryDate() != null ? truck.getExpiryDate().toLocalDate() : null);
+            dto.setSubmittedDate(truck.getSubmittedDate() != null ? truck.getSubmittedDate().toLocalDate() : null);
+            dto.setPaymentDate(truck.getPaymentDate() != null ? truck.getPaymentDate().toLocalDate() : null);
+        } else {
+            dto.setBlAwbNumber(job.getBlAwbNumber());
+            dto.setEta(job.getEta());
+        }
+
+        return dto;
     }
 
     @Override
@@ -473,6 +684,14 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setCbm(p.getCbm());
         dto.setEta(p.getEtaAta());
         dto.setJobStatus(p.getJobStatus());
+        dto.setPrincipalPoid(p.getPrincipalPoid());
+        dto.setPackages(p.getPackages());
+        dto.setBlAwbNo(p.getBlAwbNo());
+        dto.setOrigin(p.getOrigin() != null ? String.valueOf(p.getOrigin()) : null);
+        dto.setDestination(p.getDestination() != null ? String.valueOf(p.getDestination()) : null);
+        dto.setPol(p.getPol());
+        dto.setPod(p.getPod());
+        dto.setLine(p.getLine());
         return dto;
     }
 
@@ -491,61 +710,6 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setWeight(p.getWeight());
         dto.setJobStatus(p.getJobStatus());
         dto.setCanCreateJob(false);
-        return dto;
-    }
-
-    private AirFreightSummaryDTO mapToAirSummaryDTO(AirFreightJobProjection p) {
-        AirFreightSummaryDTO dto = new AirFreightSummaryDTO();
-        dto.setJobId(p.getJobId());
-        dto.setJobNo(p.getJobNo());
-        dto.setMawbNo(p.getMawbNo());
-        dto.setHawbNo(p.getHawbNo());
-        dto.setFlightNo(p.getFlightNo());
-        dto.setEtd(p.getEtd());
-        dto.setEta(p.getEtaAta());
-        dto.setNoOfPackages(p.getNoOfPackages());
-        dto.setWeight(p.getWeight());
-        dto.setCbm(p.getCbm());
-        dto.setDescription(p.getDescription());
-        dto.setJobStatus(p.getJobStatus());
-        dto.setDocumentStatus(p.getDocumentStatus());
-        return dto;
-    }
-
-    private SeaFreightSummaryDTO mapToSeaSummaryDTO(SeaFreightJobProjection p) {
-        SeaFreightSummaryDTO dto = new SeaFreightSummaryDTO();
-        dto.setJobId(p.getJobId());
-        dto.setJobNo(p.getJobNo());
-        dto.setVesselName(p.getVesselName());
-        dto.setPol(p.getPol());
-        dto.setPod(p.getPod());
-        dto.setMasterBlNo(p.getMasterBlNo());
-        dto.setHouseBlNo(p.getHouseBlNo());
-        dto.setEta(p.getEtaAta());
-        dto.setEtd(p.getEtd());
-        dto.setArrivalDate(p.getArrivalDate());
-        dto.setSailDate(p.getSailDate());
-        dto.setWeight(p.getWeight());
-        dto.setCbm(p.getCbm());
-        dto.setDescription(p.getDescription());
-        dto.setJobStatus(p.getJobStatus());
-        dto.setDocumentStatus(p.getDocumentStatus());
-        return dto;
-    }
-
-    private RoadFreightSummaryDTO mapToRoadSummaryDTO(RoadFreightJobProjection p) {
-        RoadFreightSummaryDTO dto = new RoadFreightSummaryDTO();
-        dto.setJobId(p.getJobId());
-        dto.setJobNo(p.getJobNo());
-        dto.setBlAwbNumber(p.getBlAwbNumber());
-        dto.setTransportFrom(p.getTransportFrom());
-        dto.setTransportTo(p.getTransportTo());
-        dto.setEta(p.getEta());
-        dto.setWeight(p.getWeight());
-        dto.setCbm(p.getCbm());
-        dto.setDescription(p.getDescription());
-        dto.setJobStatus(p.getJobStatus());
-        dto.setDocumentStatus(p.getDocumentStatus());
         return dto;
     }
 

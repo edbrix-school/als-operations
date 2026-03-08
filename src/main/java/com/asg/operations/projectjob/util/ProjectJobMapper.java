@@ -57,7 +57,7 @@ public class ProjectJobMapper {
         entity.setBayanMode(dto.getBayanMode());
 
         entity.setDutyAmount(dto.getDutyAmount());
-        entity.setVatLength(dto.getVatLength());
+        entity.setVatAmount(dto.getVatAmount());
         entity.setTotalPaidAmount(dto.getTotalPaidAmount());
 
         entity.setExpiryDate(dto.getExpiryDate());
@@ -264,7 +264,7 @@ public class ProjectJobMapper {
         dto.setBayanMode(entity.getBayanMode());
 
         dto.setDutyAmount(entity.getDutyAmount());
-        dto.setVatLength(entity.getVatLength());
+        dto.setVatAmount(entity.getVatAmount());
         dto.setTotalPaidAmount(entity.getTotalPaidAmount());
 
         dto.setExpiryDate(entity.getExpiryDate());
