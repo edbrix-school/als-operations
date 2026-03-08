@@ -10,12 +10,13 @@ public interface FreightJobSummaryProjection {
     LocalDate getEtaAta();
     String getPol();
     String getPod();
-    Long getOrigin();
-    Long getDestination();
+    String getOrigin();
+    String getDestination();
     String getDescription();
     Double getCbm();
     Double getPackages();
     Double getWeight();
     String getJobStatus();
     String getBlAwbNo();
+    Long getPrincipalPoid();
 }

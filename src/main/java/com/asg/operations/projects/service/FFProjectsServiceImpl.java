@@ -311,9 +311,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setMawbNo(job.getMawbNo());
         dto.setHawbNo(job.getHawbNo());
         dto.setFlightNo(job.getFlightNo());
-        dto.setOrigin(job.getOrigin() != null ? String.valueOf(job.getOrigin()) : null);
-        dto.setDestination(job.getDestination() != null ? String.valueOf(job.getDestination()) : null);
-        dto.setCarrier(job.getCarrierCode() != null ? String.valueOf(job.getCarrierCode()) : null);
+        dto.setOrigin(job.getOrigin());
+        dto.setDestination(job.getDestination());
+        dto.setCarrier(job.getCarrierCode());
         dto.setEtd(job.getEtd());
         dto.setEta(job.getEtaAta());
         dto.setJobStatus(job.getJobStatus());
@@ -687,8 +687,8 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setPrincipalPoid(p.getPrincipalPoid());
         dto.setPackages(p.getPackages());
         dto.setBlAwbNo(p.getBlAwbNo());
-        dto.setOrigin(p.getOrigin() != null ? String.valueOf(p.getOrigin()) : null);
-        dto.setDestination(p.getDestination() != null ? String.valueOf(p.getDestination()) : null);
+        dto.setOrigin(p.getOrigin());
+        dto.setDestination(p.getDestination());
         dto.setPol(p.getPol());
         dto.setPod(p.getPod());
         dto.setLine(p.getLine());

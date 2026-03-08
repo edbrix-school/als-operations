@@ -5,14 +5,14 @@ import java.time.LocalDate;
 public interface AirFreightJobProjection {
     Long getJobId();
     String getJobNo();
-    Long getOrigin();
-    Long getDestination();
+    String getOrigin();
+    String getDestination();
     LocalDate getEtd();
     LocalDate getEtaAta();
     Double getNoOfPackages();
     Double getWeight();
     Double getCbm();
-    Long getCarrierCode();
+    String getCarrierCode();
     String getDescription();
     String getJobStatus();
     String getDocumentStatus();
