@@ -17,7 +17,7 @@ import java.util.List;
 public interface FreightJobProjectionRepository extends JpaRepository<FFManifestHdr, Long> {
 
     @Query(value = """
-        SELECT 
+        SELECT
             j.TRANSACTION_POID as jobId,
             j.FF_JOBNO as jobNo,
             j.AWPORT_OF_LOAD as origin,
@@ -36,14 +36,20 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.MASTER_BL_NO as mawbNo
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
-        AND j.FF_JOBTYPE = 'AIR'
+        AND (j.FF_JOBTYPE = 'AIR' OR j.SHIPMENT_MODE = 'AIR FREIGHT')
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
+        AND (:fromDate IS NULL OR CAST(j.FLIGHT_DATE AS DATE) >= :fromDate)
+        AND (:toDate IS NULL OR CAST(j.FLIGHT_DATE AS DATE) <= :toDate)
         ORDER BY j.TRANSACTION_POID
         """, nativeQuery = true)
-    List<AirFreightJobProjection> findAirFreightJobs(@Param("projectId") Long projectId);
+    List<AirFreightJobProjection> findAirFreightJobsFiltered(
+        @Param("projectId") Long projectId,
+        @Param("fromDate") LocalDate fromDate,
+        @Param("toDate") LocalDate toDate
+    );
 
     @Query(value = """
-        SELECT 
+        SELECT
             j.TRANSACTION_POID as jobId,
             j.FF_JOBNO as jobNo,
             j.MOTHER_VSL_LOADPORT_POID as pol,
@@ -63,14 +69,20 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.DOCUMENT_STATUS as documentStatus
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
-        AND j.FF_JOBTYPE = 'SEA'
+        AND (j.FF_JOBTYPE = 'SEA' OR j.SHIPMENT_MODE = 'SEA FREIGHT')
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
+        AND (:fromDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) >= :fromDate)
+        AND (:toDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) <= :toDate)
         ORDER BY j.TRANSACTION_POID
         """, nativeQuery = true)
-    List<SeaFreightJobProjection> findSeaFreightJobs(@Param("projectId") Long projectId);
+    List<SeaFreightJobProjection> findSeaFreightJobsFiltered(
+        @Param("projectId") Long projectId,
+        @Param("fromDate") LocalDate fromDate,
+        @Param("toDate") LocalDate toDate
+    );
 
     @Query(value = """
-        SELECT 
+        SELECT
             j.TRANSACTION_POID as jobId,
             j.FF_JOBNO as jobNo,
             j.MASTER_BL_NO as blAwbNumber,
@@ -84,14 +96,20 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.DOCUMENT_STATUS as documentStatus
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
-        AND j.FF_JOBTYPE = 'ROAD'
+        AND (j.FF_JOBTYPE = 'ROAD' OR j.SHIPMENT_MODE = 'ROAD')
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
+        AND (:fromDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) >= :fromDate)
+        AND (:toDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) <= :toDate)
         ORDER BY j.TRANSACTION_POID
         """, nativeQuery = true)
-    List<RoadFreightJobProjection> findRoadFreightJobs(@Param("projectId") Long projectId);
+    List<RoadFreightJobProjection> findRoadFreightJobsFiltered(
+        @Param("projectId") Long projectId,
+        @Param("fromDate") LocalDate fromDate,
+        @Param("toDate") LocalDate toDate
+    );
 
     @Query(value = """
-        SELECT 
+        SELECT
             j.TRANSACTION_POID as jobId,
             j.FF_JOBNO as jobNo,
             j.FF_JOBTYPE as freightMode,
@@ -106,7 +124,8 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.TOTAL_NO_OF_PACKS as packages,
             j.TOTAL_WEIGHT as weight,
             j.JOB_STATUS as jobStatus,
-            j.MASTER_BL_NO as blAwbNo
+            j.MASTER_BL_NO as blAwbNo,
+            j.PRINCIPAL_POID as principalPoid
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
@@ -115,7 +134,7 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
     List<FreightJobSummaryProjection> findAllFreightJobs(@Param("projectId") Long projectId);
 
     @Query(value = """
-        SELECT 
+        SELECT
             j.TRANSACTION_POID as jobId,
             j.FF_JOBNO as jobNo,
             j.FF_JOBTYPE as freightMode,
@@ -130,7 +149,8 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.TOTAL_NO_OF_PACKS as packages,
             j.TOTAL_WEIGHT as weight,
             j.JOB_STATUS as jobStatus,
-            j.MASTER_BL_NO as blAwbNo
+            j.MASTER_BL_NO as blAwbNo,
+            j.PRINCIPAL_POID as principalPoid
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
@@ -144,7 +164,7 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
     );
 
     @Query(value = """
-        SELECT 
+        SELECT
             j.TRANSACTION_POID as jobId,
             j.FF_JOBNO as jobNo,
             j.FF_JOBTYPE as freightMode,
@@ -159,7 +179,8 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.TOTAL_NO_OF_PACKS as packages,
             j.TOTAL_WEIGHT as weight,
             j.JOB_STATUS as jobStatus,
-            j.MASTER_BL_NO as blAwbNo
+            j.MASTER_BL_NO as blAwbNo,
+            j.PRINCIPAL_POID as principalPoid
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
