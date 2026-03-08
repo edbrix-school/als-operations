@@ -3,17 +3,20 @@ package com.asg.operations.projects.projection;
 import java.time.LocalDate;
 
 public interface FreightJobSummaryProjection {
-    Long getDetRowId();
     Long getJobId();
-    String getPrincipal();
-    String getMode();
+    String getJobNo();
+    String getFreightMode();
+    String getLine();
     LocalDate getEtaAta();
     String getPol();
+    String getPod();
     String getOrigin();
+    String getDestination();
     String getDescription();
-    String getBlAwbNo();
     Double getCbm();
-    String getPackagesContainers();
+    Double getPackages();
     Double getWeight();
     String getJobStatus();
+    String getBlAwbNo();
+    Long getPrincipalPoid();
 }

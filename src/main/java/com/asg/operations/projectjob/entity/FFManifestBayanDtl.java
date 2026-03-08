@@ -44,7 +44,7 @@ public class FFManifestBayanDtl implements BaseDetailEntity {
     private BigDecimal dutyAmount;
 
     @Column(name = "VAT_AMOUNT")
-    private BigDecimal vatLength;
+    private BigDecimal vatAmount;
 
     @Column(name = "TOTAL_PAID_AMOUNT")
     private BigDecimal totalPaidAmount;

@@ -2,10 +2,7 @@ package com.asg.operations.projects.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
-import com.asg.operations.projects.dto.FFProjectsCtrlSheetDetailRequest;
-import com.asg.operations.projects.dto.FFProjectsCtrlSheetDetailResponse;
-import com.asg.operations.projects.dto.FFProjectsRequest;
-import com.asg.operations.projects.dto.FFProjectsResponse;
+import com.asg.operations.projects.dto.*;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
@@ -35,12 +32,68 @@ public interface FFProjectsService {
 
     FFProjectsCtrlSheetDetailResponse createControlSheet(Long transactionPoid, FFProjectsCtrlSheetDetailRequest request);
 
-    // Projection methods for control sheet views
-    List<?> getAirFreightJobs(Long transactionPoid);
+    /**
+     * Get comprehensive freight summary with all freight types
+     */
+    FreightJobsSummaryDTO getAllFreightsSummary(Long transactionPoid, FreightFilterRequest filter);
 
-    List<?> getSeaFreightJobs(Long transactionPoid);
+    /**
+     * Get air freight jobs summary
+     */
+    List<AirFreightSummaryDTO> getAirFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
 
-    List<?> getRoadFreightJobs(Long transactionPoid);
+    /**
+     * Get sea freight jobs summary
+     */
+    List<SeaFreightSummaryDTO> getSeaFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
 
-    List<?> getAllFreightJobs(Long transactionPoid, LocalDate fromDate, LocalDate toDate);
+    /**
+     * Get road freight jobs summary
+     */
+    List<RoadFreightSummaryDTO> getRoadFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
+
+    /**
+     * Get detailed air freight information
+     */
+    AirFreightDetailedDTO getAirFreightDetails(Long projectId, Long jobId);
+
+    /**
+     * Get detailed sea freight information
+     */
+    SeaFreightDetailedDTO getSeaFreightDetails(Long projectId, Long jobId);
+
+    /**
+     * Get detailed road freight information
+     */
+    RoadFreightDetailedDTO getRoadFreightDetails(Long projectId, Long jobId);
+
+    /**
+     * Get upcoming jobs within date range
+     */
+    List<UpcomingJobDTO> getUpcomingJobsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
+
+    /**
+     * Get job charges
+     */
+    JobChargesDTO getJobCharges(Long jobId);
+
+    /**
+     * Export control sheet to Excel
+     */
+    byte[] exportControlSheetToExcel(Long transactionPoid, String freightType, LocalDate fromDate, LocalDate toDate);
+
+    /**
+     * Export control sheet to PDF
+     */
+    byte[] exportControlSheetToPdf(Long transactionPoid, String freightType, LocalDate fromDate, LocalDate toDate);
+
+    /**
+     * Email control sheet
+     */
+    void emailControlSheet(Long transactionPoid, String emailAddress, String freightType, LocalDate fromDate, LocalDate toDate);
+
+    /**
+     * Create job from upcoming control sheet entry
+     */
+    Long createJobFromUpcoming(Long transactionPoid, Long controlSheetDetRowId);
 }

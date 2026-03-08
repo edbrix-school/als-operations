@@ -153,39 +153,4 @@ public class FFProjectsController {
         List<FFProjectsCtrlSheetDetailResponse> response = projectsService.getControlSheetsByProject(transactionPoid, freightType);
         return ApiResponse.success("Control sheets retrieved successfully", response);
     }
-
-    @Operation(summary = "Get Air Freight Jobs", description = "Retrieve air freight jobs for a project")
-    @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/freight-jobs/air")
-    public ResponseEntity<?> getAirFreightJobs(@PathVariable @NotNull Long transactionPoid) {
-        List<?> response = projectsService.getAirFreightJobs(transactionPoid);
-        return ApiResponse.success("Air freight jobs retrieved successfully", response);
-    }
-
-    @Operation(summary = "Get Sea Freight Jobs", description = "Retrieve sea freight jobs for a project")
-    @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/freight-jobs/sea")
-    public ResponseEntity<?> getSeaFreightJobs(@PathVariable @NotNull Long transactionPoid) {
-        List<?> response = projectsService.getSeaFreightJobs(transactionPoid);
-        return ApiResponse.success("Sea freight jobs retrieved successfully", response);
-    }
-
-    @Operation(summary = "Get Road Freight Jobs", description = "Retrieve road freight jobs for a project")
-    @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/freight-jobs/road")
-    public ResponseEntity<?> getRoadFreightJobs(@PathVariable @NotNull Long transactionPoid) {
-        List<?> response = projectsService.getRoadFreightJobs(transactionPoid);
-        return ApiResponse.success("Road freight jobs retrieved successfully", response);
-    }
-
-    @Operation(summary = "Get All Freight Jobs", description = "Retrieve all freight jobs for a project with optional date range")
-    @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/freight-jobs")
-    public ResponseEntity<?> getAllFreightJobs(
-            @PathVariable @NotNull Long transactionPoid,
-            @RequestParam(required = false) LocalDate fromDate,
-            @RequestParam(required = false) LocalDate toDate) {
-        List<?> response = projectsService.getAllFreightJobs(transactionPoid, fromDate, toDate);
-        return ApiResponse.success("All freight jobs retrieved successfully", response);
-    }
 }
