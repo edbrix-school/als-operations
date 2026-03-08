@@ -36,7 +36,7 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.MASTER_BL_NO as mawbNo
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
-        AND (j.FF_JOBTYPE = 'AIR' OR j.SHIPMENT_MODE = 'AIR FREIGHT')
+        AND (j.SHIPMENT_MODE = 'AIR' OR j.SHIPMENT_MODE = 'AIR FREIGHT')
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
         AND (:fromDate IS NULL OR CAST(j.FLIGHT_DATE AS DATE) >= :fromDate)
         AND (:toDate IS NULL OR CAST(j.FLIGHT_DATE AS DATE) <= :toDate)
@@ -69,7 +69,7 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.DOCUMENT_STATUS as documentStatus
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
-        AND (j.FF_JOBTYPE = 'SEA' OR j.SHIPMENT_MODE = 'SEA FREIGHT')
+        AND (j.SHIPMENT_MODE = 'SEA' OR j.SHIPMENT_MODE = 'SEA FREIGHT')
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
         AND (:fromDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) >= :fromDate)
         AND (:toDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) <= :toDate)
@@ -96,7 +96,7 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.DOCUMENT_STATUS as documentStatus
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
-        AND (j.FF_JOBTYPE = 'ROAD' OR j.SHIPMENT_MODE = 'ROAD')
+        AND (j.SHIPMENT_MODE = 'ROAD' OR j.SHIPMENT_MODE = 'ROAD FREIGHT')
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
         AND (:fromDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) >= :fromDate)
         AND (:toDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) <= :toDate)

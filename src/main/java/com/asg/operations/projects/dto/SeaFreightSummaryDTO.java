@@ -34,6 +34,7 @@ public class SeaFreightSummaryDTO {
     private String description;
     private String jobStatus;
     private String documentStatus;
+    // Bayan fields
     private String bayanNumber;
     private String bayanMode;
     private Double duty;
@@ -45,4 +46,14 @@ public class SeaFreightSummaryDTO {
     private String radioActive;
     private String ofoqManifestRef;
     private String remarks;
+    // Container fields
+    private String containerNo;
+    private String containerType;
+    private String sealNumber;
+    private Double qtyPackages;
+    private LocalDate appointmentDate;
+    private LocalDate deliveryDate;
+    private String detention;
+    private String destuffingFull;
+    private String docStatus;
 }

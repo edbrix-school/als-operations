@@ -17,12 +17,14 @@ public class RoadFreightSummaryDTO {
     private String truckNumber;
     private String transportFrom;
     private String transportTo;
+    private String origin;
     private LocalDate eta;
     private Double weight;
     private Double cbm;
     private String description;
     private String jobStatus;
     private String documentStatus;
+    // Bayan/truck detail fields
     private String bayanNumber;
     private String bayanMode;
     private Double duty;

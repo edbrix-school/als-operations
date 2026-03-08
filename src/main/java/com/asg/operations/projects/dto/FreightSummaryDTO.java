@@ -13,6 +13,7 @@ public class FreightSummaryDTO {
     private Long detRowId;
     private Long jobId;
     private String jobNo;
+    private Long principalPoid;
     private String freightType;
     private String description;
     private Double weight;
@@ -34,4 +35,5 @@ public class FreightSummaryDTO {
     private String truckNumber;
     private String transportFrom;
     private String transportTo;
+    private String blAwbNo;
 }

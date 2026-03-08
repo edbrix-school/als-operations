@@ -33,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -237,12 +238,15 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UpcomingJobDTO> getUpcomingJobsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate) {
+    public List<UpcomingJobDTO> getUpcomingJobsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
         LocalDate from = fromDate != null ? fromDate : LocalDate.now();
         LocalDate to = toDate != null ? toDate : from.plusDays(30);
-        return freightJobProjectionRepository.findUpcomingJobs(transactionPoid, from, to).stream()
+        List<UpcomingJobDTO> result = freightJobProjectionRepository.findUpcomingJobs(transactionPoid, from, to).stream()
                 .map(this::mapToUpcomingJobDTO)
                 .collect(Collectors.toList());
+        applySorting(result, sortBy, sortDir);
+        assignDetRowIds(result, UpcomingJobDTO::setDetRowId);
+        return result;
     }
 
     @Override
@@ -251,10 +255,11 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         List<FreightJobSummaryProjection> allJobs = freightJobProjectionRepository.findAllFreightJobs(transactionPoid);
         
         List<FreightSummaryDTO> allFreights = allJobs.stream().map(this::mapToFreightSummaryDTO).collect(Collectors.toList());
-        List<AirFreightSummaryDTO> airFreights = getAirFreightsSummary(transactionPoid, null, null);
-        List<SeaFreightSummaryDTO> seaFreights = getSeaFreightsSummary(transactionPoid, null, null);
-        List<RoadFreightSummaryDTO> roadFreights = getRoadFreightsSummary(transactionPoid, null, null);
-        List<UpcomingJobDTO> upcomingJobs = getUpcomingJobsList(transactionPoid, null, null);
+        assignDetRowIds(allFreights, FreightSummaryDTO::setDetRowId);
+        List<AirFreightSummaryDTO> airFreights = getAirFreightsSummary(transactionPoid, null, null, null, null);
+        List<SeaFreightSummaryDTO> seaFreights = getSeaFreightsSummary(transactionPoid, null, null, null, null);
+        List<RoadFreightSummaryDTO> roadFreights = getRoadFreightsSummary(transactionPoid, null, null, null, null);
+        List<UpcomingJobDTO> upcomingJobs = getUpcomingJobsList(transactionPoid, null, null, null, null);
         
         FreightJobsSummaryDTO.SummaryTotalsDTO totals = new FreightJobsSummaryDTO.SummaryTotalsDTO(
                 allJobs.size(),
@@ -271,7 +276,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AirFreightSummaryDTO> getAirFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate) {
+    public List<AirFreightSummaryDTO> getAirFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
         List<AirFreightJobProjection> airJobs = freightJobProjectionRepository.findAirFreightJobsFiltered(transactionPoid, fromDate, toDate);
         if (airJobs.isEmpty()) return Collections.emptyList();
 
@@ -300,6 +305,8 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 }
             }
         }
+        applySorting(result, sortBy, sortDir);
+        assignDetRowIds(result, AirFreightSummaryDTO::setDetRowId);
         return result;
     }
 
@@ -354,7 +361,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SeaFreightSummaryDTO> getSeaFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate) {
+    public List<SeaFreightSummaryDTO> getSeaFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
         List<SeaFreightJobProjection> seaJobs = freightJobProjectionRepository.findSeaFreightJobsFiltered(transactionPoid, fromDate, toDate);
         if (seaJobs.isEmpty()) return Collections.emptyList();
 
@@ -383,6 +390,8 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 }
             }
         }
+        applySorting(result, sortBy, sortDir);
+        assignDetRowIds(result, SeaFreightSummaryDTO::setDetRowId);
         return result;
     }
 
@@ -441,7 +450,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<RoadFreightSummaryDTO> getRoadFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate) {
+    public List<RoadFreightSummaryDTO> getRoadFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
         List<RoadFreightJobProjection> roadJobs = freightJobProjectionRepository.findRoadFreightJobsFiltered(transactionPoid, fromDate, toDate);
         if (roadJobs.isEmpty()) return Collections.emptyList();
 
@@ -466,6 +475,8 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 }
             }
         }
+        applySorting(result, sortBy, sortDir);
+        assignDetRowIds(result, RoadFreightSummaryDTO::setDetRowId);
         return result;
     }
 
@@ -673,6 +684,48 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 //        dto.setBayanCode(e.getBayanCode());
 //        return dto;
 //    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private <T> List<T> applySorting(List<T> list, String sortBy, String sortDir) {
+        if (sortBy == null || sortBy.isBlank() || list.isEmpty()) return list;
+
+        try {
+            Field field = list.get(0).getClass().getDeclaredField(sortBy);
+            field.setAccessible(true);
+
+            Comparator<T> comparator = (a, b) -> {
+                try {
+                    Object valA = field.get(a);
+                    Object valB = field.get(b);
+                    if (valA == null && valB == null) return 0;
+                    if (valA == null) return 1;
+                    if (valB == null) return -1;
+                    if (valA instanceof Comparable) {
+                        return ((Comparable) valA).compareTo(valB);
+                    }
+                    return valA.toString().compareToIgnoreCase(valB.toString());
+                } catch (IllegalAccessException e) {
+                    return 0;
+                }
+            };
+
+            if ("desc".equalsIgnoreCase(sortDir)) {
+                comparator = comparator.reversed();
+            }
+
+            list.sort(comparator);
+        } catch (NoSuchFieldException e) {
+            log.warn("Invalid sortBy field '{}', returning unsorted results", sortBy);
+        }
+
+        return list;
+    }
+
+    private <T> void assignDetRowIds(List<T> list, java.util.function.BiConsumer<T, Long> setter) {
+        for (int i = 0; i < list.size(); i++) {
+            setter.accept(list.get(i), (long) (i + 1));
+        }
+    }
 
     private FreightSummaryDTO mapToFreightSummaryDTO(FreightJobSummaryProjection p) {
         FreightSummaryDTO dto = new FreightSummaryDTO();

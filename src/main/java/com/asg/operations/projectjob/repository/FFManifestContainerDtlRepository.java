@@ -16,6 +16,8 @@ public interface FFManifestContainerDtlRepository
 
 	List<FFManifestContainerDtl> findByTransactionPoid(Long transactionPoid);
 
+	List<FFManifestContainerDtl> findByTransactionPoidIn(List<Long> transactionPoids);
+
 	@Query("SELECT COALESCE(MAX(d.detRowId), 0) FROM FFManifestContainerDtl d WHERE d.transactionPoid = :transactionPoid")
 	Long getMaxDetRowId(Long transactionPoid);
 

@@ -42,8 +42,13 @@ public class ProjectFreightController {
     @Operation(summary = "Get air freight jobs")
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/air")
-    public ResponseEntity<?> getAirFreights(@PathVariable @NotNull Long projectId) {
-        List<AirFreightSummaryDTO> response = projectsService.getAirFreightsSummary(projectId);
+    public ResponseEntity<?> getAirFreights(
+            @PathVariable @NotNull Long projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDir) {
+        List<AirFreightSummaryDTO> response = projectsService.getAirFreightsSummary(projectId, fromDate, toDate, sortBy, sortDir);
         return ApiResponse.success("Air freight jobs retrieved successfully", response);
     }
 
@@ -60,8 +65,13 @@ public class ProjectFreightController {
     @Operation(summary = "Get sea freight jobs")
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/sea")
-    public ResponseEntity<?> getSeaFreights(@PathVariable @NotNull Long projectId) {
-        List<SeaFreightSummaryDTO> response = projectsService.getSeaFreightsSummary(projectId);
+    public ResponseEntity<?> getSeaFreights(
+            @PathVariable @NotNull Long projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDir) {
+        List<SeaFreightSummaryDTO> response = projectsService.getSeaFreightsSummary(projectId, fromDate, toDate, sortBy, sortDir);
         return ApiResponse.success("Sea freight jobs retrieved successfully", response);
     }
 
@@ -78,8 +88,13 @@ public class ProjectFreightController {
     @Operation(summary = "Get road freight jobs")
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/road")
-    public ResponseEntity<?> getRoadFreights(@PathVariable @NotNull Long projectId) {
-        List<RoadFreightSummaryDTO> response = projectsService.getRoadFreightsSummary(projectId);
+    public ResponseEntity<?> getRoadFreights(
+            @PathVariable @NotNull Long projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDir) {
+        List<RoadFreightSummaryDTO> response = projectsService.getRoadFreightsSummary(projectId, fromDate, toDate, sortBy, sortDir);
         return ApiResponse.success("Road freight jobs retrieved successfully", response);
     }
 
@@ -99,8 +114,10 @@ public class ProjectFreightController {
     public ResponseEntity<?> getUpcomingJobs(
             @PathVariable @NotNull Long projectId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-        List<UpcomingJobDTO> response = projectsService.getUpcomingJobsList(projectId, fromDate, toDate);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDir) {
+        List<UpcomingJobDTO> response = projectsService.getUpcomingJobsList(projectId, fromDate, toDate, sortBy, sortDir);
         return ApiResponse.success("Upcoming jobs retrieved successfully", response);
     }
 

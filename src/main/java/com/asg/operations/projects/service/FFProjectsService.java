@@ -40,17 +40,17 @@ public interface FFProjectsService {
     /**
      * Get air freight jobs summary
      */
-    List<AirFreightSummaryDTO> getAirFreightsSummary(Long transactionPoid);
+    List<AirFreightSummaryDTO> getAirFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
 
     /**
      * Get sea freight jobs summary
      */
-    List<SeaFreightSummaryDTO> getSeaFreightsSummary(Long transactionPoid);
+    List<SeaFreightSummaryDTO> getSeaFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
 
     /**
      * Get road freight jobs summary
      */
-    List<RoadFreightSummaryDTO> getRoadFreightsSummary(Long transactionPoid);
+    List<RoadFreightSummaryDTO> getRoadFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
 
     /**
      * Get detailed air freight information
@@ -70,7 +70,7 @@ public interface FFProjectsService {
     /**
      * Get upcoming jobs within date range
      */
-    List<UpcomingJobDTO> getUpcomingJobsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate);
+    List<UpcomingJobDTO> getUpcomingJobsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
 
     /**
      * Get job charges
