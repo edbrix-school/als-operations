@@ -107,7 +107,9 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         dto.setTaxSlabDet(lovService.getLovItemByCode(principal.getTaxSlab(), "TAX_SLAB",
                 principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
 
-
+        dto.setAddressDet(lovService.getLovItemByPoid(principal.getAddressPoid(), "ADDRESS_MASTER",
+                principal.getGroupPoid(), principal.getCompanyPoid(), UserContext.getUserPoid()));
+        
         List<ShipPrincipalMasterDtl> charges = chargeRepository.findByPrincipalPoidOrderByDetRowIdAsc(id);
         dto.setCharges(mapChargesWithLov(charges));
 
