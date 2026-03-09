@@ -2617,9 +2617,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
-    public String createFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public String createFda(String fdaRef, Long groupPoid, Long companyPoid, Long userPoid) {
         try {
-            logger.info("[SP-FDA] PROC_PDA_DTL_UPDATE_FDA - START - transactionPoid: {}", transactionPoid);
+            logger.info("[SP-FDA] PROC_PDA_DTL_UPDATE_FDA - START - fdaRef: {}", fdaRef);
 
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_DTL_UPDATE_FDA")
@@ -2635,7 +2635,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             inParams.put("P_LOGIN_GROUP_POID", groupPoid);
             inParams.put("P_LOGIN_COMPANY_POID", companyPoid);
             inParams.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
-            inParams.put("P_PDA_POID", transactionPoid.toString());
+            inParams.put("P_PDA_POID", fdaRef);
 
             Map<String, Object> result = jdbcCall.execute(inParams);
             String spResult = (String) result.get("P_RESULT");
