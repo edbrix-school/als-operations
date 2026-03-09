@@ -7,8 +7,8 @@ import lombok.Setter;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Table(
@@ -25,6 +25,7 @@ public class GlobalUser {
     @Id
     @Column(name = "USER_POID", nullable = false)
     private Long userPoid;
+
     @AuditIgnore
     @Column(name = "GROUP_POID", nullable = false)
     private Long groupPoid;
@@ -45,8 +46,7 @@ public class GlobalUser {
     private String userEmail;
 
     @Column(name = "EXPIRY_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date expiryDate;
+    private LocalDate expiryDate;
 
     @Column(name = "USER_LOCKED", length = 1)
     private String userLocked;
@@ -59,15 +59,19 @@ public class GlobalUser {
 
     @Column(name = "SEQNO")
     private Integer seqNo;
+
     @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
+
     @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
+
     @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
+
     @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
@@ -80,6 +84,7 @@ public class GlobalUser {
 
     @Column(name = "DEFAULT_COMPANY_POID")
     private Long defaultCompanyPoid;
+
     @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;

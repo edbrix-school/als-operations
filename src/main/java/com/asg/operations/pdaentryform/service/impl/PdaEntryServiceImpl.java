@@ -7,6 +7,7 @@ import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.dto.FilterDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.utility.DateUtil;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
@@ -1167,7 +1168,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private void mapRequestToEntity(PdaEntryRequest request, PdaEntryHdr entity) {
         // Map all fields from request to entity
-        entity.setTransactionDate(request.getTransactionDate());
+        LocalDate transactionDate = request.getTransactionDate() != null
+                ? request.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
+        entity.setTransactionDate(transactionDate);
         entity.setPrincipalPoid(request.getPrincipalPoid());
         entity.setPrincipalName(request.getPrincipalName());
         entity.setPrincipalContact(request.getPrincipalContact());

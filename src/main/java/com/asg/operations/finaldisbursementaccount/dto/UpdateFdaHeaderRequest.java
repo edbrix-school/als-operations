@@ -14,7 +14,6 @@ import java.util.List;
 @Setter
 public class UpdateFdaHeaderRequest {
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate transactionDate;
 
     @NotNull(message = "Principal is required")

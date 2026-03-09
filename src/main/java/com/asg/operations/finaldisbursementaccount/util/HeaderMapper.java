@@ -106,7 +106,7 @@ public class HeaderMapper {
      * Note: docRef and transactionPoid are handled by backend/triggers
      */
     public static void mapCreateHeaderRequestToEntity(CreateFdaHeaderRequest dto, PdaFdaHdr entity, Long groupPoid, Long companyPoid, String userId) {
-        entity.setTransactionDate(dto.getTransactionDate());
+        // transactionDate is set in service after null/default resolution
         entity.setGroupPoid(groupPoid);
         entity.setCompanyPoid(companyPoid);
         entity.setPrincipalPoid(dto.getPrincipalPoid());
@@ -258,8 +258,7 @@ public class HeaderMapper {
     }
 
     public static void mapUpdateHeaderDtoToEntity(UpdateFdaHeaderRequest dto, PdaFdaHdr entity, String userId) {
-
-        entity.setTransactionDate(dto.getTransactionDate());
+        // transactionDate is set in service after null/default resolution
         entity.setPrincipalPoid(dto.getPrincipalPoid());
         entity.setPortPoid(dto.getPortPoid());
         entity.setOperationType(dto.getOperationType());

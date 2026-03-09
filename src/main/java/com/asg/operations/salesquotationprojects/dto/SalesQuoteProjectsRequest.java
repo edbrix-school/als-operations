@@ -99,6 +99,8 @@ public class SalesQuoteProjectsRequest {
     
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate validityToDate;
+
+    private LocalDate transactionDate;
     
     private Long termsPoid;
     private BigDecimal totalBuyingAmountLc;

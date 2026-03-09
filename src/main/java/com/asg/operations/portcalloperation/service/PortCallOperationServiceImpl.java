@@ -9,6 +9,7 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.utility.DateUtil;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.common.repository.GlobalParameterRepository;
 import com.asg.operations.exceptions.CustomException;
@@ -478,8 +479,11 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         validateFinalMailDetailState(null, dto.getMailDetails(), true);
 
+        LocalDate txnDate = dto.getTransactionDate() != null
+                ? dto.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
         PortCallOperationHdr hdr = PortCallOperationHdr.builder()
-                .transactionDate(LocalDate.now())
+                .transactionDate(txnDate)
                 .groupPoid(groupPoid)
                 .companyPoid(UserContext.getCompanyPoid())
                 .vesselVoyagePoid(dto.getVesselVoyagePoid())
@@ -601,7 +605,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         validateFinalMailDetailState(id, dto.getMailDetails(), false);
 
-        hdr.setTransactionDate(LocalDate.now());
+        LocalDate txnDate = dto.getTransactionDate() != null
+                ? dto.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
+        hdr.setTransactionDate(txnDate);
         hdr.setGroupPoid(groupPoid);
         hdr.setCompanyPoid(UserContext.getCompanyPoid());
         hdr.setVesselVoyagePoid(dto.getVesselVoyagePoid());

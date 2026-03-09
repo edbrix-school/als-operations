@@ -8,6 +8,7 @@ import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.dto.FilterDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.utility.DateUtil;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
@@ -54,12 +55,15 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     @Override
     public PdaRoRoEntryHdrResponseDto createRoRoEntry(PdaRoroEntryHdrRequestDto request) {
         Map<String, Object> voyageDetails = getVoyageDetails(request.getVesselVoyagePoid());
-        
+
+        LocalDate transactionDate = request.getTransactionDate() != null
+                ? request.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
         PdaRoRoEntryHdr entity = PdaRoRoEntryHdr.builder()
                 .vesselVoyagePoid(request.getVesselVoyagePoid())
                 .vesselName((String) voyageDetails.get("VESSEL_NAME"))
                 .voyageNo((String) voyageDetails.get("VOYAGE_NO"))
-                .transactionDate(LocalDate.now())
+                .transactionDate(transactionDate)
                 .deleted("N")
                 .companyPoid(UserContext.getCompanyPoid())
                 .groupPoid(UserContext.getGroupPoid())
@@ -100,10 +104,14 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         BeanUtils.copyProperties(entity, oldEntity);
 
         Map<String, Object> voyageDetails = getVoyageDetails(request.getVesselVoyagePoid());
-        
+
+        LocalDate transactionDate = request.getTransactionDate() != null
+                ? request.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
         entity.setVesselVoyagePoid(request.getVesselVoyagePoid());
         entity.setVesselName((String) voyageDetails.get("VESSEL_NAME"));
         entity.setVoyageNo((String) voyageDetails.get("VOYAGE_NO"));
+        entity.setTransactionDate(transactionDate);
         entity.setRemarks(request.getRemarks());
         entity.setDeleted("N");
         entity = hdrRepository.save(entity);

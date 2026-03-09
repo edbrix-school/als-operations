@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -16,6 +17,8 @@ import java.util.List;
 public class PortCallOperationCreateDto {
     @NotNull(message = "Vessel Voyage Poid is required")
     private Long vesselVoyagePoid;
+
+    private LocalDate transactionDate;
 
     @Size(max = 100)
     private String callSign;
