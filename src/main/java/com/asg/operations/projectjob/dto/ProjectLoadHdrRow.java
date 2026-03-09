@@ -3,6 +3,8 @@ package com.asg.operations.projectjob.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class ProjectLoadHdrRow {
@@ -17,5 +19,5 @@ public class ProjectLoadHdrRow {
     private String shipmentMode;
     private String transportationMode;
     private String projectReference;
-    private String commodity;
+    private List<String> commodityPoids;
 }
