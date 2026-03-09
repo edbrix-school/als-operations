@@ -1346,12 +1346,12 @@ public class PdaEntryController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @AllowedAction(UserRolesRightsEnum.CREATE)
-    @PostMapping("/create-fda")
+    @PostMapping("/{transactionPoid}/create-fda")
     public ResponseEntity<?> createFda(
-            @Parameter(description = "fdaRef", required = true)
-            @RequestParam String fdaRef
+            @Parameter(description = "Transaction POID", required = true)
+            @PathVariable Long transactionPoid
     ) {
-        String result = pdaEntryService.createFda(fdaRef, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        String result = pdaEntryService.createFda(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         Map<String, String> responseData = new HashMap<>();
         responseData.put("result", result);
         return ApiResponse.success("FDA created successfully", responseData);
