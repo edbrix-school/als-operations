@@ -140,15 +140,15 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         log.debug("Creating principal with code: {}", dto.getPrincipalCode());
         Long addressPoid = null;
         if (dto.getAddressPoid() == null) {
-//            if (StringUtils.isBlank(dto.getAddressName())) {
-//                throw new CustomException("Address Name is required for creating new address", 400);
-//            }
-//            boolean addressExists = addressMasterRepository.existsByAddressNameIgnoreCaseAndGroupPoid(dto.getAddressName(), groupPoid);
-//            if (addressExists) {
-//                throw new ResourceAlreadyExistsException("Address Name", dto.getAddressName());
-//            }
+            if (StringUtils.isBlank(dto.getPrincipalName())) {
+                throw new CustomException("Address Name is required for creating new address", 400);
+            }
+            boolean addressExists = addressMasterRepository.existsByAddressNameIgnoreCaseAndGroupPoid(dto.getPrincipalName(), groupPoid);
+            if (addressExists) {
+                throw new ResourceAlreadyExistsException("Address Name", dto.getPrincipalName());
+            }
             AddressMaster newAddressMaster = new AddressMaster();
-            newAddressMaster.setAddressName(dto.getAddressName());
+            newAddressMaster.setAddressName(dto.getPrincipalName());
             newAddressMaster.setGroupPoid(groupPoid);
             newAddressMaster.setSeqno(Long.valueOf(dto.getSeqNo()));
             addressMasterRepository.save(newAddressMaster);
@@ -260,15 +260,15 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         User user = userRepository.findByUserPoid(userPoid).orElseThrow(() -> new ResourceNotFoundException("User", "user poid", userPoid));
         Long addressPoid = null;
         if (dto.getAddressPoid() == null) {
-//            if (StringUtils.isBlank(dto.getAddressName())) {
-//                throw new CustomException("Address Name is required for creating new address", 400);
-//            }
-//            boolean addressExists = addressMasterRepository.existsByAddressNameIgnoreCaseAndGroupPoid(dto.getAddressName(), groupPoid);
-//            if (addressExists) {
-//                throw new ResourceAlreadyExistsException("Address Name", dto.getAddressName());
-//            }
+            if (StringUtils.isBlank(dto.getPrincipalName())) {
+                throw new CustomException("Address Name is required for creating new address", 400);
+            }
+            boolean addressExists = addressMasterRepository.existsByAddressNameIgnoreCaseAndGroupPoid(dto.getPrincipalName(), groupPoid);
+            if (addressExists) {
+                throw new ResourceAlreadyExistsException("Address Name", dto.getPrincipalName());
+            }
             AddressMaster newAddressMaster = new AddressMaster();
-            newAddressMaster.setAddressName(dto.getAddressName());
+            newAddressMaster.setAddressName(dto.getPrincipalName());
             newAddressMaster.setGroupPoid(groupPoid);
             newAddressMaster.setSeqno(Long.valueOf(dto.getSeqNo()));
             addressMasterRepository.save(newAddressMaster);
