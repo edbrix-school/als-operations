@@ -48,6 +48,7 @@ public class ProjectJobStoredProcRepositoryImpl implements ProjectJobStoredProcR
                             row.setProjectCustomerPoid(rs.getLong("PROJECT_CUSTOMER_POID"));
                             row.setPrincipalPoid(rs.getLong("PRINCIPAL_POID"));
                             row.setSalesmanPoid(rs.getLong("SALESMAN_POID"));
+                            row.setLinePoid(rs.getLong("LINE_POID"));
                             row.setShipmentMode(rs.getString("SHIPMENT_MODE"));
                             row.setTransportationMode(rs.getString("TRANSPORTATION_MODE"));
                             row.setProjectReference(rs.getString("PROJECT_REFERENCE"));
