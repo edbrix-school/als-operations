@@ -4,13 +4,14 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 public class FFManifestHdrDto {
 
-    private LocalDateTime transactionDate;
+    private LocalDate transactionDate;
     private Long companyPoid;
 
     private String ffJobNo;
