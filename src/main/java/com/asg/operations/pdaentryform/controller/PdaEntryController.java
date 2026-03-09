@@ -85,12 +85,12 @@ public class PdaEntryController {
     public ResponseEntity<?> getPdaEntryList(
             @RequestBody(required = false) FilterRequestDto filterRequest,
             @ParameterObject Pageable pageable,
-            @RequestParam(required = false) LocalDate periodFrom,
-            @RequestParam(required = false) LocalDate periodTo) {
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
 
 
         try {
-            Map<String, Object> pdaPage = pdaEntryService.getAllPdaWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            Map<String, Object> pdaPage = pdaEntryService.getAllPdaWithFilters(UserContext.getDocumentId(), filterRequest, pageable, startDate, endDate);
             return success("PDA entries retrieved successfully", pdaPage);
         }
         catch (Exception ex){
