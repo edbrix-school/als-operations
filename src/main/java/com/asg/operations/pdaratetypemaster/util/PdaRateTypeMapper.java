@@ -100,6 +100,9 @@ public class PdaRateTypeMapper {
             return;
         }
 
+        if (request.getRateTypeCode() != null) {
+            entity.setRateTypeCode(request.getRateTypeCode().trim().toUpperCase());
+        }
         if (request.getRateTypeName() != null) {
             entity.setRateTypeName(request.getRateTypeName().trim());
         }

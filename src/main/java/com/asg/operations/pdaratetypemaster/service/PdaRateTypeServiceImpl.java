@@ -127,6 +127,19 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         PdaRateTypeMaster oldRateType = new PdaRateTypeMaster();
         BeanUtils.copyProperties(existingRateType, oldRateType);
 
+        String normalizedCode = request.getRateTypeCode() != null
+                ? request.getRateTypeCode().trim().toUpperCase()
+                : null;
+
+        if (normalizedCode != null && !normalizedCode.equals(existingRateType.getRateTypeCode())) {
+            if (normalizedCode.contains(" ")) {
+                throw new ValidationException("Rate type code must not contain spaces");
+            }
+            if (repository.existsByRateTypeCodeAndGroupPoid(normalizedCode, groupPoidBD)) {
+                throw new ValidationException("Rate type code already exists: " + normalizedCode);
+            }
+        }
+
         String normalizedName = request.getRateTypeName() != null
                 ? request.getRateTypeName().trim()
                 : null;
