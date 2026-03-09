@@ -297,7 +297,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project Job", "transactionPoid", transactionPoid));
 
         documentDeleteService.deleteDocument(transactionPoid, "FF_MANIEST_HDR", "TRANSACTION_POID", deleteReasonDto,
-                hdr.getTransactionDate().toLocalDate());
+                hdr.getTransactionDate());
 
     }
 

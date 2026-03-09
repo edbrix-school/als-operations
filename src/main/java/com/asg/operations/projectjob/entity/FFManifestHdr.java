@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,7 +28,7 @@ public class FFManifestHdr {
     @AuditIgnore
     @Column(name = "TRANSACTION_DATE", nullable = false)
     @NotNull
-    private LocalDateTime transactionDate;
+    private LocalDate transactionDate;
 
     @AuditIgnore
     @Column(name = "GROUP_POID")
