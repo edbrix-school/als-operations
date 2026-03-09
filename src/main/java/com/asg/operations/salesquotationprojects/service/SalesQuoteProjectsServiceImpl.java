@@ -6,6 +6,7 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.utility.DateUtil;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.CustomException;
@@ -218,7 +219,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         SalesQuoteProjectsHdr entity = mapToEntity(request);
         entity.setCompanyPoid(UserContext.getCompanyPoid());
         entity.setDeleted("N");
-        entity.setTransactionDate(LocalDate.now());
 
         SalesQuoteProjectsHdr savedEntity = repository.saveAndFlush(entity);
         entityManager.refresh(savedEntity);
@@ -419,7 +419,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         }
 
         updateEntityFromRequest(existingEntity, request);
-        existingEntity.setTransactionDate(LocalDate.now());
 
         SalesQuoteProjectsHdr savedEntity = repository.save(existingEntity);
 
@@ -568,6 +567,10 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         entity.setActionStatus(request.getActionStatus());
         entity.setActionDueDate(request.getActionDueDate());
         entity.setBankAccountPoid(request.getBankAccountPoid());
+        LocalDate transactionDate = request.getTransactionDate() != null
+                ? request.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
+        entity.setTransactionDate(transactionDate);
     }
 
     private SalesQuoteProjectsChargeDetailResponse mapChargeDetailToResponse(SalesQuoteProjectsChargeDtl entity) {
