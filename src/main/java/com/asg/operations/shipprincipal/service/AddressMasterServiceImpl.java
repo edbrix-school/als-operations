@@ -97,12 +97,12 @@ public class AddressMasterServiceImpl implements AddressMasterService {
     public void saveAllDetails(AddressTypeMapDTO typeMap, AddressMaster master, String currentUser) {
         if (typeMap == null) return;
 
-        //  Fetch existing details from DB
         List<AddressDetails> existingDetails = detailsRepo.findByAddressMasterPoidOrderByAddressType(master.getAddressMasterPoid());
         Map<String, AddressDetails> existingMap = existingDetails.stream()
                 .collect(Collectors.toMap(d -> String.valueOf(d.getAddressPoid()), d -> d));
 
         List<AddressDetails> toSave = new ArrayList<>();
+        List<AddressDetails> toDelete = new ArrayList<>();
 
         Map<String, List<AddressDetailsDTO>> typedLists = Map.of(
                 "MAIN", Optional.ofNullable(typeMap.getMAIN()).orElse(List.of()),
@@ -122,17 +122,27 @@ public class AddressMasterServiceImpl implements AddressMasterService {
         for (Map.Entry<String, List<AddressDetailsDTO>> entry : typedLists.entrySet()) {
             String type = entry.getKey();
             for (AddressDetailsDTO dto : entry.getValue()) {
-                AddressDetails detail;
-                if (dto.getAddressPoid() != null && existingMap.containsKey(dto.getAddressPoid())) {
-                    detail = existingMap.get(dto.getAddressPoid());
-                    AddressDetails oldDetail = new AddressDetails();
-                    BeanUtils.copyProperties(detail, oldDetail);
-                    updateDetail(detail, dto, currentUser);
-                    toSave.add(detail);
-                    String logDetail = String.format("KeyId = ADDRESS_MASTER_POID %s: ADDRESS_POID %s", master.getAddressMasterPoid(), detail.getAddressPoid());
-                    loggingService.createLog(oldDetail, detail, AddressDetails.class, UserContext.getDocumentId(), master.getAddressMasterPoid().toString(), logDetail);
-                } else {
-                    detail = buildDetail(dto, master, type, counter++, currentUser);
+                String actionType = dto.getActionType() != null ? dto.getActionType() : "isCreated";
+
+                if ("isDeleted".equalsIgnoreCase(actionType)) {
+                    if (dto.getAddressPoid() != null && existingMap.containsKey(dto.getAddressPoid())) {
+                        AddressDetails detail = existingMap.get(dto.getAddressPoid());
+                        toDelete.add(detail);
+                        String logDetail = String.format("Row Deleted on Address Detail with addressPoid: %s", detail.getAddressPoid());
+                        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), master.getAddressMasterPoid().toString(), logDetail);
+                    }
+                } else if ("isUpdated".equalsIgnoreCase(actionType)) {
+                    if (dto.getAddressPoid() != null && existingMap.containsKey(dto.getAddressPoid())) {
+                        AddressDetails detail = existingMap.get(dto.getAddressPoid());
+                        AddressDetails oldDetail = new AddressDetails();
+                        BeanUtils.copyProperties(detail, oldDetail);
+                        updateDetail(detail, dto, currentUser);
+                        toSave.add(detail);
+                        String logDetail = String.format("KeyId = ADDRESS_MASTER_POID %s: ADDRESS_POID %s", master.getAddressMasterPoid(), detail.getAddressPoid());
+                        loggingService.createLog(oldDetail, detail, AddressDetails.class, UserContext.getDocumentId(), master.getAddressMasterPoid().toString(), logDetail);
+                    }
+                } else if ("isCreated".equalsIgnoreCase(actionType)) {
+                    AddressDetails detail = buildDetail(dto, master, type, counter++, currentUser);
                     toSave.add(detail);
                     String logDetail = String.format("Row Created on Address Detail with addressPoid: %s", detail.getAddressPoid());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), master.getAddressMasterPoid().toString(), logDetail);
@@ -140,9 +150,11 @@ public class AddressMasterServiceImpl implements AddressMasterService {
             }
         }
 
-        //  Save updated and new details
         if (!toSave.isEmpty()) {
             detailsRepo.saveAll(toSave);
+        }
+        if (!toDelete.isEmpty()) {
+            detailsRepo.deleteAll(toDelete);
         }
     }
 

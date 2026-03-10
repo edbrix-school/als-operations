@@ -24,6 +24,9 @@ public class AddressDetailsDTO {
     @Size(max = 20, message = "Address Type must not exceed 20 characters")
     private String addressType;
 
+    @Schema(description = "Action type: isCreated, isUpdated, isDeleted")
+    private String actionType;
+
     @Size(max = 50, message = "Contact Person must not exceed 50 characters")
     private String contactPerson;
 
