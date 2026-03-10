@@ -242,6 +242,7 @@ public class PrincipalMasterMapper {
 
         AddressDetailsDTO dto = new AddressDetailsDTO();
         dto.setAddressPoid(String.valueOf(entity.getAddressPoid()));
+        dto.setWebsite(entity.getWebsite());
         dto.setContactPerson(entity.getContactPerson());
         dto.setDesignation(entity.getDesignation());
         dto.setOffTel1(entity.getOffTel1());

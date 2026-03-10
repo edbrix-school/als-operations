@@ -554,7 +554,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         Map<Long, LovItem> pdfTemplateMap = getLovMap("PDF_TEMPLATE_MST");
         Map<Long, LovItem> emailTemplateMap = getLovMap("EMAIL_TEMPLATE_MST");
         Map<Long, LovItem> userRolesMap = getLovMap("USER_ROLES");
-        Map<String, LovItem> vesselTypeMap = getLovMapByCode("VESSEL_TYPE_MASTER");
+        Map<Long, LovItem> vesselTypeMap = getLovMap("VESSEL_TYPE_MASTER");
 
         return details.stream().map(entity -> {
             ShipPrincipalPaRptDetailResponseDto dto = mapper.mapToPaRptDetailResponseDTO(entity);
@@ -567,7 +567,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             dto.setAssignedToRolePoid(entity.getAssignedToRolePoid());
             dto.setAssignedToRoleDet(userRolesMap.get(entity.getAssignedToRolePoid()));
             dto.setVesselTypePoid(entity.getVesselType() != null ? Long.valueOf(entity.getVesselType()) : null);
-            dto.setVesselTypeDet(vesselTypeMap.get(entity.getVesselType()));
+            dto.setVesselTypeDet(dto.getVesselTypePoid() != null ? vesselTypeMap.get(dto.getVesselTypePoid()) : null);
             dto.setEscalationRole1Poid(entity.getEscalationRole1());
             dto.setEscalationRole1Det(userRolesMap.get(entity.getEscalationRole1()));
             dto.setEscalationRole2Poid(entity.getEscalationRole2());
