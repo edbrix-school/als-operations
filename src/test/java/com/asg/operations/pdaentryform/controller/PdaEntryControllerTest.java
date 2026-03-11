@@ -582,14 +582,14 @@ class PdaEntryControllerTest {
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
 
-            when(pdaEntryService.createFda(transactionPoid, groupPoid, companyPoid, userPoid))
+            when(pdaEntryService.createFdaFromPda(groupPoid, companyPoid, userPoid, transactionPoid.toString()))
                     .thenReturn(fdaResult);
 
             mockMvc.perform(post("/v1/pda-entries/{transactionPoid}/create-fda", transactionPoid)
                     .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
-            verify(pdaEntryService, times(1)).createFda(transactionPoid, groupPoid, companyPoid, userPoid);
+            verify(pdaEntryService, times(1)).createFdaFromPda(groupPoid, companyPoid, userPoid, transactionPoid.toString());
         }
     }
 }
