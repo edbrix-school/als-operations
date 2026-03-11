@@ -106,8 +106,8 @@ class SalesQuoteProjectsServiceImplTest {
         when(chargeDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
         when(notesDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
         when(globalTermsCustomChangesRepository.findByIdDocIdAndIdDocKeyPoidAndIdRefTermsPoid(anyString(), eq(transactionPoid), anyLong())).thenReturn(new ArrayList<>());
-        when(salesQuoteProjectsStoredProcRepository.callNewTempAddressLoadListProc(any(), any(), any(), any(), any()))
-            .thenReturn(new ArrayList<>());
+//        when(salesQuoteProjectsStoredProcRepository.callNewTempAddressLoadListProc(any(), any(), any(), any(), any()))
+//            .thenReturn(new ArrayList<>());
 
         try (MockedStatic<UserContext> userContextMock = mockStatic(UserContext.class)) {
             userContextMock.when(UserContext::getGroupPoid).thenReturn(1L);
