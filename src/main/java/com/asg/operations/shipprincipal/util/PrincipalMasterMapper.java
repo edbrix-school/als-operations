@@ -287,7 +287,9 @@ public class PrincipalMasterMapper {
         dto.setPdfTemplatePoid(entity.getPdfTemplatePoid());
         dto.setEmailTemplatePoid(entity.getEmailTemplatePoid());
         dto.setAssignedToRolePoid(entity.getAssignedToRolePoid());
-        dto.setVesselType(entity.getVesselType());
+        if (entity.getVesselType() != null && !entity.getVesselType().isEmpty()) {
+            dto.setVesselType(java.util.Arrays.asList(entity.getVesselType().split(",")));
+        }
         dto.setResponseTimeHrs(entity.getResponseTimeHrs());
         dto.setFrequenceHrs(entity.getFrequenceHrs());
         dto.setEscalationRole1(entity.getEscalationRole1());
