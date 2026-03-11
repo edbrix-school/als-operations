@@ -207,7 +207,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
         if (dto.getPortActivityReportDetails() != null && !dto.getPortActivityReportDetails().isEmpty()) {
             log.debug("Processing {} port activity report details", dto.getPortActivityReportDetails().size());
-            List<Long> validVesselTypePoids = vesselTypeRepository.findAllActive().stream()
+            List<Long> validVesselTypePoids = vesselTypeRepository.findAll().stream()
                     .map(VesselType::getVesselTypePoid)
                     .toList();
 
@@ -366,7 +366,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
         if (dto.getPortActivityReportDetails() != null) {
             log.debug("Updating {} port activity report details", dto.getPortActivityReportDetails().size());
-            List<Long> validVesselTypePoids = vesselTypeRepository.findAllActive().stream()
+            List<Long> validVesselTypePoids = vesselTypeRepository.findAll().stream()
                     .map(VesselType::getVesselTypePoid)
                     .toList();
 
