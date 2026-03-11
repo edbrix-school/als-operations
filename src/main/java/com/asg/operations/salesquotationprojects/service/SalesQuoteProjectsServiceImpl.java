@@ -108,40 +108,43 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
 
         SalesQuoteProjectsResponse response = mapToResponse(entity);
 
-        // Legacy "reopen" behavior: load temp addresses via PROC_NEW_ADDRESS_LOADLIST and patch addressDetails
-        String tempNewAddressFound = "Existing";
-        try {
-            List<TempNewAddressRow> newTempAddresses = salesQuoteProjectsStoredProcRepository.callNewTempAddressLoadListProc(
-                    UserContext.getGroupPoid(),
-                    UserContext.getCompanyPoid(),
-                    UserContext.getUserPoid(),
-                    UserContext.getDocumentId(),
-                    transactionPoid
-            );
+        if ("new".equalsIgnoreCase(response.getCustomerType())) {
 
-            if (newTempAddresses != null && !newTempAddresses.isEmpty()) {
-                for (TempNewAddressRow row : newTempAddresses) {
-                    if (row != null && row.getDocFieldName() != null && row.getDocFieldName().equalsIgnoreCase(LEGACY_DOC_FIELD_NAME_CUSTOMER_POID)) {
+            // Legacy "reopen" behavior: load temp addresses via PROC_NEW_ADDRESS_LOADLIST and patch addressDetails
+            String tempNewAddressFound = "Existing";
+            try {
+                List<TempNewAddressRow> newTempAddresses = salesQuoteProjectsStoredProcRepository.callNewTempAddressLoadListProc(
+                        UserContext.getGroupPoid(),
+                        UserContext.getCompanyPoid(),
+                        UserContext.getUserPoid(),
+                        UserContext.getDocumentId(),
+                        transactionPoid
+                );
 
-                        response.setCustomerName(row.getAddressName());
-                        response.setCustomerContact(row.getContactPerson());
-                        response.setCustomerEmail(row.getEmail1());
-                        response.setCustomerTelephone(row.getOffTel1());
-                        response.setCustomerMobile(row.getMobile());
-                        response.setCustomerName(row.getAddressName());
+                if (newTempAddresses != null && !newTempAddresses.isEmpty()) {
+                    for (TempNewAddressRow row : newTempAddresses) {
+                        if (row != null && row.getDocFieldName() != null && row.getDocFieldName().equalsIgnoreCase(LEGACY_DOC_FIELD_NAME_CUSTOMER_POID)) {
 
-                        tempNewAddressFound = "New";
-                        break;
+                            response.setCustomerName(row.getAddressName());
+                            response.setCustomerContact(row.getContactPerson());
+                            response.setCustomerEmail(row.getEmail1());
+                            response.setCustomerTelephone(row.getOffTel1());
+                            response.setCustomerMobile(row.getMobile());
+                            response.setCustomerName(row.getAddressName());
+
+                            tempNewAddressFound = "New";
+                            break;
+                        }
                     }
                 }
+            } catch (Exception e) {
+                // Do not fail GET if temp address cannot be loaded; keep existing dto as-is.
+                log.warn("Temp address loadlist failed for transactionPoid={}: {}", transactionPoid, e.getMessage());
             }
-        } catch (Exception e) {
-            // Do not fail GET if temp address cannot be loaded; keep existing dto as-is.
-            log.warn("Temp address loadlist failed for transactionPoid={}: {}", transactionPoid, e.getMessage());
-        }
 
-        // Expose legacy temp-address status in response (New if temp address exists for CustomerPoid)
-        response.setCustomerType(tempNewAddressFound);
+            // Expose legacy temp-address status in response (New if temp address exists for CustomerPoid)
+            response.setCustomerType(tempNewAddressFound);
+        }
 
         log.info("getSalesQuoteProjectById completed for transactionPoid={} companyPoid={}", transactionPoid, UserContext.getCompanyPoid());
         return response;
@@ -151,13 +154,13 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     public SalesQuoteProjectsResponse createSalesQuoteProject(SalesQuoteProjectsRequest request) {
         log.info("Creating sales quote project");
 
-        String contentType = request.getCustomerType().toLowerCase();
+        String customerType = request.getCustomerType().toLowerCase();
         Set<String> allowedTypes = Set.of("existing", "new");
-        if (!allowedTypes.contains(contentType)) {
+        if (!allowedTypes.contains(customerType)) {
             throw new CustomException("Customer Type should be either Existing or New", 400);
         }
 
-        if (request.getCustomerPoid() != null && StringUtils.isNotBlank(contentType) && !"new".equalsIgnoreCase(contentType)) {
+        if (request.getCustomerPoid() != null && StringUtils.isNotBlank(customerType) && !"new".equalsIgnoreCase(customerType)) {
             if (!addressDetailsRepository.existsByAddressPoid(request.getCustomerPoid())) {
                 throw new ResourceNotFoundException("Customer", "Customer Poid", request.getCustomerPoid());
             }
@@ -224,7 +227,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         entityManager.refresh(savedEntity);
 
         // Legacy-compatible: create/update temp address in GLOBAL_NEW_ADDRESS_DETAILS, keyed by DocId+DocKeyPoid+DocFieldName
-        if (StringUtils.isNotBlank(contentType) && "new".equalsIgnoreCase(contentType)) {
+        if (StringUtils.isNotBlank(customerType) && "new".equalsIgnoreCase(customerType)) {
             try {
                 Long generatedNewAddressPoid = System.currentTimeMillis();
 
