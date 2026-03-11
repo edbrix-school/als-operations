@@ -214,9 +214,13 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             long nextDetRowId = paRptDtlRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
             int index = 0;
             for (ShipPrincipalPaRptDetailDto paRptDetail : dto.getPortActivityReportDetails()) {
-                if (paRptDetail.getVesselType() != null && !validVesselTypePoids.contains(Long.parseLong(paRptDetail.getVesselType()))) {
-                    log.error("Invalid vessel type POID: {}", paRptDetail.getVesselType());
-                    throw new ValidationException("Invalid vessel type", List.of(new ValidationError(index, "vesselType", "Invalid vessel type POID: " + paRptDetail.getVesselType())));
+                if (paRptDetail.getVesselType() != null && !paRptDetail.getVesselType().isEmpty()) {
+                    for (String vesselTypeId : paRptDetail.getVesselType()) {
+                        if (!validVesselTypePoids.contains(Long.parseLong(vesselTypeId))) {
+                            log.error("Invalid vessel type POID: {}", vesselTypeId);
+                            throw new ValidationException("Invalid vessel type", List.of(new ValidationError(index, "vesselType", "Invalid vessel type POID: " + vesselTypeId)));
+                        }
+                    }
                 }
                 index++;
 
@@ -227,7 +231,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                 entity.setPdfTemplatePoid(paRptDetail.getPdfTemplatePoid());
                 entity.setEmailTemplatePoid(paRptDetail.getEmailTemplatePoid());
                 entity.setAssignedToRolePoid(paRptDetail.getAssignedToRolePoid());
-                entity.setVesselType(paRptDetail.getVesselType());
+                entity.setVesselType(paRptDetail.getVesselType() != null ? String.join(",", paRptDetail.getVesselType()) : null);
                 entity.setResponseTimeHrs(paRptDetail.getResponseTimeHrs());
                 entity.setFrequenceHrs(paRptDetail.getFrequenceHrs());
                 entity.setEscalationRole1(paRptDetail.getEscalationRole1());
@@ -368,9 +372,13 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
             int index = 0;
             for (ShipPrincipalPaRptDetailDto paRptDetail : dto.getPortActivityReportDetails()) {
-                if (paRptDetail.getVesselType() != null && !validVesselTypePoids.contains(Long.parseLong(paRptDetail.getVesselType()))) {
-                    log.error("Invalid vessel type POID: {}", paRptDetail.getVesselType());
-                    throw new ValidationException("Invalid vessel type", List.of(new ValidationError(index, "vesselType", "Invalid vessel type POID: " + paRptDetail.getVesselType())));
+                if (paRptDetail.getVesselType() != null && !paRptDetail.getVesselType().isEmpty()) {
+                    for (String vesselTypeId : paRptDetail.getVesselType()) {
+                        if (!validVesselTypePoids.contains(Long.parseLong(vesselTypeId))) {
+                            log.error("Invalid vessel type POID: {}", vesselTypeId);
+                            throw new ValidationException("Invalid vessel type", List.of(new ValidationError(index, "vesselType", "Invalid vessel type POID: " + vesselTypeId)));
+                        }
+                    }
                 }
                 index++;
 
@@ -389,7 +397,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                     entity.setPdfTemplatePoid(paRptDetail.getPdfTemplatePoid());
                     entity.setEmailTemplatePoid(paRptDetail.getEmailTemplatePoid());
                     entity.setAssignedToRolePoid(paRptDetail.getAssignedToRolePoid());
-                    entity.setVesselType(paRptDetail.getVesselType());
+                    entity.setVesselType(paRptDetail.getVesselType() != null ? String.join(",", paRptDetail.getVesselType()) : null);
                     entity.setResponseTimeHrs(paRptDetail.getResponseTimeHrs());
                     entity.setFrequenceHrs(paRptDetail.getFrequenceHrs());
                     entity.setEscalationRole1(paRptDetail.getEscalationRole1());
@@ -407,7 +415,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                                 existing.setPdfTemplatePoid(paRptDetail.getPdfTemplatePoid());
                                 existing.setEmailTemplatePoid(paRptDetail.getEmailTemplatePoid());
                                 existing.setAssignedToRolePoid(paRptDetail.getAssignedToRolePoid());
-                                existing.setVesselType(paRptDetail.getVesselType());
+                                existing.setVesselType(paRptDetail.getVesselType() != null ? String.join(",", paRptDetail.getVesselType()) : null);
                                 existing.setResponseTimeHrs(paRptDetail.getResponseTimeHrs());
                                 existing.setFrequenceHrs(paRptDetail.getFrequenceHrs());
                                 existing.setEscalationRole1(paRptDetail.getEscalationRole1());
@@ -566,8 +574,19 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             dto.setEmailTemplateDet(emailTemplateMap.get(entity.getEmailTemplatePoid()));
             dto.setAssignedToRolePoid(entity.getAssignedToRolePoid());
             dto.setAssignedToRoleDet(userRolesMap.get(entity.getAssignedToRolePoid()));
-            dto.setVesselTypePoid(entity.getVesselType() != null ? Long.valueOf(entity.getVesselType()) : null);
-            dto.setVesselTypeDet(dto.getVesselTypePoid() != null ? vesselTypeMap.get(dto.getVesselTypePoid()) : null);
+            
+            if (entity.getVesselType() != null && !entity.getVesselType().isEmpty()) {
+                List<Long> vesselTypePoids = Arrays.stream(entity.getVesselType().split(","))
+                        .map(String::trim)
+                        .map(Long::parseLong)
+                        .toList();
+                dto.setVesselTypePoids(vesselTypePoids);
+                dto.setVesselTypeDets(vesselTypePoids.stream()
+                        .map(vesselTypeMap::get)
+                        .filter(Objects::nonNull)
+                        .toList());
+            }
+            
             dto.setEscalationRole1Poid(entity.getEscalationRole1());
             dto.setEscalationRole1Det(userRolesMap.get(entity.getEscalationRole1()));
             dto.setEscalationRole2Poid(entity.getEscalationRole2());

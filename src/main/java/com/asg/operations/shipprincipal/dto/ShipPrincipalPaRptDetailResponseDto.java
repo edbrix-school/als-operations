@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,11 +42,11 @@ public class ShipPrincipalPaRptDetailResponseDto {
     @Schema(description = "Assigned to role LOV details")
     private LovItem assignedToRoleDet;
     
-    @Schema(description = "Vessel type POID")
-    private Long vesselTypePoid;
+    @Schema(description = "Vessel type POIDs")
+    private List<Long> vesselTypePoids;
     
     @Schema(description = "Vessel type LOV details")
-    private LovItem vesselTypeDet;
+    private List<LovItem> vesselTypeDets;
     
     @Schema(description = "Response time in hours")
     private Long responseTimeHrs;
