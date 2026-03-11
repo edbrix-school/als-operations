@@ -150,10 +150,20 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     entry.setPortPoid((BigDecimal) voyageDetails.get("portPoid"));
                 }
                 if (voyageDetails.get("arrivalDate") != null) {
-                    entry.setArrivalDate(((java.sql.Date) voyageDetails.get("arrivalDate")).toLocalDate());
+                    Object arrivalDateObj = voyageDetails.get("arrivalDate");
+                    if (arrivalDateObj instanceof java.sql.Date) {
+                        entry.setArrivalDate(((java.sql.Date) arrivalDateObj).toLocalDate());
+                    } else if (arrivalDateObj instanceof java.sql.Timestamp) {
+                        entry.setArrivalDate(((java.sql.Timestamp) arrivalDateObj).toLocalDateTime().toLocalDate());
+                    }
                 }
                 if (voyageDetails.get("sailDate") != null) {
-                    entry.setSailDate(((java.sql.Date) voyageDetails.get("sailDate")).toLocalDate());
+                    Object sailDateObj = voyageDetails.get("sailDate");
+                    if (sailDateObj instanceof java.sql.Date) {
+                        entry.setSailDate(((java.sql.Date) sailDateObj).toLocalDate());
+                    } else if (sailDateObj instanceof java.sql.Timestamp) {
+                        entry.setSailDate(((java.sql.Timestamp) sailDateObj).toLocalDateTime().toLocalDate());
+                    }
                 }
                 if (voyageDetails.get("totalQuantity") != null) {
                     entry.setTotalQuantity((BigDecimal) voyageDetails.get("totalQuantity"));
@@ -281,10 +291,20 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     entry.setPortPoid((BigDecimal) voyageDetails.get("portPoid"));
                 }
                 if (voyageDetails.get("arrivalDate") != null) {
-                    entry.setArrivalDate(((java.sql.Date) voyageDetails.get("arrivalDate")).toLocalDate());
+                    Object arrivalDateObj = voyageDetails.get("arrivalDate");
+                    if (arrivalDateObj instanceof java.sql.Date) {
+                        entry.setArrivalDate(((java.sql.Date) arrivalDateObj).toLocalDate());
+                    } else if (arrivalDateObj instanceof java.sql.Timestamp) {
+                        entry.setArrivalDate(((java.sql.Timestamp) arrivalDateObj).toLocalDateTime().toLocalDate());
+                    }
                 }
                 if (voyageDetails.get("sailDate") != null) {
-                    entry.setSailDate(((java.sql.Date) voyageDetails.get("sailDate")).toLocalDate());
+                    Object sailDateObj = voyageDetails.get("sailDate");
+                    if (sailDateObj instanceof java.sql.Date) {
+                        entry.setSailDate(((java.sql.Date) sailDateObj).toLocalDate());
+                    } else if (sailDateObj instanceof java.sql.Timestamp) {
+                        entry.setSailDate(((java.sql.Timestamp) sailDateObj).toLocalDateTime().toLocalDate());
+                    }
                 }
                 if (voyageDetails.get("totalQuantity") != null) {
                     entry.setTotalQuantity((BigDecimal) voyageDetails.get("totalQuantity"));
@@ -723,6 +743,84 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         return callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
     }
 
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public String createFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, String pdaPoid) {
+        try {
+            logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - START - pdaPoid: {}", pdaPoid);
+
+            // Try with schema prefix first
+            String sqlWithSchema = "{ call PRODUCTION.PROC_PDA_FDA_CREATE_FROM_PDA(?, ?, ?, ?, ?) }";
+            
+            try {
+                String result = jdbcTemplate.execute(sqlWithSchema, (java.sql.CallableStatement cs) -> {
+                    cs.setBigDecimal(1, new BigDecimal(groupPoid));
+                    cs.setBigDecimal(2, new BigDecimal(companyPoid));
+                    cs.setBigDecimal(3, new BigDecimal(userPoid));
+                    cs.setString(4, pdaPoid);
+                    cs.registerOutParameter(5, Types.VARCHAR);
+                    cs.execute();
+                    return cs.getString(5);
+                });
+                
+                logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Completed with schema. Status: {}", result);
+                return result != null ? result : "Success";
+                
+            } catch (Exception schemaCallException) {
+                logger.warn("[SP-10] Schema call failed, trying without schema: {}", schemaCallException.getMessage());
+                
+                // Try without schema prefix
+                String sql = "{ call PROC_PDA_FDA_CREATE_FROM_PDA(?, ?, ?, ?, ?) }";
+                
+                try {
+                    String result = jdbcTemplate.execute(sql, (java.sql.CallableStatement cs) -> {
+                        cs.setBigDecimal(1, new BigDecimal(groupPoid));
+                        cs.setBigDecimal(2, new BigDecimal(companyPoid));
+                        cs.setBigDecimal(3, new BigDecimal(userPoid));
+                        cs.setString(4, pdaPoid);
+                        cs.registerOutParameter(5, Types.VARCHAR);
+                        cs.execute();
+                        return cs.getString(5);
+                    });
+                    
+                    logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Completed without schema. Status: {}", result);
+                    return result != null ? result : "Success";
+                    
+                } catch (Exception directCallException) {
+                    logger.warn("[SP-10] Direct call failed, trying SimpleJdbcCall: {}", directCallException.getMessage());
+                    
+                    // Final fallback to SimpleJdbcCall
+                    SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                            .withSchemaName("PRODUCTION")
+                            .withProcedureName("PROC_PDA_FDA_CREATE_FROM_PDA")
+                            .withoutProcedureColumnMetaDataAccess()
+                            .declareParameters(
+                                    new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                                    new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                                    new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                                    new SqlParameter("P_PDA_POID", Types.VARCHAR),
+                                    new SqlOutParameter("P_RESULT", Types.VARCHAR)
+                            );
+
+                    Map<String, Object> inputMap = new HashMap<>();
+                    inputMap.put("P_LOGIN_GROUP_POID", new BigDecimal(groupPoid));
+                    inputMap.put("P_LOGIN_COMPANY_POID", new BigDecimal(companyPoid));
+                    inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+                    inputMap.put("P_PDA_POID", pdaPoid);
+
+                    Map<String, Object> result = jdbcCall.execute(inputMap);
+                    String status = (String) result.get("P_RESULT");
+
+                    logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Completed via SimpleJdbcCall. Status: {}", status);
+                    return status != null ? status : "Success";
+                }
+            }
+
+        } catch (Exception e) {
+            logger.error("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
+        }
+    }
+
     public void updateFdaFromPda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
         callUpdateFdaFromPda(groupPoid, companyPoid, userPoid, transactionPoid);
     }
@@ -1112,6 +1210,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             errors.add(new ValidationError("refType", "Ref type is mandatory"));
         }
 
+        // Validate subCategory (Category) is mandatory
+        if (request.getSubCategory() == null || request.getSubCategory().trim().isEmpty()) {
+            errors.add(new ValidationError("subCategory", "Category is mandatory"));
+        }
+
         // Validate required fields for GENERAL ref type
         if ("GENERAL".equals(request.getRefType())) {
             if (request.getPrincipalPoid() == null) {
@@ -1130,10 +1233,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 errors.add(new ValidationError("vesselPoid", "Vessel is mandatory for GENERAL ref type"));
             }
             if (request.getArrivalDate() == null) {
-                errors.add(new ValidationError("arrivalDate", "Arrival date is mandatory for GENERAL ref type"));
+                errors.add(new ValidationError("arrivalDate", "ETA (Arrival date) is mandatory for GENERAL ref type"));
             }
             if (request.getSailDate() == null) {
-                errors.add(new ValidationError("sailDate", "Sail date is mandatory for GENERAL ref type"));
+                errors.add(new ValidationError("sailDate", "ETD (Sail date) is mandatory for GENERAL ref type"));
+            }
+            // Validate customer/nominated party for GENERAL ref type
+            if (request.getNominatedPartyPoid() == null) {
+                errors.add(new ValidationError("nominatedPartyPoid", "Customer is mandatory for GENERAL ref type"));
             }
         }
 
@@ -2621,7 +2728,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
-    public String createFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public String updateFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
         try {
             logger.info("[SP-FDA] PROC_PDA_DTL_UPDATE_FDA - START - transactionPoid: {}", transactionPoid);
 
@@ -2651,11 +2758,12 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             logger.error("[SP-FDA] PROC_PDA_DTL_UPDATE_FDA - ERROR: {}", e.getMessage(), e);
             throw new ValidationException(
                     "FDA creation failed",
-                    List.of(new ValidationError("general", "Error creating FDA: " + e.getMessage()))
+                    List.of(new ValidationError("general", "Error updating FDA: " + e.getMessage()))
             );
         }
     }
 
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public String callUpdateFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
         try {
             logger.info("[SP-8] PROC_PDA_DTL_UPDATE_FDA - transactionPoid: {}", transactionPoid);
@@ -2691,6 +2799,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public String callSubmitPdaToFda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
         try {
             logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - transactionPoid: {}", transactionPoid);

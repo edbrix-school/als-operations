@@ -139,7 +139,12 @@ public interface PdaEntryService {
     /**
      * Create FDA from PDA entry
      */
-    String createFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    String updateFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
+     * Create FDA from PDA
+     */
+    String createFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, String pdaPoid);
 
     /**
      * Upload acknowledgment details

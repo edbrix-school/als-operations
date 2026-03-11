@@ -1318,8 +1318,8 @@ public class PdaEntryController {
     @Operation(
             summary = "Create FDA from PDA",
             description = "Creates an FDA (Freight Disbursement Account) from a PDA entry. " +
-                    "Calls PROC_PDA_DTL_UPDATE_FDA stored procedure to create FDA in database. " +
-                    "Returns FDA_POID which can be used to redirect to FDA screen. " +
+                    "Calls PROC_PDA_FDA_CREATE_FROM_PDA stored procedure to create FDA in database. " +
+                    "Returns FDA creation result message. " +
                     "Entry must be in editable state.",
             responses = {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -1347,14 +1347,59 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping("/{transactionPoid}/create-fda")
-    public ResponseEntity<?> createFda(
+    public ResponseEntity<?> createFdaFromPda(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
-        String result = pdaEntryService.createFda(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        String result = pdaEntryService.createFdaFromPda(
+                UserContext.getGroupPoid(), 
+                UserContext.getCompanyPoid(), 
+                UserContext.getUserPoid(), 
+                transactionPoid.toString()
+        );
+        return ApiResponse.success("FDA creation completed", Map.of("result", result));
+    }
+
+    @Operation(
+            summary = "Update FDA from PDA",
+            description = "Updates an existing FDA from a PDA entry. " +
+                    "Calls PROC_PDA_DTL_UPDATE_FDA stored procedure to update FDA in database. " +
+                    "Returns FDA_POID which can be used to redirect to FDA screen. " +
+                    "Entry must be in editable state.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully updated FDA",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "FDA update failed",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "PDA entry not found",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.CREATE)
+    @PostMapping("/{transactionPoid}/update-fda")
+    public ResponseEntity<?> updateFda(
+            @Parameter(description = "Transaction POID", required = true)
+            @PathVariable Long transactionPoid
+    ) {
+        String result = pdaEntryService.updateFda(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         Map<String, String> responseData = new HashMap<>();
         responseData.put("result", result);
-        return ApiResponse.success("FDA created successfully", responseData);
+        return ApiResponse.success("FDA Updated successfully", responseData);
     }
 
     // ==================== FDA Document Operations ====================
