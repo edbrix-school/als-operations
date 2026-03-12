@@ -96,8 +96,7 @@ public class CreateFdaHeaderRequest {
     @Size(max = 2000, message = "Remarks cannot exceed 2000 characters")
     private String remarks;
 
-    @Size(max = 100, message = "PDA Reference cannot exceed 100 characters")
-    private String pdaRef;
+    private Long pdaRef;
 
     private Long addressPoid;
 

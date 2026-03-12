@@ -123,7 +123,7 @@ public class ValidationUtils {
 
         if (StringUtils.isNotBlank(dto.getFdaSubType()) && !"MAIN_FDA".equalsIgnoreCase(dto.getFdaSubType())) {
 
-            if (StringUtils.isBlank(dto.getPdaRef())) {
+            if (dto.getPdaRef() == null) {
                 throw new CustomException("PDA Reference is required when FDA Sub Type is not 'MAIN_FDA'. Supplementary FDAs must reference an existing MAIN_FDA.", 400);
             }
 
@@ -141,7 +141,7 @@ public class ValidationUtils {
                 throw new CustomException("Maximum limit reached for PDA Reference '" + dto.getPdaRef() + "'. Only 3 FDAs are allowed per PDA Reference (1 MAIN_FDA + 2 supplementary).", 400);
             }
 
-        } else if ("MAIN_FDA".equalsIgnoreCase(dto.getFdaSubType()) && StringUtils.isNotBlank(dto.getPdaRef())) {
+        } else if ("MAIN_FDA".equalsIgnoreCase(dto.getFdaSubType()) && dto.getPdaRef() != null) {
             // If creating MAIN_FDA, validate that no MAIN_FDA already exists for this PDA_REF
             boolean mainFdaExists = pdaFdaHdrRepository.existsMainFdaByPdaRef(dto.getPdaRef());
             if (mainFdaExists) {
@@ -173,7 +173,7 @@ public class ValidationUtils {
         if (StringUtils.isNotBlank(dto.getFdaSubType()) && existingEntity != null) {
             String oldFdaSubType = existingEntity.getFdaSubType();
             String newFdaSubType = dto.getFdaSubType();
-            String pdaRef = existingEntity.getPdaRef();
+            Long pdaRef = existingEntity.getPdaRef();
 
             // Prevent changing from MAIN_FDA to non-MAIN_FDA (would break DOC_REF relationship)
             if ("MAIN_FDA".equalsIgnoreCase(oldFdaSubType) && !"MAIN_FDA".equalsIgnoreCase(newFdaSubType)) {
@@ -182,7 +182,7 @@ public class ValidationUtils {
 
             // If changing to MAIN_FDA, validate no other MAIN_FDA exists for this PDA_REF
             if (!"MAIN_FDA".equalsIgnoreCase(oldFdaSubType) && "MAIN_FDA".equalsIgnoreCase(newFdaSubType)) {
-                if (StringUtils.isNotBlank(pdaRef) && pdaFdaHdrRepository.existsMainFdaByPdaRef(pdaRef)) {
+                if (pdaRef != null && pdaFdaHdrRepository.existsMainFdaByPdaRef(pdaRef)) {
                     throw new CustomException("Cannot change FDA Sub Type to 'MAIN_FDA'. A MAIN_FDA already exists for PDA Reference '" + pdaRef + "'.", 400);
                 }
             }

@@ -91,8 +91,7 @@ public class FdaHeaderDto {
     private LocalDateTime lastModifiedDate;
     @Size(max = 1, message = "Deleted cannot exceed 1 character")
     private String deleted;
-    @Size(max = 100, message = "PDA Reference cannot exceed 100 characters")
-    private String pdaRef;
+    private Long pdaRef;
     private LovItem pdaRefDet;
     private Long addressPoid;
     private LovItem addressDet;

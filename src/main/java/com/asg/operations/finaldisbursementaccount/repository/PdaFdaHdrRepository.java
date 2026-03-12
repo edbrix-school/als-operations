@@ -46,7 +46,7 @@ public interface PdaFdaHdrRepository extends JpaRepository<PdaFdaHdr, Long> {
 
     Optional<PdaFdaHdr> findByTransactionPoidAndGroupPoidAndCompanyPoidAndDeleted(Long transactionPoid, Long groupPoid, Long companyPoid, String deleted);
 
-    List<PdaFdaHdr> findByPdaRefAndGroupPoidAndCompanyPoidAndDeleted(String pdaRef, Long groupPoid, Long companyPoid, String deleted);
+    List<PdaFdaHdr> findByPdaRefAndGroupPoidAndCompanyPoidAndDeleted(Long pdaRef, Long groupPoid, Long companyPoid, String deleted);
 
     boolean existsByTransactionPoid(Long transactionPoid);
 
@@ -57,7 +57,7 @@ public interface PdaFdaHdrRepository extends JpaRepository<PdaFdaHdr, Long> {
               AND h.fdaSubType = 'MAIN_FDA'
               AND (h.deleted IS NULL OR h.deleted = 'N')
             """)
-    boolean existsMainFdaByPdaRef(@Param("pdaRef") String pdaRef);
+    boolean existsMainFdaByPdaRef(@Param("pdaRef") Long pdaRef);
 
     @Query("""
             SELECT COUNT(h)
@@ -65,5 +65,5 @@ public interface PdaFdaHdrRepository extends JpaRepository<PdaFdaHdr, Long> {
             WHERE h.pdaRef = :pdaRef
               AND (h.deleted IS NULL OR h.deleted = 'N')
             """)
-    long countExistingFdasByPdaRef(@Param("pdaRef") String pdaRef);
+    long countExistingFdasByPdaRef(@Param("pdaRef") Long pdaRef);
 }
