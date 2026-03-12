@@ -1910,14 +1910,17 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames) {
         log.info("Updating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}, preActivityDtlPoid: {}", transactionPoid, detRowId, preActivityDtlPoid);
 
-        List<PortCallOperationEstPrearrivalActDtl> existingEntities = estPrearrivalActDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
-        if (existingEntities.isEmpty()) {
-            throw new ResourceNotFoundException("EstPrearrivalActDetail", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId));
+        // Parent row is PortCallOperationEstPrearrivalDtl (edit opens from its table); ActDtl children may not exist yet.
+        if (!estPrearrivalDtlRepository.existsById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))) {
+            throw new ResourceNotFoundException("EstPrearrivalDtl", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId));
         }
 
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
+
+        // Existing activity rows for this prearrival detail (may be empty when first saving activities from the popup)
+        List<PortCallOperationEstPrearrivalActDtl> existingEntities = estPrearrivalActDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
 
         PortCallOperationEstPrearrivalActDtl oldEntity = new PortCallOperationEstPrearrivalActDtl();
         if (!existingEntities.isEmpty()) {
@@ -2298,14 +2301,20 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames) {
         log.info("Updating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}, actualsTimingDtlPoid: {}", transactionPoid, detRowId, actualsTimingDtlPoid);
 
-        List<PortCallOperationActTimingsActvtyDtl> existingEntities = actTimingsActvtyDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
-        if (existingEntities.isEmpty()) {
-            throw new ResourceNotFoundException("ActTimingsActvtyDetail", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId));
-        }
-
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
         }
+
+        // Parent row is PortCallOperationActTimingDtl (edit opens from its table); ActvtyDtl children may not exist yet.
+        if (dto.getPortCallReportPoid() == null) {
+            throw new ValidationException("portCallReportPoid is required to update act timing activities");
+        }
+        if (!actTimingDtlRepository.existsById(new PortCallOperationActTimingDtlId(transactionPoid, detRowId, dto.getPortCallReportPoid()))) {
+            throw new ResourceNotFoundException("ActTimingDtl", "Transaction Poid, Det Row Id and Port Report Poid", String.format("%s, %s, %s", transactionPoid, detRowId, dto.getPortCallReportPoid()));
+        }
+
+        // Existing activity rows for this act-timing detail (may be empty when first saving activities from the popup)
+        List<PortCallOperationActTimingsActvtyDtl> existingEntities = actTimingsActvtyDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
 
         if (dto.getEmailPoid() != null && !docsMsgsDtl1Repository.existsByEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
