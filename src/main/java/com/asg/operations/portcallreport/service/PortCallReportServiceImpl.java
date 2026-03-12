@@ -224,7 +224,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                 }
             }
         }
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), hdr.getPortCallReportId());
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), hdr.getPortCallReportPoid().toString());
         return getReportById(hdr.getPortCallReportPoid());
     }
 
