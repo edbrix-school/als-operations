@@ -52,8 +52,6 @@ public interface FdaService {
 
     List<PdaLogResponse> getPdaLogs(Long transactionPoid, Long groupPoid, Long companyPoid);
 
-//    Resource generateFdaReport(Long transactionPoid, String reportType, Long companyId, Long userId, Long groupId);
-
     Map<String, Object> getAllFdaWithFilters(String documentId, FilterRequestDto filters, Pageable pageable, LocalDate periodFrom, LocalDate periodTo);
 
     byte[] printFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String currency) throws Exception;

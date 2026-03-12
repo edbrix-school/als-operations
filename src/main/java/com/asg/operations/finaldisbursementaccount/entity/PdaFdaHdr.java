@@ -133,8 +133,8 @@ public class PdaFdaHdr extends BaseEntity {
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
-    @Column(name = "PDA_REF", length = 100)
-    private String pdaRef;
+    @Column(name = "PDA_REF")
+    private Long pdaRef;
 
     @Column(name = "ADDRESS_POID")
     private Long addressPoid;

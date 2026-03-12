@@ -466,16 +466,14 @@ public class FdaServiceImpl implements FdaService {
     @Transactional(readOnly = true)
     public List<PdaLogResponse> getPdaLogs(Long transactionPoid, Long groupPoid, Long companyPoid) {
 
-        Optional<PdaFdaHdr> fdaHdrOptional = pdaFdaHdrRepository
-                .findByTransactionPoidAndGroupPoidAndCompanyPoidAndDeleted(transactionPoid, groupPoid, companyPoid, "N");
+        Optional<PdaFdaHdr> fdaHdrOptional = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoidAndDeleted(transactionPoid, groupPoid, companyPoid, "N");
 
         if (fdaHdrOptional.isEmpty()) {
             return List.of();
         }
         PdaFdaHdr fdaHeader = fdaHdrOptional.get();
 
-        List<PdaFdaHdr> logs = pdaFdaHdrRepository
-                .findByPdaRefAndGroupPoidAndCompanyPoidAndDeleted(fdaHeader.getPdaRef(), groupPoid, companyPoid, "N");
+        List<PdaFdaHdr> logs = pdaFdaHdrRepository.findByPdaRefAndGroupPoidAndCompanyPoidAndDeleted(fdaHeader.getPdaRef(), groupPoid, companyPoid, "N");
 
         if (logs.isEmpty()) {
             return List.of();
@@ -484,7 +482,7 @@ public class FdaServiceImpl implements FdaService {
         List<Long> pdaTransactionIds = logs.stream()
                 .map(fda -> {
                     try {
-                        return Long.valueOf(fda.getPdaRef());
+                        return fda.getPdaRef();
                     } catch (NumberFormatException e) {
                         return null;
                     }
@@ -499,14 +497,14 @@ public class FdaServiceImpl implements FdaService {
         return logs.stream().map(fda -> {
             PdaLogResponse response = new PdaLogResponse();
 
-            PdaEntryHdr pda = pdaMap.get(fda.getPdaRef());
+            PdaEntryHdr pda = pdaMap.get(String.valueOf(fda.getPdaRef()));
             if (pda != null) {
                 response.setPdaTransactionPoid(pda.getTransactionPoid());
                 response.setPdaDocRef(pda.getDocRef());
                 response.setPdaTransactionDate(pda.getTransactionDate());
             } else {
-                response.setPdaTransactionPoid(null);
-                response.setPdaDocRef(fda.getPdaRef());
+                response.setPdaTransactionPoid(fda.getPdaRef());
+                response.setPdaDocRef(null);
                 response.setPdaTransactionDate(null);
             }
 
@@ -551,7 +549,7 @@ public class FdaServiceImpl implements FdaService {
         fdaHeaderDto.setNominatedPartyTypeDet(lovService.getLovItemByCode(fdaHeaderDto.getNominatedPartyType(), "PDA_NOMINATED_PARTY_TYPE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         fdaHeaderDto.setOperationTypeDet(lovService.getLovItemByCode(fdaHeaderDto.getOperationType(), "PDA_OPERATION_TYPES", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         fdaHeaderDto.setUnitDet(lovService.getLovItemByCode(fdaHeaderDto.getUnit(), "UNIT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-        fdaHeaderDto.setPdaRefDet(lovService.getLovItemByCode(fdaHeaderDto.getPdaRef(), "PROCESS_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        fdaHeaderDto.setPdaRefDet(lovService.getLovItemByPoid(fdaHeaderDto.getPdaRef(), "PROCESS_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         if (StringUtils.isNotBlank(fdaHeaderDto.getNominatedPartyType()) && "CUSTOMER".equalsIgnoreCase(fdaHeaderDto.getNominatedPartyType())) {
             fdaHeaderDto.setNominatedPartyDet(lovService.getLovItemByPoid(fdaHeaderDto.getNominatedPartyPoid(), "PDA_NOMINATED_PARTY_CUSTOMER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         }
