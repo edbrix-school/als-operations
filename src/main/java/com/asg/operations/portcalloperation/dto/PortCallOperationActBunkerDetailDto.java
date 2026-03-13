@@ -19,7 +19,7 @@ public class PortCallOperationActBunkerDetailDto {
     private Long transactionPoid;
     private Long detRowId;
 
-    @Size(max = 100)
+    @Size(max = 100, message = "Bunker Grade should not exceed 100 characters")
     private String grade;
 
     private BigDecimal nominatedQtyMt;

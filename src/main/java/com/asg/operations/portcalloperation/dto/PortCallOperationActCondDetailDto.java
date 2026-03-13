@@ -1,6 +1,8 @@
 package com.asg.operations.portcalloperation.dto;
 
 import com.asg.operations.portcallreport.enums.ActionType;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,11 +21,14 @@ public class PortCallOperationActCondDetailDto {
     private Long transactionPoid;
     private Long detRowId;
 
-    @Size(max = 100)
+    @NotBlank(message = "Condition Type is required")
+    @Size(max = 100, message = "Condition Type should not exceed 100 characters")
     private String conditionType;
 
+    @NotNull(message = "Draft Forward is required")
     private BigDecimal draftForward;
     private BigDecimal draftMid;
+    @NotNull(message = "Draft Aft is required")
     private BigDecimal draftAft;
     private BigDecimal fuelOil;
     private BigDecimal dieselOil;
