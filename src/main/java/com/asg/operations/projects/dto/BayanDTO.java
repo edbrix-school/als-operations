@@ -11,6 +11,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BayanDTO {
+    private Long jobId;
+    private String jobNo;
     private Long detRowId;
     private String blAwbNumber;
     private String bayanNumber;
