@@ -38,6 +38,16 @@ public interface FFProjectsService {
     FreightJobsSummaryDTO getAllFreightsSummary(Long transactionPoid, FreightFilterRequest filter);
 
     /**
+     * Get all freights list from control sheet
+     */
+    List<FreightSummaryDTO> getAllFreights(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
+
+    /**
+     * Get job status/pending bills rows
+     */
+    List<JobStatusPendingBillDTO> getJobStatusPendingBills(Long transactionPoid, String viewBy, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
+
+    /**
      * Get air freight jobs summary
      */
     List<AirFreightSummaryDTO> getAirFreightsSummary(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
@@ -76,6 +86,11 @@ public interface FFProjectsService {
      * Get job charges
      */
     JobChargesDTO getJobCharges(Long jobId);
+
+    /**
+     * Get all bayan details for a project
+     */
+    List<BayanDTO> getProjectBayanDetails(Long projectId, String sortBy, String sortDir);
 
     /**
      * Export control sheet to Excel

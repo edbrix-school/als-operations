@@ -26,18 +26,14 @@ public class AirFreightSummaryDTO {
     private Double noOfPackages;
     private Double weight;
     private Double cbm;
+    private Double totalVolume;
     private Double chargeableWeight;
     private String description;
     private String jobStatus;
     private String documentStatus;
-    private String bayanNumber;
-    private String bayanMode;
-    private Double duty;
-    private Double vat;
-    private Double totalPaid;
-    private LocalDate expiryDate;
-    private LocalDate submittedDate;
-    private LocalDate paymentDate;
+    private LocalDate appointmentDate;
+    private LocalDate deliveryDate;
+    private String imcoClassUnno;
     private String detention;
     private String remarks;
 }

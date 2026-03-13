@@ -39,6 +39,33 @@ public class ProjectFreightController {
         return ApiResponse.success("Freight summary retrieved successfully", response);
     }
 
+    @Operation(summary = "Get all freights")
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllFreights(
+            @PathVariable @NotNull Long projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDir) {
+        List<FreightSummaryDTO> response = projectsService.getAllFreights(projectId, fromDate, toDate, sortBy, sortDir);
+        return ApiResponse.success("All freights retrieved successfully", response);
+    }
+
+    @Operation(summary = "Get job status and pending bills")
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/job-status-pending-bills")
+    public ResponseEntity<?> getJobStatusPendingBills(
+            @PathVariable @NotNull Long projectId,
+            @RequestParam(required = false, defaultValue = "principal") String viewBy,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDir) {
+        List<JobStatusPendingBillDTO> response = projectsService.getJobStatusPendingBills(projectId, viewBy, fromDate, toDate, sortBy, sortDir);
+        return ApiResponse.success("Job status and pending bills retrieved successfully", response);
+    }
+
     @Operation(summary = "Get air freight jobs")
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/air")
@@ -119,6 +146,17 @@ public class ProjectFreightController {
             @RequestParam(required = false, defaultValue = "asc") String sortDir) {
         List<UpcomingJobDTO> response = projectsService.getUpcomingJobsList(projectId, fromDate, toDate, sortBy, sortDir);
         return ApiResponse.success("Upcoming jobs retrieved successfully", response);
+    }
+
+    @Operation(summary = "Get bayan details by project")
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/bayans")
+    public ResponseEntity<?> getProjectBayanDetails(
+            @PathVariable @NotNull Long projectId,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDir) {
+        List<BayanDTO> response = projectsService.getProjectBayanDetails(projectId, sortBy, sortDir);
+        return ApiResponse.success("Bayan details retrieved successfully", response);
     }
 
     @Operation(summary = "Get job charges")

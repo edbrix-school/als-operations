@@ -13,6 +13,7 @@ public class UpcomingJobDTO {
     private Long detRowId;
     private Long jobId;
     private String jobNo;
+    private String blAwbNo;
     private String freightType;
     private String line;
     private LocalDate eta;
