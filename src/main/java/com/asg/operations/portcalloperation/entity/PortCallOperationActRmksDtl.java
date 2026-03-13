@@ -9,7 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -39,7 +38,7 @@ public class PortCallOperationActRmksDtl extends BaseEntity {
     private LocalDateTime remarksFrom;
 
     @Column(name = "REMARKS_TO")
-    private LocalDate remarksTo;
+    private LocalDateTime remarksTo;
 
     @Column(name = "CARGO_DETAILS", length = 100)
     private String cargoDetails;
