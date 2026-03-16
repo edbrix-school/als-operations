@@ -48,6 +48,7 @@ import java.math.BigDecimal;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -222,7 +223,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .detRowId(dtl.getDetRowId())
                     .eta(dtl.getEta())
                     .etb(dtl.getEtb())
-                    .updatedOn(dtl.getLastModifiedDate())
+                    .updatedOn(dtl.getLastModifiedDate() != null ? dtl.getLastModifiedDate().truncatedTo(ChronoUnit.MINUTES) : null)
                     .updatedBy(dtl.getLastModifiedBy())
                     .berthingAttachments(dtl.getBerthingAttachments())
                     .emailPoid(dtl.getEmailPoid());
