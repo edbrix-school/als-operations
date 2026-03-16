@@ -120,15 +120,40 @@ public class PortCallOperationController {
      * @return updated port call operation
      */
     @AllowedAction(UserRolesRightsEnum.EDIT)
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Update port call operation",
-            description = "Update an existing port call operation",
+            description = "Update an existing port call operation. Supports uploading husbandry crew and other attachments via multipart form-data.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> updateOperation(@Parameter(description = "Operation ID") @PathVariable Long id,
-                                             @Valid @RequestBody PortCallOperationDto dto) {
+                                             @Valid @RequestPart("dto") PortCallOperationDto dto,
+                                             @RequestPart(value = "husbandryCrewFiles", required = false) MultipartFile[] husbandryCrewFiles,
+                                             @RequestPart(value = "husbandryCrewDetRowId", required = false) Long husbandryCrewDetRowId,
+                                             @RequestPart(value = "husbandryCrewRemarks", required = false) String[] husbandryCrewRemarks,
+                                             @RequestPart(value = "husbandryCrewChecklistName", required = false) String[] husbandryCrewChecklistNames,
+                                             @RequestPart(value = "husbandryOthFiles", required = false) MultipartFile[] husbandryOthFiles,
+                                             @RequestPart(value = "husbandryOthDetRowId", required = false) Long husbandryOthDetRowId,
+                                             @RequestPart(value = "husbandryOthRemarks", required = false) String[] husbandryOthRemarks,
+                                             @RequestPart(value = "husbandryOthChecklistName", required = false) String[] husbandryOthChecklistNames) {
+
         PortCallOperationResponseDto updated = portCallOperationService.updateOperation(id, dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
+
+        // Optionally handle husbandry attachments in the same call
+        if ((husbandryCrewFiles != null && husbandryCrewFiles.length > 0) || (husbandryOthFiles != null && husbandryOthFiles.length > 0)) {
+            if (requireAttachmentService() != null) {
+                return requireAttachmentService();
+            }
+
+            if (husbandryCrewFiles != null && husbandryCrewFiles.length > 0 && husbandryCrewDetRowId != null) {
+                screenAttachmentService.uploadHusbandryCrewAttachments(id, husbandryCrewDetRowId, husbandryCrewFiles, husbandryCrewRemarks, husbandryCrewChecklistNames);
+            }
+
+            if (husbandryOthFiles != null && husbandryOthFiles.length > 0 && husbandryOthDetRowId != null) {
+                screenAttachmentService.uploadHusbandryOthAttachments(id, husbandryOthDetRowId, husbandryOthFiles, husbandryOthRemarks, husbandryOthChecklistNames);
+            }
+        }
+
         return success("Operation updated successfully", updated);
     }
 
@@ -453,11 +478,10 @@ public class PortCallOperationController {
             description = "Upload multiple files as PC Info attachments using the common attachment service. Stored file names are appended to PC_INFO_ATTACHMENTS on the port call operation header (comma-separated).",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<?> uploadPcInfoAttachments(
-            @Parameter(description = "Transaction POID (port call operation id)") @PathVariable Long transactionPoid,
-            @RequestParam(value = "files", required = false) MultipartFile[] files,
-            @RequestParam(value = "remarks", required = false) String[] remarks,
-            @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
+    public ResponseEntity<?> uploadPcInfoAttachments(@Parameter(description = "Transaction POID (port call operation id)") @PathVariable Long transactionPoid,
+                                                     @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                     @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                     @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         if (!pcInfoAttachmentService.isAttachmentServiceAvailable()) {
             return badRequest("Attachment service is not configured. Set common.service.attachment.base-url.");
         }
