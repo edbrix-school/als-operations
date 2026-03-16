@@ -755,6 +755,15 @@ public class PortCallOperationController {
         return screenAttachmentService.downloadHusbandryCrewAttachment(transactionPoid, detRowId, storedFileName);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments/download-all")
+    @Operation(summary = "Download all husbandry crew attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllHusbandryCrewAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable())
+            throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadAllHusbandryCrewAttachments(transactionPoid, detRowId);
+    }
+
     // ----- Husbandry other (OPS_PC_HUSBANDRY_OTH_DTL.ARRNGMNT_ATTACHMENTS) -----
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping(value = "/{transactionPoid}/husbandry-other/{detRowId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -793,6 +802,15 @@ public class PortCallOperationController {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadHusbandryOthAttachment(transactionPoid, detRowId, storedFileName);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments/download-all")
+    @Operation(summary = "Download all husbandry other attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllHusbandryOthAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable())
+            throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadAllHusbandryOthAttachments(transactionPoid, detRowId);
     }
 
     // ----- Docs copy (OPS_PC_DOCS_COPY_DTL.DOCUMENT_ATTACHMENTS) -----
