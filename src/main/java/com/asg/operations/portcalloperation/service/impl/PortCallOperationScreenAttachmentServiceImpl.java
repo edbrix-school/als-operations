@@ -574,6 +574,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+                int addedEntries = 0;
                 for (Map<String, Object> attachment : attachments) {
                     Object storedName = attachment.get("storedFileName");
                     if (storedName == null) continue;
@@ -585,17 +586,24 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
                     } else {
                         entryName = storedFileName;
                     }
+                    try {
+                        ResponseEntity<org.springframework.core.io.Resource> fileResponse =
+                                attachmentClient.downloadAttachment(docId, key, storedFileName);
+                        org.springframework.core.io.Resource resource = fileResponse.getBody();
+                        if (resource == null) continue;
 
-                    ResponseEntity<org.springframework.core.io.Resource> fileResponse =
-                            attachmentClient.downloadAttachment(docId, key, storedFileName);
-                    org.springframework.core.io.Resource resource = fileResponse.getBody();
-                    if (resource == null) continue;
-
-                    try (InputStream is = resource.getInputStream()) {
-                        zos.putNextEntry(new ZipEntry(entryName));
-                        is.transferTo(zos);
-                        zos.closeEntry();
+                        try (InputStream is = resource.getInputStream()) {
+                            zos.putNextEntry(new ZipEntry(entryName));
+                            is.transferTo(zos);
+                            zos.closeEntry();
+                            addedEntries++;
+                        }
+                    } catch (RuntimeException ex) {
+                        log.warn("Skipping missing attachment '{}' for docId={}, key={}: {}", storedFileName, docId, key, ex.getMessage());
                     }
+                }
+                if (addedEntries == 0) {
+                    throw new ResourceNotFoundException("Attachment", "transactionPoid, detRowId", transactionPoid + ", " + detRowId);
                 }
             }
 
