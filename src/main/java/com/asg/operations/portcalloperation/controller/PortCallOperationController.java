@@ -127,7 +127,7 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> updateOperation(@Parameter(description = "Operation ID") @PathVariable Long id,
-                                             @Valid @RequestPart("dto") PortCallOperationDto dto,
+                                             @Valid @ModelAttribute PortCallOperationDto dto,
                                              @RequestPart(value = "husbandryCrewFiles", required = false) MultipartFile[] husbandryCrewFiles,
                                              @RequestPart(value = "husbandryCrewDetRowId", required = false) Long husbandryCrewDetRowId,
                                              @RequestPart(value = "husbandryCrewRemarks", required = false) String[] husbandryCrewRemarks,
