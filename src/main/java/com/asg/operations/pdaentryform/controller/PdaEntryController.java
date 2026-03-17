@@ -1357,7 +1357,12 @@ public class PdaEntryController {
                 UserContext.getUserPoid(), 
                 transactionPoid.toString()
         );
-        return ApiResponse.success("FDA creation completed", Map.of("result", result));
+        
+        // Parse the result to extract FDA reference
+        Map<String, String> parsedResult = ((com.asg.operations.pdaentryform.service.impl.PdaEntryServiceImpl) pdaEntryService)
+                .parseFdaCreationResult(result);
+        
+        return ApiResponse.success("FDA creation completed", parsedResult);
     }
 
     @Operation(
