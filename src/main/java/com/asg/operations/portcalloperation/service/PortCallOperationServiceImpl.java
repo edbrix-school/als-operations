@@ -163,6 +163,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .husbandryCrewReqBy(hdr.getHusbandryCrewReqBy())
                 .docsCopyEmailPoid(hdr.getDocsCopyEmailPoid())
                 .status(hdr.getStatus())
+                .createdBy(hdr.getCreatedBy())
+                .createdDate(hdr.getCreatedDate())
                 .lastModifiedBy(hdr.getLastModifiedBy())
                 .lastModifiedDate(hdr.getLastModifiedDate())
                 .grt(hdr.getGrt())
