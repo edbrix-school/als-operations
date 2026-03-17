@@ -41,7 +41,6 @@ class SalesQuoteProjectsServiceImplTest {
 
     @Mock private JdbcTemplate jdbcTemplate;
     @Mock private SalesQuoteProjectsHdrRepository repository;
-    @Mock private SalesQuoteProjectsStoredProcRepository salesQuoteProjectsStoredProcRepository;
     @Mock private SalesQuoteProjectsChargeDtlRepository chargeDtlRepository;
     @Mock private SalesQuoteProjectsNotesDtlRepository notesDtlRepository;
     @Mock private GlobalTermsCustomChangesRepository globalTermsCustomChangesRepository;
