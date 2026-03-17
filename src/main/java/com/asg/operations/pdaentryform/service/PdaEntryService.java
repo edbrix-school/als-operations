@@ -147,6 +147,11 @@ public interface PdaEntryService {
     String createFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, String pdaPoid);
 
     /**
+     * Parse FDA creation result to extract FDA reference
+     */
+    Map<String, String> parseFdaCreationResult(String spResult);
+
+    /**
      * Upload acknowledgment details
      */
     List<PdaEntryAcknowledgmentDetailResponse> uploadAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);

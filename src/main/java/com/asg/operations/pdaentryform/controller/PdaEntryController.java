@@ -1359,8 +1359,7 @@ public class PdaEntryController {
         );
         
         // Parse the result to extract FDA reference
-        Map<String, String> parsedResult = ((com.asg.operations.pdaentryform.service.impl.PdaEntryServiceImpl) pdaEntryService)
-                .parseFdaCreationResult(result);
+        Map<String, String> parsedResult = pdaEntryService.parseFdaCreationResult(result);
         
         return ApiResponse.success("FDA creation completed", parsedResult);
     }
