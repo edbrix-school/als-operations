@@ -47,6 +47,8 @@ public class PortCallOperationResponseDto {
     private String status;
     private String lastModifiedBy;
     private LocalDateTime lastModifiedDate;
+    private String createdBy;
+    private LocalDateTime createdDate;
     private List<PortCallOperationCargoDetailResponseDto> cargoDetails;
     private List<PortCallOperationMailDetailResponseDto> mailDetails;
     private List<PortCallOperationEstBertDetailResponseDto> estBertDetails;
