@@ -821,6 +821,32 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
+    // Helper method to extract FDA reference from stored procedure result
+    public Map<String, String> parseFdaCreationResult(String spResult) {
+        Map<String, String> result = new HashMap<>();
+        
+        if (spResult != null) {
+            result.put("message", spResult);
+            
+            // Extract FDA reference using regex pattern
+            // Pattern matches: "FDA Ref: CSA926" or "FDA REF - CSA926" etc.
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("FDA\\s+(?:Ref|REF)\\s*[:-]?\\s*([A-Z0-9,\\s]+)");
+            java.util.regex.Matcher matcher = pattern.matcher(spResult);
+            
+            if (matcher.find()) {
+                String fdaRef = matcher.group(1).trim();
+                // Clean up any trailing characters like ')' or '...'
+                fdaRef = fdaRef.replaceAll("[)\\.].*$", "").trim();
+                result.put("fdaRef", fdaRef);
+                logger.info("[SP-10] Extracted FDA Reference: {}", fdaRef);
+            } else {
+                logger.warn("[SP-10] Could not extract FDA reference from result: {}", spResult);
+            }
+        }
+        
+        return result;
+    }
+
     public void updateFdaFromPda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
         callUpdateFdaFromPda(groupPoid, companyPoid, userPoid, transactionPoid);
     }
