@@ -23,9 +23,9 @@ public class SalesQuoteProjectsRequest {
     @Size(max = 50, message = "Customer type cannot exceed 50 characters")
     private String customerType;
 
-    @NotNull(message = "Customer Poid is required")
     private BigDecimal customerPoid;
-    
+
+    @NotBlank(message = "Customer name is required")
     @Size(max = 300, message = "Customer name cannot exceed 300 characters")
     private String customerName;
     

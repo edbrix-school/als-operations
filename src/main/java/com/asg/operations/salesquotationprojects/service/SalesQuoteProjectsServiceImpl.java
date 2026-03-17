@@ -30,7 +30,9 @@ import com.asg.operations.shipprincipal.entity.AddressDetails;
 import com.asg.operations.shipprincipal.entity.AddressMaster;
 import com.asg.operations.shipprincipal.repository.AddressDetailsRepository;
 import com.asg.operations.shipprincipal.repository.AddressMasterRepository;
+import com.asg.operations.shipprincipal.repository.ShipPrincipalRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -60,7 +62,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
 
     private final JdbcTemplate jdbcTemplate;
     private final SalesQuoteProjectsHdrRepository repository;
-    private final SalesQuoteProjectsStoredProcRepository salesQuoteProjectsStoredProcRepository;
     private final SalesQuoteProjectsChargeDtlRepository chargeDtlRepository;
     private final SalesQuoteProjectsNotesDtlRepository notesDtlRepository;
     private final GlobalTermsCustomChangesRepository globalTermsCustomChangesRepository;
@@ -68,7 +69,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     private final DocumentDeleteService documentDeleteService;
     private final AddressDetailsRepository addressDetailsRepository;
     private final AddressMasterRepository addressMasterRepository;
-    private final ApSupplierMasterRepository apSupplierMasterRepository;
+    private final ShipPrincipalRepository shipPrincipalRepository;
     private final SalesSalesmanMasterRepository salesSalesmanMasterRepository;
     private final ShipCommodityMasterRepository shipCommodityMasterRepository;
     private final ShipLineMasterRepository shipLineMasterRepository;
@@ -108,44 +109,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
 
         SalesQuoteProjectsResponse response = mapToResponse(entity);
 
-        if ("new".equalsIgnoreCase(response.getCustomerType())) {
-
-            // Legacy "reopen" behavior: load temp addresses via PROC_NEW_ADDRESS_LOADLIST and patch addressDetails
-            String tempNewAddressFound = "Existing";
-            try {
-                List<TempNewAddressRow> newTempAddresses = salesQuoteProjectsStoredProcRepository.callNewTempAddressLoadListProc(
-                        UserContext.getGroupPoid(),
-                        UserContext.getCompanyPoid(),
-                        UserContext.getUserPoid(),
-                        UserContext.getDocumentId(),
-                        transactionPoid
-                );
-
-                if (newTempAddresses != null && !newTempAddresses.isEmpty()) {
-                    for (TempNewAddressRow row : newTempAddresses) {
-                        if (row != null && row.getDocFieldName() != null && row.getDocFieldName().equalsIgnoreCase(LEGACY_DOC_FIELD_NAME_CUSTOMER_POID)) {
-
-                            response.setCustomerName(row.getAddressName());
-                            response.setCustomerContact(row.getContactPerson());
-                            response.setCustomerEmail(row.getEmail1());
-                            response.setCustomerTelephone(row.getOffTel1());
-                            response.setCustomerMobile(row.getMobile());
-                            response.setCustomerName(row.getAddressName());
-
-                            tempNewAddressFound = "New";
-                            break;
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                // Do not fail GET if temp address cannot be loaded; keep existing dto as-is.
-                log.warn("Temp address loadlist failed for transactionPoid={}: {}", transactionPoid, e.getMessage());
-            }
-
-            // Expose legacy temp-address status in response (New if temp address exists for CustomerPoid)
-            response.setCustomerType(tempNewAddressFound);
-        }
-
         log.info("getSalesQuoteProjectById completed for transactionPoid={} companyPoid={}", transactionPoid, UserContext.getCompanyPoid());
         return response;
     }
@@ -160,13 +123,17 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             throw new CustomException("Customer Type should be either Existing or New", 400);
         }
 
+        if ("existing".equalsIgnoreCase(customerType) && request.getCustomerPoid() == null) {
+            throw new ValidationException("Customer Poid is required for Existing customer type");
+        }
+
         if (request.getCustomerPoid() != null && StringUtils.isNotBlank(customerType) && !"new".equalsIgnoreCase(customerType)) {
             if (!addressDetailsRepository.existsByAddressPoid(request.getCustomerPoid())) {
                 throw new ResourceNotFoundException("Customer", "Customer Poid", request.getCustomerPoid());
             }
         }
         if (request.getPrincipalPoid() != null) {
-            if (!apSupplierMasterRepository.existsBySupplierPoid(request.getPrincipalPoid())) {
+            if (!shipPrincipalRepository.existsByPrincipalPoid(request.getPrincipalPoid())) {
                 throw new ResourceNotFoundException("Principal", "Principal Poid", request.getPrincipalPoid());
             }
         }
@@ -226,64 +193,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         SalesQuoteProjectsHdr savedEntity = repository.saveAndFlush(entity);
         entityManager.refresh(savedEntity);
 
-        // Legacy-compatible: create/update temp address in GLOBAL_NEW_ADDRESS_DETAILS, keyed by DocId+DocKeyPoid+DocFieldName
-        if (StringUtils.isNotBlank(customerType) && "new".equalsIgnoreCase(customerType)) {
-            try {
-                Long generatedNewAddressPoid = System.currentTimeMillis();
-
-                log.info("Calling stored procedure PROC_NEW_ADDRESS_CREATE_UPDATE for transactionPoid={} generatedNewAddressPoid={}", savedEntity.getTransactionPoid(), generatedNewAddressPoid);
-
-                TempAddressProcedureResponse tempAddrResp = salesQuoteProjectsStoredProcRepository.callNewTempAddressCreateUpdateProc(
-                        UserContext.getGroupPoid(),
-                        UserContext.getUserPoid(),
-                        UserContext.getDocumentId(),
-                        savedEntity.getTransactionPoid(),
-                        LEGACY_DOC_FIELD_NAME_CUSTOMER_POID,
-                        request.getCustomerName(),
-                        generatedNewAddressPoid,
-                        request.getCustomerTelephone(),
-                        null,
-                        request.getCustomerContact(),
-                        null,
-                        request.getCustomerMobile(),
-                        null,
-                        request.getCustomerEmail(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "CREATE"
-                );
-
-                log.info("Stored procedure response for transactionPoid={}: success={}, newAddressPoid={}, errorMessage={}", savedEntity.getTransactionPoid(), tempAddrResp.isSuccess(), tempAddrResp.getNewAddressPoid(), tempAddrResp.getErrorMessage());
-
-                if (!tempAddrResp.isSuccess() || tempAddrResp.getNewAddressPoid() == null) {
-                    String errorMsg = tempAddrResp.getErrorMessage() != null ? tempAddrResp.getErrorMessage() : "Temp address save failed";
-                    log.error("Temp address creation failed for transactionPoid={}: {}", savedEntity.getTransactionPoid(), errorMsg);
-                    throw new CustomException(errorMsg);
-                }
-
-                // Per agreed REST contract: store returned temp id into customerPoid (ADF binding-style)
-                savedEntity.setCustomerPoid(BigDecimal.valueOf(tempAddrResp.getNewAddressPoid()));
-                savedEntity = repository.save(savedEntity);
-                repository.flush();
-                log.info("createSalesQuotationSch updated customerPoid to temp newAddressPoid={} for transactionPoid={}", tempAddrResp.getNewAddressPoid(), savedEntity.getTransactionPoid());
-            } catch (CustomException e) {
-                // Re-throw CustomException as-is
-                throw e;
-            } catch (Exception e) {
-                // Wrap any other exception to ensure proper transaction rollback
-                log.error("Unexpected error during temp address creation for transactionPoid={}: {}", savedEntity.getTransactionPoid(), e.getMessage(), e);
-                throw new CustomException("Failed to create temp address: " + e.getMessage(), e);
-            }
-        }
-
         // Save child details
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {
             saveChargeDetails(savedEntity, request.getChargeDetails());
@@ -303,72 +212,29 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     public SalesQuoteProjectsResponse updateSalesQuoteProject(Long transactionPoid, SalesQuoteProjectsRequest request) {
         log.info("Updating sales quote project id: {}", transactionPoid);
 
-        String contentType = request.getCustomerType().toLowerCase();
+        String customerType = request.getCustomerType().toLowerCase();
         Set<String> allowedTypes = Set.of("existing", "new");
-        if (!allowedTypes.contains(contentType)) {
+        if (!allowedTypes.contains(customerType)) {
             throw new CustomException("Customer Type should be either Existing or New", 400);
         }
+
+        if ("existing".equalsIgnoreCase(customerType) && request.getCustomerPoid() == null) {
+            throw new ValidationException("Customer Poid is required for Existing customer type");
+        }
+
         SalesQuoteProjectsHdr existingEntity = repository.findById(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Sales Quote Project not found with ID: " + transactionPoid));
 
-        TempAddressProcedureResponse tempAddrResp;
-        SalesQuoteProjectsHdr oldHeader = null;
+        SalesQuoteProjectsHdr oldHeader = new SalesQuoteProjectsHdr();
+        BeanUtils.copyProperties(existingEntity, oldHeader);
 
-        if (StringUtils.isNotBlank(contentType) && "new".equalsIgnoreCase(contentType)) {
-            // For update, assume request.customerPoid holds the temp id (legacy binding-style). If missing, create a new one.
-            Long existingOrNewTempId = request.getCustomerPoid() != null ? request.getCustomerPoid().longValue() : System.currentTimeMillis();
-            String action = request.getCustomerPoid() != null ? "UPDATE" : "CREATE";
-
-
-            if (StringUtils.isNotBlank(contentType) && request.getCustomerPoid() != null) {
-                oldHeader = repository.findById(request.getCustomerPoid().longValue()).orElse(null);
-
-                if (oldHeader != null) {
-                    oldHeader = new SalesQuoteProjectsHdr();
-                    BeanUtils.copyProperties(existingEntity, oldHeader);
-                }
-            }
-
-            tempAddrResp = salesQuoteProjectsStoredProcRepository.callNewTempAddressCreateUpdateProc(
-                    UserContext.getGroupPoid(),
-                    UserContext.getUserPoid(),
-                    UserContext.getDocumentId(),
-                    transactionPoid,
-                    LEGACY_DOC_FIELD_NAME_CUSTOMER_POID,
-                    request.getCustomerName(),
-                    existingOrNewTempId,
-                    request.getCustomerTelephone(),
-                    null,
-                    request.getCustomerContact(),
-                    null,
-                    request.getCustomerMobile(),
-                    null,
-                    request.getCustomerEmail(),
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    action
-            );
-
-            if (!tempAddrResp.isSuccess() || tempAddrResp.getNewAddressPoid() == null) {
-                throw new CustomException(tempAddrResp.getErrorMessage() != null ? tempAddrResp.getErrorMessage() : "Temp address save failed");
-            }
-        }
-
-        if (request.getCustomerPoid() != null && StringUtils.isNotBlank(contentType) && !"new".equalsIgnoreCase(contentType)) {
+        if (request.getCustomerPoid() != null && StringUtils.isNotBlank(customerType) && !"new".equalsIgnoreCase(customerType)) {
             if (!addressDetailsRepository.existsByAddressPoid(request.getCustomerPoid())) {
                 throw new ResourceNotFoundException("Customer", "Customer Poid", request.getCustomerPoid());
             }
         }
         if (request.getPrincipalPoid() != null) {
-            if (!apSupplierMasterRepository.existsBySupplierPoid(request.getPrincipalPoid())) {
+            if (!shipPrincipalRepository.existsByPrincipalPoid(request.getPrincipalPoid())) {
                 throw new ResourceNotFoundException("Principal", "Principal Poid", request.getPrincipalPoid());
             }
         }
