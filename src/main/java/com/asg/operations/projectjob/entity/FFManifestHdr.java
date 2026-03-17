@@ -20,8 +20,7 @@ public class FFManifestHdr {
 
     @AuditIgnore
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ff_manifest_hdr_seq")
-    @SequenceGenerator(name = "ff_manifest_hdr_seq", sequenceName = "FF_MANIEST_HDR_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
 

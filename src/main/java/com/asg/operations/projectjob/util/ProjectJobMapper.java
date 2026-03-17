@@ -463,7 +463,6 @@ public class ProjectJobMapper {
 
         entity.setCfInvnoOld(dto.getCfInvnoOld());
         entity.setCurrentDoNo(dto.getCurrentDoNo());
-        entity.setDocRef(dto.getDocRef());
         entity.setDeleted(dto.getDeleted());
 
         entity.setReleasedType(dto.getReleasedType());

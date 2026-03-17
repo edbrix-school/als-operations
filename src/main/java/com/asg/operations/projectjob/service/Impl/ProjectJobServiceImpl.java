@@ -1,5 +1,23 @@
 package com.asg.operations.projectjob.service.Impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterDto;
 import com.asg.common.lib.dto.FilterRequestDto;
@@ -13,32 +31,44 @@ import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
-import com.asg.operations.projectjob.dto.*;
-import com.asg.operations.projectjob.entity.*;
-import com.asg.operations.projectjob.repository.*;
+import com.asg.operations.projectjob.dto.BaseDetailDto;
+import com.asg.operations.projectjob.dto.FFManifestHdrDto;
+import com.asg.operations.projectjob.dto.FFManifestHdrDtoResponse;
+import com.asg.operations.projectjob.dto.ProjectJobAirPkgDto;
+import com.asg.operations.projectjob.dto.ProjectJobAirPkgDtoRequest;
+import com.asg.operations.projectjob.dto.ProjectJobBayanDto;
+import com.asg.operations.projectjob.dto.ProjectJobBayanDtoRequest;
+import com.asg.operations.projectjob.dto.ProjectJobChargesDto;
+import com.asg.operations.projectjob.dto.ProjectJobChargesDtoRequest;
+import com.asg.operations.projectjob.dto.ProjectJobContainerDto;
+import com.asg.operations.projectjob.dto.ProjectJobContainerDtoRequest;
+import com.asg.operations.projectjob.dto.ProjectJobRequest;
+import com.asg.operations.projectjob.dto.ProjectJobResponse;
+import com.asg.operations.projectjob.dto.ProjectJobTruckDto;
+import com.asg.operations.projectjob.dto.ProjectJobTruckDtoRequest;
+import com.asg.operations.projectjob.dto.ProjectLoadInJobsProcResponse;
+import com.asg.operations.projectjob.entity.BaseDetailEntity;
+import com.asg.operations.projectjob.entity.FFManifestAirPkgDtl;
+import com.asg.operations.projectjob.entity.FFManifestBayanDtl;
+import com.asg.operations.projectjob.entity.FFManifestChargesDtl;
+import com.asg.operations.projectjob.entity.FFManifestContainerDtl;
+import com.asg.operations.projectjob.entity.FFManifestHdr;
+import com.asg.operations.projectjob.entity.FFManifestTruckDtl;
+import com.asg.operations.projectjob.repository.FFManifestAirPkgDtlRepository;
+import com.asg.operations.projectjob.repository.FFManifestBayanDtlRepository;
+import com.asg.operations.projectjob.repository.FFManifestChargesDtlRepository;
+import com.asg.operations.projectjob.repository.FFManifestContainerDtlRepository;
+import com.asg.operations.projectjob.repository.FFManifestHdrRepository;
+import com.asg.operations.projectjob.repository.FFManifestTruckDtlRepository;
+import com.asg.operations.projectjob.repository.ProjectJobStoredProcRepository;
 import com.asg.operations.projectjob.service.ProjectJobService;
 import com.asg.operations.projectjob.util.ProjectJobMapper;
 import com.asg.operations.projectjob.util.TriConsumer;
+
+import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -54,12 +84,14 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
+    private final EntityManager entityManager;
 
     @Override
+    @Transactional
     public ProjectJobResponse create(ProjectJobRequest request) {
 
         FFManifestHdr hdr = new FFManifestHdr();
-        ProjectJobMapper.mapHdrFromDto((FFManifestHdrDto) request, hdr);
+        ProjectJobMapper.mapHdrFromDto(request, hdr);
         Long groupPoid = UserContext.getGroupPoid();
         Long companyPoid = UserContext.getCompanyPoid();
         String currentUser = UserContext.getUserId();
@@ -70,9 +102,11 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         hdr.setCreatedBy(currentUser);
         hdr.setCreatedDate(now);
 
-        hdrRepository.save(hdr);
 
-        saveDetails(hdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
+        FFManifestHdr savedHdr=hdrRepository.save(hdr);
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedHdr.getTransactionPoid().toString(), "Project Job Created");
+
+        saveDetails(savedHdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
                 request.getContainers(), request.getTruckDetails());
 
         return getById(hdr.getTransactionPoid());
@@ -190,8 +224,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     }
 
     /*
-     * ================================================= SAVE ALL DETAILS
-     * =======================================================
+     * ==================== SAVE ALL DETAILS=====================
      */
 
     private void saveDetails(Long transactionPoid, List<ProjectJobAirPkgDtoRequest> airpkgDetails,
