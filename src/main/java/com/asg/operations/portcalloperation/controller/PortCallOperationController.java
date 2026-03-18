@@ -127,7 +127,7 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> updateOperation(@Parameter(description = "Operation ID") @PathVariable Long id,
-                                             @Valid @ModelAttribute PortCallOperationDto dto,
+                                             @Valid @RequestPart("dto") PortCallOperationDto dto,
                                              @RequestPart(value = "husbandryCrewFiles", required = false) MultipartFile[] husbandryCrewFiles,
                                              @RequestPart(value = "husbandryCrewDetRowId", required = false) Long husbandryCrewDetRowId,
                                              @RequestPart(value = "husbandryCrewRemarks", required = false) String[] husbandryCrewRemarks,
@@ -609,6 +609,15 @@ public class PortCallOperationController {
         return screenAttachmentService.downloadBerthingAttachment(transactionPoid, detRowId, storedFileName);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/berthing/{detRowId}/attachments/download-all")
+    @Operation(summary = "Download all berthing attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllBerthingAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable())
+            throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadAllBerthingAttachments(transactionPoid, detRowId);
+    }
+
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}/berthing/{detRowId}/attachments/{storedFileName}")
     @Operation(summary = "Delete berthing attachment", description = "Deletes an attachment. Cannot delete the last attachment.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -658,6 +667,15 @@ public class PortCallOperationController {
         return screenAttachmentService.downloadPreArrivalAttachment(transactionPoid, detRowId, storedFileName);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments/download-all")
+    @Operation(summary = "Download all pre-arrival attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllPreArrivalAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable())
+            throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadAllPreArrivalAttachments(transactionPoid, detRowId);
+    }
+
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments/{storedFileName}")
     @Operation(summary = "Delete pre-arrival attachment", description = "Deletes an attachment. Cannot delete the last attachment.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -704,6 +722,15 @@ public class PortCallOperationController {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadPdaFdaAttachment(transactionPoid, storedFileName);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/disbursement-other-details/attachments/download-all")
+    @Operation(summary = "Download all other details (PDA/FDA) attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllPdaFdaAttachments(@PathVariable Long transactionPoid) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable())
+            throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadAllPdaFdaAttachments(transactionPoid);
     }
 
     @AllowedAction(UserRolesRightsEnum.DELETE)
@@ -853,6 +880,15 @@ public class PortCallOperationController {
         return screenAttachmentService.downloadDocsCopyAttachment(transactionPoid, detRowId, storedFileName);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments/download-all")
+    @Operation(summary = "Download all docs copy attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllDocsCopyAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable())
+            throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadAllDocsCopyAttachments(transactionPoid, detRowId);
+    }
+
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments/{storedFileName}")
     @Operation(summary = "Delete docs copy attachment", description = "Deletes an attachment. Cannot delete the last attachment.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -900,6 +936,15 @@ public class PortCallOperationController {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadTimingAttachment(transactionPoid, detRowId, storedFileName);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/actual-timing/{detRowId}/attachments/download-all")
+    @Operation(summary = "Download all actual timing attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllTimingAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        if (!screenAttachmentService.isAttachmentServiceAvailable())
+            throw new IllegalStateException("Attachment service is not configured.");
+        return screenAttachmentService.downloadAllTimingAttachments(transactionPoid, detRowId);
     }
 
     @AllowedAction(UserRolesRightsEnum.DELETE)

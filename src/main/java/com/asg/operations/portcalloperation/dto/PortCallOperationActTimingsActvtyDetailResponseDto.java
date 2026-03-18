@@ -18,6 +18,7 @@ public class PortCallOperationActTimingsActvtyDetailResponseDto {
     private Long detRowId;
     private Long actualsTimingDtlPoid;
     private Long activityPoid;
+    private String activityName;
     private String details;
     private LocalDateTime estimatedDatetime;
 }

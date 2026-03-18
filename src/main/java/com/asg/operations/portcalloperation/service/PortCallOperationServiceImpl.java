@@ -1847,12 +1847,15 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         List<PortCallOperationEstPrearrivalActDtl> entitiesToSave = new ArrayList<>();
         for (PortCallReportActivityDto activity : activities) {
-            if (activity.getActivityPoid() == null) continue;
+            if (activity.getActivityPoid() == null && StringUtils.isBlank(activity.getActivityName())) {
+                throw new ValidationException("activityName is required when activityPoid is not provided");
+            }
             entitiesToSave.add(PortCallOperationEstPrearrivalActDtl.builder()
                     .transactionPoid(transactionPoid)
                     .detRowId(detRowId)
                     .preActivityDtlPoid(nextPreActivityDtlPoid++)
                     .activityPoid(activity.getActivityPoid())
+                    .activityName(activity.getActivityName())
                     .otherDescription(activity.getOtherDescription())
                     .estimatedDatetime(activity.getEstimatedDatetime())
                     .build());
@@ -1893,6 +1896,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .detRowId(entity.getDetRowId())
                     .preActivityDtlPoid(entity.getPreActivityDtlPoid())
                     .activityPoid(entity.getActivityPoid())
+                    .activityName(entity.getActivityName())
                     .otherDescription(entity.getOtherDescription())
                     .estimatedDatetime(entity.getEstimatedDatetime())
                     .build();
@@ -2047,7 +2051,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Process activities from DTO: update existing or mark for creation
         for (PortCallReportActivityDto activity : activities) {
-            if (activity.getActivityPoid() == null) continue;
+            if (activity.getActivityPoid() == null && StringUtils.isBlank(activity.getActivityName())) {
+                throw new ValidationException("activityName is required when activityPoid is not provided");
+            }
             processedActivityPoids.add(activity.getActivityPoid());
 
             PortCallOperationEstPrearrivalActDtl existingActivity = existingActivitiesMap.get(activity.getActivityPoid());
@@ -2056,6 +2062,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 PortCallOperationEstPrearrivalActDtl oldActivity = new PortCallOperationEstPrearrivalActDtl();
                 BeanUtils.copyProperties(existingActivity, oldActivity);
 
+                existingActivity.setActivityName(activity.getActivityName());
                 existingActivity.setOtherDescription(activity.getOtherDescription());
                 existingActivity.setEstimatedDatetime(activity.getEstimatedDatetime());
 
@@ -2069,6 +2076,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         .detRowId(detRowId)
                         .preActivityDtlPoid(nextPreActivityDtlPoid++)
                         .activityPoid(activity.getActivityPoid())
+                        .activityName(activity.getActivityName())
                         .otherDescription(activity.getOtherDescription())
                         .estimatedDatetime(activity.getEstimatedDatetime())
                         .build());
@@ -2134,6 +2142,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .detRowId(entity.getDetRowId())
                 .preActivityDtlPoid(entity.getPreActivityDtlPoid())
                 .activityPoid(entity.getActivityPoid())
+                .activityName(entity.getActivityName())
                 .otherDescription(entity.getOtherDescription())
                 .estimatedDatetime(entity.getEstimatedDatetime())
                 .build();
@@ -2151,6 +2160,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         .detRowId(e.getDetRowId())
                         .actualsTimingDtlPoid(e.getActualsTimingDtlPoid())
                         .activityPoid(e.getActivityPoid())
+                        .activityName(e.getActivityName())
                         .details(e.getDetails())
                         .estimatedDatetime(e.getEstimatedDatetime())
                         .build())
@@ -2239,12 +2249,15 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         List<PortCallOperationActTimingsActvtyDtl> entitiesToSave = new ArrayList<>();
         for (PortCallReportActivityDto activity : activities) {
-            if (activity.getActivityPoid() == null) continue;
+            if (activity.getActivityPoid() == null && StringUtils.isBlank(activity.getActivityName())) {
+                throw new ValidationException("activityName is required when activityPoid is not provided");
+            }
             entitiesToSave.add(PortCallOperationActTimingsActvtyDtl.builder()
                     .transactionPoid(transactionPoid)
                     .detRowId(detRowId)
                     .actualsTimingDtlPoid(nextActualsTimingDtlPoid++)
                     .activityPoid(activity.getActivityPoid())
+                    .activityName(activity.getActivityName())
                     .details(activity.getOtherDescription())
                     .estimatedDatetime(activity.getEstimatedDatetime())
                     .build());
@@ -2286,6 +2299,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .detRowId(entity.getDetRowId())
                     .actualsTimingDtlPoid(entity.getActualsTimingDtlPoid())
                     .activityPoid(entity.getActivityPoid())
+                    .activityName(entity.getActivityName())
                     .details(entity.getDetails())
                     .estimatedDatetime(entity.getEstimatedDatetime())
                     .build();
@@ -2400,7 +2414,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Process activities from DTO: update existing or mark for creation
         for (PortCallReportActivityDto activity : activities) {
-            if (activity.getActivityPoid() == null) continue;
+            if (activity.getActivityPoid() == null && StringUtils.isBlank(activity.getActivityName())) {
+                throw new ValidationException("activityName is required when activityPoid is not provided");
+            }
             processedActivityPoids.add(activity.getActivityPoid());
 
             PortCallOperationActTimingsActvtyDtl existingActivity = existingActivitiesMap.get(activity.getActivityPoid());
@@ -2409,6 +2425,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 PortCallOperationActTimingsActvtyDtl oldActivity = new PortCallOperationActTimingsActvtyDtl();
                 BeanUtils.copyProperties(existingActivity, oldActivity);
 
+                existingActivity.setActivityName(activity.getActivityName());
                 existingActivity.setDetails(activity.getOtherDescription());
                 existingActivity.setEstimatedDatetime(activity.getEstimatedDatetime());
 
@@ -2422,6 +2439,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         .detRowId(detRowId)
                         .actualsTimingDtlPoid(nextActualsTimingDtlPoid++)
                         .activityPoid(activity.getActivityPoid())
+                        .activityName(activity.getActivityName())
                         .details(activity.getOtherDescription())
                         .estimatedDatetime(activity.getEstimatedDatetime())
                         .build());
@@ -2484,6 +2502,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .detRowId(entity.getDetRowId())
                 .actualsTimingDtlPoid(entity.getActualsTimingDtlPoid())
                 .activityPoid(entity.getActivityPoid())
+                .activityName(entity.getActivityName())
                 .details(entity.getDetails())
                 .estimatedDatetime(entity.getEstimatedDatetime())
                 .build();
