@@ -38,6 +38,9 @@ public class PortCallOperationActTimingsActvtyDtl extends BaseEntity {
     @Column(name = "ACTIVITY_POID")
     private Long activityPoid;
 
+    @Column(name = "ACTIVITY_NAME", length = 300)
+    private String activityName;
+
     @Column(name = "DETAILS", length = 300)
     private String details;
 
