@@ -22,6 +22,8 @@ public interface PortCallOperationScreenAttachmentService {
 
     ResponseEntity<org.springframework.core.io.Resource> downloadBerthingAttachment(Long transactionPoid, Long detRowId, String storedFileName);
 
+    ResponseEntity<org.springframework.core.io.Resource> downloadAllBerthingAttachments(Long transactionPoid, Long detRowId);
+
     void deleteBerthingAttachment(Long transactionPoid, Long detRowId, String storedFileName);
 
 
@@ -34,6 +36,8 @@ public interface PortCallOperationScreenAttachmentService {
 
     ResponseEntity<org.springframework.core.io.Resource> downloadPreArrivalAttachment(Long transactionPoid, Long detRowId, String storedFileName);
 
+    ResponseEntity<org.springframework.core.io.Resource> downloadAllPreArrivalAttachments(Long transactionPoid, Long detRowId);
+
     void deletePreArrivalAttachment(Long transactionPoid, Long detRowId, String storedFileName);
 
 
@@ -45,6 +49,8 @@ public interface PortCallOperationScreenAttachmentService {
     String getPdaFdaAttachmentsSummary(Long transactionPoid);
 
     ResponseEntity<org.springframework.core.io.Resource> downloadPdaFdaAttachment(Long transactionPoid, String storedFileName);
+
+    ResponseEntity<org.springframework.core.io.Resource> downloadAllPdaFdaAttachments(Long transactionPoid);
 
     void deletePdaFdaAttachment(Long transactionPoid, String storedFileName);
 
@@ -82,6 +88,8 @@ public interface PortCallOperationScreenAttachmentService {
 
     ResponseEntity<Resource> downloadDocsCopyAttachment(Long transactionPoid, Long detRowId, String storedFileName);
 
+    ResponseEntity<Resource> downloadAllDocsCopyAttachments(Long transactionPoid, Long detRowId);
+
 
     void deleteDocsCopyAttachment(Long transactionPoid, Long detRowId, String storedFileName);
 
@@ -93,6 +101,8 @@ public interface PortCallOperationScreenAttachmentService {
     String getTimingAttachmentsSummary(Long transactionPoid, Long detRowId);
 
     ResponseEntity<Resource> downloadTimingAttachment(Long transactionPoid, Long detRowId, String storedFileName);
+
+    ResponseEntity<Resource> downloadAllTimingAttachments(Long transactionPoid, Long detRowId);
 
     void deleteTimingAttachment(Long transactionPoid, Long detRowId, String storedFileName);
 
