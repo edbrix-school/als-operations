@@ -101,6 +101,7 @@ class FdaControllerTest {
     @Test
     void updateFda_ShouldUpdateAndReturnFda() throws Exception {
         UpdateFdaHeaderRequest requestDto = new UpdateFdaHeaderRequest();
+        requestDto.setTransactionDate(java.time.LocalDate.now());
         requestDto.setPrincipalPoid(1L);
         requestDto.setSalesmanPoid(1L);
         requestDto.setPortPoid(1L);

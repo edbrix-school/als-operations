@@ -20,6 +20,7 @@ import java.util.List;
 @Setter
 public class CreateFdaHeaderRequest {
 
+    @NotNull(message = "Transaction Date is required")
     private LocalDate transactionDate;
 
     @NotNull(message = "Principal is required")

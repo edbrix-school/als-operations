@@ -262,6 +262,11 @@ public class HeaderMapper {
         entity.setPrincipalPoid(dto.getPrincipalPoid());
         entity.setPortPoid(dto.getPortPoid());
         entity.setOperationType(dto.getOperationType());
+        // Quantities persisted on update/edit
+        entity.setImportQty(dto.getImportQty());
+        entity.setExportQty(dto.getExportQty());
+        entity.setTranshipmentQty(dto.getTranshipmentQty());
+        entity.setTotalQuantity(dto.getTotalQuantity());
         entity.setUnit(dto.getUnit());
         entity.setHarbourCallType(dto.getHarbourCallType());
         entity.setCargoDetails(dto.getCargoDetails());

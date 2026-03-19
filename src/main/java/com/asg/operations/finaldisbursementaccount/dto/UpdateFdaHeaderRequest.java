@@ -14,10 +14,19 @@ import java.util.List;
 @Setter
 public class UpdateFdaHeaderRequest {
 
+    @NotNull(message = "Transaction Date is required")
     private LocalDate transactionDate;
 
     @NotNull(message = "Principal is required")
     private Long principalPoid;
+
+    private BigDecimal importQty;
+
+    private BigDecimal exportQty;
+
+    private BigDecimal transhipmentQty;
+
+    private BigDecimal totalQuantity;
 
     @NotNull(message = "Salesman is required")
     private Long salesmanPoid;
