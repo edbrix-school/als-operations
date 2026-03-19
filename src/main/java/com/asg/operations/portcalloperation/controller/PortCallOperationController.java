@@ -34,6 +34,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -134,30 +135,16 @@ public class PortCallOperationController {
     @Operation(
             summary = "Update port call operation",
             description = "Update an existing port call operation using multipart form-data. Required: form field 'dto' with JSON body for PortCallOperationDto. "
-                    + "Optional: husbandryCrewFiles / husbandryOthFiles (file uploads) and husbandryCrewDetRowId, husbandryCrewRemarks, husbandryCrewChecklistName (and oth-* equivalents). "
-                    + "All fields are standard form fields (works with Postman form-data Text/File without per-part JSON content-type issues).",
+                    + "Optional file uploads: husbandryCrewFiles / husbandryOthFiles. Reads multipart via MultipartHttpServletRequest (avoids binding errors when Postman sends empty file rows as application/octet-stream). "
+                    + "Per-row uploads: send the same number of husbandryCrewFiles slots as husbandryCrewFileDetailIndices (empty file slots are skipped; index/remark/checklist for that slot are ignored). "
+                    + "Or use husbandryCrewDetRowId / husbandryOthDetRowId when all non-empty files go to one row. "
+                    + "Alternatively upload after save via POST .../husbandry-crew/{detRowId}/attachments/upload.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> updateOperation(@Parameter(description = "Operation ID") @PathVariable Long id,
-                                             @Parameter(description = "Required. JSON string for PortCallOperationDto (form-data Text or file upload).", required = true)
-                                             @RequestParam("dto") String dtoJson,
-                                             @Parameter(description = "Optional. Husbandry crew attachment files for this update.", required = false)
-                                             @RequestParam(value = "husbandryCrewFiles", required = false) MultipartFile[] husbandryCrewFiles,
-                                             @Parameter(description = "Optional. Required only when uploading husbandryCrewFiles.", required = false)
-                                             @RequestParam(value = "husbandryCrewDetRowId", required = false) Long husbandryCrewDetRowId,
-                                             @Parameter(description = "Optional. Remarks aligned to husbandryCrewFiles (same order).", required = false)
-                                             @RequestParam(value = "husbandryCrewRemarks", required = false) String[] husbandryCrewRemarks,
-                                             @Parameter(description = "Optional. Checklist names aligned to husbandryCrewFiles (same order).", required = false)
-                                             @RequestParam(value = "husbandryCrewChecklistName", required = false) String[] husbandryCrewChecklistNames,
-                                             @Parameter(description = "Optional. Husbandry other attachment files for this update.", required = false)
-                                             @RequestParam(value = "husbandryOthFiles", required = false) MultipartFile[] husbandryOthFiles,
-                                             @Parameter(description = "Optional. Required only when uploading husbandryOthFiles.", required = false)
-                                             @RequestParam(value = "husbandryOthDetRowId", required = false) Long husbandryOthDetRowId,
-                                             @Parameter(description = "Optional. Remarks aligned to husbandryOthFiles (same order).", required = false)
-                                             @RequestParam(value = "husbandryOthRemarks", required = false) String[] husbandryOthRemarks,
-                                             @Parameter(description = "Optional. Checklist names aligned to husbandryOthFiles (same order).", required = false)
-                                             @RequestParam(value = "husbandryOthChecklistName", required = false) String[] husbandryOthChecklistNames) {
+                                             MultipartHttpServletRequest multipartRequest) {
 
+        String dtoJson = multipartRequest.getParameter("dto");
         if (StringUtils.isBlank(dtoJson)) {
             throw new IllegalArgumentException("Form field 'dto' is required and must contain JSON for PortCallOperationDto");
         }
@@ -173,26 +160,214 @@ public class PortCallOperationController {
             throw new ConstraintViolationException(violations);
         }
 
-        PortCallOperationResponseDto updated = portCallOperationService.updateOperation(id, dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
+        Long husbandryCrewDetRowId = parseOptionalLongParameter(multipartRequest, "husbandryCrewDetRowId");
+        Long husbandryOthDetRowId = parseOptionalLongParameter(multipartRequest, "husbandryOthDetRowId");
 
-        // Optionally handle husbandry attachments in the same call (all husbandry parts are optional)
-        MultipartFile[] crewFiles = nonEmptyMultipartFiles(husbandryCrewFiles);
-        MultipartFile[] othFiles = nonEmptyMultipartFiles(husbandryOthFiles);
+        HusbandryMultipartParsed crewParsed = parseHusbandryCrewMultipart(multipartRequest);
+        HusbandryMultipartParsed othParsed = parseHusbandryOthMultipart(multipartRequest);
+
+        MultipartFile[] crewFiles = crewParsed.filesForUpload();
+        int[] husbandryCrewFileDetailIndices = crewParsed.detailIndicesForUpload();
+        String[] husbandryCrewRemarks = crewParsed.remarksForUpload();
+        String[] husbandryCrewChecklistNames = crewParsed.checklistsForUpload();
+
+        MultipartFile[] othFiles = othParsed.filesForUpload();
+        int[] husbandryOthFileDetailIndices = othParsed.detailIndicesForUpload();
+        String[] husbandryOthRemarks = othParsed.remarksForUpload();
+        String[] husbandryOthChecklistNames = othParsed.checklistsForUpload();
+
+        Long[] crewDetRowIdByDetailIndex = null;
+        Long[] othDetRowIdByDetailIndex = null;
+
+        if (crewFiles != null) {
+            if (husbandryCrewFileDetailIndices != null) {
+                if (dto.getHusbandryCrewDetails() == null || dto.getHusbandryCrewDetails().isEmpty()) {
+                    throw new IllegalArgumentException("husbandryCrewFileDetailIndices requires non-empty husbandryCrewDetails in dto.");
+                }
+                if (husbandryCrewFileDetailIndices.length != crewFiles.length) {
+                    throw new IllegalArgumentException("husbandryCrewFileDetailIndices must have the same length as non-empty husbandryCrewFiles.");
+                }
+                for (int detailIndex : husbandryCrewFileDetailIndices) {
+                    if (detailIndex < 0 || detailIndex >= dto.getHusbandryCrewDetails().size()) {
+                        throw new IllegalArgumentException("husbandryCrewFileDetailIndices out of range: " + detailIndex);
+                    }
+                }
+                crewDetRowIdByDetailIndex = new Long[dto.getHusbandryCrewDetails().size()];
+            } else if (husbandryCrewDetRowId == null) {
+                throw new IllegalArgumentException("When uploading husbandryCrewFiles, send husbandryCrewDetRowId (all files to one row) or husbandryCrewFileDetailIndices (one per non-empty file slot, aligned with file rows).");
+            }
+        }
+
+        if (othFiles != null) {
+            if (husbandryOthFileDetailIndices != null) {
+                if (dto.getHusbandryOthDetails() == null || dto.getHusbandryOthDetails().isEmpty()) {
+                    throw new IllegalArgumentException("husbandryOthFileDetailIndices requires non-empty husbandryOthDetails in dto.");
+                }
+                if (husbandryOthFileDetailIndices.length != othFiles.length) {
+                    throw new IllegalArgumentException("husbandryOthFileDetailIndices must have the same length as non-empty husbandryOthFiles.");
+                }
+                for (int detailIndex : husbandryOthFileDetailIndices) {
+                    if (detailIndex < 0 || detailIndex >= dto.getHusbandryOthDetails().size()) {
+                        throw new IllegalArgumentException("husbandryOthFileDetailIndices out of range: " + detailIndex);
+                    }
+                }
+                othDetRowIdByDetailIndex = new Long[dto.getHusbandryOthDetails().size()];
+            } else if (husbandryOthDetRowId == null) {
+                throw new IllegalArgumentException("When uploading husbandryOthFiles, send husbandryOthDetRowId or husbandryOthFileDetailIndices.");
+            }
+        }
+
+        PortCallOperationResponseDto updated = portCallOperationService.updateOperation(
+                id, dto, UserContext.getUserPoid(), UserContext.getGroupPoid(),
+                crewDetRowIdByDetailIndex, othDetRowIdByDetailIndex);
+
         if (crewFiles != null || othFiles != null) {
             if (requireAttachmentService() != null) {
                 return requireAttachmentService();
             }
 
-            if (crewFiles != null && husbandryCrewDetRowId != null) {
-                screenAttachmentService.uploadHusbandryCrewAttachments(id, husbandryCrewDetRowId, crewFiles, husbandryCrewRemarks, husbandryCrewChecklistNames);
+            if (crewFiles != null) {
+                if (husbandryCrewFileDetailIndices != null) {
+                    for (int j = 0; j < crewFiles.length; j++) {
+                        int di = husbandryCrewFileDetailIndices[j];
+                        Long detRowId = crewDetRowIdByDetailIndex[di];
+                        if (detRowId == null) {
+                            throw new IllegalArgumentException("Cannot upload crew file #" + j + ": husbandryCrewDetails[" + di + "] has no detRowId after save.");
+                        }
+                        screenAttachmentService.uploadHusbandryCrewAttachments(
+                                id, detRowId,
+                                new MultipartFile[]{crewFiles[j]},
+                                singleStringArrayAt(husbandryCrewRemarks, j),
+                                singleStringArrayAt(husbandryCrewChecklistNames, j));
+                    }
+                } else {
+                    screenAttachmentService.uploadHusbandryCrewAttachments(
+                            id, husbandryCrewDetRowId, crewFiles, husbandryCrewRemarks, husbandryCrewChecklistNames);
+                }
             }
 
-            if (othFiles != null && husbandryOthDetRowId != null) {
-                screenAttachmentService.uploadHusbandryOthAttachments(id, husbandryOthDetRowId, othFiles, husbandryOthRemarks, husbandryOthChecklistNames);
+            if (othFiles != null) {
+                if (husbandryOthFileDetailIndices != null) {
+                    for (int j = 0; j < othFiles.length; j++) {
+                        int di = husbandryOthFileDetailIndices[j];
+                        Long detRowId = othDetRowIdByDetailIndex[di];
+                        if (detRowId == null) {
+                            throw new IllegalArgumentException("Cannot upload oth file #" + j + ": husbandryOthDetails[" + di + "] has no detRowId after save.");
+                        }
+                        screenAttachmentService.uploadHusbandryOthAttachments(
+                                id, detRowId,
+                                new MultipartFile[]{othFiles[j]},
+                                singleStringArrayAt(husbandryOthRemarks, j),
+                                singleStringArrayAt(husbandryOthChecklistNames, j));
+                    }
+                } else {
+                    screenAttachmentService.uploadHusbandryOthAttachments(
+                            id, husbandryOthDetRowId, othFiles, husbandryOthRemarks, husbandryOthChecklistNames);
+                }
             }
         }
 
         return success("Operation updated successfully", updated);
+    }
+
+    private record HusbandryMultipartParsed(
+            MultipartFile[] filesForUpload,
+            int[] detailIndicesForUpload,
+            String[] remarksForUpload,
+            String[] checklistsForUpload) {
+    }
+
+    private static Long parseOptionalLongParameter(MultipartHttpServletRequest req, String name) {
+        String v = req.getParameter(name);
+        if (StringUtils.isBlank(v)) {
+            return null;
+        }
+        try {
+            return Long.valueOf(v.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid number for '" + name + "': " + v);
+        }
+    }
+
+    /**
+     * Pairs each {@code husbandryCrewFiles} part with the same-position index/remark/checklist.
+     * Empty file parts are skipped (Postman "no file" rows) so uploads + indices arrays stay aligned for real files only.
+     */
+    private static HusbandryMultipartParsed parseHusbandryCrewMultipart(MultipartHttpServletRequest req) {
+        return parseNamedHusbandryMultipart(
+                req,
+                "husbandryCrewFiles",
+                "husbandryCrewFileDetailIndices",
+                "husbandryCrewRemarks",
+                "husbandryCrewChecklistName");
+    }
+
+    private static HusbandryMultipartParsed parseHusbandryOthMultipart(MultipartHttpServletRequest req) {
+        return parseNamedHusbandryMultipart(
+                req,
+                "husbandryOthFiles",
+                "husbandryOthFileDetailIndices",
+                "husbandryOthRemarks",
+                "husbandryOthChecklistName");
+    }
+
+    private static HusbandryMultipartParsed parseNamedHusbandryMultipart(
+            MultipartHttpServletRequest req,
+            String fileParam,
+            String indicesParam,
+            String remarksParam,
+            String checklistParam) {
+
+        List<MultipartFile> rawFiles = req.getFiles(fileParam);
+        String[] idxStrs = req.getParameterValues(indicesParam);
+        String[] remarkStrs = req.getParameterValues(remarksParam);
+        String[] checklistStrs = req.getParameterValues(checklistParam);
+
+        if (rawFiles == null || rawFiles.isEmpty()) {
+            return new HusbandryMultipartParsed(null, null, null, null);
+        }
+
+        if (idxStrs != null && idxStrs.length > 0) {
+            if (idxStrs.length != rawFiles.size()) {
+                throw new IllegalArgumentException(String.format(
+                        "Count mismatch: %d '%s' part(s) but %d '%s' value(s). Use one index per file row (including empty rows), or remove extra empty file rows.",
+                        rawFiles.size(), fileParam, idxStrs.length, indicesParam));
+            }
+            List<MultipartFile> filesOut = new ArrayList<>();
+            List<Integer> idxOut = new ArrayList<>();
+            List<String> remarkOut = new ArrayList<>();
+            List<String> checklistOut = new ArrayList<>();
+            for (int i = 0; i < rawFiles.size(); i++) {
+                MultipartFile f = rawFiles.get(i);
+                if (f == null || f.isEmpty()) {
+                    continue;
+                }
+                int di;
+                try {
+                    di = Integer.parseInt(idxStrs[i].trim());
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Invalid " + indicesParam + " at position " + i + ": " + idxStrs[i]);
+                }
+                filesOut.add(f);
+                idxOut.add(di);
+                remarkOut.add(remarkStrs != null && i < remarkStrs.length ? remarkStrs[i] : null);
+                checklistOut.add(checklistStrs != null && i < checklistStrs.length ? checklistStrs[i] : null);
+            }
+            if (filesOut.isEmpty()) {
+                return new HusbandryMultipartParsed(null, null, null, null);
+            }
+            return new HusbandryMultipartParsed(
+                    filesOut.toArray(new MultipartFile[0]),
+                    idxOut.stream().mapToInt(Integer::intValue).toArray(),
+                    remarkOut.toArray(new String[0]),
+                    checklistOut.toArray(new String[0]));
+        }
+
+        MultipartFile[] nonEmpty = nonEmptyMultipartFiles(rawFiles.toArray(new MultipartFile[0]));
+        if (nonEmpty == null) {
+            return new HusbandryMultipartParsed(null, null, null, null);
+        }
+        return new HusbandryMultipartParsed(nonEmpty, null, remarkStrs, checklistStrs);
     }
 
     /**
@@ -621,6 +796,16 @@ public class PortCallOperationController {
             }
         }
         return out.isEmpty() ? null : out.toArray(new MultipartFile[0]);
+    }
+
+    /**
+     * One-element array for per-file upload APIs, or null if index missing.
+     */
+    private static String[] singleStringArrayAt(String[] values, int index) {
+        if (values == null || index < 0 || index >= values.length) {
+            return null;
+        }
+        return new String[]{values[index]};
     }
 
     // ----- Berthing (OPS_PC_EST_BERT_DTL.BERTHING_ATTACHMENTS) -----
