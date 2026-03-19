@@ -38,6 +38,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -136,7 +137,7 @@ public class PortCallOperationController {
             summary = "Update port call operation",
             description = "Update an existing port call operation using multipart form-data. Required: form field 'dto' with JSON body for PortCallOperationDto. "
                     + "Optional file uploads: husbandryCrewFiles / husbandryOthFiles. Reads multipart via MultipartHttpServletRequest (avoids binding errors when Postman sends empty file rows as application/octet-stream). "
-                    + "Per-row uploads: send the same number of husbandryCrewFiles slots as husbandryCrewFileDetailIndices (empty file slots are skipped; index/remark/checklist for that slot are ignored). "
+                    + "Per-row uploads: husbandryCrewFileDetailIndices must match the number of husbandryCrewFiles rows, OR send a single index value to apply to every file row (e.g. multiple files for the same crew detail). Empty file slots are skipped. "
                     + "Or use husbandryCrewDetRowId / husbandryOthDetRowId when all non-empty files go to one row. "
                     + "Alternatively upload after save via POST .../husbandry-crew/{detRowId}/attachments/upload.",
             security = @SecurityRequirement(name = "bearerAuth")
@@ -328,11 +329,19 @@ public class PortCallOperationController {
         }
 
         if (idxStrs != null && idxStrs.length > 0) {
-            if (idxStrs.length != rawFiles.size()) {
+            final String[] idxPerRow;
+            if (idxStrs.length == rawFiles.size()) {
+                idxPerRow = idxStrs;
+            } else if (idxStrs.length == 1) {
+                // Same detail index for every file row (e.g. 2+ files → one husbandry crew line)
+                idxPerRow = new String[rawFiles.size()];
+                Arrays.fill(idxPerRow, idxStrs[0].trim());
+            } else {
                 throw new IllegalArgumentException(String.format(
-                        "Count mismatch: %d '%s' part(s) but %d '%s' value(s). Use one index per file row (including empty rows), or remove extra empty file rows.",
+                        "Count mismatch: %d '%s' part(s) but %d '%s' value(s). Use one index per file row, a single index for all rows, or remove extra empty file rows.",
                         rawFiles.size(), fileParam, idxStrs.length, indicesParam));
             }
+            final boolean singleIndexBroadcast = idxStrs.length == 1 && rawFiles.size() > 1;
             List<MultipartFile> filesOut = new ArrayList<>();
             List<Integer> idxOut = new ArrayList<>();
             List<String> remarkOut = new ArrayList<>();
@@ -344,14 +353,14 @@ public class PortCallOperationController {
                 }
                 int di;
                 try {
-                    di = Integer.parseInt(idxStrs[i].trim());
+                    di = Integer.parseInt(idxPerRow[i].trim());
                 } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Invalid " + indicesParam + " at position " + i + ": " + idxStrs[i]);
+                    throw new IllegalArgumentException("Invalid " + indicesParam + " at position " + i + ": " + idxPerRow[i]);
                 }
                 filesOut.add(f);
                 idxOut.add(di);
-                remarkOut.add(remarkStrs != null && i < remarkStrs.length ? remarkStrs[i] : null);
-                checklistOut.add(checklistStrs != null && i < checklistStrs.length ? checklistStrs[i] : null);
+                remarkOut.add(resolveMetaAt(remarkStrs, i, singleIndexBroadcast));
+                checklistOut.add(resolveMetaAt(checklistStrs, i, singleIndexBroadcast));
             }
             if (filesOut.isEmpty()) {
                 return new HusbandryMultipartParsed(null, null, null, null);
@@ -806,6 +815,22 @@ public class PortCallOperationController {
             return null;
         }
         return new String[]{values[index]};
+    }
+
+    /**
+     * Remark/checklist per file row; when one index is broadcast to multiple file rows, a single meta value applies to all rows.
+     */
+    private static String resolveMetaAt(String[] meta, int rowIndex, boolean singleIndexBroadcast) {
+        if (meta == null || meta.length == 0) {
+            return null;
+        }
+        if (rowIndex < meta.length) {
+            return meta[rowIndex];
+        }
+        if (singleIndexBroadcast && meta.length == 1) {
+            return meta[0];
+        }
+        return null;
     }
 
     // ----- Berthing (OPS_PC_EST_BERT_DTL.BERTHING_ATTACHMENTS) -----
