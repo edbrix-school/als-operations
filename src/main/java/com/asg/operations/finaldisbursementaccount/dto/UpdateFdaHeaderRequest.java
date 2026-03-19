@@ -20,6 +20,14 @@ public class UpdateFdaHeaderRequest {
     @NotNull(message = "Principal is required")
     private Long principalPoid;
 
+    private BigDecimal importQty;
+
+    private BigDecimal exportQty;
+
+    private BigDecimal transhipmentQty;
+
+    private BigDecimal totalQuantity;
+
     @NotNull(message = "Salesman is required")
     private Long salesmanPoid;
 
