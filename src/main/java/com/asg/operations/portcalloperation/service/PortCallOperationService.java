@@ -18,7 +18,17 @@ public interface PortCallOperationService {
 
     PortCallOperationResponseDto createOperation(PortCallOperationCreateDto dto, Long userPoid, Long groupPoid);
 
-    PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid);
+    /**
+     * Updates a port call operation.
+     *
+     * @param husbandryCrewDetRowIdByDetailIndexOut optional; when non-null, length must equal {@code dto.getHusbandryCrewDetails().size()}.
+     *                                                 After update, each position i holds the DB {@code detRowId} for {@code husbandryCrewDetails.get(i)}
+     *                                                 (including rows created in this request).
+     * @param husbandryOthDetRowIdByDetailIndexOut   same for {@code husbandryOthDetails}
+     */
+    PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid,
+                                                   Long[] husbandryCrewDetRowIdByDetailIndexOut,
+                                                   Long[] husbandryOthDetRowIdByDetailIndexOut);
 
     void deleteOperation(Long id, DeleteReasonDto deleteReasonDto);
 

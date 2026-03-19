@@ -571,7 +571,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
     @Override
     @Transactional
-    public PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid) {
+    public PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid,
+                                                        Long[] husbandryCrewDetRowIdByDetailIndexOut,
+                                                        Long[] husbandryOthDetRowIdByDetailIndexOut) {
         log.info("Updating port call operation id: {}", id);
 
         PortCallOperationHdr hdr = hdrRepository.findById(id)
@@ -747,7 +749,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
         // Update all other detail tables with actionType
-        updateAllDetailTables(id, dto, UserContext.getUserId());
+        updateAllDetailTables(id, dto, UserContext.getUserId(),
+                husbandryCrewDetRowIdByDetailIndexOut, husbandryOthDetRowIdByDetailIndexOut);
 
         loggingService.logChanges(oldHdr, hdr, PortCallOperationHdr.class, UserContext.getDocumentId(), id.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return getOperationById(id);
@@ -776,7 +779,26 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     }
 
 
-    private void updateAllDetailTables(Long transactionPoid, PortCallOperationDto dto, String userId) {
+    private void updateAllDetailTables(Long transactionPoid, PortCallOperationDto dto, String userId,
+                                       Long[] husbandryCrewDetRowIdByDetailIndexOut,
+                                       Long[] husbandryOthDetRowIdByDetailIndexOut) {
+
+        if (husbandryCrewDetRowIdByDetailIndexOut != null) {
+            if (dto.getHusbandryCrewDetails() == null || dto.getHusbandryCrewDetails().isEmpty()) {
+                throw new ValidationException("When resolving husbandry crew row ids, dto.husbandryCrewDetails must be non-empty.");
+            }
+            if (husbandryCrewDetRowIdByDetailIndexOut.length != dto.getHusbandryCrewDetails().size()) {
+                throw new IllegalArgumentException("husbandryCrewDetRowIdByDetailIndexOut length must match husbandryCrewDetails size.");
+            }
+        }
+        if (husbandryOthDetRowIdByDetailIndexOut != null) {
+            if (dto.getHusbandryOthDetails() == null || dto.getHusbandryOthDetails().isEmpty()) {
+                throw new ValidationException("When resolving husbandry other row ids, dto.husbandryOthDetails must be non-empty.");
+            }
+            if (husbandryOthDetRowIdByDetailIndexOut.length != dto.getHusbandryOthDetails().size()) {
+                throw new IllegalArgumentException("husbandryOthDetRowIdByDetailIndexOut length must match husbandryOthDetails size.");
+            }
+        }
 //
 //        // Update Est Bert Details
 //        if (dto.getEstBertDetails() != null && !dto.getEstBertDetails().isEmpty()) {
@@ -1140,11 +1162,18 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        // Update Husbandry Crew Details
+        // Update Husbandry Crew Details (indexed so callers can map file uploads to detRowId, including new rows)
         if (dto.getHusbandryCrewDetails() != null && !dto.getHusbandryCrewDetails().isEmpty()) {
-            for (PortCallOperationHusbandryCrewDetailDto detailDto : dto.getHusbandryCrewDetails()) {
+            List<PortCallOperationHusbandryCrewDetailDto> crewList = dto.getHusbandryCrewDetails();
+            for (int i = 0; i < crewList.size(); i++) {
+                PortCallOperationHusbandryCrewDetailDto detailDto = crewList.get(i);
                 ActionType action = detailDto.getActionType();
-                if (action == null || action == ActionType.noChange) continue;
+                if (action == null || action == ActionType.noChange) {
+                    if (husbandryCrewDetRowIdByDetailIndexOut != null) {
+                        husbandryCrewDetRowIdByDetailIndexOut[i] = detailDto.getDetRowId();
+                    }
+                    continue;
+                }
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = husbandryCrewDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
                     PortCallOperationHusbandryCrewDtl saved = husbandryCrewDtlRepository.save(PortCallOperationHusbandryCrewDtl.builder()
@@ -1157,9 +1186,15 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .crewSeamanNo(detailDto.getCrewSeamanNo())
                             .crewRank(detailDto.getCrewRank())
                             .build());
+                    if (husbandryCrewDetRowIdByDetailIndexOut != null) {
+                        husbandryCrewDetRowIdByDetailIndexOut[i] = saved.getDetRowId();
+                    }
                     String logDetail = String.format("Row Created on [Port Call Operation Husbandry Crew Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
+                    if (husbandryCrewDetRowIdByDetailIndexOut != null) {
+                        husbandryCrewDetRowIdByDetailIndexOut[i] = detailDto.getDetRowId();
+                    }
                     husbandryCrewDtlRepository.findById(new PortCallOperationHusbandryCrewDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationHusbandryCrewDtl oldDetail = new PortCallOperationHusbandryCrewDtl();
@@ -1180,14 +1215,21 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Update Husbandry Other Details
         if (dto.getHusbandryOthDetails() != null && !dto.getHusbandryOthDetails().isEmpty()) {
-            for (PortCallOperationHusbandryOthDetailDto detailDto : dto.getHusbandryOthDetails()) {
+            List<PortCallOperationHusbandryOthDetailDto> othList = dto.getHusbandryOthDetails();
+            for (int i = 0; i < othList.size(); i++) {
+                PortCallOperationHusbandryOthDetailDto detailDto = othList.get(i);
                 if (detailDto.getUnitPoid() != null) {
                     if (!stockUnitMasterRepository.existsByStockUnitPoid(detailDto.getUnitPoid())) {
                         throw new ResourceNotFoundException("Stock Unit Master", "Unit Poid", detailDto.getUnitPoid());
                     }
                 }
                 ActionType action = detailDto.getActionType();
-                if (action == null || action == ActionType.noChange) continue;
+                if (action == null || action == ActionType.noChange) {
+                    if (husbandryOthDetRowIdByDetailIndexOut != null) {
+                        husbandryOthDetRowIdByDetailIndexOut[i] = detailDto.getDetRowId();
+                    }
+                    continue;
+                }
                 if (action == ActionType.isCreated) {
                     Long nextDetRowId = husbandryOthDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
                     PortCallOperationHusbandryOthDtl saved = husbandryOthDtlRepository.save(PortCallOperationHusbandryOthDtl.builder()
@@ -1206,9 +1248,15 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .requestedBy(detailDto.getRequestedBy())
                             .paymentMode(detailDto.getPaymentMode())
                             .build());
+                    if (husbandryOthDetRowIdByDetailIndexOut != null) {
+                        husbandryOthDetRowIdByDetailIndexOut[i] = saved.getDetRowId();
+                    }
                     String logDetail = String.format("Row Created on [Port Call Operation Husbandry Other Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 } else if (action == ActionType.isUpdated) {
+                    if (husbandryOthDetRowIdByDetailIndexOut != null) {
+                        husbandryOthDetRowIdByDetailIndexOut[i] = detailDto.getDetRowId();
+                    }
                     husbandryOthDtlRepository.findById(new PortCallOperationHusbandryOthDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationHusbandryOthDtl oldDetail = new PortCallOperationHusbandryOthDtl();

@@ -19,6 +19,7 @@ public class PortCallOperationDto {
     @NotNull(message = "Vessel Voyage Poid is required")
     private Long vesselVoyagePoid;
 
+    @NotNull(message = "Transaction Date is required")
     private LocalDate transactionDate;
 
     @Size(max = 100, message = "Call Sign should not exceed 100 characters")

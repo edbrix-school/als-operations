@@ -18,6 +18,7 @@ public class PortCallOperationCreateDto {
     @NotNull(message = "Vessel Voyage Poid is required")
     private Long vesselVoyagePoid;
 
+    @NotNull(message = "Transaction Date is required")
     private LocalDate transactionDate;
 
     @Size(max = 100)
