@@ -612,42 +612,93 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
         }
 
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (ZipOutputStream zos = new ZipOutputStream(baos)) {
-                int addedEntries = 0;
-                for (Map<String, Object> attachment : attachments) {
-                    Object storedName = attachment.get("storedFileName");
-                    if (storedName == null) continue;
-                    String storedFileName = storedName.toString();
-                    String entryName;
-                    Object origName = attachment.get("originalFileName");
-                    if (origName != null && !origName.toString().isBlank()) {
-                        entryName = origName.toString();
-                    } else {
-                        entryName = storedFileName;
-                    }
-                    try {
-                        ResponseEntity<org.springframework.core.io.Resource> fileResponse =
-                                attachmentClient.downloadAttachment(docId, key, storedFileName);
-                        org.springframework.core.io.Resource resource = fileResponse.getBody();
-                        if (resource == null) continue;
+            // Decide "single file vs ZIP" based on how many files can be actually downloaded (not list metadata count).
+            int successCount = 0;
 
-                        try (InputStream is = resource.getInputStream()) {
-                            zos.putNextEntry(new ZipEntry(entryName));
-                            is.transferTo(zos);
+            byte[] firstBytes = null;
+            HttpHeaders firstHeaders = null;
+            org.springframework.http.HttpStatusCode firstStatus = null;
+            String firstEntryName = null;
+
+            ByteArrayOutputStream zipBaos = null;
+            ZipOutputStream zos = null;
+            int addedEntries = 0;
+
+            for (Map<String, Object> attachment : attachments) {
+                if (attachment == null || attachment.get("storedFileName") == null) continue;
+                String storedFileName = attachment.get("storedFileName").toString();
+
+                String entryName;
+                Object origName = attachment.get("originalFileName");
+                if (origName != null && !origName.toString().isBlank()) {
+                    entryName = origName.toString();
+                } else {
+                    entryName = storedFileName;
+                }
+
+                try {
+                    ResponseEntity<org.springframework.core.io.Resource> fileResponse =
+                            attachmentClient.downloadAttachment(docId, key, storedFileName);
+                    org.springframework.core.io.Resource resource = fileResponse.getBody();
+                    if (resource == null) continue;
+
+                    byte[] bytes;
+                    try (InputStream is = resource.getInputStream()) {
+                        bytes = is.readAllBytes();
+                    }
+
+                    successCount++;
+                    if (successCount == 1) {
+                        firstBytes = bytes;
+                        firstHeaders = fileResponse.getHeaders();
+                        firstStatus = fileResponse.getStatusCode();
+                        firstEntryName = entryName;
+                    } else {
+                        // Switch to ZIP mode if this is the 2nd successful file.
+                        if (zos == null) {
+                            zipBaos = new ByteArrayOutputStream();
+                            zos = new ZipOutputStream(zipBaos);
+
+                            // Add the first successful file into the ZIP.
+                            zos.putNextEntry(new ZipEntry(firstEntryName));
+                            zos.write(firstBytes);
                             zos.closeEntry();
                             addedEntries++;
                         }
-                    } catch (RuntimeException ex) {
-                        log.warn("Skipping missing attachment '{}' for docId={}, key={}: {}", storedFileName, docId, key, ex.getMessage());
+
+                        zos.putNextEntry(new ZipEntry(entryName));
+                        zos.write(bytes);
+                        zos.closeEntry();
+                        addedEntries++;
                     }
-                }
-                if (addedEntries == 0) {
-                    throw new ResourceNotFoundException("Attachment", "transactionPoid, detRowId", transactionPoid + ", " + detRowId);
+                } catch (RuntimeException ex) {
+                    log.warn("Skipping missing attachment '{}' for docId={}, key={}: {}", storedFileName, docId, key, ex.getMessage());
                 }
             }
 
-            byte[] zipBytes = baos.toByteArray();
+            if (successCount == 0) {
+                throw new ResourceNotFoundException("Attachment", "transactionPoid, detRowId", transactionPoid + ", " + detRowId);
+            }
+
+            // Exactly one file was downloadable: return it directly (no ZIP).
+            if (successCount == 1) {
+                ByteArrayResource singleResource = new ByteArrayResource(firstBytes);
+                if (firstHeaders != null) {
+                    // keep original Content-Disposition from common-service
+                }
+                return ResponseEntity.status(firstStatus != null ? firstStatus : org.springframework.http.HttpStatus.OK)
+                        .headers(firstHeaders != null ? firstHeaders : new HttpHeaders())
+                        .body(singleResource);
+            }
+
+            // Multiple downloadable files: return ZIP.
+            if (zos != null) {
+                try {
+                    zos.close();
+                } catch (Exception ignored) {
+                }
+            }
+            byte[] zipBytes = zipBaos.toByteArray();
             ByteArrayResource resource = new ByteArrayResource(zipBytes);
 
             HttpHeaders headers = new HttpHeaders();
@@ -674,44 +725,90 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
         }
 
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (ZipOutputStream zos = new ZipOutputStream(baos)) {
-                int addedEntries = 0;
-                for (Map<String, Object> attachment : attachments) {
-                    Object storedName = attachment.get("storedFileName");
-                    if (storedName == null) continue;
-                    String storedFileName = storedName.toString();
+            // Decide "single file vs ZIP" based on how many files can be actually downloaded.
+            int successCount = 0;
 
-                    String entryName;
-                    Object origName = attachment.get("originalFileName");
-                    if (origName != null && !origName.toString().isBlank()) {
-                        entryName = origName.toString();
-                    } else {
-                        entryName = storedFileName;
+            byte[] firstBytes = null;
+            HttpHeaders firstHeaders = null;
+            org.springframework.http.HttpStatusCode firstStatus = null;
+            String firstEntryName = null;
+
+            ByteArrayOutputStream zipBaos = null;
+            ZipOutputStream zos = null;
+            int addedEntries = 0;
+
+            for (Map<String, Object> attachment : attachments) {
+                if (attachment == null || attachment.get("storedFileName") == null) continue;
+                String storedFileName = attachment.get("storedFileName").toString();
+
+                String entryName;
+                Object origName = attachment.get("originalFileName");
+                if (origName != null && !origName.toString().isBlank()) {
+                    entryName = origName.toString();
+                } else {
+                    entryName = storedFileName;
+                }
+
+                try {
+                    ResponseEntity<org.springframework.core.io.Resource> fileResponse =
+                            attachmentClient.downloadAttachment(docId, transactionPoid, storedFileName);
+                    org.springframework.core.io.Resource resource = fileResponse.getBody();
+                    if (resource == null) continue;
+
+                    byte[] bytes;
+                    try (InputStream is = resource.getInputStream()) {
+                        bytes = is.readAllBytes();
                     }
 
-                    try {
-                        ResponseEntity<org.springframework.core.io.Resource> fileResponse =
-                                attachmentClient.downloadAttachment(docId, transactionPoid, storedFileName);
-                        org.springframework.core.io.Resource resource = fileResponse.getBody();
-                        if (resource == null) continue;
+                    successCount++;
+                    if (successCount == 1) {
+                        firstBytes = bytes;
+                        firstHeaders = fileResponse.getHeaders();
+                        firstStatus = fileResponse.getStatusCode();
+                        firstEntryName = entryName;
+                    } else {
+                        if (zos == null) {
+                            zipBaos = new ByteArrayOutputStream();
+                            zos = new ZipOutputStream(zipBaos);
 
-                        try (InputStream is = resource.getInputStream()) {
-                            zos.putNextEntry(new ZipEntry(entryName));
-                            is.transferTo(zos);
+                            zos.putNextEntry(new ZipEntry(firstEntryName));
+                            zos.write(firstBytes);
                             zos.closeEntry();
                             addedEntries++;
                         }
-                    } catch (RuntimeException ex) {
-                        log.warn("Skipping missing attachment '{}' for docId={}, transactionPoid={}: {}", storedFileName, docId, transactionPoid, ex.getMessage());
+
+                        zos.putNextEntry(new ZipEntry(entryName));
+                        zos.write(bytes);
+                        zos.closeEntry();
+                        addedEntries++;
                     }
-                }
-                if (addedEntries == 0) {
-                    throw new ResourceNotFoundException("Attachment", "transactionPoid", transactionPoid);
+                } catch (RuntimeException ex) {
+                    log.warn("Skipping missing attachment '{}' for docId={}, transactionPoid={}: {}", storedFileName, docId, transactionPoid, ex.getMessage());
                 }
             }
 
-            byte[] zipBytes = baos.toByteArray();
+            if (successCount == 0) {
+                throw new ResourceNotFoundException("Attachment", "transactionPoid", transactionPoid);
+            }
+
+            if (successCount == 1) {
+                ByteArrayResource singleResource = new ByteArrayResource(firstBytes);
+                if (firstHeaders != null) {
+                    firstHeaders.setContentLength(firstBytes.length);
+                }
+                return ResponseEntity.status(firstStatus != null ? firstStatus : org.springframework.http.HttpStatus.OK)
+                        .headers(firstHeaders != null ? firstHeaders : new HttpHeaders())
+                        .body(singleResource);
+            }
+
+            if (zos != null) {
+                try {
+                    zos.close();
+                } catch (Exception ignored) {
+                }
+            }
+
+            byte[] zipBytes = zipBaos.toByteArray();
             ByteArrayResource resource = new ByteArrayResource(zipBytes);
 
             HttpHeaders headers = new HttpHeaders();
