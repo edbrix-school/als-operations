@@ -17,9 +17,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ContentDisposition;
@@ -30,8 +36,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.asg.common.lib.dto.response.ApiResponse.*;
 
@@ -51,6 +59,8 @@ public class PortCallOperationController {
     private final PortCallOperationPcInfoAttachmentService pcInfoAttachmentService;
     private final PortCallOperationScreenAttachmentService screenAttachmentService;
     private final ExcelExportService excelExportService;
+    private final ObjectMapper objectMapper;
+    private final Validator validator;
 
     /**
      * Retrieves paginated list of port call operations.
@@ -123,34 +133,62 @@ public class PortCallOperationController {
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Update port call operation",
-            description = "Update an existing port call operation. Supports uploading husbandry crew and other attachments via multipart form-data.",
+            description = "Update an existing port call operation using multipart form-data. Required: form field 'dto' with JSON body for PortCallOperationDto. "
+                    + "Optional: husbandryCrewFiles / husbandryOthFiles (file uploads) and husbandryCrewDetRowId, husbandryCrewRemarks, husbandryCrewChecklistName (and oth-* equivalents). "
+                    + "All fields are standard form fields (works with Postman form-data Text/File without per-part JSON content-type issues).",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> updateOperation(@Parameter(description = "Operation ID") @PathVariable Long id,
-                                             @Valid @RequestPart("dto") PortCallOperationDto dto,
-                                             @RequestPart(value = "husbandryCrewFiles", required = false) MultipartFile[] husbandryCrewFiles,
-                                             @RequestPart(value = "husbandryCrewDetRowId", required = false) Long husbandryCrewDetRowId,
-                                             @RequestPart(value = "husbandryCrewRemarks", required = false) String[] husbandryCrewRemarks,
-                                             @RequestPart(value = "husbandryCrewChecklistName", required = false) String[] husbandryCrewChecklistNames,
-                                             @RequestPart(value = "husbandryOthFiles", required = false) MultipartFile[] husbandryOthFiles,
-                                             @RequestPart(value = "husbandryOthDetRowId", required = false) Long husbandryOthDetRowId,
-                                             @RequestPart(value = "husbandryOthRemarks", required = false) String[] husbandryOthRemarks,
-                                             @RequestPart(value = "husbandryOthChecklistName", required = false) String[] husbandryOthChecklistNames) {
+                                             @Parameter(description = "Required. JSON string for PortCallOperationDto (form-data Text or file upload).", required = true)
+                                             @RequestParam("dto") String dtoJson,
+                                             @Parameter(description = "Optional. Husbandry crew attachment files for this update.", required = false)
+                                             @RequestParam(value = "husbandryCrewFiles", required = false) MultipartFile[] husbandryCrewFiles,
+                                             @Parameter(description = "Optional. Required only when uploading husbandryCrewFiles.", required = false)
+                                             @RequestParam(value = "husbandryCrewDetRowId", required = false) Long husbandryCrewDetRowId,
+                                             @Parameter(description = "Optional. Remarks aligned to husbandryCrewFiles (same order).", required = false)
+                                             @RequestParam(value = "husbandryCrewRemarks", required = false) String[] husbandryCrewRemarks,
+                                             @Parameter(description = "Optional. Checklist names aligned to husbandryCrewFiles (same order).", required = false)
+                                             @RequestParam(value = "husbandryCrewChecklistName", required = false) String[] husbandryCrewChecklistNames,
+                                             @Parameter(description = "Optional. Husbandry other attachment files for this update.", required = false)
+                                             @RequestParam(value = "husbandryOthFiles", required = false) MultipartFile[] husbandryOthFiles,
+                                             @Parameter(description = "Optional. Required only when uploading husbandryOthFiles.", required = false)
+                                             @RequestParam(value = "husbandryOthDetRowId", required = false) Long husbandryOthDetRowId,
+                                             @Parameter(description = "Optional. Remarks aligned to husbandryOthFiles (same order).", required = false)
+                                             @RequestParam(value = "husbandryOthRemarks", required = false) String[] husbandryOthRemarks,
+                                             @Parameter(description = "Optional. Checklist names aligned to husbandryOthFiles (same order).", required = false)
+                                             @RequestParam(value = "husbandryOthChecklistName", required = false) String[] husbandryOthChecklistNames) {
+
+        if (StringUtils.isBlank(dtoJson)) {
+            throw new IllegalArgumentException("Form field 'dto' is required and must contain JSON for PortCallOperationDto");
+        }
+        String normalizedDtoJson = dtoJson.trim();
+        final PortCallOperationDto dto;
+        try {
+            dto = objectMapper.readValue(normalizedDtoJson, PortCallOperationDto.class);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid JSON in form field 'dto': " + e.getOriginalMessage());
+        }
+        Set<ConstraintViolation<PortCallOperationDto>> violations = validator.validate(dto);
+        if (!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
 
         PortCallOperationResponseDto updated = portCallOperationService.updateOperation(id, dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
 
-        // Optionally handle husbandry attachments in the same call
-        if ((husbandryCrewFiles != null && husbandryCrewFiles.length > 0) || (husbandryOthFiles != null && husbandryOthFiles.length > 0)) {
+        // Optionally handle husbandry attachments in the same call (all husbandry parts are optional)
+        MultipartFile[] crewFiles = nonEmptyMultipartFiles(husbandryCrewFiles);
+        MultipartFile[] othFiles = nonEmptyMultipartFiles(husbandryOthFiles);
+        if (crewFiles != null || othFiles != null) {
             if (requireAttachmentService() != null) {
                 return requireAttachmentService();
             }
 
-            if (husbandryCrewFiles != null && husbandryCrewFiles.length > 0 && husbandryCrewDetRowId != null) {
-                screenAttachmentService.uploadHusbandryCrewAttachments(id, husbandryCrewDetRowId, husbandryCrewFiles, husbandryCrewRemarks, husbandryCrewChecklistNames);
+            if (crewFiles != null && husbandryCrewDetRowId != null) {
+                screenAttachmentService.uploadHusbandryCrewAttachments(id, husbandryCrewDetRowId, crewFiles, husbandryCrewRemarks, husbandryCrewChecklistNames);
             }
 
-            if (husbandryOthFiles != null && husbandryOthFiles.length > 0 && husbandryOthDetRowId != null) {
-                screenAttachmentService.uploadHusbandryOthAttachments(id, husbandryOthDetRowId, husbandryOthFiles, husbandryOthRemarks, husbandryOthChecklistNames);
+            if (othFiles != null && husbandryOthDetRowId != null) {
+                screenAttachmentService.uploadHusbandryOthAttachments(id, husbandryOthDetRowId, othFiles, husbandryOthRemarks, husbandryOthChecklistNames);
             }
         }
 
@@ -566,6 +604,23 @@ public class PortCallOperationController {
             return badRequest("Attachment service is not configured. Set common.service.attachment.base-url.");
         }
         return null;
+    }
+
+    /**
+     * Treats missing, all-null, or all-empty {@link MultipartFile} entries as "no files" so optional uploads stay optional
+     * (e.g. Postman file row with no file selected).
+     */
+    private static MultipartFile[] nonEmptyMultipartFiles(MultipartFile[] files) {
+        if (files == null || files.length == 0) {
+            return null;
+        }
+        List<MultipartFile> out = new ArrayList<>();
+        for (MultipartFile f : files) {
+            if (f != null && !f.isEmpty()) {
+                out.add(f);
+            }
+        }
+        return out.isEmpty() ? null : out.toArray(new MultipartFile[0]);
     }
 
     // ----- Berthing (OPS_PC_EST_BERT_DTL.BERTHING_ATTACHMENTS) -----
