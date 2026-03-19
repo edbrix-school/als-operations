@@ -53,9 +53,6 @@ public class PortCallOperationCreateDto {
     @Size(max = 4000, message = "Terms and Conditions should not exceed 4000 characters")
     private String termsConditions;
 
-    @Size(max = 4000, message = "PC Info Attachments should not exceed 4000 characters")
-    private String pcInfoAttachments;
-
     @Valid
     private List<PortCallOperationCargoDetailDto> cargoDetails;
 

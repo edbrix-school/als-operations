@@ -124,6 +124,51 @@ public class PortCallOperationController {
         return success("Operation created successfully", created);
     }
 
+    @AllowedAction(UserRolesRightsEnum.CREATE)
+    @PostMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "Create port call operation (multipart)",
+            description = "Create a new port call operation and optionally upload PC Info attachments. "
+                    + "Send multipart form-data with JSON field 'dto' (PortCallOperationCreateDto) and optional file parts: "
+                    + "'files', 'remarks', 'checklistName'.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> createOperationMultipart(@RequestParam("dto") String dtoJson,
+                                                      @RequestParam(value = "files", required = false) MultipartFile[] files,
+                                                      @RequestParam(value = "remarks", required = false) String[] remarks,
+                                                      @RequestParam(value = "checklistName", required = false) String[] checklistNames) throws JsonProcessingException {
+
+        if (StringUtils.isBlank(dtoJson)) {
+            throw new IllegalArgumentException("Form field 'dto' is required");
+        }
+
+        PortCallOperationCreateDto dto = objectMapper.readValue(dtoJson.trim(), PortCallOperationCreateDto.class);
+        Set<ConstraintViolation<PortCallOperationCreateDto>> violations = validator.validate(dto);
+        if (!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
+
+        PortCallOperationResponseDto created = portCallOperationService.createOperation(dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
+
+        if (files != null && files.length > 0) {
+            // Filter empty slots (some clients send empty multipart rows as application/octet-stream)
+            MultipartFile[] nonEmptyFiles = Arrays.stream(files)
+                    .filter(f -> f != null && !f.isEmpty())
+                    .toArray(MultipartFile[]::new);
+
+            if (nonEmptyFiles.length > 0) {
+                PcInfoAttachmentUploadResponseDto uploadResponse = pcInfoAttachmentService.uploadPcInfoAttachments(created.getTransactionPoid(), nonEmptyFiles, remarks, checklistNames);
+                if (uploadResponse.isHasErrors()) {
+                    throw new IllegalStateException("PC Info attachments upload failed");
+                }
+            }
+        }
+
+        // Refresh to include PC_INFO_ATTACHMENTS updated by upload
+        PortCallOperationResponseDto refreshed = portCallOperationService.getOperationById(created.getTransactionPoid());
+        return success("Operation created successfully", refreshed);
+    }
+
     /**
      * Updates an existing port call operation.
      *
