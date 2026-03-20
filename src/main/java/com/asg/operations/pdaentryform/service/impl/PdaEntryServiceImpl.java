@@ -749,7 +749,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - START - pdaPoid: {}", pdaPoid);
 
             // Try with schema prefix first
-            String sqlWithSchema = "{ call PRODUCTION.PROC_PDA_FDA_CREATE_FROM_PDA(?, ?, ?, ?, ?) }";
+            String sqlWithSchema = "{ call PROC_PDA_FDA_CREATE_FROM_PDA(?, ?, ?, ?, ?) }";
             
             try {
                 String result = jdbcTemplate.execute(sqlWithSchema, (java.sql.CallableStatement cs) -> {
@@ -790,7 +790,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     
                     // Final fallback to SimpleJdbcCall
                     SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                            .withSchemaName("PRODUCTION")
                             .withProcedureName("PROC_PDA_FDA_CREATE_FROM_PDA")
                             .withoutProcedureColumnMetaDataAccess()
                             .declareParameters(
