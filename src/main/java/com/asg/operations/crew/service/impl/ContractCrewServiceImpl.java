@@ -1,6 +1,7 @@
 package com.asg.operations.crew.service.impl;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.exception.ValidationException;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.service.DocumentDeleteService;
@@ -22,7 +23,6 @@ import com.asg.operations.crew.util.CrewCodeGenerator;
 import com.asg.operations.crew.util.EntityMapper;
 import com.asg.operations.crew.util.ValidationUtil;
 import com.asg.operations.exceptions.ResourceNotFoundException;
-import com.asg.operations.exceptions.ValidationException;
 import com.asg.operations.crew.service.ContractCrewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -95,7 +95,10 @@ public class ContractCrewServiceImpl implements ContractCrewService {
     public ContractCrewResponse createCrew(ContractCrewRequest request, Long companyPoid, Long groupPoid, String userId) {
         // Validate request
         validateCrewRequest(request);
+        if (request.getDetails() != null) {
+            validateCrewDetails(request.getDetails());
 
+        }
         // Map request to entity
         ContractCrew crew = entityMapper.toContractCrewEntity(companyPoid, groupPoid, userId, request);
 
@@ -120,13 +123,32 @@ public class ContractCrewServiceImpl implements ContractCrewService {
         return getCrewById(crew.getCrewPoid());
     }
 
+    private void validateCrewDetails(List<ContractCrewDtlRequest> details) {
+
+       for (ContractCrewDtlRequest det : details) {
+           if (!det.getActionType().equalsIgnoreCase("isDeleted")){
+               if (StringUtils.isBlank(det.getDocumentType())){
+                   throw new ValidationException("Document Type is mandatory");
+               }
+               if (StringUtils.isBlank(det.getDocumentNumber())){
+                   throw new ValidationException("Document Number is mandatory");
+               }
+               if (det.getDocumentAppliedDate() == null){
+                   throw new ValidationException("Document Applied date is mandatory");
+               }
+           }
+       }
+    }
+
     @Override
     public ContractCrewResponse updateCrew(Long companyPoid, String userId, Long crewPoid, ContractCrewRequest request) {
         // Validate request
         validateCrewRequest(request);
 
-        // Check if crew exists
+        if (request.getDetails() != null) {
+            validateCrewDetails(request.getDetails());
 
+        }
         ContractCrew crew = crewRepository.findByCrewPoidAndCompanyPoid(crewPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Crew master not found with id: " + crewPoid));
 
@@ -262,7 +284,7 @@ public class ContractCrewServiceImpl implements ContractCrewService {
 
         // If validation errors exist, throw exception
         if (!validationErrors.isEmpty()) {
-            throw new ValidationException(
+            throw new com.asg.operations.exceptions.ValidationException(
                     "Validation errors occurred",
                     validationErrors
             );

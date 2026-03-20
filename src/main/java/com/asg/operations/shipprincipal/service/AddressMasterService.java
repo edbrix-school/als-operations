@@ -10,6 +10,6 @@ public interface AddressMasterService {
 
     AddressMasterResponse getMasterWithDetails(Long poid);
 
-    void saveAllDetails(AddressTypeMapDTO typeMap, AddressMaster master, String currentUser);
+    void saveAllDetails(AddressTypeMapDTO typeMap, AddressMaster master, String currentUser, String parentPoid);
 
 }
