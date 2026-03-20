@@ -94,8 +94,10 @@ public class AddressMasterServiceImpl implements AddressMasterService {
     }
 
     @Override
-    public void saveAllDetails(AddressTypeMapDTO typeMap, AddressMaster master, String currentUser) {
+    public void saveAllDetails(AddressTypeMapDTO typeMap, AddressMaster master, String currentUser, String parentPoid) {
         if (typeMap == null) return;
+
+        String entityId = (parentPoid != null && !parentPoid.isEmpty()) ? parentPoid : String.valueOf(master.getAddressMasterPoid());
 
         List<AddressDetails> existingDetails = detailsRepo.findByAddressMasterPoidOrderByAddressType(master.getAddressMasterPoid());
         Map<String, AddressDetails> existingMap = existingDetails.stream()
@@ -129,7 +131,7 @@ public class AddressMasterServiceImpl implements AddressMasterService {
                         AddressDetails detail = existingMap.get(dto.getAddressPoid());
                         toDelete.add(detail);
                         String logDetail = String.format("Row Deleted on Address Detail with addressPoid: %s", detail.getAddressPoid());
-                        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), master.getAddressMasterPoid().toString(), logDetail);
+                        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), entityId, logDetail);
                     }
                 } else if ("isUpdated".equalsIgnoreCase(actionType)) {
                     if (dto.getAddressPoid() != null && existingMap.containsKey(dto.getAddressPoid())) {
@@ -139,13 +141,13 @@ public class AddressMasterServiceImpl implements AddressMasterService {
                         updateDetail(detail, dto, currentUser);
                         toSave.add(detail);
                         String logDetail = String.format("KeyId = ADDRESS_MASTER_POID %s: ADDRESS_POID %s", master.getAddressMasterPoid(), detail.getAddressPoid());
-                        loggingService.createLog(oldDetail, detail, AddressDetails.class, UserContext.getDocumentId(), master.getAddressMasterPoid().toString(), logDetail);
+                        loggingService.createLog(oldDetail, detail, AddressDetails.class, UserContext.getDocumentId(), entityId, logDetail);
                     }
                 } else if ("isCreated".equalsIgnoreCase(actionType)) {
                     AddressDetails detail = buildDetail(dto, master, type, counter++, currentUser);
                     toSave.add(detail);
                     String logDetail = String.format("Row Created on Address Detail with addressPoid: %s", detail.getAddressPoid());
-                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), master.getAddressMasterPoid().toString(), logDetail);
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), entityId, logDetail);
                 }
             }
         }

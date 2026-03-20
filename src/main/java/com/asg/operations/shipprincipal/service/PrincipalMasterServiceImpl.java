@@ -141,6 +141,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
         log.debug("Creating principal with code: {}", dto.getPrincipalCode());
         Long addressPoid = null;
+        AddressMaster addressMasterToUpdate = null;
         if (dto.getAddressPoid() == null) {
             if (StringUtils.isBlank(dto.getPrincipalName())) {
                 throw new CustomException("Address Name is required for creating new address", 400);
@@ -157,16 +158,11 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
             dto.setAddressPoid(newAddressMaster.getAddressMasterPoid());
             addressPoid = dto.getAddressPoid();
-
-            if (dto.getAddressTypeMap() != null) {
-                addressMasterService.saveAllDetails(dto.getAddressTypeMap(), newAddressMaster, user.getUserName());
-            }
+            addressMasterToUpdate = newAddressMaster;
         } else {
             AddressMaster addressMaster = addressMasterRepository.findByAddressMasterPoid(dto.getAddressPoid());
             addressPoid = addressMaster.getAddressMasterPoid();
-            if (dto.getAddressTypeMap() != null) {
-                addressMasterService.saveAllDetails(dto.getAddressTypeMap(), addressMaster, user.getUserName());
-            }
+            addressMasterToUpdate = addressMaster;
         }
 
         ShipPrincipalMaster principal = new ShipPrincipalMaster();
@@ -176,6 +172,10 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
         principal = principalRepository.save(principal);
 
         Long principalId = principal.getPrincipalPoid();
+
+        if (dto.getAddressTypeMap() != null && addressMasterToUpdate != null) {
+            addressMasterService.saveAllDetails(dto.getAddressTypeMap(), addressMasterToUpdate, user.getUserName(), principalId.toString());
+        }
 
         if (dto.getCharges() != null && !dto.getCharges().isEmpty()) {
             long nextDetRowId = chargeRepository.findMaxDetRowIdByPrincipalPoid(principalId) + 1;
@@ -283,13 +283,13 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             addressPoid = dto.getAddressPoid();
 
             if (dto.getAddressTypeMap() != null) {
-                addressMasterService.saveAllDetails(dto.getAddressTypeMap(), newAddressMaster, user.getUserName());
+                addressMasterService.saveAllDetails(dto.getAddressTypeMap(), newAddressMaster, user.getUserName(), id.toString());
             }
         } else {
             AddressMaster addressMaster = addressMasterRepository.findByAddressMasterPoid(dto.getAddressPoid());
             addressPoid = addressMaster.getAddressMasterPoid();
             if (dto.getAddressTypeMap() != null) {
-                addressMasterService.saveAllDetails(dto.getAddressTypeMap(), addressMaster, user.getUserName());
+                addressMasterService.saveAllDetails(dto.getAddressTypeMap(), addressMaster, user.getUserName(), id.toString());
             }
         }
 
@@ -422,6 +422,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
                                 existing.setEscalationRole2(paRptDetail.getEscalationRole2());
                                 existing.setRemarks(paRptDetail.getRemarks());
                                 existing = paRptDtlRepository.save(existing);
+
                                 String logDetail = String.format("KeyId = PRINCIPAL_POID %s: DET_ROW_ID %s", existing.getPrincipalPoid(), existing.getDetRowId());
                                 loggingService.createLog(oldPaRpt, existing, ShipPrincipalPaRptDtl.class, UserContext.getDocumentId(), id.toString(), logDetail);
                             });

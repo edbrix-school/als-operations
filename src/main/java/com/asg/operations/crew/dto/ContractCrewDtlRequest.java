@@ -14,17 +14,14 @@ import java.time.LocalDate;
 @Data
 public class ContractCrewDtlRequest {
 
-    private Long detRowId; // Required for UPDATE operations
+    private Long detRowId;
 
-    @NotBlank(message = "Document type is mandatory")
     @Size(max = 50, message = "Document type must not exceed 50 characters")
     private String documentType;
 
-    @NotBlank(message = "Document number is mandatory")
     @Size(max = 100, message = "Document number must not exceed 100 characters")
     private String documentNumber;
 
-    @NotNull(message = "Document applied date is mandatory")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate documentAppliedDate;
 
