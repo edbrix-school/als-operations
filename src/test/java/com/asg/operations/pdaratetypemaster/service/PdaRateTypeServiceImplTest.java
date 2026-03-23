@@ -78,9 +78,6 @@ public class PdaRateTypeServiceImplTest {
     void testCreate_Success() {
         when(repository.existsByRateTypeCodeAndGroupPoid("GRT", BigDecimal.ONE)).thenReturn(false);
         when(repository.existsByRateTypeNameAndGroupPoid("Gross Tonnage Rate", BigDecimal.ONE)).thenReturn(false);
-        when(formulaValidator.validate(anyString(), any())).thenReturn(
-            new FormulaValidator.FormulaValidationResult(true, new ArrayList<>(), new ArrayList<>(), "GRT * 0.5", Arrays.asList("GRT"))
-        );
         when(mapper.toEntity(requestDTO, BigDecimal.ONE, "testUser")).thenReturn(entity);
         when(repository.save(any(PdaRateTypeMaster.class))).thenReturn(entity);
         when(mapper.toResponse(entity)).thenReturn(new PdaRateTypeResponseDTO());
