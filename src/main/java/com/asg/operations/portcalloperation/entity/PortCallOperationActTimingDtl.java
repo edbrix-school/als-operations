@@ -29,7 +29,6 @@ public class PortCallOperationActTimingDtl extends BaseEntity {
     @Column(name = "DET_ROW_ID")
     private Long detRowId;
 
-    @Id
     @Column(name = "PORT_REPORT_POID")
     private Long portReportPoid;
 

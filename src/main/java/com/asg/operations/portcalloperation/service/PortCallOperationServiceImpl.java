@@ -2374,8 +2374,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (dto.getPortCallReportPoid() == null) {
             throw new ValidationException("portCallReportPoid is required to update act timing activities");
         }
-        if (!actTimingDtlRepository.existsById(new PortCallOperationActTimingDtlId(transactionPoid, detRowId, dto.getPortCallReportPoid()))) {
-            throw new ResourceNotFoundException("ActTimingDtl", "Transaction Poid, Det Row Id and Port Report Poid", String.format("%s, %s, %s", transactionPoid, detRowId, dto.getPortCallReportPoid()));
+        if (!actTimingDtlRepository.existsById(new PortCallOperationActTimingDtlId(transactionPoid, detRowId))) {
+            throw new ResourceNotFoundException("ActTimingDtl", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId));
         }
 
         // Existing activity rows for this act-timing detail (may be empty when first saving activities from the popup)
@@ -2526,13 +2526,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         long maxActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId);
 
         // Update PortCallOperationActTimingDtl record
-        PortCallOperationActTimingDtl existingActTimingDtl = actTimingDtlRepository.findById(new PortCallOperationActTimingDtlId(transactionPoid, detRowId, dto.getPortCallReportPoid()))
-                .orElseThrow(() -> new ResourceNotFoundException("ActTimingDtl", "Transaction Poid, Det Row Id and Port Report Poid", String.format("%s, %s, %s", transactionPoid, detRowId, dto.getPortCallReportPoid())));
+        PortCallOperationActTimingDtl existingActTimingDtl = actTimingDtlRepository.findById(new PortCallOperationActTimingDtlId(transactionPoid, detRowId))
+                .orElseThrow(() -> new ResourceNotFoundException("ActTimingDtl", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId)));
 
         PortCallOperationActTimingDtl oldActTimingDtl = new PortCallOperationActTimingDtl();
         BeanUtils.copyProperties(existingActTimingDtl, oldActTimingDtl);
 
         existingActTimingDtl.setEmailPoid(emailPoidToUse);
+        existingActTimingDtl.setPortReportPoid(dto.getPortCallReportPoid());
         existingActTimingDtl.setActualsTimingDtlPoid(maxActualsTimingDtlPoid);
 
         actTimingDtlRepository.save(existingActTimingDtl);
