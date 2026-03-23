@@ -860,12 +860,8 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     }
 
     private PortCallOperationActTimingDtl resolveTiming(Long transactionPoid, Long detRowId) {
-        List<PortCallOperationActTimingDtl> entities = actTimingDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
-        if (entities.isEmpty()) {
-            throw new ResourceNotFoundException("Actual timing detail", "detRowId", detRowId);
-        }
-        // Return the first one (there could be multiple with different portReportPoid, but attachments are at detRowId level)
-        return entities.get(0);
+        return actTimingDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId)
+                .orElseThrow(() -> new ResourceNotFoundException("Actual timing detail", "detRowId", detRowId));
     }
 
     @SuppressWarnings("unchecked")
