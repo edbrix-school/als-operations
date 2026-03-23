@@ -570,7 +570,8 @@ public class PortCallOperationController {
                                                  @RequestParam(value = "files", required = false) MultipartFile[] files,
                                                  @RequestParam(value = "remarks", required = false) String[] remarks,
                                                  @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
-        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.createEstBertDetail(transactionPoid, dto, files, remarks, checklistNames);
+        MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
+        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.createEstBertDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
         return success("EstBertDetail created successfully", result);
     }
 
@@ -587,7 +588,8 @@ public class PortCallOperationController {
                                                  @RequestParam(value = "files", required = false) MultipartFile[] files,
                                                  @RequestParam(value = "remarks", required = false) String[] remarks,
                                                  @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
-        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.updateEstBertDetail(transactionPoid, detRowId, dto, files, remarks, checklistNames);
+        MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
+        PortCallOperationEstBertDetailResponseDto result = portCallOperationService.updateEstBertDetail(transactionPoid, detRowId, dto, nonEmptyFiles, remarks, checklistNames);
         return success("EstBertDetail updated successfully", result);
     }
 
@@ -616,7 +618,8 @@ public class PortCallOperationController {
                                                           @RequestParam(value = "files", required = false) MultipartFile[] files,
                                                           @RequestParam(value = "remarks", required = false) String[] remarks,
                                                           @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
-        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, dto, files, remarks, checklistNames);
+        MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
+        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("EstPrearrivalActDetail created successfully", result);
     }
@@ -635,7 +638,8 @@ public class PortCallOperationController {
                                                           @RequestParam(value = "files", required = false) MultipartFile[] files,
                                                           @RequestParam(value = "remarks", required = false) String[] remarks,
                                                           @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
-        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, preActivityDtlPoid, dto, files, remarks, checklistNames);
+        MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
+        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, preActivityDtlPoid, dto, nonEmptyFiles, remarks, checklistNames);
         return success("EstPrearrivalActDetail updated successfully", result);
     }
 
@@ -665,7 +669,8 @@ public class PortCallOperationController {
                                                           @RequestParam(value = "files", required = false) MultipartFile[] files,
                                                           @RequestParam(value = "remarks", required = false) String[] remarks,
                                                           @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
-        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, dto, files, remarks, checklistNames);
+        MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
+        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("ActTimingsActvtyDetail created successfully", result);
     }
@@ -684,7 +689,8 @@ public class PortCallOperationController {
                                                           @RequestParam(value = "files", required = false) MultipartFile[] files,
                                                           @RequestParam(value = "remarks", required = false) String[] remarks,
                                                           @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
-        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto, files, remarks, checklistNames);
+        MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
+        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto, nonEmptyFiles, remarks, checklistNames);
         return success("ActTimingsActvtyDetail updated successfully", result);
     }
 
@@ -714,7 +720,8 @@ public class PortCallOperationController {
                                                   @RequestParam(value = "files", required = false) MultipartFile[] files,
                                                   @RequestParam(value = "remarks", required = false) String[] remarks,
                                                   @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
-        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.createDocsCopyDetail(transactionPoid, dto, files, remarks, checklistNames);
+        MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
+        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.createDocsCopyDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("DocsCopyDetail created successfully", result);
     }
@@ -732,7 +739,8 @@ public class PortCallOperationController {
                                                   @RequestParam(value = "files", required = false) MultipartFile[] files,
                                                   @RequestParam(value = "remarks", required = false) String[] remarks,
                                                   @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
-        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.updateDocsCopyDetail(transactionPoid, detRowId, dto, files, remarks, checklistNames);
+        MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
+        PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.updateDocsCopyDetail(transactionPoid, detRowId, dto, nonEmptyFiles, remarks, checklistNames);
         return success("DocsCopyDetail updated successfully", result);
     }
 
