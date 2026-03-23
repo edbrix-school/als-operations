@@ -129,7 +129,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
     @Override
     @Transactional
-    public PrincipalMasterDto createPrincipal(PrincipalCreateDTO dto, Long groupPoid, Long userPoid) {
+    public PrincipalMasterDto createPrincipal(@Valid PrincipalCreateDTO dto, Long groupPoid, Long userPoid) {
         log.info("Creating principal with name: {}", dto.getPrincipalName());
 
         if (principalRepository.existsByPrincipalName(dto.getPrincipalName())) {
@@ -250,7 +250,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
 
     @Override
     @Transactional
-    public PrincipalMasterDto updatePrincipal(Long id, PrincipalUpdateDTO dto, Long groupPoid, Long userPoid) {
+    public PrincipalMasterDto updatePrincipal(Long id, @Valid PrincipalUpdateDTO dto, Long groupPoid, Long userPoid) {
         log.info("Updating principal with id: {}", id);
         ShipPrincipalMaster principal = principalRepository.findById(id)
                 .orElseThrow(() -> {
