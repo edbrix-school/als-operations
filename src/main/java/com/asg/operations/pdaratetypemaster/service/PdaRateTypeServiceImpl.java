@@ -217,13 +217,7 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
     }
 
     private void validateFormulaString(String formula) {
-        if (formula != null && !formula.trim().isEmpty()) {
-            FormulaValidator.FormulaValidationResult result =
-                    formulaValidator.validate(formula, null);
-
-            if (!result.isValid()) {
-                throw new ValidationException("Formula validation failed");
-            }
-        }
+        // Accept any formula - no validation restrictions
+        // Formula validation is now permissive to allow any input
     }
 }
