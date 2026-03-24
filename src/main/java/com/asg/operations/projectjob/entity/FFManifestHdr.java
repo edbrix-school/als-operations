@@ -1,6 +1,7 @@
 package com.asg.operations.projectjob.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Table(name = "FF_MANIEST_HDR")
-public class FFManifestHdr {
+public class FFManifestHdr extends BaseEntity {
 
     @AuditIgnore
     @Id
@@ -278,24 +279,6 @@ public class FFManifestHdr {
     @Column(name = "TOTAL_CHARGES")
     private BigDecimal totalCharges;
 
-    @AuditIgnore
-    @Column(name = "CREATED_BY")
-    @Size(max = 20)
-    private String createdBy;
-
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY")
-    @Size(max = 20)
-    private String lastModifiedBy;
-
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
     @Column(name = "AIR_ARRIVAL_PORT")
     @Size(max = 100)
     private String airArrivalport;
@@ -503,7 +486,7 @@ public class FFManifestHdr {
 
     @Column(name = "INCO_TERM")
     @Size(max = 100)
-    private String IncoTerm;
+    private String incoTerm;
 
     @Column(name = "DOCUMENT_STATUS")
     @Size(max = 100)

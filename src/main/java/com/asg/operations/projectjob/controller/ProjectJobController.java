@@ -8,7 +8,6 @@ import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.common.ApiResponse;
-import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
 import com.asg.operations.projectjob.dto.ProjectJobRequest;
 import com.asg.operations.projectjob.dto.ProjectJobResponse;
 import com.asg.operations.projectjob.dto.ProjectLoadInJobsProcResponse;
@@ -65,7 +64,7 @@ public class ProjectJobController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required", content = @Content(mediaType = "application/json"))}, security = @SecurityRequirement(name = "bearerAuth"))
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
-    public ResponseEntity<?> createPdaEntry(
+    public ResponseEntity<?> createProjectJob(
             @Parameter(description = "Project JOb request", required = true) @Valid @RequestBody ProjectJobRequest request) {
         ProjectJobResponse response = projectJobService.create(request);
         return ApiResponse.success("project Job created successfully", response);
@@ -79,7 +78,7 @@ public class ProjectJobController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required", content = @Content(mediaType = "application/json"))}, security = @SecurityRequirement(name = "bearerAuth"))
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{transactionPoid}")
-    public ResponseEntity<?> updatePdaEntry(
+    public ResponseEntity<?> updateProjectJob(
             @Parameter(description = "Transaction POID", required = true) @PathVariable Long transactionPoid,
             @Parameter(description = "Project Job request", required = true) @Valid @RequestBody ProjectJobRequest request) {
         ProjectJobResponse response = projectJobService.update(transactionPoid, request);
@@ -117,7 +116,7 @@ public class ProjectJobController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required", content = @Content(mediaType = "application/json"))}, security = @SecurityRequirement(name = "bearerAuth"))
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}")
-    public ResponseEntity<?> deletePdaEntry(
+    public ResponseEntity<?> deleteProjectJob(
             @Parameter(description = "Transaction POID", required = true) @PathVariable Long transactionPoid,
             @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
         projectJobService.deleteById(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(),
@@ -128,7 +127,7 @@ public class ProjectJobController {
     @Operation(summary = "Get Project Jobs list", description = "Retrieves a paginated list of Project Jobs with optional filtering and sorting. "
             + "Results are paginated and can be sorted by any field. "
             + "Only records accessible to the user's company are returned (multi-tenant filtering).", responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved Project list", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Successfully retrieved Project list", content = @Content(mediaType = "application/json")),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required", content = @Content(mediaType = "application/json")),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(mediaType = "application/json"))}, security = @SecurityRequirement(name = "bearerAuth"))
     @AllowedAction(UserRolesRightsEnum.VIEW)
@@ -136,9 +135,9 @@ public class ProjectJobController {
     public ResponseEntity<?> getProjectJobList(@RequestBody(required = false) FilterRequestDto filterRequest,
                                                @ParameterObject Pageable pageable, @RequestParam(required = false) LocalDate periodFrom,
                                                @RequestParam(required = false) LocalDate periodTo) {
-        Map<String, Object> pdaPage = projectJobService.getAllProjectJobsWithFilters(UserContext.getDocumentId(),
+        Map<String, Object> page = projectJobService.getAllProjectJobsWithFilters(UserContext.getDocumentId(),
                 filterRequest, pageable, periodFrom, periodTo);
-        return success("Project Jobs retrieved successfully", pdaPage);
+        return success("Project Jobs retrieved successfully", page);
     }
 
 }

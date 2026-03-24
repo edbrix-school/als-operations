@@ -1,4 +1,34 @@
-package com.asg.operations.projectjob.service.Impl;
+package com.asg.operations.projectjob.service.impl;
+
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterDto;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.dto.request.LogRequestDto;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.utility.PaginationUtil;
+import com.asg.operations.crew.dto.ValidationError;
+import com.asg.operations.exceptions.ResourceNotFoundException;
+import com.asg.operations.exceptions.ValidationException;
+import com.asg.operations.projectjob.dto.*;
+import com.asg.operations.projectjob.entity.*;
+import com.asg.operations.projectjob.repository.*;
+import com.asg.operations.projectjob.service.ProjectJobService;
+import com.asg.operations.projectjob.util.ProjectJobMapper;
+import com.asg.operations.projectjob.util.TriConsumer;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -10,65 +40,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import org.springframework.beans.BeanUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.asg.common.lib.dto.DeleteReasonDto;
-import com.asg.common.lib.dto.FilterDto;
-import com.asg.common.lib.dto.FilterRequestDto;
-import com.asg.common.lib.dto.RawSearchResult;
-import com.asg.common.lib.dto.request.LogRequestDto;
-import com.asg.common.lib.security.util.UserContext;
-import com.asg.common.lib.service.DocumentDeleteService;
-import com.asg.common.lib.service.DocumentSearchService;
-import com.asg.common.lib.service.LoggingService;
-import com.asg.common.lib.utility.PaginationUtil;
-import com.asg.operations.crew.dto.ValidationError;
-import com.asg.operations.exceptions.ResourceNotFoundException;
-import com.asg.operations.exceptions.ValidationException;
-import com.asg.operations.projectjob.dto.BaseDetailDto;
-import com.asg.operations.projectjob.dto.FFManifestHdrDto;
-import com.asg.operations.projectjob.dto.FFManifestHdrDtoResponse;
-import com.asg.operations.projectjob.dto.ProjectJobAirPkgDto;
-import com.asg.operations.projectjob.dto.ProjectJobAirPkgDtoRequest;
-import com.asg.operations.projectjob.dto.ProjectJobBayanDto;
-import com.asg.operations.projectjob.dto.ProjectJobBayanDtoRequest;
-import com.asg.operations.projectjob.dto.ProjectJobChargesDto;
-import com.asg.operations.projectjob.dto.ProjectJobChargesDtoRequest;
-import com.asg.operations.projectjob.dto.ProjectJobContainerDto;
-import com.asg.operations.projectjob.dto.ProjectJobContainerDtoRequest;
-import com.asg.operations.projectjob.dto.ProjectJobRequest;
-import com.asg.operations.projectjob.dto.ProjectJobResponse;
-import com.asg.operations.projectjob.dto.ProjectJobTruckDto;
-import com.asg.operations.projectjob.dto.ProjectJobTruckDtoRequest;
-import com.asg.operations.projectjob.dto.ProjectLoadInJobsProcResponse;
-import com.asg.operations.projectjob.entity.BaseDetailEntity;
-import com.asg.operations.projectjob.entity.FFManifestAirPkgDtl;
-import com.asg.operations.projectjob.entity.FFManifestBayanDtl;
-import com.asg.operations.projectjob.entity.FFManifestChargesDtl;
-import com.asg.operations.projectjob.entity.FFManifestContainerDtl;
-import com.asg.operations.projectjob.entity.FFManifestHdr;
-import com.asg.operations.projectjob.entity.FFManifestTruckDtl;
-import com.asg.operations.projectjob.repository.FFManifestAirPkgDtlRepository;
-import com.asg.operations.projectjob.repository.FFManifestBayanDtlRepository;
-import com.asg.operations.projectjob.repository.FFManifestChargesDtlRepository;
-import com.asg.operations.projectjob.repository.FFManifestContainerDtlRepository;
-import com.asg.operations.projectjob.repository.FFManifestHdrRepository;
-import com.asg.operations.projectjob.repository.FFManifestTruckDtlRepository;
-import com.asg.operations.projectjob.repository.ProjectJobStoredProcRepository;
-import com.asg.operations.projectjob.service.ProjectJobService;
-import com.asg.operations.projectjob.util.ProjectJobMapper;
-import com.asg.operations.projectjob.util.TriConsumer;
-
-import jakarta.persistence.EntityManager;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -84,7 +55,8 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
-    private final EntityManager entityManager;
+
+    private static final String TRANSACTION_POID = "TRANSACTION_POID";
 
     @Override
     @Transactional
@@ -94,20 +66,17 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         ProjectJobMapper.mapHdrFromDto(request, hdr);
         Long groupPoid = UserContext.getGroupPoid();
         Long companyPoid = UserContext.getCompanyPoid();
-        String currentUser = UserContext.getUserId();
-        LocalDateTime now = LocalDateTime.now();
 
         hdr.setCompanyPoid(companyPoid);
         hdr.setGroupPoid(groupPoid);
-        hdr.setCreatedBy(currentUser);
-        hdr.setCreatedDate(now);
 
 
-        FFManifestHdr savedHdr=hdrRepository.save(hdr);
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedHdr.getTransactionPoid().toString(), "Project Job Created");
+        FFManifestHdr savedHdr = hdrRepository.save(hdr);
 
         saveDetails(savedHdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
                 request.getContainers(), request.getTruckDetails());
+
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedHdr.getTransactionPoid().toString(), "Project Job Created");
 
         return getById(hdr.getTransactionPoid());
     }
@@ -118,19 +87,17 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         FFManifestHdr hdr = hdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
-        FFManifestHdr hdrEntity = new FFManifestHdr();
-        ProjectJobMapper.mapHdrFromDto((FFManifestHdrDto) request, hdrEntity);
-        Long groupPoid = UserContext.getGroupPoid();
-        String currentUser = UserContext.getUserId();
-        LocalDateTime now = LocalDateTime.now();
-        hdr.setGroupPoid(groupPoid);
-        hdr.setTransactionPoid(transactionPoid);
-        hdr.setLastModifiedBy(currentUser);
-        hdr.setLastModifiedDate(now);
+        FFManifestHdr oldHdr = new FFManifestHdr();
+        BeanUtils.copyProperties(hdr, oldHdr);
+
+        ProjectJobMapper.mapHdrFromDto(request, hdr);
+
         hdrRepository.save(hdr);
 
         saveDetails(hdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
                 request.getContainers(), request.getTruckDetails());
+
+        loggingService.logChanges(oldHdr, hdr, FFManifestHdr.class, UserContext.getDocumentId(), hdr.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, TRANSACTION_POID);
 
         return getById(transactionPoid);
     }
@@ -205,6 +172,9 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                     toDelete.add(detRowId);
                     loggingService.logDelete(dto, docId, docKeyPoid);
                     break;
+
+                default:
+                    break;
             }
         }
 
@@ -265,7 +235,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
 
         ProjectJobResponse response = new ProjectJobResponse();
 
-        ProjectJobMapper.toHdrDto(hdr, (FFManifestHdrDtoResponse) response);
+        ProjectJobMapper.toHdrDto(hdr, response);
 
         List<FFManifestAirPkgDtl> airPkg = airPkgRepository.findByTransactionPoid(transactionPoid);
         List<FFManifestBayanDtl> bayan = bayanRepository.findByTransactionPoid(transactionPoid);
@@ -329,7 +299,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         FFManifestHdr hdr = hdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Project Job", "transactionPoid", transactionPoid));
 
-        documentDeleteService.deleteDocument(transactionPoid, "FF_MANIEST_HDR", "TRANSACTION_POID", deleteReasonDto,
+        documentDeleteService.deleteDocument(transactionPoid, "FF_MANIEST_HDR", TRANSACTION_POID, deleteReasonDto,
                 hdr.getTransactionDate());
 
     }
@@ -346,7 +316,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                 periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
-                "DOC_REF", "TRANSACTION_POID");
+                "DOC_REF", TRANSACTION_POID);
 
         Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 

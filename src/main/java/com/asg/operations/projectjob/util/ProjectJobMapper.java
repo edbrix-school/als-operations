@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 
 public class ProjectJobMapper {
 
+    private ProjectJobMapper(){}
+
     public static void mapAirPkgFromDto(ProjectJobAirPkgDto dto, FFManifestAirPkgDtl entity, Long transactionPoid) {
 
         if (dto == null)
@@ -350,7 +352,7 @@ public class ProjectJobMapper {
 
     public static void mapHdrFromDto(FFManifestHdrDto dto, FFManifestHdr entity) {
 
-        if (dto == null)
+        if (dto == null || entity == null)
             return;
 
         entity.setTransactionDate(dto.getTransactionDate());
