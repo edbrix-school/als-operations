@@ -376,7 +376,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         slabDtl.setRemarks(slabRequest.getRemarks());
 
         slabDtlRepository.save(slabDtl);
-        String logDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", slabRequest.getDetRowId());
+        String logDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", slabDtl.getId().getDetRowId());
         loggingService.createLogSummaryEntry(UserContext.getDocumentId(),slabId.getTransactionPoid().toString(),logDetail);
     }
 
