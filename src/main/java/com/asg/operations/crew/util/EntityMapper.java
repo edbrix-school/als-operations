@@ -86,8 +86,6 @@ public class EntityMapper {
         entity.setCrewPassportExpiryDate(request.getCrewPassportExpiryDate());
         entity.setCrewPassportIssuePlace(request.getCrewPassportIssuePlace());
         entity.setRemarks(request.getRemarks());
-        entity.setActive(request.getActive() != null ? request.getActive() : "Y");
-
         // Set multi-tenant fields
         entity.setCompanyPoid(companyPoid);
         entity.setGroupPoid(groupPoid);
@@ -114,9 +112,6 @@ public class EntityMapper {
         entity.setCrewPassportExpiryDate(request.getCrewPassportExpiryDate());
         entity.setCrewPassportIssuePlace(request.getCrewPassportIssuePlace());
         entity.setRemarks(request.getRemarks());
-        if (request.getActive() != null) {
-            entity.setActive(request.getActive());
-        }
     }
 
     /**
