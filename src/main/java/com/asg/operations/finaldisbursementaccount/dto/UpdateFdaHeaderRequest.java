@@ -64,5 +64,6 @@ public class UpdateFdaHeaderRequest {
 
     private BigDecimal nrt;
     private BigDecimal dwt;
+    private Long printBankPoid;
     private List<FdaChargeDto> charges;
 }
