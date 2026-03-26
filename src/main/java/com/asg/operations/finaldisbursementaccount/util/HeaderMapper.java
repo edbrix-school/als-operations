@@ -279,6 +279,7 @@ public class HeaderMapper {
         entity.setPortDescription(dto.getPortDescription());
         entity.setFdaSubType(dto.getFdaSubType());
         entity.setSubCategory(dto.getSubCategory());
+        entity.setPrintBankPoid(dto.getPrintBankPoid());
 
         if (entity.getDeleted() == null) {
             entity.setDeleted("N");
