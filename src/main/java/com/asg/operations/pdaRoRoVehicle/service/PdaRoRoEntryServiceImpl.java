@@ -302,6 +302,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
             savedDetails = saveVehicleDetailsToTable(request.getTransactionPoid(), vehicleDetails);
         }
 
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), request.getTransactionPoid().toString(), "Vehicle details uploaded successfully");
         return PdaRoroVehicleUploadResponse.builder()
                 .status(status)
                 .vehicleDetails(savedDetails != null ? savedDetails : vehicleDetails)
@@ -393,6 +394,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                         .addValue("P_TRANSACTION_POID", transactionPoid)
         );
 
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(),"Vehicle details cleared successfully");
         return (String) result.get("P_STATUS");
     }
 
