@@ -4,12 +4,14 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.shipprincipal.dto.AddressDetailsDTO;
+import com.asg.operations.shipprincipal.dto.AddressLoadListResponse;
 import com.asg.operations.shipprincipal.dto.AddressMasterResponse;
 import com.asg.operations.shipprincipal.dto.AddressTypeMapDTO;
 import com.asg.operations.shipprincipal.entity.AddressDetails;
 import com.asg.operations.shipprincipal.entity.AddressMaster;
 import com.asg.operations.shipprincipal.repository.AddressDetailsRepository;
 import com.asg.operations.shipprincipal.repository.AddressMasterRepository;
+import com.asg.operations.shipprincipal.repository.AddressStoredProcRepository;
 import com.asg.operations.shipprincipal.repository.CountryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -20,6 +22,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
+
 @Service
 @RequiredArgsConstructor
 public class AddressMasterServiceImpl implements AddressMasterService {
@@ -27,6 +31,7 @@ public class AddressMasterServiceImpl implements AddressMasterService {
     private final CountryRepository countryRepo;
     private final AddressMasterRepository masterRepo;
     private final AddressDetailsRepository detailsRepo;
+    private final AddressStoredProcRepository addressStoredProcRepository;
     private final LovService lovService;
     private final LoggingService loggingService;
 
@@ -158,6 +163,12 @@ public class AddressMasterServiceImpl implements AddressMasterService {
         if (!toDelete.isEmpty()) {
             detailsRepo.deleteAll(toDelete);
         }
+    }
+
+    @Override
+    public AddressLoadListResponse loadAddressCollection(BigDecimal addressMasterPoid) {
+        BigDecimal groupPoid = BigDecimal.valueOf(UserContext.getGroupPoid());
+        return addressStoredProcRepository.callAddressLoadListProc(groupPoid, addressMasterPoid);
     }
 
     private void updateDetail(AddressDetails entity, AddressDetailsDTO dto, String currentUser) {
