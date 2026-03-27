@@ -9,6 +9,7 @@ import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.shipprincipal.dto.*;
+import com.asg.operations.shipprincipal.service.AddressMasterService;
 import com.asg.operations.shipprincipal.service.PrincipalMasterService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -24,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -37,6 +39,7 @@ import static com.asg.common.lib.dto.response.ApiResponse.success;
 @Tag(name = "Principal Management", description = "APIs for managing ship principals")
 public class PrincipalController {
     private final PrincipalMasterService principalMasterService;
+    private final AddressMasterService addressMasterService;
     private final LoggingService loggingService;
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
@@ -242,6 +245,20 @@ public class PrincipalController {
         log.info("Creating ledger for principal with id: {}, userName: {}", id, UserContext.getUserPoid());
         CreateLedgerResponseDto response = principalMasterService.createLedger(id, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Ledger created successfully", response);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/address-collection/{addressMasterPoid}")
+    @Operation(
+            summary = "Load address collection",
+            description = "Load all address details for a given address master POID via stored procedure",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> loadAddressCollection(
+            @Parameter(description = "Address Master POID") @PathVariable BigDecimal addressMasterPoid) {
+        log.info("Loading address collection for addressMasterPoid: {}", addressMasterPoid);
+        AddressLoadListResponse response = addressMasterService.loadAddressCollection(addressMasterPoid);
+        return ApiResponse.success("Address collection loaded successfully", response);
     }
 
 }
