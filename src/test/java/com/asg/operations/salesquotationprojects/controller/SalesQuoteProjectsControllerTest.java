@@ -84,7 +84,7 @@ class SalesQuoteProjectsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Sales Quote Projects list fetched successfully"));
+                .andExpect(jsonPath("$.message").value("Sales Quotation Projects fetched successfully"));
 
         then(salesQuoteProjectsService).should()
                 .listSalesQuoteProjectsWithFilters(eq("100"), any(), any(Pageable.class), any(), any());
@@ -106,7 +106,7 @@ class SalesQuoteProjectsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Sales Quote Projects list fetched successfully"));
+                .andExpect(jsonPath("$.message").value("Sales Quotation Projects fetched successfully"));
     }
 
     @Test
@@ -121,7 +121,7 @@ class SalesQuoteProjectsControllerTest {
 
         mockMvc.perform(get("/v1/sales-quotation-projects/{transactionPoid}", transactionPoid))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Sales Quote Project retrieved successfully"))
+                .andExpect(jsonPath("$.message").value("Sales Quotation Project retrieved successfully"))
                 .andExpect(jsonPath("$.result.data.transactionPoid").value(transactionPoid.intValue()))
                 .andExpect(jsonPath("$.result.data.customerName").value("Test Customer"));
 
@@ -157,7 +157,7 @@ class SalesQuoteProjectsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Sales Quote Project created successfully"))
+                .andExpect(jsonPath("$.message").value("Sales Quotation Project created successfully"))
                 .andExpect(jsonPath("$.result.data.transactionPoid").value(createdPoid.intValue()));
 
         then(salesQuoteProjectsService).should().createSalesQuoteProject(any(SalesQuoteProjectsRequest.class));
@@ -191,7 +191,7 @@ class SalesQuoteProjectsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Sales Quote Project updated successfully"))
+                .andExpect(jsonPath("$.message").value("Sales Quotation Project updated successfully"))
                 .andExpect(jsonPath("$.result.data.transactionPoid").value(transactionPoid.intValue()));
 
         then(salesQuoteProjectsService).should().updateSalesQuoteProject(eq(transactionPoid), any(SalesQuoteProjectsRequest.class));
@@ -211,7 +211,7 @@ class SalesQuoteProjectsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Sales Quote Project deleted successfully"));
+                .andExpect(jsonPath("$.message").value("Sales Quotation Project deleted successfully"));
 
         then(salesQuoteProjectsService).should().deleteSalesQuoteProject(eq(transactionPoid), any(DeleteReasonDto.class));
     }

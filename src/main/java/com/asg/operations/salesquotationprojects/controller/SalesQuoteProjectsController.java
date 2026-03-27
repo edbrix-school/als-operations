@@ -54,7 +54,7 @@ public class SalesQuoteProjectsController {
                                                        @RequestParam(required = false) LocalDate periodFrom,
                                                        @RequestParam(required = false) LocalDate periodTo) {
         Map<String, Object> salesQuoteProjectsPage = salesQuoteProjectsService.listSalesQuoteProjectsWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
-        return success("Sales Quote Projects list fetched successfully", salesQuoteProjectsPage);
+        return success("Sales Quotation Projects fetched successfully", salesQuoteProjectsPage);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
@@ -62,14 +62,14 @@ public class SalesQuoteProjectsController {
     public ResponseEntity<?> getSalesQuoteProjectById(@PathVariable @NotNull Long transactionPoid) {
         SalesQuoteProjectsResponse response = salesQuoteProjectsService.getSalesQuoteProjectById(transactionPoid);
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
-        return ApiResponse.success("Sales Quote Project retrieved successfully", response);
+        return ApiResponse.success("Sales Quotation Project retrieved successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
     public ResponseEntity<?> createSalesQuoteProject(@Valid @RequestBody SalesQuoteProjectsRequest request) {
         SalesQuoteProjectsResponse response = salesQuoteProjectsService.createSalesQuoteProject(request);
-        return ApiResponse.success("Sales Quote Project created successfully", response);
+        return ApiResponse.success("Sales Quotation Project created successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -77,7 +77,7 @@ public class SalesQuoteProjectsController {
     public ResponseEntity<?> updateSalesQuoteProject(@PathVariable @NotNull Long transactionPoid,
                                                      @Valid @RequestBody SalesQuoteProjectsRequest request) {
         SalesQuoteProjectsResponse response = salesQuoteProjectsService.updateSalesQuoteProject(transactionPoid, request);
-        return ApiResponse.success("Sales Quote Project updated successfully", response);
+        return ApiResponse.success("Sales Quotation Project updated successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.DELETE)
@@ -85,7 +85,7 @@ public class SalesQuoteProjectsController {
     public ResponseEntity<?> deleteSalesQuoteProject(@PathVariable @NotNull Long transactionPoid,
                                                      @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
         salesQuoteProjectsService.deleteSalesQuoteProject(transactionPoid, deleteReasonDto);
-        return ApiResponse.success("Sales Quote Project deleted successfully");
+        return ApiResponse.success("Sales Quotation Project deleted successfully");
     }
 
     // Stored Procedure Endpoints
@@ -121,7 +121,7 @@ public class SalesQuoteProjectsController {
         AddressDetailsDto response = salesQuoteProjectsService.getCustomerDetailsById(addressPoid);
 
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), addressPoid.toString());
-        return ApiResponse.success("Sales Quote Project retrieved successfully", response);
+        return ApiResponse.success("Customer details retrieved successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.PRINT)
