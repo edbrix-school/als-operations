@@ -1,17 +1,17 @@
 package com.asg.operations.salesquotationprojects.service;
 
 import com.asg.common.lib.dto.*;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.utility.DateUtil;
 import com.asg.operations.exceptions.ResourceNotFoundException;
-import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.finaldisbursementaccount.repository.*;
 import com.asg.operations.pdaporttariffmaster.repository.ShipChargeMasterRepository;
 import com.asg.operations.salesquotationprojects.dto.*;
 import com.asg.operations.salesquotationprojects.entity.SalesQuoteProjectsHdr;
-import com.asg.operations.salesquotationprojects.key.ShipCommodityMasterId;
 import com.asg.operations.salesquotationprojects.repository.*;
 import com.asg.operations.shipprincipal.repository.AddressDetailsRepository;
 import com.asg.operations.shipprincipal.repository.AddressMasterRepository;
@@ -41,7 +41,6 @@ class SalesQuoteProjectsServiceImplTest {
 
     @Mock private JdbcTemplate jdbcTemplate;
     @Mock private SalesQuoteProjectsHdrRepository repository;
-    @Mock private SalesQuoteProjectsStoredProcRepository salesQuoteProjectsStoredProcRepository;
     @Mock private SalesQuoteProjectsChargeDtlRepository chargeDtlRepository;
     @Mock private SalesQuoteProjectsNotesDtlRepository notesDtlRepository;
     @Mock private GlobalTermsCustomChangesRepository globalTermsCustomChangesRepository;
@@ -106,8 +105,6 @@ class SalesQuoteProjectsServiceImplTest {
         when(chargeDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
         when(notesDtlRepository.findByIdTransactionPoid(transactionPoid)).thenReturn(new ArrayList<>());
         when(globalTermsCustomChangesRepository.findByIdDocIdAndIdDocKeyPoidAndIdRefTermsPoid(anyString(), eq(transactionPoid), anyLong())).thenReturn(new ArrayList<>());
-        when(salesQuoteProjectsStoredProcRepository.callNewTempAddressLoadListProc(any(), any(), any(), any(), any()))
-            .thenReturn(new ArrayList<>());
 
         try (MockedStatic<UserContext> userContextMock = mockStatic(UserContext.class)) {
             userContextMock.when(UserContext::getGroupPoid).thenReturn(1L);
@@ -136,18 +133,21 @@ class SalesQuoteProjectsServiceImplTest {
 
     @Test
     void createSalesQuoteProject_Success() {
-        try (MockedStatic<UserContext> userContextMock = mockStatic(UserContext.class)) {
+        try (MockedStatic<UserContext> userContextMock = mockStatic(UserContext.class);
+             MockedStatic<DateUtil> dateUtilMock = mockStatic(DateUtil.class)) {
             userContextMock.when(UserContext::getCompanyPoid).thenReturn(1L);
             userContextMock.when(UserContext::getUserId).thenReturn("testUser");
             userContextMock.when(UserContext::getGroupPoid).thenReturn(1L);
             userContextMock.when(UserContext::getDocumentId).thenReturn("100");
             userContextMock.when(UserContext::getUserPoid).thenReturn(1L);
+            dateUtilMock.when(DateUtil::getCurrentDateTimeInUserTimeZone).thenReturn(LocalDateTime.now());
 
             when(addressDetailsRepository.existsByAddressPoid(any())).thenReturn(true);
             when(globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(any())).thenReturn(true);
             when(termsTemplateRepository.existsByTermsPoid(any())).thenReturn(true);
             when(repository.saveAndFlush(any(SalesQuoteProjectsHdr.class))).thenReturn(mockEntity);
             doNothing().when(entityManager).refresh(any());
+            doNothing().when(loggingService).createLogSummaryEntry(any(LogDetailsEnum.class), any(), any());
 
             SalesQuoteProjectsResponse result = service.createSalesQuoteProject(mockRequest);
 
@@ -169,18 +169,21 @@ class SalesQuoteProjectsServiceImplTest {
 
     @Test
     void updateSalesQuoteProject_Success() {
-        try (MockedStatic<UserContext> userContextMock = mockStatic(UserContext.class)) {
+        try (MockedStatic<UserContext> userContextMock = mockStatic(UserContext.class);
+             MockedStatic<DateUtil> dateUtilMock = mockStatic(DateUtil.class)) {
             userContextMock.when(UserContext::getCompanyPoid).thenReturn(1L);
             userContextMock.when(UserContext::getUserId).thenReturn("testUser");
             userContextMock.when(UserContext::getGroupPoid).thenReturn(1L);
             userContextMock.when(UserContext::getDocumentId).thenReturn("100");
             userContextMock.when(UserContext::getUserPoid).thenReturn(1L);
+            dateUtilMock.when(DateUtil::getCurrentDateTimeInUserTimeZone).thenReturn(LocalDateTime.now());
 
             when(repository.findById(transactionPoid)).thenReturn(Optional.of(mockEntity));
             when(addressDetailsRepository.existsByAddressPoid(any())).thenReturn(true);
             when(globalCurrencyMasterRepository.existsByCurrencyCodeIgnoreCase(any())).thenReturn(true);
             when(termsTemplateRepository.existsByTermsPoid(any())).thenReturn(true);
             when(repository.save(any(SalesQuoteProjectsHdr.class))).thenReturn(mockEntity);
+            doNothing().when(loggingService).logChanges(any(), any(), any(), any(), any(), any(), any());
 
             SalesQuoteProjectsResponse result = service.updateSalesQuoteProject(transactionPoid, mockRequest);
 

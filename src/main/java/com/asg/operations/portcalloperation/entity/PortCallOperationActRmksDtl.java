@@ -1,6 +1,7 @@
 package com.asg.operations.portcalloperation.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,7 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,11 +19,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @IdClass(PortCallOperationActRmksDtlId.class)
-public class PortCallOperationActRmksDtl {
+public class PortCallOperationActRmksDtl extends BaseEntity {
+
     @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
+
     @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID")
@@ -36,7 +38,7 @@ public class PortCallOperationActRmksDtl {
     private LocalDateTime remarksFrom;
 
     @Column(name = "REMARKS_TO")
-    private LocalDate remarksTo;
+    private LocalDateTime remarksTo;
 
     @Column(name = "CARGO_DETAILS", length = 100)
     private String cargoDetails;
@@ -46,28 +48,4 @@ public class PortCallOperationActRmksDtl {
 
     @Column(name = "PC_REPORT_POID")
     private Long pcReportPoid;
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
-    @PrePersist
-    protected void onCreate() {
-        if (createdDate == null) {
-            createdDate = LocalDateTime.now();
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        lastModifiedDate = LocalDateTime.now();
-    }
 }

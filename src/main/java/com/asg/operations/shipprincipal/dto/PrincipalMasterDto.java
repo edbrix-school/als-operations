@@ -29,6 +29,7 @@ public class PrincipalMasterDto {
     private Long countryPoid;
     private LovItem countryDet;
     private Long addressPoid;
+    private LovItem addressDet;
     private Long creditPeriod;
     private Long glCodePoid;
     private LovItem glCodeDet;

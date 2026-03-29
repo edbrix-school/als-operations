@@ -10,11 +10,11 @@ import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffSlabDtl;
 import com.asg.operations.pdaporttariffmaster.repository.ShipPortMasterRepository;
 import com.asg.operations.pdaporttariffmaster.repository.ShipVesselTypeMasterRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +30,7 @@ public class PdaPortTariffMapper {
 
     // Convert comma-separated string to list
     public List<String> stringToList(String str) {
-        if (str == null || str.trim().isEmpty()) {
+        if (StringUtils.isBlank(str)) {
             return new ArrayList<>();
         }
         return Arrays.stream(str.split("[,;]"))
@@ -59,7 +59,7 @@ public class PdaPortTariffMapper {
         if (entity.getPorts() != null && !entity.getPorts().trim().isEmpty()) {
             BigDecimal portPoidBD = BigDecimal.valueOf(Long.parseLong(entity.getPorts()));
             response.setPortDet(lovService.getLovItemByPoid(portPoidBD.longValue(), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-            
+
             List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(List.of(portPoidBD), BigDecimal.valueOf(entity.getGroupPoid()));
             if (!portNames.isEmpty()) {
                 response.setPortName(portNames.get(0));
@@ -110,7 +110,7 @@ public class PdaPortTariffMapper {
         if (response.getPort() != null && !response.getPort().trim().isEmpty()) {
             BigDecimal portPoidBD = BigDecimal.valueOf(Long.parseLong(response.getPort()));
             response.setPortDet(lovService.getLovItemByPoid(portPoidBD.longValue(), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-            
+
             List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(List.of(portPoidBD), BigDecimal.valueOf(UserContext.getGroupPoid()));
             if (!portNames.isEmpty()) {
                 response.setPortName(portNames.get(0));
@@ -203,10 +203,6 @@ public class PdaPortTariffMapper {
         entity.setRemarks(request.getRemarks());
         entity.setDeleted("N");
         entity.setTransactionDate(LocalDate.now());
-        entity.setCreatedBy(currentUser);
-        entity.setCreatedDate(LocalDateTime.now());
-        entity.setLastModifiedBy(currentUser);
-        entity.setLastModifiedDate(LocalDateTime.now());
         return entity;
     }
 
@@ -217,8 +213,6 @@ public class PdaPortTariffMapper {
         entity.setPeriodFrom(request.getPeriodFrom());
         entity.setPeriodTo(request.getPeriodTo());
         entity.setRemarks(request.getRemarks());
-        entity.setLastModifiedBy(currentUser);
-        entity.setLastModifiedDate(LocalDateTime.now());
     }
 
     // Entity to Request (for copy functionality)
@@ -270,7 +264,7 @@ public class PdaPortTariffMapper {
         if (entity.getPorts() != null && !entity.getPorts().trim().isEmpty()) {
             BigDecimal portPoidBD = BigDecimal.valueOf(Long.parseLong(entity.getPorts()));
             response.setPortDet(lovService.getLovItemByPoid(portPoidBD.longValue(), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-            
+
             List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(List.of(portPoidBD), BigDecimal.valueOf(entity.getGroupPoid()));
             if (!portNames.isEmpty()) {
                 response.setPortName(portNames.get(0));

@@ -35,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -251,8 +250,6 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                     existing.setIsEnabled(chargeRequest.getIsEnabled() != null ? chargeRequest.getIsEnabled() : "Y");
                     existing.setRemarks(chargeRequest.getRemarks());
                     existing.setSeqNo(chargeRequest.getSeqNo());
-                    existing.setLastModifiedBy(currentUser);
-                    existing.setLastModifiedDate(LocalDateTime.now());
                     existing = chargeDtlRepository.save(existing);
                     String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getDetRowId());
                     loggingService.createLog(oldCharge, existing, PdaPortTariffChargeDtl.class, UserContext.getDocumentId(), tariffHdr.getTransactionPoid().toString(), logDetail);
@@ -304,8 +301,6 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                     existing.setRate4(slabRequest.getRate4());
                     existing.setCallByPort(slabRequest.getCallByPort());
                     existing.setRemarks(slabRequest.getRemarks());
-                    existing.setLastModifiedBy(currentUser);
-                    existing.setLastModifiedDate(LocalDateTime.now());
                     existing = slabDtlRepository.save(existing);
                     String logDetail = String.format("KeyId = TRANSACTION_POID %s: CHARGE_DET_ROW_ID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getChargeDetRowId(), existing.getId().getDetRowId());
                     loggingService.createLog(oldSlab, existing, PdaPortTariffSlabDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
@@ -348,10 +343,6 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         chargeDtl.setIsEnabled(chargeRequest.getIsEnabled() != null ? chargeRequest.getIsEnabled() : "Y");
         chargeDtl.setRemarks(chargeRequest.getRemarks());
         chargeDtl.setSeqNo(chargeRequest.getSeqNo());
-        chargeDtl.setCreatedBy(currentUser);
-        chargeDtl.setCreatedDate(LocalDateTime.now());
-        chargeDtl.setLastModifiedBy(currentUser);
-        chargeDtl.setLastModifiedDate(LocalDateTime.now());
 
         PdaPortTariffChargeDtl savedChargeDtl = chargeDtlRepository.save(chargeDtl);
 
@@ -383,13 +374,9 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         slabDtl.setRate4(slabRequest.getRate4());
         slabDtl.setCallByPort(slabRequest.getCallByPort());
         slabDtl.setRemarks(slabRequest.getRemarks());
-        slabDtl.setCreatedBy(currentUser);
-        slabDtl.setCreatedDate(LocalDateTime.now());
-        slabDtl.setLastModifiedBy(currentUser);
-        slabDtl.setLastModifiedDate(LocalDateTime.now());
 
         slabDtlRepository.save(slabDtl);
-        String logDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", slabRequest.getDetRowId());
+        String logDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", slabDtl.getId().getDetRowId());
         loggingService.createLogSummaryEntry(UserContext.getDocumentId(),slabId.getTransactionPoid().toString(),logDetail);
     }
 
@@ -430,10 +417,6 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
             chargeDtl.setIsEnabled(chargeRequest.getIsEnabled() != null ? chargeRequest.getIsEnabled() : "Y");
             chargeDtl.setRemarks(chargeRequest.getRemarks());
             chargeDtl.setSeqNo(chargeRequest.getSeqNo());
-            chargeDtl.setCreatedBy(currentUser);
-            chargeDtl.setCreatedDate(LocalDateTime.now());
-            chargeDtl.setLastModifiedBy(currentUser);
-            chargeDtl.setLastModifiedDate(LocalDateTime.now());
 
             PdaPortTariffChargeDtl savedChargeDtl = chargeDtlRepository.save(chargeDtl);
 
@@ -458,10 +441,6 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                     slabDtl.setRate4(slabRequest.getRate4());
                     slabDtl.setCallByPort(slabRequest.getCallByPort());
                     slabDtl.setRemarks(slabRequest.getRemarks());
-                    slabDtl.setCreatedBy(currentUser);
-                    slabDtl.setCreatedDate(LocalDateTime.now());
-                    slabDtl.setLastModifiedBy(currentUser);
-                    slabDtl.setLastModifiedDate(LocalDateTime.now());
 
                     slabDtlRepository.save(slabDtl);
                 }

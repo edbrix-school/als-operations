@@ -9,7 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -21,19 +20,19 @@ public class PortCallOperationActRmksDetailDto {
     private Long transactionPoid;
     private Long detRowId;
 
-    @Size(max = 100)
+    @Size(max = 100, message = "Remarks Type should not exceed 100 characters")
     private String remarksType;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime remarksFrom;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate remarksTo;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime remarksTo;
 
-    @Size(max = 100)
+    @Size(max = 100, message = "Cargo Details should not exceed 100 characters")
     private String cargoDetails;
 
-    @Size(max = 500)
+    @Size(max = 500, message = "Reason should not exceed 500 characters")
     private String reason;
 
     private Long pcReportPoid;

@@ -5,8 +5,6 @@ import com.asg.operations.finaldisbursementaccount.dto.FdaHeaderDto;
 import com.asg.operations.finaldisbursementaccount.dto.UpdateFdaHeaderRequest;
 import com.asg.operations.finaldisbursementaccount.entity.PdaFdaHdr;
 
-import java.time.LocalDateTime;
-
 public class HeaderMapper {
 
     public static FdaHeaderDto mapHeaderEntityToDto(PdaFdaHdr entity) {
@@ -108,7 +106,7 @@ public class HeaderMapper {
      * Note: docRef and transactionPoid are handled by backend/triggers
      */
     public static void mapCreateHeaderRequestToEntity(CreateFdaHeaderRequest dto, PdaFdaHdr entity, Long groupPoid, Long companyPoid, String userId) {
-        entity.setTransactionDate(dto.getTransactionDate());
+        // transactionDate is set in service after null/default resolution
         entity.setGroupPoid(groupPoid);
         entity.setCompanyPoid(companyPoid);
         entity.setPrincipalPoid(dto.getPrincipalPoid());
@@ -170,8 +168,6 @@ public class HeaderMapper {
 
         // Set default values for system-managed fields
         entity.setDeleted("N");
-        entity.setCreatedBy(userId);
-        entity.setCreatedDate(LocalDateTime.now());
     }
 
     public static void mapHeaderDtoToEntity(FdaHeaderDto dto, PdaFdaHdr entity, String userId) {
@@ -257,19 +253,20 @@ public class HeaderMapper {
         entity.setOpsCorrectionRemarks(dto.getOpsCorrectionRemarks());
         entity.setOpsReturnedDate(dto.getOpsReturnedDate());
 
-        entity.setLastModifiedBy(userId);
-        entity.setLastModifiedDate(LocalDateTime.now());
-
         if (entity.getDeleted() == null)
             entity.setDeleted("N");
     }
 
     public static void mapUpdateHeaderDtoToEntity(UpdateFdaHeaderRequest dto, PdaFdaHdr entity, String userId) {
-
-        entity.setTransactionDate(dto.getTransactionDate());
+        // transactionDate is set in service after null/default resolution
         entity.setPrincipalPoid(dto.getPrincipalPoid());
         entity.setPortPoid(dto.getPortPoid());
         entity.setOperationType(dto.getOperationType());
+        // Quantities persisted on update/edit
+        entity.setImportQty(dto.getImportQty());
+        entity.setExportQty(dto.getExportQty());
+        entity.setTranshipmentQty(dto.getTranshipmentQty());
+        entity.setTotalQuantity(dto.getTotalQuantity());
         entity.setUnit(dto.getUnit());
         entity.setHarbourCallType(dto.getHarbourCallType());
         entity.setCargoDetails(dto.getCargoDetails());
@@ -282,9 +279,7 @@ public class HeaderMapper {
         entity.setPortDescription(dto.getPortDescription());
         entity.setFdaSubType(dto.getFdaSubType());
         entity.setSubCategory(dto.getSubCategory());
-
-        entity.setLastModifiedBy(userId);
-        entity.setLastModifiedDate(LocalDateTime.now());
+        entity.setPrintBankPoid(dto.getPrintBankPoid());
 
         if (entity.getDeleted() == null) {
             entity.setDeleted("N");

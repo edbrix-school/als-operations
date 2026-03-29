@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -17,6 +18,9 @@ import java.util.List;
 public class PortCallOperationDto {
     @NotNull(message = "Vessel Voyage Poid is required")
     private Long vesselVoyagePoid;
+
+    @NotNull(message = "Transaction Date is required")
+    private LocalDate transactionDate;
 
     @Size(max = 100, message = "Call Sign should not exceed 100 characters")
     private String callSign;

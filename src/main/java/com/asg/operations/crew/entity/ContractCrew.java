@@ -1,30 +1,31 @@
 package com.asg.operations.crew.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Entity class for CONTRACT_CREW master table
  * Represents crew master information
  */
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "CONTRACT_CREW_MASTER")
-public class ContractCrew {
+public class ContractCrew extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @AuditIgnore
     @Column(name = "CREW_POID")
     private Long crewPoid;
-
 
     @Column(name = "CREW_NAME", length = 250, nullable = false)
     @NotBlank
@@ -73,6 +74,7 @@ public class ContractCrew {
     @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
+
     @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
@@ -83,26 +85,11 @@ public class ContractCrew {
 
     @Column(name = "SEQNO")
     private Long seqno;
+
     @AuditIgnore
     @Column(name = "DELETED", length = 1)
     @Size(max = 1)
     private String deleted;
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    @Size(max = 20)
-    private String createdBy;
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    @Size(max = 20)
-    private String lastModifiedBy;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
-
 
 }
 

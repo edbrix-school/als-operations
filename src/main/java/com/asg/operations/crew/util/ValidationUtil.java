@@ -1,6 +1,7 @@
 package com.asg.operations.crew.util;
 
 
+import com.asg.common.lib.exception.ValidationException;
 import com.asg.operations.crew.dto.ContractCrewDtlRequest;
 import com.asg.operations.crew.dto.ValidationError;
 
@@ -17,18 +18,19 @@ public class ValidationUtil {
      * Validate passport dates
      * Rule: Passport expiry date must not be earlier than passport issue date
      */
-    public static ValidationError validatePassportDates(LocalDate issueDate, LocalDate expiryDate) {
+    public static void validatePassportDates(LocalDate issueDate,
+                                             LocalDate expiryDate) {
+
         if (issueDate != null && expiryDate != null) {
+
             if (expiryDate.isBefore(issueDate)) {
-                return new ValidationError(
-                    "crewPassportExpiryDate",
-                    "Passport expiry date cannot be earlier than issue date"
+
+                throw new ValidationException(
+                        "Passport expiry date cannot be earlier than issue date"
                 );
             }
         }
-        return null;
     }
-
     /**
      * Validate document dates for detail records
      * Rules:

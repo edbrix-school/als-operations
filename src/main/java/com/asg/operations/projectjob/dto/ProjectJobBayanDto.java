@@ -17,7 +17,7 @@ public class ProjectJobBayanDto {
     private String bayanMode;
 
     private BigDecimal dutyAmount;
-    private BigDecimal vatLength;
+    private BigDecimal vatAmount;
     private BigDecimal totalPaidAmount;
 
     private LocalDateTime expiryDate;

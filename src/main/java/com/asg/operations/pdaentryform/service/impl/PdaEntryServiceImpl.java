@@ -7,6 +7,7 @@ import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.dto.FilterDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.utility.DateUtil;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
@@ -122,8 +123,59 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entry.setDocRef(docRef);
         logger.info("Generated unique docRef: {}", docRef);
 
-        // Auto-populate vessel details if vesselPoid is provided
-        if (request.getVesselPoid() != null) {
+        // Auto-populate voyage details if voyagePoid is provided
+        if (request.getVoyagePoid() != null) {
+            Map<String, Object> voyageDetails = getVoyageDetails(request.getVoyagePoid(), groupPoid, companyPoid, userPoid);
+            if (!voyageDetails.isEmpty()) {
+                // Auto-populate voyage number if not provided in request
+                if (request.getVoyageNo() == null || request.getVoyageNo().trim().isEmpty()) {
+                    entry.setVoyageNo((String) voyageDetails.get("voyageNo"));
+                }
+                // Auto-populate vessel details
+                if (voyageDetails.get("vesselPoid") != null) {
+                    entry.setVesselPoid((BigDecimal) voyageDetails.get("vesselPoid"));
+                    entry.setVesselTypePoid((BigDecimal) voyageDetails.get("vesselTypePoid"));
+                    if (request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) {
+                        entry.setImoNumber((String) voyageDetails.get("imoNumber"));
+                    }
+                    entry.setGrt((BigDecimal) voyageDetails.get("grt"));
+                    entry.setNrt((BigDecimal) voyageDetails.get("nrt"));
+                    entry.setDwt((BigDecimal) voyageDetails.get("dwt"));
+                }
+                // Auto-populate other voyage details
+                if (voyageDetails.get("linePoid") != null) {
+                    entry.setLinePoid((BigDecimal) voyageDetails.get("linePoid"));
+                }
+                if (voyageDetails.get("portPoid") != null) {
+                    entry.setPortPoid((BigDecimal) voyageDetails.get("portPoid"));
+                }
+                if (voyageDetails.get("arrivalDate") != null) {
+                    Object arrivalDateObj = voyageDetails.get("arrivalDate");
+                    if (arrivalDateObj instanceof java.sql.Date) {
+                        entry.setArrivalDate(((java.sql.Date) arrivalDateObj).toLocalDate());
+                    } else if (arrivalDateObj instanceof java.sql.Timestamp) {
+                        entry.setArrivalDate(((java.sql.Timestamp) arrivalDateObj).toLocalDateTime().toLocalDate());
+                    }
+                }
+                if (voyageDetails.get("sailDate") != null) {
+                    Object sailDateObj = voyageDetails.get("sailDate");
+                    if (sailDateObj instanceof java.sql.Date) {
+                        entry.setSailDate(((java.sql.Date) sailDateObj).toLocalDate());
+                    } else if (sailDateObj instanceof java.sql.Timestamp) {
+                        entry.setSailDate(((java.sql.Timestamp) sailDateObj).toLocalDateTime().toLocalDate());
+                    }
+                }
+                if (voyageDetails.get("totalQuantity") != null) {
+                    entry.setTotalQuantity((BigDecimal) voyageDetails.get("totalQuantity"));
+                }
+                if (voyageDetails.get("numberOfDays") != null) {
+                    entry.setNumberOfDays((BigDecimal) voyageDetails.get("numberOfDays"));
+                }
+            }
+        }
+
+        // Auto-populate vessel details if vesselPoid is provided (fallback if not from voyage)
+        if (request.getVesselPoid() != null && entry.getVesselTypePoid() == null) {
             VesselDetailsResponse vesselDetails = getVesselDetails(request.getVesselPoid(), groupPoid, companyPoid, userPoid);
             if (vesselDetails != null) {
                 entry.setVesselTypePoid(vesselDetails.getVesselTypePoid());
@@ -141,13 +193,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         if (request.getPrincipalPoid() != null) {
             setDefaultCurrency(groupPoid, companyPoid, userPoid, entry.getTransactionPoid(), request.getPrincipalPoid(), entry);
         }
-
-        // Set audit fields
-        LocalDateTime now = LocalDateTime.now();
-        entry.setCreatedBy(UserContext.getUserId());
-        entry.setCreatedDate(now);
-        entry.setLastModifiedBy(UserContext.getUserId());
-        entry.setLastModifiedDate(now);
 
         // Save entity
         entry = entryHdrRepository.save(entry);
@@ -218,9 +263,62 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Map request to entity (preserve read-only fields)
         mapRequestToEntity(request, entry);
 
-        // Auto-populate vessel details if vesselPoid changed
+        // Auto-populate voyage details if voyagePoid changed
+        if (request.getVoyagePoid() != null &&
+                !Objects.equals(entry.getVoyagePoid(), request.getVoyagePoid())) {
+            Map<String, Object> voyageDetails = getVoyageDetails(request.getVoyagePoid(), groupPoid, companyPoid, userPoid);
+            if (!voyageDetails.isEmpty()) {
+                // Auto-populate voyage number if not provided in request
+                if (request.getVoyageNo() == null || request.getVoyageNo().trim().isEmpty()) {
+                    entry.setVoyageNo((String) voyageDetails.get("voyageNo"));
+                }
+                // Auto-populate vessel details
+                if (voyageDetails.get("vesselPoid") != null) {
+                    entry.setVesselPoid((BigDecimal) voyageDetails.get("vesselPoid"));
+                    entry.setVesselTypePoid((BigDecimal) voyageDetails.get("vesselTypePoid"));
+                    if (request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) {
+                        entry.setImoNumber((String) voyageDetails.get("imoNumber"));
+                    }
+                    entry.setGrt((BigDecimal) voyageDetails.get("grt"));
+                    entry.setNrt((BigDecimal) voyageDetails.get("nrt"));
+                    entry.setDwt((BigDecimal) voyageDetails.get("dwt"));
+                }
+                // Auto-populate other voyage details
+                if (voyageDetails.get("linePoid") != null) {
+                    entry.setLinePoid((BigDecimal) voyageDetails.get("linePoid"));
+                }
+                if (voyageDetails.get("portPoid") != null) {
+                    entry.setPortPoid((BigDecimal) voyageDetails.get("portPoid"));
+                }
+                if (voyageDetails.get("arrivalDate") != null) {
+                    Object arrivalDateObj = voyageDetails.get("arrivalDate");
+                    if (arrivalDateObj instanceof java.sql.Date) {
+                        entry.setArrivalDate(((java.sql.Date) arrivalDateObj).toLocalDate());
+                    } else if (arrivalDateObj instanceof java.sql.Timestamp) {
+                        entry.setArrivalDate(((java.sql.Timestamp) arrivalDateObj).toLocalDateTime().toLocalDate());
+                    }
+                }
+                if (voyageDetails.get("sailDate") != null) {
+                    Object sailDateObj = voyageDetails.get("sailDate");
+                    if (sailDateObj instanceof java.sql.Date) {
+                        entry.setSailDate(((java.sql.Date) sailDateObj).toLocalDate());
+                    } else if (sailDateObj instanceof java.sql.Timestamp) {
+                        entry.setSailDate(((java.sql.Timestamp) sailDateObj).toLocalDateTime().toLocalDate());
+                    }
+                }
+                if (voyageDetails.get("totalQuantity") != null) {
+                    entry.setTotalQuantity((BigDecimal) voyageDetails.get("totalQuantity"));
+                }
+                if (voyageDetails.get("numberOfDays") != null) {
+                    entry.setNumberOfDays((BigDecimal) voyageDetails.get("numberOfDays"));
+                }
+            }
+        }
+
+        // Auto-populate vessel details if vesselPoid changed (fallback if not from voyage)
         if (request.getVesselPoid() != null &&
-                !Objects.equals(entry.getVesselPoid(), request.getVesselPoid())) {
+                !Objects.equals(entry.getVesselPoid(), request.getVesselPoid()) &&
+                entry.getVesselTypePoid() == null) {
             VesselDetailsResponse vesselDetails = getVesselDetails(request.getVesselPoid(), groupPoid, companyPoid, userPoid);
             if (vesselDetails != null) {
                 entry.setVesselTypePoid(vesselDetails.getVesselTypePoid());
@@ -239,10 +337,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 !Objects.equals(entry.getPrincipalPoid(), request.getPrincipalPoid())) {
             setDefaultCurrency(groupPoid, companyPoid, userPoid, transactionPoid, request.getPrincipalPoid(), entry);
         }
-
-        // Update audit fields
-        entry.setLastModifiedBy(UserContext.getUserId());
-        entry.setLastModifiedDate(LocalDateTime.now());
 
         // Save entity
         entry = entryHdrRepository.save(entry);
@@ -461,8 +555,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Update header total amount to 0
         entry.setTotalAmount(BigDecimal.ZERO);
-        entry.setLastModifiedBy(UserContext.getUserId());
-        entry.setLastModifiedDate(LocalDateTime.now());
+        // Audit is handled by BaseEntity
         entryHdrRepository.save(entry);
     }
 
@@ -648,6 +741,109 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
 
         return callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
+    }
+
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public String createFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, String pdaPoid) {
+        try {
+            logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - START - pdaPoid: {}", pdaPoid);
+
+            // Try with schema prefix first
+            String sqlWithSchema = "{ call PROC_PDA_FDA_CREATE_FROM_PDA(?, ?, ?, ?, ?) }";
+            
+            try {
+                String result = jdbcTemplate.execute(sqlWithSchema, (java.sql.CallableStatement cs) -> {
+                    cs.setBigDecimal(1, new BigDecimal(groupPoid));
+                    cs.setBigDecimal(2, new BigDecimal(companyPoid));
+                    cs.setBigDecimal(3, new BigDecimal(userPoid));
+                    cs.setString(4, pdaPoid);
+                    cs.registerOutParameter(5, Types.VARCHAR);
+                    cs.execute();
+                    return cs.getString(5);
+                });
+                
+                logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Completed with schema. Status: {}", result);
+                return result != null ? result : "Success";
+                
+            } catch (Exception schemaCallException) {
+                logger.warn("[SP-10] Schema call failed, trying without schema: {}", schemaCallException.getMessage());
+                
+                // Try without schema prefix
+                String sql = "{ call PROC_PDA_FDA_CREATE_FROM_PDA(?, ?, ?, ?, ?) }";
+                
+                try {
+                    String result = jdbcTemplate.execute(sql, (java.sql.CallableStatement cs) -> {
+                        cs.setBigDecimal(1, new BigDecimal(groupPoid));
+                        cs.setBigDecimal(2, new BigDecimal(companyPoid));
+                        cs.setBigDecimal(3, new BigDecimal(userPoid));
+                        cs.setString(4, pdaPoid);
+                        cs.registerOutParameter(5, Types.VARCHAR);
+                        cs.execute();
+                        return cs.getString(5);
+                    });
+                    
+                    logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Completed without schema. Status: {}", result);
+                    return result != null ? result : "Success";
+                    
+                } catch (Exception directCallException) {
+                    logger.warn("[SP-10] Direct call failed, trying SimpleJdbcCall: {}", directCallException.getMessage());
+                    
+                    // Final fallback to SimpleJdbcCall
+                    SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                            .withProcedureName("PROC_PDA_FDA_CREATE_FROM_PDA")
+                            .withoutProcedureColumnMetaDataAccess()
+                            .declareParameters(
+                                    new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                                    new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                                    new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                                    new SqlParameter("P_PDA_POID", Types.VARCHAR),
+                                    new SqlOutParameter("P_RESULT", Types.VARCHAR)
+                            );
+
+                    Map<String, Object> inputMap = new HashMap<>();
+                    inputMap.put("P_LOGIN_GROUP_POID", new BigDecimal(groupPoid));
+                    inputMap.put("P_LOGIN_COMPANY_POID", new BigDecimal(companyPoid));
+                    inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+                    inputMap.put("P_PDA_POID", pdaPoid);
+
+                    Map<String, Object> result = jdbcCall.execute(inputMap);
+                    String status = (String) result.get("P_RESULT");
+
+                    logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Completed via SimpleJdbcCall. Status: {}", status);
+                    return status != null ? status : "Success";
+                }
+            }
+
+        } catch (Exception e) {
+            logger.error("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Error: {}", e.getMessage(), e);
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    // Helper method to extract FDA reference from stored procedure result
+    public Map<String, String> parseFdaCreationResult(String spResult) {
+        Map<String, String> result = new HashMap<>();
+        
+        if (spResult != null) {
+            result.put("message", spResult);
+            
+            // Extract FDA reference using regex pattern
+            // Pattern matches: "FDA Ref: CSA926" or "FDA REF - CSA926" etc.
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("FDA\\s+(?:Ref|REF)\\s*[:-]?\\s*([A-Z0-9,\\s]+)");
+            java.util.regex.Matcher matcher = pattern.matcher(spResult);
+            
+            if (matcher.find()) {
+                String fdaRef = matcher.group(1).trim();
+                // Clean up any trailing characters like ')' or '...'
+                fdaRef = fdaRef.replaceAll("[)\\.].*$", "").trim();
+                result.put("fdaRef", fdaRef);
+                logger.info("[SP-10] Extracted FDA Reference: {}", fdaRef);
+            } else {
+                logger.warn("[SP-10] Could not extract FDA reference from result: {}", spResult);
+            }
+        }
+        
+        return result;
     }
 
     public void updateFdaFromPda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
@@ -969,6 +1165,65 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
+    @Override
+    public Map<String, Object> getVoyageDetails(BigDecimal voyagePoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        if (voyagePoid == null) {
+            throw new ValidationException(
+                    "Voyage POID is required",
+                    List.of(new ValidationError("voyagePoid", "Voyage POID is mandatory"))
+            );
+        }
+
+        try {
+            logger.info("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - voyagePoid: {}", voyagePoid);
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_VOYAGE_DEFAULT_DTLS")
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_VOYAGE_POID", Types.NUMERIC),
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
+                    );
+
+            Map<String, Object> inParams = new HashMap<>();
+            inParams.put("P_LOGIN_GROUP_POID", groupPoid);
+            inParams.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inParams.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inParams.put("P_VOYAGE_POID", voyagePoid);
+
+            Map<String, Object> result = jdbcCall.execute(inParams);
+
+            List<Map<String, Object>> rows = (List<Map<String, Object>>) result.get("OUTDATA");
+
+            Map<String, Object> response = new HashMap<>();
+            if (!rows.isEmpty()) {
+                Map<String, Object> row = rows.getFirst();
+                response.put("voyageNo", row.get("VOYAGE_NO"));
+                response.put("vesselPoid", row.get("VESSEL_POID"));
+                response.put("linePoid", row.get("LINE_POID"));
+                response.put("portPoid", row.get("PORT_POID"));
+                response.put("arrivalDate", row.get("ARRIVAL_DATE"));
+                response.put("sailDate", row.get("SAIL_DATE"));
+                response.put("vesselTypePoid", row.get("VESSEL_TYPE_POID"));
+                response.put("imoNumber", row.get("IMO_NUMBER"));
+                response.put("grt", row.get("GRT"));
+                response.put("nrt", row.get("NRT"));
+                response.put("dwt", row.get("DWT"));
+                response.put("totalQuantity", row.get("TOTAL_QUANTITY"));
+                response.put("numberOfDays", row.get("NUMBER_OF_DAYS"));
+            }
+
+            logger.info("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - Completed");
+            return response;
+
+        } catch (Exception e) {
+            logger.error("[SP-21] PROC_PDA_VOYAGE_DEFAULT_DTLS - Error: {}", e.getMessage(), e);
+            return new HashMap<>();
+        }
+    }
+
 
     // Private helper methods
 
@@ -978,6 +1233,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Validate refType is mandatory
         if (request.getRefType() == null || request.getRefType().trim().isEmpty()) {
             errors.add(new ValidationError("refType", "Ref type is mandatory"));
+        }
+
+        // Validate subCategory (Category) is mandatory
+        if (request.getSubCategory() == null || request.getSubCategory().trim().isEmpty()) {
+            errors.add(new ValidationError("subCategory", "Category is mandatory"));
         }
 
         // Validate required fields for GENERAL ref type
@@ -998,10 +1258,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 errors.add(new ValidationError("vesselPoid", "Vessel is mandatory for GENERAL ref type"));
             }
             if (request.getArrivalDate() == null) {
-                errors.add(new ValidationError("arrivalDate", "Arrival date is mandatory for GENERAL ref type"));
+                errors.add(new ValidationError("arrivalDate", "ETA (Arrival date) is mandatory for GENERAL ref type"));
             }
             if (request.getSailDate() == null) {
-                errors.add(new ValidationError("sailDate", "Sail date is mandatory for GENERAL ref type"));
+                errors.add(new ValidationError("sailDate", "ETD (Sail date) is mandatory for GENERAL ref type"));
+            }
+            // Validate customer/nominated party for GENERAL ref type
+            if (request.getNominatedPartyPoid() == null) {
+                errors.add(new ValidationError("nominatedPartyPoid", "Customer is mandatory for GENERAL ref type"));
             }
         }
 
@@ -1036,7 +1300,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private void mapRequestToEntity(PdaEntryRequest request, PdaEntryHdr entity) {
         // Map all fields from request to entity
-        entity.setTransactionDate(request.getTransactionDate());
+        LocalDate transactionDate = request.getTransactionDate() != null
+                ? request.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
+        entity.setTransactionDate(transactionDate);
         entity.setPrincipalPoid(request.getPrincipalPoid());
         entity.setPrincipalName(request.getPrincipalName());
         entity.setPrincipalContact(request.getPrincipalContact());
@@ -1327,7 +1594,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             inParams.put("P_PRINCIPAL_POID", principalPoid.toString()); // VARCHAR2
             inParams.put("P_LINE_POID", linePoid.toString()); // VARCHAR2
-            inParams.put("P_VESSEL_POID", vesselPoid.toString()); // VARCHAR2
+            inParams.put("P_VESSEL_POID", vesselPoid.toString()); // VARCListHAR2
             inParams.put("P_VOYAGE_NO", voyageNo);
             inParams.put("P_VESSEL_VOYAGE_POID", voyagePoid.toString()); // VARCHAR2
 
@@ -1394,10 +1661,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         calculateAmounts(detail);
 
         // Set audit fields
-        detail.setCreatedBy(userId);
-        detail.setCreatedDate(now);
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
 
         // Save
         PdaEntryDtl saved = entryDtlRepository.save(detail);
@@ -1466,8 +1729,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
 
         // Update audit fields
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
 
         // Save and log
         detail = entryDtlRepository.save(detail);
@@ -1618,8 +1879,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 ));
 
         entry.setTotalAmount(totalAmount);
-        entry.setLastModifiedBy(userId);
-        entry.setLastModifiedDate(LocalDateTime.now());
         entryHdrRepository.save(entry);
     }
 
@@ -1846,10 +2105,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapVehicleDetailRequestToEntity(request, detail);
 
         // Set audit fields
-        detail.setCreatedBy(userId);
-        detail.setCreatedDate(now);
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
 
         // Save
         PdaEntryVehicleDtl saved = vehicleDtlRepository.save(detail);
@@ -1870,8 +2125,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapVehicleDetailRequestToEntity(request, detail);
 
         // Update audit fields
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
+        // Audit is handled by BaseEntity
 
         // Save
         vehicleDtlRepository.save(detail);
@@ -2039,10 +2293,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapTdrDetailRequestToEntity(request, detail);
 
         // Set audit fields
-        detail.setCreatedBy(userId);
-        detail.setCreatedDate(now);
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
+        // Audit is handled by BaseEntity
 
         // Save
         PdaEntryTdrDetail saved = tdrDetailRepository.save(detail);
@@ -2059,15 +2310,23 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                         "TDR detail not found with id: " + request.getDetRowId()
                 ));
 
+        // Create old detail copy for logging
+        PdaEntryTdrDetail oldDetail = new PdaEntryTdrDetail();
+        oldDetail.setTransactionPoid(detail.getTransactionPoid());
+        oldDetail.setDetRowId(detail.getDetRowId());
+        BeanUtils.copyProperties(detail, oldDetail);
+
         // Map request to entity
         mapTdrDetailRequestToEntity(request, detail);
 
         // Update audit fields
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
+        // Audit is handled by BaseEntity
 
-        // Save
+        // Save and log
         tdrDetailRepository.save(detail);
+        
+        String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", detail.getTransactionPoid(), detail.getDetRowId());
+        loggingService.createLog(oldDetail, detail, PdaEntryTdrDetail.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
     }
 
     private void deleteTdrDetailRecord(Long transactionPoid, Long detRowId) {
@@ -2229,10 +2488,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapAcknowledgmentDetailRequestToEntity(request, detail);
 
         // Set audit fields
-        detail.setCreatedBy(userId);
-        detail.setCreatedDate(now);
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
+        // Audit is handled by BaseEntity
 
         // Save
         PdaEntryAcknowledgmentDtl saved = acknowledgmentDtlRepository.save(detail);
@@ -2253,8 +2509,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         mapAcknowledgmentDetailRequestToEntity(request, detail);
 
         // Update audit fields
-        detail.setLastModifiedBy(userId);
-        detail.setLastModifiedDate(now);
+        // Audit is handled by BaseEntity
 
         // Save
         acknowledgmentDtlRepository.save(detail);
@@ -2498,7 +2753,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
-    public String createFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public String updateFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
         try {
             logger.info("[SP-FDA] PROC_PDA_DTL_UPDATE_FDA - START - transactionPoid: {}", transactionPoid);
 
@@ -2528,11 +2783,12 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             logger.error("[SP-FDA] PROC_PDA_DTL_UPDATE_FDA - ERROR: {}", e.getMessage(), e);
             throw new ValidationException(
                     "FDA creation failed",
-                    List.of(new ValidationError("general", "Error creating FDA: " + e.getMessage()))
+                    List.of(new ValidationError("general", "Error updating FDA: " + e.getMessage()))
             );
         }
     }
 
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public String callUpdateFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
         try {
             logger.info("[SP-8] PROC_PDA_DTL_UPDATE_FDA - transactionPoid: {}", transactionPoid);
@@ -2568,6 +2824,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public String callSubmitPdaToFda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
         try {
             logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - transactionPoid: {}", transactionPoid);
@@ -2877,8 +3134,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entry.setVerificationAcceptedDate(LocalDate.now());
         entry.setVerificationAcceptedBy(UserContext.getUserId());
         entry.setDocumentReceivedStatus("ACCEPTED");
-        entry.setLastModifiedBy(UserContext.getUserId());
-        entry.setLastModifiedDate(LocalDateTime.now());
+        // Audit is handled by BaseEntity
 
         entryHdrRepository.save(entry);
     }
@@ -2944,8 +3200,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Update entity status
         entry.setCancelRemark(cancelRemark);
         entry.setStatus("CANCELLED");
-        entry.setLastModifiedBy(UserContext.getUserId());
-        entry.setLastModifiedDate(LocalDateTime.now());
+        // Audit is handled by BaseEntity
         entryHdrRepository.save(entry);
 
         // Return the actual stored procedure result or success message
@@ -3102,11 +3357,17 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        return uploadTdrDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file);
+        String result = uploadTdrDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file, false);
+        
+        // Log TDR file import action
+        String logDetail = String.format("TDR file imported: %s", file.getOriginalFilename());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+        
+        return result;
     }
 
     @Override
-    public String uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+    public List<PdaEntryTdrDetailResponse> uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
                 "PDA Entry not found with id: " + transactionPoid
         ));
@@ -3118,26 +3379,42 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        if (file != null && !file.isEmpty()) {
-            // Process async for large files
-            processTdrFileAsync(transactionPoid, groupPoid, companyPoid, userPoid, file);
-            return "TDR file upload started. Processing in background...";
-        } else {
-            return callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
-        }
+        // Clear existing TDR details before importing new data
+        callClearTdrDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+        
+        callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
+        
+        // Log TDR details upload action
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), "TDR details uploaded");
+        
+        // Fetch and return the loaded TDR details
+        List<PdaEntryTdrDetail> details = tdrDetailRepository.findByTransactionPoidOrderByDetRowIdAsc(transactionPoid);
+        return details.stream()
+                .map(this::toTdrDetailResponse)
+                .collect(Collectors.toList());
     }
 
     @org.springframework.scheduling.annotation.Async
     public void processTdrFileAsync(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
         try {
-            uploadTdrDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file);
+            uploadTdrDetailsFromExcel(transactionPoid, groupPoid, companyPoid, userPoid, file, true);
+            
+            // Log successful async processing completion
+            String logDetail = String.format("TDR file processing completed successfully: %s", file.getOriginalFilename());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+            
         } catch (Exception e) {
             logger.error("Async TDR file processing failed for transaction {}: {}", transactionPoid, e.getMessage(), e);
+            
+            // Log failed async processing
+            String logDetail = String.format("TDR file processing failed: %s - Error: %s", 
+                    file.getOriginalFilename(), e.getMessage());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
         }
     }
 
     @org.springframework.transaction.annotation.Transactional(timeout = 600)
-    public String uploadTdrDetailsFromExcel(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file) {
+    public String uploadTdrDetailsFromExcel(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file, boolean callStoredProcedure) {
         if (file.isEmpty()) {
             throw new ValidationException(
                     "File is empty",
@@ -3156,6 +3433,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         String docId = "110-160_1";
         ExcelConfig config = getExcelConfig(docId);
+        logger.info("Excel config - startRowNumber: {}, startColNumber: {}, endColNumber: {}, tempTable: {}", 
+                config.startRowNumber, config.startColNumber, config.endColNumber, config.tempTableName);
 
         jdbcTemplate.update("DELETE FROM " + config.tempTableName);
 
@@ -3184,17 +3463,28 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
+        logger.info("Total rows read from Excel: {}, Rows to be inserted (after startRowNumber {}): {}", 
+                rowsCollection.size(), config.startRowNumber, Math.max(0, rowsCollection.size() - config.startRowNumber + 1));
+        
         saveImportedDataAsync(config.startRowNumber, rowsCollection, config.tempTableName);
-        String result = callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
+        
+        // Verify data was inserted
+        Integer insertedCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM " + config.tempTableName, Integer.class);
+        logger.info("Rows inserted into temp table {}: {}", config.tempTableName, insertedCount);
 
-        if (result != null && result.startsWith("ERROR")) {
-            throw new ValidationException(
-                    "Failed to upload TDR details from Excel",
-                    List.of(new ValidationError("file", result))
-            );
+        if (callStoredProcedure) {
+            String result = callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
+            if (result != null && result.startsWith("ERROR")) {
+                throw new ValidationException(
+                        "Failed to upload TDR details from Excel",
+                        List.of(new ValidationError("file", result))
+                );
+            }
+            return result != null ? result : "TDR details uploaded successfully from Excel";
+        } else {
+            return String.format("Successfully imported %d rows to temp table. Click 'Load Details' to process.", insertedCount);
         }
-
-        return result != null ? result : "TDR details uploaded successfully from Excel";
     }
 
     @Override
@@ -3210,7 +3500,12 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        return callClearTdrDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+        String result = callClearTdrDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+        
+        // Log TDR details clear action
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), "TDR details cleared");
+        
+        return result;
     }
 
     @Override
@@ -3226,7 +3521,13 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        return callDefaultChargesFromTdr(groupPoid, userPoid, companyPoid, transactionPoid, entry.getArrivalDate());
+        String result = callDefaultChargesFromTdr(groupPoid, userPoid, companyPoid, transactionPoid, entry.getArrivalDate());
+        
+        // Log TDR charges processing action
+        logger.info("TDR charges processed for transactionPoid: {}", transactionPoid);
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), "TDR charges processed");
+        
+        return result;
     }
 }
 

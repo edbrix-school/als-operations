@@ -1,10 +1,11 @@
-package com.asg.operations.projectjob.service.Impl;
+package com.asg.operations.projectjob.service.impl;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.dto.RawSearchResult;
 import com.asg.common.lib.dto.request.LogRequestDto;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
@@ -55,23 +56,27 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
 
+    private static final String TRANSACTION_POID = "TRANSACTION_POID";
+
     @Override
+    @Transactional
     public ProjectJobResponse create(ProjectJobRequest request) {
 
         FFManifestHdr hdr = new FFManifestHdr();
-        ProjectJobMapper.mapHdrFromDto((FFManifestHdrDto) request, hdr);
+        ProjectJobMapper.mapHdrFromDto(request, hdr);
         Long groupPoid = UserContext.getGroupPoid();
-        String currentUser = UserContext.getUserId();
-        LocalDateTime now = LocalDateTime.now();
+        Long companyPoid = UserContext.getCompanyPoid();
 
+        hdr.setCompanyPoid(companyPoid);
         hdr.setGroupPoid(groupPoid);
-        hdr.setCreatedBy(currentUser);
-        hdr.setCreatedDate(now);
 
-        hdrRepository.save(hdr);
 
-        saveDetails(hdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
+        FFManifestHdr savedHdr = hdrRepository.save(hdr);
+
+        saveDetails(savedHdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
                 request.getContainers(), request.getTruckDetails());
+
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedHdr.getTransactionPoid().toString(), "Project Job Created");
 
         return getById(hdr.getTransactionPoid());
     }
@@ -82,19 +87,17 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         FFManifestHdr hdr = hdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
-        FFManifestHdr hdrEntity = new FFManifestHdr();
-        ProjectJobMapper.mapHdrFromDto((FFManifestHdrDto) request, hdrEntity);
-        Long groupPoid = UserContext.getGroupPoid();
-        String currentUser = UserContext.getUserId();
-        LocalDateTime now = LocalDateTime.now();
-        hdr.setGroupPoid(groupPoid);
-        hdr.setTransactionPoid(transactionPoid);
-        hdr.setLastModifiedBy(currentUser);
-        hdr.setLastModifiedDate(now);
+        FFManifestHdr oldHdr = new FFManifestHdr();
+        BeanUtils.copyProperties(hdr, oldHdr);
+
+        ProjectJobMapper.mapHdrFromDto(request, hdr);
+
         hdrRepository.save(hdr);
 
         saveDetails(hdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
                 request.getContainers(), request.getTruckDetails());
+
+        loggingService.logChanges(oldHdr, hdr, FFManifestHdr.class, UserContext.getDocumentId(), hdr.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, TRANSACTION_POID);
 
         return getById(transactionPoid);
     }
@@ -169,6 +172,9 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                     toDelete.add(detRowId);
                     loggingService.logDelete(dto, docId, docKeyPoid);
                     break;
+
+                default:
+                    break;
             }
         }
 
@@ -188,8 +194,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     }
 
     /*
-     * ================================================= SAVE ALL DETAILS
-     * =======================================================
+     * ==================== SAVE ALL DETAILS=====================
      */
 
     private void saveDetails(Long transactionPoid, List<ProjectJobAirPkgDtoRequest> airpkgDetails,
@@ -230,7 +235,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
 
         ProjectJobResponse response = new ProjectJobResponse();
 
-        ProjectJobMapper.toHdrDto(hdr, (FFManifestHdrDtoResponse) response);
+        ProjectJobMapper.toHdrDto(hdr, response);
 
         List<FFManifestAirPkgDtl> airPkg = airPkgRepository.findByTransactionPoid(transactionPoid);
         List<FFManifestBayanDtl> bayan = bayanRepository.findByTransactionPoid(transactionPoid);
@@ -294,8 +299,8 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         FFManifestHdr hdr = hdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Project Job", "transactionPoid", transactionPoid));
 
-        documentDeleteService.deleteDocument(transactionPoid, "FF_MANIEST_HDR", "TRANSACTION_POID", deleteReasonDto,
-                hdr.getTransactionDate().toLocalDate());
+        documentDeleteService.deleteDocument(transactionPoid, "FF_MANIEST_HDR", TRANSACTION_POID, deleteReasonDto,
+                hdr.getTransactionDate());
 
     }
 
@@ -311,7 +316,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                 periodFrom, periodTo);
 
         RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
-                "DOC_REF", "TRANSACTION_POID");
+                "DOC_REF", TRANSACTION_POID);
 
         Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 

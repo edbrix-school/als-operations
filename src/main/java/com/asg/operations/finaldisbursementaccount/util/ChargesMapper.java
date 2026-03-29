@@ -4,8 +4,6 @@ import com.asg.operations.finaldisbursementaccount.dto.FdaChargeDto;
 import com.asg.operations.finaldisbursementaccount.entity.PdaFdaDtl;
 import com.asg.operations.finaldisbursementaccount.key.PdaFdaDtlId;
 
-import java.time.LocalDateTime;
-
 public class ChargesMapper {
 
     public static void updateChargeEntityFromDto(FdaChargeDto dto, PdaFdaDtl entity, String userId) {
@@ -53,17 +51,12 @@ public class ChargesMapper {
         entity.setPdaPoid(dto.getPdaPoid());
         entity.setPdaDetRowId(dto.getPdaDetRowId());
         entity.setPrintSeqNo(dto.getPrintSeqNo());
-
-        entity.setLastModifiedBy(userId);
-        entity.setLastModifiedDate(LocalDateTime.now());
     }
 
     public static PdaFdaDtl createNewCharge(PdaFdaDtlId id, FdaChargeDto dto, String userId) {
         PdaFdaDtl entity = new PdaFdaDtl();
         entity.setId(id);
         updateChargeEntityFromDto(dto, entity, userId);
-        entity.setCreatedBy(userId);
-        entity.setCreatedDate(LocalDateTime.now());
         return entity;
     }
 
@@ -115,6 +108,8 @@ public class ChargesMapper {
         dto.setPdaPoid(entity.getPdaPoid());
         dto.setPdaDetRowId(entity.getPdaDetRowId());
         dto.setPrintSeqNo(entity.getPrintSeqNo());
+        dto.setLastModifiedBy(entity.getLastModifiedBy());
+        dto.setLastModifiedDate(entity.getLastModifiedDate());
         return dto;
     }
 

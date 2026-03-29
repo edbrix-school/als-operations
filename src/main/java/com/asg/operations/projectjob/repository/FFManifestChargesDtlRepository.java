@@ -21,4 +21,6 @@ public interface FFManifestChargesDtlRepository extends JpaRepository<FFManifest
 	void deleteByTransactionPoidAndDetRowIdIn(Long transactionPoid, List<Long> toDelete);
 
 	Optional<FFManifestChargesDtl> findByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
+
+	List<FFManifestChargesDtl> findByTransactionPoidIn(List<Long> transactionPoids);
 }

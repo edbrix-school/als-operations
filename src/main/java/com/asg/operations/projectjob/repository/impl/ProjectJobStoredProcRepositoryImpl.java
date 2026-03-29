@@ -4,6 +4,7 @@ import com.asg.operations.projectjob.dto.ProjectLoadDtlRow;
 import com.asg.operations.projectjob.dto.ProjectLoadHdrRow;
 import com.asg.operations.projectjob.dto.ProjectLoadInJobsProcResponse;
 import com.asg.operations.projectjob.repository.ProjectJobStoredProcRepository;
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -47,10 +48,12 @@ public class ProjectJobStoredProcRepositoryImpl implements ProjectJobStoredProcR
                             row.setProjectCustomerPoid(rs.getLong("PROJECT_CUSTOMER_POID"));
                             row.setPrincipalPoid(rs.getLong("PRINCIPAL_POID"));
                             row.setSalesmanPoid(rs.getLong("SALESMAN_POID"));
+                            row.setLinePoid(rs.getLong("LINE_POID"));
                             row.setShipmentMode(rs.getString("SHIPMENT_MODE"));
                             row.setTransportationMode(rs.getString("TRANSPORTATION_MODE"));
                             row.setProjectReference(rs.getString("PROJECT_REFERENCE"));
-                            row.setCommodity(rs.getString("COMMODITY"));
+                            String commodityPoids = rs.getString("COMMODITY");
+                            row.setCommodityPoids(StringUtils.isEmpty(commodityPoids) ? null : List.of(commodityPoids.split((","))));
                             hdrList.add(row);
                         }
                     }

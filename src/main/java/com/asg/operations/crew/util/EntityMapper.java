@@ -13,7 +13,6 @@ import com.asg.operations.crew.entity.ContractCrewDtlId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -87,13 +86,6 @@ public class EntityMapper {
         entity.setCrewPassportExpiryDate(request.getCrewPassportExpiryDate());
         entity.setCrewPassportIssuePlace(request.getCrewPassportIssuePlace());
         entity.setRemarks(request.getRemarks());
-        entity.setActive(request.getActive() != null ? request.getActive() : "Y");
-
-        // Set audit fields
-
-        entity.setCreatedBy(userId);
-        entity.setCreatedDate(LocalDateTime.now());
-
         // Set multi-tenant fields
         entity.setCompanyPoid(companyPoid);
         entity.setGroupPoid(groupPoid);
@@ -119,15 +111,7 @@ public class EntityMapper {
         entity.setCrewPassportIssueDate(request.getCrewPassportIssueDate());
         entity.setCrewPassportExpiryDate(request.getCrewPassportExpiryDate());
         entity.setCrewPassportIssuePlace(request.getCrewPassportIssuePlace());
-        entity.setLastModifiedBy(UserContext.getUserId());
-        entity.setLastModifiedDate(LocalDateTime.now());
         entity.setRemarks(request.getRemarks());
-        if (request.getActive() != null) {
-            entity.setActive(request.getActive());
-        }
-
-        // Update audit fields (only modified fields)
-
     }
 
     /**
@@ -188,12 +172,6 @@ public class EntityMapper {
         entity.setPptReceiptDate(request.getPptReceiptDate());
         entity.setPptReturnDate(request.getPptReturnDate());
         entity.setRemarks(request.getRemarks());
-
-        // Set audit fields
-
-        entity.setCreatedBy(userId);
-        entity.setCreatedDate(LocalDateTime.now());
-        //entity.setModifiedBy(currentUser);
 
         return entity;
     }

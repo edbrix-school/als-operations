@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 
 public class ProjectJobMapper {
 
+    private ProjectJobMapper(){}
+
     public static void mapAirPkgFromDto(ProjectJobAirPkgDto dto, FFManifestAirPkgDtl entity, Long transactionPoid) {
 
         if (dto == null)
@@ -57,7 +59,7 @@ public class ProjectJobMapper {
         entity.setBayanMode(dto.getBayanMode());
 
         entity.setDutyAmount(dto.getDutyAmount());
-        entity.setVatLength(dto.getVatLength());
+        entity.setVatAmount(dto.getVatAmount());
         entity.setTotalPaidAmount(dto.getTotalPaidAmount());
 
         entity.setExpiryDate(dto.getExpiryDate());
@@ -264,7 +266,7 @@ public class ProjectJobMapper {
         dto.setBayanMode(entity.getBayanMode());
 
         dto.setDutyAmount(entity.getDutyAmount());
-        dto.setVatLength(entity.getVatLength());
+        dto.setVatAmount(entity.getVatAmount());
         dto.setTotalPaidAmount(entity.getTotalPaidAmount());
 
         dto.setExpiryDate(entity.getExpiryDate());
@@ -350,7 +352,7 @@ public class ProjectJobMapper {
 
     public static void mapHdrFromDto(FFManifestHdrDto dto, FFManifestHdr entity) {
 
-        if (dto == null)
+        if (dto == null || entity == null)
             return;
 
         entity.setTransactionDate(dto.getTransactionDate());
@@ -463,7 +465,6 @@ public class ProjectJobMapper {
 
         entity.setCfInvnoOld(dto.getCfInvnoOld());
         entity.setCurrentDoNo(dto.getCurrentDoNo());
-        entity.setDocRef(dto.getDocRef());
         entity.setDeleted(dto.getDeleted());
 
         entity.setReleasedType(dto.getReleasedType());

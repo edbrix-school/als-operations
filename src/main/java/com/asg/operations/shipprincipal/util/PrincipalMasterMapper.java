@@ -254,6 +254,7 @@ public class PrincipalMasterMapper {
 
         AddressDetailsDTO dto = new AddressDetailsDTO();
         dto.setAddressPoid(String.valueOf(entity.getAddressPoid()));
+        dto.setWebsite(entity.getWebsite());
         dto.setContactPerson(entity.getContactPerson());
         dto.setDesignation(entity.getDesignation());
         dto.setOffTel1(entity.getOffTel1());
@@ -326,7 +327,9 @@ public class PrincipalMasterMapper {
         dto.setPdfTemplatePoid(entity.getPdfTemplatePoid());
         dto.setEmailTemplatePoid(entity.getEmailTemplatePoid());
         dto.setAssignedToRolePoid(entity.getAssignedToRolePoid());
-        dto.setVesselType(entity.getVesselType());
+        if (entity.getVesselType() != null && !entity.getVesselType().isEmpty()) {
+            dto.setVesselType(java.util.Arrays.asList(entity.getVesselType().split(",")));
+        }
         dto.setResponseTimeHrs(entity.getResponseTimeHrs());
         dto.setFrequenceHrs(entity.getFrequenceHrs());
         dto.setEscalationRole1(entity.getEscalationRole1());

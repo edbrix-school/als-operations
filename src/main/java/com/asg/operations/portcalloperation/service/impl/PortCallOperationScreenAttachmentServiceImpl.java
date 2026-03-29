@@ -11,15 +11,23 @@ import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Screen-specific side drawer attachments. Each screen uses its own docId and DB column;
@@ -72,8 +80,8 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     }
 
     private PcInfoAttachmentUploadResponseDto uploadDetail(String docId, long docKeyPoid,
-                                                             String existingValue, java.util.function.Consumer<String> setter, Runnable save,
-                                                             MultipartFile[] files, String[] remarks, String[] checklistNames) {
+                                                           String existingValue, java.util.function.Consumer<String> setter, Runnable save,
+                                                           MultipartFile[] files, String[] remarks, String[] checklistNames) {
         if (!attachmentClient.isConfigured()) {
             throw new IllegalStateException("Common attachment service is not configured. Set common.service.attachment.base-url.");
         }
@@ -97,7 +105,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     @Override
     @Transactional
     public PcInfoAttachmentUploadResponseDto uploadBerthingAttachments(Long transactionPoid, Long detRowId,
-                                                                         MultipartFile[] files, String[] remarks, String[] checklistNames) {
+                                                                       MultipartFile[] files, String[] remarks, String[] checklistNames) {
         PortCallOperationEstBertDtl d = estBertDtlRepository.findById(new PortCallOperationEstBertDtlId(transactionPoid, detRowId))
                 .orElseThrow(() -> new ResourceNotFoundException("Berthing detail", "detRowId", detRowId));
         long key = docKey(transactionPoid, detRowId);
@@ -126,16 +134,24 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     }
 
     @Override
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllBerthingAttachments(Long transactionPoid, Long detRowId) {
+        ensureConfigured();
+        resolveBerthing(transactionPoid, detRowId);
+        return downloadAllForDetail(CommonAttachmentServiceClient.DOC_ID_BERTHING, transactionPoid, detRowId,
+                "berthing-" + transactionPoid + "-" + detRowId + ".zip");
+    }
+
+    @Override
     @Transactional
     public void deleteBerthingAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
         ensureConfigured();
         PortCallOperationEstBertDtl entity = resolveBerthing(transactionPoid, detRowId);
         long key = docKey(transactionPoid, detRowId);
-        
+
         // List attachments to find the originalFileName for the storedFileName
         Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_BERTHING, key, 0, 1000);
         String originalFileName = null;
-        
+
         // Extract attachments from response
         List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
         for (Map<String, Object> attachment : attachments) {
@@ -148,14 +164,14 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
                 break;
             }
         }
-        
+
         if (originalFileName == null) {
             throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
         }
-        
+
         // Delete from attachment service
         attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_BERTHING, key, storedFileName);
-        
+
         // Remove originalFileName from berthingAttachments field
         String currentAttachments = entity.getBerthingAttachments();
         if (StringUtils.isNotBlank(currentAttachments)) {
@@ -172,7 +188,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     @Override
     @Transactional
     public PcInfoAttachmentUploadResponseDto uploadPreArrivalAttachments(Long transactionPoid, Long detRowId,
-                                                                          MultipartFile[] files, String[] remarks, String[] checklistNames) {
+                                                                         MultipartFile[] files, String[] remarks, String[] checklistNames) {
         PortCallOperationEstPrearrivalDtl d = estPrearrivalDtlRepository.findById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))
                 .orElseThrow(() -> new ResourceNotFoundException("Pre-arrival detail", "detRowId", detRowId));
         long key = docKey(transactionPoid, detRowId);
@@ -201,16 +217,24 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     }
 
     @Override
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllPreArrivalAttachments(Long transactionPoid, Long detRowId) {
+        ensureConfigured();
+        resolvePreArrival(transactionPoid, detRowId);
+        return downloadAllForDetail(CommonAttachmentServiceClient.DOC_ID_PREARRIVAL, transactionPoid, detRowId,
+                "pre-arrival-" + transactionPoid + "-" + detRowId + ".zip");
+    }
+
+    @Override
     @Transactional
     public void deletePreArrivalAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
         ensureConfigured();
         PortCallOperationEstPrearrivalDtl entity = resolvePreArrival(transactionPoid, detRowId);
         long key = docKey(transactionPoid, detRowId);
-        
+
         // List attachments to find the originalFileName for the storedFileName
         Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_PREARRIVAL, key, 0, 1000);
         String originalFileName = null;
-        
+
         // Extract attachments from response
         List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
         for (Map<String, Object> attachment : attachments) {
@@ -223,14 +247,14 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
                 break;
             }
         }
-        
+
         if (originalFileName == null) {
             throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
         }
-        
+
         // Delete from attachment service
         attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_PREARRIVAL, key, storedFileName);
-        
+
         // Remove originalFileName from preArrivalAttachments field
         String currentAttachments = entity.getPreArrivalAttachments();
         if (StringUtils.isNotBlank(currentAttachments)) {
@@ -247,7 +271,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     @Override
     @Transactional
     public PcInfoAttachmentUploadResponseDto uploadPdaFdaAttachments(Long transactionPoid,
-                                                                       MultipartFile[] files, String[] remarks, String[] checklistNames) {
+                                                                     MultipartFile[] files, String[] remarks, String[] checklistNames) {
         PortCallOperationHdr h = hdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
         return uploadDetail(CommonAttachmentServiceClient.DOC_ID_PDA_FDA, transactionPoid,
@@ -275,16 +299,24 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     }
 
     @Override
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllPdaFdaAttachments(Long transactionPoid) {
+        ensureConfigured();
+        hdrRepository.findById(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
+        return downloadAllForHeader(CommonAttachmentServiceClient.DOC_ID_PDA_FDA, transactionPoid,
+                "disbursement-other-details-" + transactionPoid + ".zip");
+    }
+
+    @Override
     @Transactional
     public void deletePdaFdaAttachment(Long transactionPoid, String storedFileName) {
         ensureConfigured();
         PortCallOperationHdr entity = hdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
-        
+
         // List attachments to find the originalFileName for the storedFileName
         Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_PDA_FDA, transactionPoid, 0, 1000);
         String originalFileName = null;
-        
+
         // Extract attachments from response
         List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
         for (Map<String, Object> attachment : attachments) {
@@ -297,14 +329,14 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
                 break;
             }
         }
-        
+
         if (originalFileName == null) {
             throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
         }
-        
+
         // Delete from attachment service
         attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_PDA_FDA, transactionPoid, storedFileName);
-        
+
         // Remove originalFileName from pdaFdaAttachments field
         String currentAttachments = entity.getPdaFdaAttachments();
         if (StringUtils.isNotBlank(currentAttachments)) {
@@ -321,7 +353,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     @Override
     @Transactional
     public PcInfoAttachmentUploadResponseDto uploadHusbandryCrewAttachments(Long transactionPoid, Long detRowId,
-                                                                              MultipartFile[] files, String[] remarks, String[] checklistNames) {
+                                                                            MultipartFile[] files, String[] remarks, String[] checklistNames) {
         PortCallOperationHusbandryCrewDtl d = husbandryCrewDtlRepository.findById(new PortCallOperationHusbandryCrewDtlId(transactionPoid, detRowId))
                 .orElseThrow(() -> new ResourceNotFoundException("Husbandry crew detail", "detRowId", detRowId));
         long key = docKey(transactionPoid, detRowId);
@@ -353,7 +385,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     @Override
     @Transactional
     public PcInfoAttachmentUploadResponseDto uploadHusbandryOthAttachments(Long transactionPoid, Long detRowId,
-                                                                             MultipartFile[] files, String[] remarks, String[] checklistNames) {
+                                                                           MultipartFile[] files, String[] remarks, String[] checklistNames) {
         PortCallOperationHusbandryOthDtl d = husbandryOthDtlRepository.findById(new PortCallOperationHusbandryOthDtlId(transactionPoid, detRowId))
                 .orElseThrow(() -> new ResourceNotFoundException("Husbandry other detail", "detRowId", detRowId));
         long key = docKey(transactionPoid, detRowId);
@@ -385,7 +417,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     @Override
     @Transactional
     public PcInfoAttachmentUploadResponseDto uploadDocsCopyAttachments(Long transactionPoid, Long detRowId,
-                                                                        MultipartFile[] files, String[] remarks, String[] checklistNames) {
+                                                                       MultipartFile[] files, String[] remarks, String[] checklistNames) {
         PortCallOperationDocsCopyDtl d = docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detRowId))
                 .orElseThrow(() -> new ResourceNotFoundException("Docs copy detail", "detRowId", detRowId));
         long key = docKey(transactionPoid, detRowId);
@@ -414,17 +446,25 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     }
 
     @Override
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllDocsCopyAttachments(Long transactionPoid, Long detRowId) {
+        ensureConfigured();
+        resolveDocsCopy(transactionPoid, detRowId);
+        return downloadAllForDetail(CommonAttachmentServiceClient.DOC_ID_DOCS_COPY, transactionPoid, detRowId,
+                "docs-copy-" + transactionPoid + "-" + detRowId + ".zip");
+    }
+
+    @Override
     @Transactional
     public void deleteDocsCopyAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
         ensureConfigured();
         PortCallOperationDocsCopyDtl entity = resolveDocsCopy(transactionPoid, detRowId);
         long key = docKey(transactionPoid, detRowId);
-        
+
         // List attachments to find the originalFileName for the storedFileName
         Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_DOCS_COPY, key, 0, 1000);
         String originalFileName = null;
         int attachmentCount = 0;
-        
+
         // Extract attachments from response
         List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
         for (Map<String, Object> attachment : attachments) {
@@ -438,19 +478,19 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
                 break;
             }
         }
-        
+
         if (originalFileName == null) {
             throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
         }
-        
+
         // Prevent deletion if it's the last file
         if (attachmentCount <= 1) {
             throw new ValidationException("Cannot delete the last attachment. Document attachments cannot be empty.");
         }
-        
+
         // Delete from attachment service
         attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_DOCS_COPY, key, storedFileName);
-        
+
         // Remove originalFileName from documentAttachments field
         String currentAttachments = entity.getDocumentAttachments();
         if (StringUtils.isNotBlank(currentAttachments)) {
@@ -495,16 +535,24 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     }
 
     @Override
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllTimingAttachments(Long transactionPoid, Long detRowId) {
+        ensureConfigured();
+        resolveTiming(transactionPoid, detRowId);
+        return downloadAllForDetail(CommonAttachmentServiceClient.DOC_ID_TIMING, transactionPoid, detRowId,
+                "actual-timing-" + transactionPoid + "-" + detRowId + ".zip");
+    }
+
+    @Override
     @Transactional
     public void deleteTimingAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
         ensureConfigured();
         PortCallOperationActTimingDtl entity = resolveTiming(transactionPoid, detRowId);
         long key = docKey(transactionPoid, detRowId);
-        
+
         // List attachments to find the originalFileName for the storedFileName
         Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_TIMING, key, 0, 1000);
         String originalFileName = null;
-        
+
         // Extract attachments from response
         List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
         for (Map<String, Object> attachment : attachments) {
@@ -517,14 +565,14 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
                 break;
             }
         }
-        
+
         if (originalFileName == null) {
             throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
         }
-        
+
         // Delete from attachment service
         attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_TIMING, key, storedFileName);
-        
+
         // Remove originalFileName from timingAttachments field
         String currentAttachments = entity.getTimingAttachments();
         if (StringUtils.isNotBlank(currentAttachments)) {
@@ -540,6 +588,240 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     @Override
     public boolean isAttachmentServiceAvailable() {
         return attachmentClient.isConfigured();
+    }
+
+    @Override
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllHusbandryCrewAttachments(Long transactionPoid, Long detRowId) {
+        return downloadAllForDetail(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_CREW, transactionPoid, detRowId, "husbandry-crew-" + transactionPoid + "-" + detRowId + ".zip");
+    }
+
+    @Override
+    public ResponseEntity<org.springframework.core.io.Resource> downloadAllHusbandryOthAttachments(Long transactionPoid, Long detRowId) {
+        return downloadAllForDetail(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_OTH, transactionPoid, detRowId, "husbandry-other-" + transactionPoid + "-" + detRowId + ".zip");
+    }
+
+    private ResponseEntity<org.springframework.core.io.Resource> downloadAllForDetail(String docId, Long transactionPoid, Long detRowId, String zipFileName) {
+        ensureConfigured();
+        long key = docKey(transactionPoid, detRowId);
+
+        Map<String, Object> listResponse = attachmentClient.listAttachments(docId, key, 0, 1000);
+        List<Map<String, Object>> attachments = extractAttachmentsFromResponse(listResponse);
+
+        if (attachments.isEmpty()) {
+            throw new ResourceNotFoundException("Attachment", "transactionPoid, detRowId", transactionPoid + ", " + detRowId);
+        }
+
+        try {
+            // Decide "single file vs ZIP" based on how many files can be actually downloaded (not list metadata count).
+            int successCount = 0;
+
+            byte[] firstBytes = null;
+            HttpHeaders firstHeaders = null;
+            org.springframework.http.HttpStatusCode firstStatus = null;
+            String firstEntryName = null;
+
+            ByteArrayOutputStream zipBaos = null;
+            ZipOutputStream zos = null;
+            int addedEntries = 0;
+
+            for (Map<String, Object> attachment : attachments) {
+                if (attachment == null || attachment.get("storedFileName") == null) continue;
+                String storedFileName = attachment.get("storedFileName").toString();
+
+                String entryName;
+                Object origName = attachment.get("originalFileName");
+                if (origName != null && !origName.toString().isBlank()) {
+                    entryName = origName.toString();
+                } else {
+                    entryName = storedFileName;
+                }
+
+                try {
+                    ResponseEntity<org.springframework.core.io.Resource> fileResponse =
+                            attachmentClient.downloadAttachment(docId, key, storedFileName);
+                    org.springframework.core.io.Resource resource = fileResponse.getBody();
+                    if (resource == null) continue;
+
+                    byte[] bytes;
+                    try (InputStream is = resource.getInputStream()) {
+                        bytes = is.readAllBytes();
+                    }
+
+                    successCount++;
+                    if (successCount == 1) {
+                        firstBytes = bytes;
+                        firstHeaders = fileResponse.getHeaders();
+                        firstStatus = fileResponse.getStatusCode();
+                        firstEntryName = entryName;
+                    } else {
+                        // Switch to ZIP mode if this is the 2nd successful file.
+                        if (zos == null) {
+                            zipBaos = new ByteArrayOutputStream();
+                            zos = new ZipOutputStream(zipBaos);
+
+                            // Add the first successful file into the ZIP.
+                            zos.putNextEntry(new ZipEntry(firstEntryName));
+                            zos.write(firstBytes);
+                            zos.closeEntry();
+                            addedEntries++;
+                        }
+
+                        zos.putNextEntry(new ZipEntry(entryName));
+                        zos.write(bytes);
+                        zos.closeEntry();
+                        addedEntries++;
+                    }
+                } catch (RuntimeException ex) {
+                    log.warn("Skipping missing attachment '{}' for docId={}, key={}: {}", storedFileName, docId, key, ex.getMessage());
+                }
+            }
+
+            if (successCount == 0) {
+                throw new ResourceNotFoundException("Attachment", "transactionPoid, detRowId", transactionPoid + ", " + detRowId);
+            }
+
+            // Exactly one file was downloadable: return it directly (no ZIP).
+            if (successCount == 1) {
+                ByteArrayResource singleResource = new ByteArrayResource(firstBytes);
+                if (firstHeaders != null) {
+                    // keep original Content-Disposition from common-service
+                }
+                return ResponseEntity.status(firstStatus != null ? firstStatus : org.springframework.http.HttpStatus.OK)
+                        .headers(firstHeaders != null ? firstHeaders : new HttpHeaders())
+                        .body(singleResource);
+            }
+
+            // Multiple downloadable files: return ZIP.
+            if (zos != null) {
+                try {
+                    zos.close();
+                } catch (Exception ignored) {
+                }
+            }
+            byte[] zipBytes = zipBaos.toByteArray();
+            ByteArrayResource resource = new ByteArrayResource(zipBytes);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentLength(zipBytes.length);
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipFileName + "\"");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(resource);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create zip for attachments", e);
+        }
+    }
+
+    private ResponseEntity<org.springframework.core.io.Resource> downloadAllForHeader(String docId, Long transactionPoid, String zipFileName) {
+        ensureConfigured();
+
+        Map<String, Object> listResponse = attachmentClient.listAttachments(docId, transactionPoid, 0, 1000);
+        List<Map<String, Object>> attachments = extractAttachmentsFromResponse(listResponse);
+
+        if (attachments.isEmpty()) {
+            throw new ResourceNotFoundException("Attachment", "transactionPoid", transactionPoid);
+        }
+
+        try {
+            // Decide "single file vs ZIP" based on how many files can be actually downloaded.
+            int successCount = 0;
+
+            byte[] firstBytes = null;
+            HttpHeaders firstHeaders = null;
+            org.springframework.http.HttpStatusCode firstStatus = null;
+            String firstEntryName = null;
+
+            ByteArrayOutputStream zipBaos = null;
+            ZipOutputStream zos = null;
+            int addedEntries = 0;
+
+            for (Map<String, Object> attachment : attachments) {
+                if (attachment == null || attachment.get("storedFileName") == null) continue;
+                String storedFileName = attachment.get("storedFileName").toString();
+
+                String entryName;
+                Object origName = attachment.get("originalFileName");
+                if (origName != null && !origName.toString().isBlank()) {
+                    entryName = origName.toString();
+                } else {
+                    entryName = storedFileName;
+                }
+
+                try {
+                    ResponseEntity<org.springframework.core.io.Resource> fileResponse =
+                            attachmentClient.downloadAttachment(docId, transactionPoid, storedFileName);
+                    org.springframework.core.io.Resource resource = fileResponse.getBody();
+                    if (resource == null) continue;
+
+                    byte[] bytes;
+                    try (InputStream is = resource.getInputStream()) {
+                        bytes = is.readAllBytes();
+                    }
+
+                    successCount++;
+                    if (successCount == 1) {
+                        firstBytes = bytes;
+                        firstHeaders = fileResponse.getHeaders();
+                        firstStatus = fileResponse.getStatusCode();
+                        firstEntryName = entryName;
+                    } else {
+                        if (zos == null) {
+                            zipBaos = new ByteArrayOutputStream();
+                            zos = new ZipOutputStream(zipBaos);
+
+                            zos.putNextEntry(new ZipEntry(firstEntryName));
+                            zos.write(firstBytes);
+                            zos.closeEntry();
+                            addedEntries++;
+                        }
+
+                        zos.putNextEntry(new ZipEntry(entryName));
+                        zos.write(bytes);
+                        zos.closeEntry();
+                        addedEntries++;
+                    }
+                } catch (RuntimeException ex) {
+                    log.warn("Skipping missing attachment '{}' for docId={}, transactionPoid={}: {}", storedFileName, docId, transactionPoid, ex.getMessage());
+                }
+            }
+
+            if (successCount == 0) {
+                throw new ResourceNotFoundException("Attachment", "transactionPoid", transactionPoid);
+            }
+
+            if (successCount == 1) {
+                ByteArrayResource singleResource = new ByteArrayResource(firstBytes);
+                if (firstHeaders != null) {
+                    firstHeaders.setContentLength(firstBytes.length);
+                }
+                return ResponseEntity.status(firstStatus != null ? firstStatus : org.springframework.http.HttpStatus.OK)
+                        .headers(firstHeaders != null ? firstHeaders : new HttpHeaders())
+                        .body(singleResource);
+            }
+
+            if (zos != null) {
+                try {
+                    zos.close();
+                } catch (Exception ignored) {
+                }
+            }
+
+            byte[] zipBytes = zipBaos.toByteArray();
+            ByteArrayResource resource = new ByteArrayResource(zipBytes);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentLength(zipBytes.length);
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipFileName + "\"");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(resource);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create zip for attachments", e);
+        }
     }
 
     private void ensureConfigured() {
@@ -578,12 +860,8 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     }
 
     private PortCallOperationActTimingDtl resolveTiming(Long transactionPoid, Long detRowId) {
-        List<PortCallOperationActTimingDtl> entities = actTimingDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
-        if (entities.isEmpty()) {
-            throw new ResourceNotFoundException("Actual timing detail", "detRowId", detRowId);
-        }
-        // Return the first one (there could be multiple with different portReportPoid, but attachments are at detRowId level)
-        return entities.get(0);
+        return actTimingDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId)
+                .orElseThrow(() -> new ResourceNotFoundException("Actual timing detail", "detRowId", detRowId));
     }
 
     @SuppressWarnings("unchecked")
@@ -591,7 +869,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
         if (response == null) {
             return new ArrayList<>();
         }
-        
+
         Object content = null;
         if (response.containsKey("content")) {
             content = response.get("content");
@@ -612,7 +890,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
                 content = dataMap.get("content");
             }
         }
-        
+
         if (content instanceof List) {
             List<Map<String, Object>> attachments = new ArrayList<>();
             for (Object item : (List<?>) content) {
@@ -622,7 +900,7 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
             }
             return attachments;
         }
-        
+
         return new ArrayList<>();
     }
 }

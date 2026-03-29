@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -19,7 +18,7 @@ public class PortCallOperationActRmksDetailResponseDto {
     private Long detRowId;
     private String remarksType;
     private LocalDateTime remarksFrom;
-    private LocalDate remarksTo;
+    private LocalDateTime remarksTo;
     private String cargoDetails;
     private String reason;
     private Long pcReportPoid;

@@ -1,18 +1,20 @@
 package com.asg.operations.pdaentryform.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import lombok.Setter;
 
-import java.time.LocalDateTime;
 
 @Getter
+@Setter
 @Entity
 @Table(name = "PDA_ENTRY_ACKNOWLEDGMENT_DTL")
 @IdClass(PdaEntryAcknowledgmentDtlId.class)
-public class PdaEntryAcknowledgmentDtl {
+public class PdaEntryAcknowledgmentDtl extends BaseEntity {
 
     @AuditIgnore
     @Id
@@ -37,65 +39,6 @@ public class PdaEntryAcknowledgmentDtl {
     @Column(name = "REMARKS", length = 4000)
     @Size(max = 4000)
     private String remarks;
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    @Size(max = 20)
-    private String createdBy;
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    @Size(max = 20)
-    private String lastModifiedBy;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "TRANSACTION_POID", insertable = false, updatable = false)
-    private PdaEntryHdr entryHdr;
-
-    // Getters and Setters
-
-    public void setTransactionPoid(Long transactionPoid) {
-        this.transactionPoid = transactionPoid;
-    }
-
-    public void setDetRowId(Long detRowId) {
-        this.detRowId = detRowId;
-    }
-
-    public void setParticulars(String particulars) {
-        this.particulars = particulars;
-    }
-
-    public void setSelected(String selected) {
-        this.selected = selected;
-    }
-
-    public void setRemarks(String remarks) {
-        this.remarks = remarks;
-    }
-
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
-    }
-
-    public void setCreatedDate(LocalDateTime createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public void setLastModifiedBy(String lastModifiedBy) {
-        this.lastModifiedBy = lastModifiedBy;
-    }
-
-    public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
-        this.lastModifiedDate = lastModifiedDate;
-    }
-
-    public void setEntryHdr(PdaEntryHdr entryHdr) {
-        this.entryHdr = entryHdr;
-    }
 }
 

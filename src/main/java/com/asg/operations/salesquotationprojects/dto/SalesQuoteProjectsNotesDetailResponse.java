@@ -3,7 +3,7 @@ package com.asg.operations.salesquotationprojects.dto;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -12,7 +12,7 @@ public class SalesQuoteProjectsNotesDetailResponse {
     private Long detRowId;
     private String notes;
     private String createdBy;
-    private LocalDate createdDate;
+    private LocalDateTime createdDate;
     private String lastModifiedBy;
-    private LocalDate lastModifiedDate;
+    private LocalDateTime lastModifiedDate;
 }

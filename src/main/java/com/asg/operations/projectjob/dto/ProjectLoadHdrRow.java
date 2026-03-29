@@ -1,5 +1,7 @@
 package com.asg.operations.projectjob.dto;
 
+import java.util.List;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,8 +16,9 @@ public class ProjectLoadHdrRow {
     private Long projectCustomerPoid;
     private Long principalPoid;
     private Long salesmanPoid;
+    private Long linePoid;
     private String shipmentMode;
     private String transportationMode;
     private String projectReference;
-    private String commodity;
+    private List<String> commodityPoids;
 }

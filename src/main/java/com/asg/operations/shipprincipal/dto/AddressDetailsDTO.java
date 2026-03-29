@@ -6,16 +6,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -26,6 +24,9 @@ public class AddressDetailsDTO {
 
     @Size(max = 20, message = "Address Type must not exceed 20 characters")
     private String addressType;
+
+    @Schema(description = "Action type: isCreated, isUpdated, isDeleted")
+    private String actionType;
 
     @Size(max = 50, message = "Contact Person must not exceed 50 characters")
     private String contactPerson;
@@ -89,15 +90,12 @@ public class AddressDetailsDTO {
 
     private String createdBy;
 
-    @JsonFormat(pattern = "dd-MMM-yyyy HH:mm:ss")
     private LocalDateTime createdDate;
 
     private String lastModifiedBy;
 
-    @JsonFormat(pattern = "dd-MMM-yyyy HH:mm:ss")
     private LocalDateTime lastModifiedDate;
 
-    // Social Media fields (for department-level tabs)
     @Size(max = 30, message = "WhatsApp Number must not exceed 30 characters")
     private String whatsappNo;
 
@@ -109,5 +107,4 @@ public class AddressDetailsDTO {
 
     @Size(max = 250, message = "Facebook must not exceed 250 characters")
     private String facebook;
-
 }

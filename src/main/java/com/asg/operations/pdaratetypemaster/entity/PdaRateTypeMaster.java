@@ -1,6 +1,7 @@
 package com.asg.operations.pdaratetypemaster.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -8,7 +9,6 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "PDA_RATE_TYPE_MASTER")
@@ -17,12 +17,13 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PdaRateTypeMaster {
+public class PdaRateTypeMaster extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "RATE_TYPE_POID")
     private Long rateTypePoid;
+
     @AuditIgnore
     @Column(name = "GROUP_POID", nullable = false)
     private Long groupPoid;
@@ -58,22 +59,9 @@ public class PdaRateTypeMaster {
     @Column(name = "ACTIVE", length = 1)
     @Size(max = 1)
     private String active;
+
     @AuditIgnore
     @Column(name = "DELETED", length = 1)
     @Size(max = 1)
     private String deleted;
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    @Size(max = 20)
-    private String createdBy;
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    @Size(max = 20)
-    private String lastmodifiedBy;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastmodifiedDate;
 }

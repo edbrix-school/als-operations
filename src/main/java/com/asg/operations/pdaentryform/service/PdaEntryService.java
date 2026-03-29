@@ -132,9 +132,24 @@ public interface PdaEntryService {
     VesselDetailsResponse getVesselDetails(BigDecimal vesselPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
+     * Get voyage details (auto-population from LOV change)
+     */
+    Map<String, Object> getVoyageDetails(BigDecimal voyagePoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
      * Create FDA from PDA entry
      */
-    String createFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    String updateFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
+     * Create FDA from PDA
+     */
+    String createFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, String pdaPoid);
+
+    /**
+     * Parse FDA creation result to extract FDA reference
+     */
+    Map<String, String> parseFdaCreationResult(String spResult);
 
     /**
      * Upload acknowledgment details
@@ -194,7 +209,7 @@ public interface PdaEntryService {
     /**
      * Upload TDR details
      */
-    String uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file);
+    List<PdaEntryTdrDetailResponse> uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file);
 
     /**
      * Clear TDR details

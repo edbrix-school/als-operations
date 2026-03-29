@@ -8,6 +8,7 @@ import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.dto.FilterDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.utility.DateUtil;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
@@ -32,7 +33,6 @@ import org.springframework.stereotype.Service;
 import java.sql.Date;
 import java.sql.Types;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -55,19 +55,18 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     @Override
     public PdaRoRoEntryHdrResponseDto createRoRoEntry(PdaRoroEntryHdrRequestDto request) {
         Map<String, Object> voyageDetails = getVoyageDetails(request.getVesselVoyagePoid());
-        
+
+        LocalDate transactionDate = request.getTransactionDate() != null
+                ? request.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
         PdaRoRoEntryHdr entity = PdaRoRoEntryHdr.builder()
                 .vesselVoyagePoid(request.getVesselVoyagePoid())
                 .vesselName((String) voyageDetails.get("VESSEL_NAME"))
                 .voyageNo((String) voyageDetails.get("VOYAGE_NO"))
-                .transactionDate(LocalDate.now())
+                .transactionDate(transactionDate)
                 .deleted("N")
                 .companyPoid(UserContext.getCompanyPoid())
                 .groupPoid(UserContext.getGroupPoid())
-                .createdBy(getCurrentUser())
-                .createdDate(LocalDateTime.now())
-                .lastModifiedBy(getCurrentUser())
-                .lastModifiedDate(LocalDateTime.now())
                 .remarks(request.getRemarks())
                 .build();
 
@@ -105,14 +104,16 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         BeanUtils.copyProperties(entity, oldEntity);
 
         Map<String, Object> voyageDetails = getVoyageDetails(request.getVesselVoyagePoid());
-        
+
+        LocalDate transactionDate = request.getTransactionDate() != null
+                ? request.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
         entity.setVesselVoyagePoid(request.getVesselVoyagePoid());
         entity.setVesselName((String) voyageDetails.get("VESSEL_NAME"));
         entity.setVoyageNo((String) voyageDetails.get("VOYAGE_NO"));
+        entity.setTransactionDate(transactionDate);
         entity.setRemarks(request.getRemarks());
         entity.setDeleted("N");
-        entity.setLastModifiedBy(getCurrentUser());
-        entity.setLastModifiedDate(LocalDateTime.now());
         entity = hdrRepository.save(entity);
         loggingService.logChanges(oldEntity, entity, PdaRoRoEntryHdr.class, UserContext.getDocumentId(), entity.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return mapToResponse(entity);
@@ -301,6 +302,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
             savedDetails = saveVehicleDetailsToTable(request.getTransactionPoid(), vehicleDetails);
         }
 
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), request.getTransactionPoid().toString(), "Vehicle details uploaded successfully");
         return PdaRoroVehicleUploadResponse.builder()
                 .status(status)
                 .vehicleDetails(savedDetails != null ? savedDetails : vehicleDetails)
@@ -327,8 +329,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
             } else {
                 entity = new com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl();
                 entity.setId(id);
-                entity.setCreatedBy(getCurrentUser());
-                entity.setCreatedDate(LocalDateTime.now());
             }
             
             entity.setBlNumber(detail.getBlNumber());
@@ -340,8 +340,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
             entity.setBlCbm(detail.getBlCbm());
             entity.setPortOfLoad(detail.getPortOfLoad());
             entity.setAgent(detail.getAgent());
-            entity.setLastModifiedBy(getCurrentUser());
-            entity.setLastModifiedDate(LocalDateTime.now());
             
             entity = dtlRepository.save(entity);
             
@@ -396,6 +394,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                         .addValue("P_TRANSACTION_POID", transactionPoid)
         );
 
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(),"Vehicle details cleared successfully");
         return (String) result.get("P_STATUS");
     }
 
@@ -461,10 +460,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         int startColNumber;
         int endColNumber;
         String tempTableName;
-    }
-
-    public static String getCurrentUser() {
-        return UserContext.getUserId() != null ? String.valueOf(UserContext.getUserId()) : "SYSTEM";
     }
 
     @Override

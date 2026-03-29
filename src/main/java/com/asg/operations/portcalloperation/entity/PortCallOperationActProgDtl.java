@@ -1,6 +1,7 @@
 package com.asg.operations.portcalloperation.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,11 +21,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @IdClass(PortCallOperationActProgDtlId.class)
-public class PortCallOperationActProgDtl {
+public class PortCallOperationActProgDtl extends BaseEntity {
+
     @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
+
     @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID")
@@ -59,28 +62,4 @@ public class PortCallOperationActProgDtl {
 
     @Column(name = "EST_BL_DATE")
     private LocalDate estBlDate;
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
-    @PrePersist
-    protected void onCreate() {
-        if (createdDate == null) {
-            createdDate = LocalDateTime.now();
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        lastModifiedDate = LocalDateTime.now();
-    }
 }
