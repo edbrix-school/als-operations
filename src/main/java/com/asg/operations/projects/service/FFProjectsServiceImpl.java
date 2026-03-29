@@ -179,8 +179,10 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     }
 
     @Override
-    public Map<String, Object> loadQuotationDetails(Long quotationPoid) {
-        return projectsStoredProcRepository.loadProjectsQuotation(quotationPoid, null);
+    public Map<String, Object> loadQuotationDetails(Long quotationPoid, String quoteFlag) {
+        // Validate and normalize quoteFlag parameter
+        String normalizedQuoteFlag = (quoteFlag != null && "Y".equalsIgnoreCase(quoteFlag.trim())) ? "Y" : "N";
+        return projectsStoredProcRepository.loadProjectsQuotation(quotationPoid, normalizedQuoteFlag);
     }
 
     @Override

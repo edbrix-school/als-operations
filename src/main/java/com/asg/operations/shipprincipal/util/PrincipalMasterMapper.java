@@ -6,9 +6,15 @@ import com.asg.operations.shipprincipal.entity.ShipPrincipalMaster;
 import com.asg.operations.shipprincipal.entity.ShipPrincipalMasterDtl;
 import com.asg.operations.shipprincipal.entity.ShipPrincipalMasterPymtDtl;
 import com.asg.operations.shipprincipal.entity.ShipPrincipalPaRptDtl;
+import com.asg.operations.shipprincipal.repository.AddressDetailsRepository;
+import com.asg.operations.commonlov.dto.LovItem;
+import com.asg.operations.common.entity.State;
+import com.asg.operations.common.repository.StateRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -16,6 +22,12 @@ import java.util.List;
  */
 @Component
 public class PrincipalMasterMapper {
+
+    @Autowired
+    private AddressDetailsRepository addressDetailsRepository;
+    
+    @Autowired
+    private StateRepository stateRepository;
 
     /**
      * Convert Entity to List DTO
@@ -266,15 +278,43 @@ public class PrincipalMasterMapper {
         dto.setRoad(entity.getRoad());
         dto.setArea(area);
         dto.setCity(city);
-        entity.setState(dto.getState() != null && !dto.getState().isEmpty()
-                ? String.join(",", dto.getState())
-                : null
+        dto.setState(entity.getState() != null && !entity.getState().isEmpty()
+                ? Arrays.asList(entity.getState().split(","))
+                : new ArrayList<>()
         );
+        
+        // Fetch state details for each state
+        if (entity.getState() != null && !entity.getState().isEmpty()) {
+            List<LovItem> stateDetailsList = new ArrayList<>();
+            String[] stateIds = entity.getState().split(",");
+            for (String stateId : stateIds) {
+                try {
+                    Long statePoid = Long.parseLong(stateId.trim());
+                    State state = stateRepository.findById(statePoid).orElse(null);
+                    if (state != null) {
+                        LovItem stateDetail = new LovItem();
+                        stateDetail.setPoid(state.getStatePoid());
+                        stateDetail.setDescription(state.getStateName());
+                        stateDetail.setLabel(state.getStateName());
+                        stateDetailsList.add(stateDetail);
+                    }
+                } catch (NumberFormatException e) {
+                    // Skip invalid state IDs
+                }
+            }
+            dto.setStateDetails(stateDetailsList);
+        }
+        
         dto.setLandMark(entity.getLandMark());
+        dto.setVerified(entity.getVerified());
+        dto.setVerifiedBy(entity.getVerifiedBy());
+        dto.setVerifiedDate(entity.getVerifiedDate());
         dto.setWhatsappNo(entity.getWhatsappNo());
         dto.setLinkedIn(entity.getLinkedIn());
         dto.setInstagram(entity.getInstagram());
         dto.setFacebook(entity.getFacebook());
+        dto.setCreatedBy(entity.getCreatedBy());
+        dto.setCreatedDate(entity.getCreatedDate());
         dto.setLastModifiedBy(entity.getLastModifiedBy());
         dto.setLastModifiedDate(entity.getLastModifiedDate());
         return dto;

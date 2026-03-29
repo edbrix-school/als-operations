@@ -1,5 +1,6 @@
 package com.asg.operations.shipprincipal.dto;
 
+import com.asg.operations.commonlov.dto.LovItem;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
@@ -71,6 +72,9 @@ public class AddressDetailsDTO {
 
     @Size(max = 100, message = "State must not exceed 100 characters")
     private List<String> state;
+
+    @Schema(description = "State details with poid and name")
+    private List<LovItem> stateDetails;
 
     @Size(max = 250, message = "Landmark must not exceed 250 characters")
     private String landMark;

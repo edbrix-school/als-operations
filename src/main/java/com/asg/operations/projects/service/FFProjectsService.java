@@ -21,7 +21,7 @@ public interface FFProjectsService {
 
     void deleteProject(Long transactionPoid, DeleteReasonDto deleteReasonDto);
 
-    Map<String, Object> loadQuotationDetails(Long quotationPoid);
+    Map<String, Object> loadQuotationDetails(Long quotationPoid, String quoteFlag);
 
     Map<String, Object> loadJobDetails(Long transactionPoid);
 

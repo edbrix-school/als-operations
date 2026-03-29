@@ -109,8 +109,10 @@ public class FFProjectsController {
     @Operation(summary = "Load Quotation Details", description = "Load quotation details for project creation")
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/load-quotation/{quotationPoid}")
-    public ResponseEntity<?> loadQuotationDetails(@PathVariable @NotNull Long quotationPoid) {
-        Map<String, Object> result = projectsService.loadQuotationDetails(quotationPoid);
+    public ResponseEntity<?> loadQuotationDetails(
+            @PathVariable @NotNull Long quotationPoid,
+            @RequestParam(value = "quoteFlag", defaultValue = "N") String quoteFlag) {
+        Map<String, Object> result = projectsService.loadQuotationDetails(quotationPoid, quoteFlag);
         return ApiResponse.success("Quotation details loaded successfully", result);
     }
 
