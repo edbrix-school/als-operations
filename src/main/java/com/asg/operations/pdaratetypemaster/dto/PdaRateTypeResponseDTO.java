@@ -21,7 +21,7 @@ public class PdaRateTypeResponseDTO {
     private String rateTypeName2;
     private String rateTypeFormula;
     private String defQty;
-    private BigDecimal defDays;
+    private Long defDays;
     private BigInteger seqNo;
     private String active;
 
