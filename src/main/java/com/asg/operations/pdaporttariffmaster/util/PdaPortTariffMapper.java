@@ -191,11 +191,10 @@ public class PdaPortTariffMapper {
     }
 
     // Request to Entity (Header - for create)
-    public PdaPortTariffHdr toEntity(PdaPortTariffMasterRequest request, BigDecimal groupPoid, BigDecimal companyPoid, String docRef, String currentUser) {
+    public PdaPortTariffHdr toEntity(PdaPortTariffMasterRequest request) {
         PdaPortTariffHdr entity = new PdaPortTariffHdr();
-        entity.setGroupPoid(groupPoid.longValue());
-        entity.setCompanyPoid(companyPoid.longValue());
-        entity.setDocRef(docRef);
+        entity.setGroupPoid(UserContext.getGroupPoid());
+        entity.setCompanyPoid(UserContext.getCompanyPoid());
         entity.setPorts(request.getPort());
         entity.setVesselTypes(listToString(request.getVesselTypes()));
         entity.setPeriodFrom(request.getPeriodFrom());
@@ -207,7 +206,7 @@ public class PdaPortTariffMapper {
     }
 
     // Update Entity from Request (Header)
-    public void updateEntityFromRequest(PdaPortTariffHdr entity, PdaPortTariffMasterRequest request, String currentUser) {
+    public void updateEntityFromRequest(PdaPortTariffHdr entity, PdaPortTariffMasterRequest request) {
         entity.setPorts(request.getPort());
         entity.setVesselTypes(listToString(request.getVesselTypes()));
         entity.setPeriodFrom(request.getPeriodFrom());
