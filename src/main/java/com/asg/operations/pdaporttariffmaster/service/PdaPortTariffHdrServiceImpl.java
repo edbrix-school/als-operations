@@ -105,11 +105,11 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         PdaPortTariffHdr tariffHdr = mapper.toEntity(request);
         PdaPortTariffHdr savedTariff = tariffHdrRepository.save(tariffHdr);
 
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedTariff.getTransactionPoid().toString());
+
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {
             saveChargeDetails(savedTariff, request.getChargeDetails());
         }
-
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedTariff.getTransactionPoid().toString());
         return getTariffById(savedTariff.getTransactionPoid());
     }
 
@@ -360,8 +360,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         slabDtl.setCallByPort(slabRequest.getCallByPort());
         slabDtl.setRemarks(slabRequest.getRemarks());
 
-        slabDtlRepository.save(slabDtl);
-        String logDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", slabDtl.getId().getDetRowId());
+        PdaPortTariffSlabDtl savedSlabDetails =  slabDtlRepository.save(slabDtl);
+        String logDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", savedSlabDetails.getId().getDetRowId());
         loggingService.createLogSummaryEntry(UserContext.getDocumentId(), slabId.getTransactionPoid().toString(), logDetail);
     }
 
@@ -405,6 +405,9 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
 
             PdaPortTariffChargeDtl savedChargeDtl = chargeDtlRepository.save(chargeDtl);
 
+            String logDetail = String.format("Row Created on [PDA Port Tariff Master Charge Details] with detRowId: %s", savedChargeDtl.getId().getDetRowId());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), tariffHdr.getTransactionPoid().toString(), logDetail);
+
             if (chargeRequest.getSlabDetails() != null && !chargeRequest.getSlabDetails().isEmpty()) {
                 for (PdaPortTariffSlabDetailRequest slabRequest : chargeRequest.getSlabDetails()) {
                     PdaPortTariffSlabDtlId slabId = new PdaPortTariffSlabDtlId();
@@ -427,7 +430,10 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                     slabDtl.setCallByPort(slabRequest.getCallByPort());
                     slabDtl.setRemarks(slabRequest.getRemarks());
 
-                    slabDtlRepository.save(slabDtl);
+                    PdaPortTariffSlabDtl savedSlabDtl = slabDtlRepository.saveAndFlush(slabDtl);
+
+                     String slabLogDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", savedSlabDtl.getId().getDetRowId());
+                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), slabId.getTransactionPoid().toString(), slabLogDetail);
                 }
             }
         }
