@@ -113,7 +113,7 @@ public class PdaPortTariffMapper {
 
             List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(List.of(portPoidBD), BigDecimal.valueOf(UserContext.getGroupPoid()));
             if (!portNames.isEmpty()) {
-                response.setPortName(portNames.get(0));
+                response.setPortName(portNames.getFirst());
             }
         }
 
@@ -266,7 +266,7 @@ public class PdaPortTariffMapper {
 
             List<String> portNames = shipPortMasterRepository.findPortNamesByPortPoidInAndGroupPoid(List.of(portPoidBD), BigDecimal.valueOf(entity.getGroupPoid()));
             if (!portNames.isEmpty()) {
-                response.setPortName(portNames.get(0));
+                response.setPortName(portNames.getFirst());
             }
         }
 
