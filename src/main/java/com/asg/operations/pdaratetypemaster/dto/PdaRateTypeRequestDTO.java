@@ -28,7 +28,7 @@ public class PdaRateTypeRequestDTO {
     @Size(max = 100, message = "Default quantity must not exceed 100 characters")
     private String defQty;
 
-    private BigDecimal defDays;
+    private Long defDays;
 
     private BigInteger seqNo;
 

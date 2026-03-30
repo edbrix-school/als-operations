@@ -204,14 +204,14 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
 
     private void validateCreateRequest(PdaRateTypeRequestDTO request, Long groupPoid) {
         if (request.getDefDays() != null &&
-                request.getDefDays().compareTo(BigDecimal.ZERO) < 0) {
+                request.getDefDays().compareTo(Long.MIN_VALUE) < 0) {
             throw new ValidationException("Default days must be ≥ 0");
         }
     }
 
     private void validateUpdateRequest(PdaRateTypeRequestDTO request, Long groupPoid) {
         if (request.getDefDays() != null &&
-                request.getDefDays().compareTo(BigDecimal.ZERO) < 0) {
+                request.getDefDays().compareTo(Long.MIN_VALUE) < 0) {
             throw new ValidationException("Default days must be ≥ 0");
         }
     }

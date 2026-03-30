@@ -51,7 +51,7 @@ public class PdaRateTypeMaster extends BaseEntity {
     private String defQty;
 
     @Column(name = "DEF_DAYS")
-    private BigDecimal defDays;
+    private Long defDays;
 
     @Column(name = "SEQNO")
     private BigInteger seqno;
