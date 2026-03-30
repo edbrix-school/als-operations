@@ -7,9 +7,7 @@ import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.pdaporttariffmaster.dto.*;
-import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffChargeDtl;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffHdr;
-import com.asg.operations.pdaporttariffmaster.key.PdaPortTariffChargeDtlId;
 import com.asg.operations.pdaporttariffmaster.repository.*;
 import com.asg.operations.pdaporttariffmaster.util.PdaPortTariffMapper;
 import jakarta.persistence.EntityManager;
@@ -53,7 +51,7 @@ class PdaPortTariffHdrServiceImplTest {
         PdaPortTariffMasterResponse expectedResponse = createMockResponse();
 
         when(tariffHdrRepository.findByTransactionPoid(1L)).thenReturn(Optional.of(tariff));
-        when(chargeDtlRepository.findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(1L)).thenReturn(Collections.emptyList());
+        when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
         when(mapper.toResponseWithChargeDetails(eq(tariff), any())).thenReturn(expectedResponse);
 
         PdaPortTariffMasterResponse result = tariffService.getTariffById(1L);
@@ -93,7 +91,7 @@ class PdaPortTariffHdrServiceImplTest {
         ChargeDetailsResponse expectedResponse = new ChargeDetailsResponse();
 
         when(tariffHdrRepository.findByTransactionPoid(1L)).thenReturn(Optional.of(tariff));
-        when(chargeDtlRepository.findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(1L)).thenReturn(Collections.emptyList());
+        when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
         when(mapper.toChargeDetailsResponse(any(), eq(1L))).thenReturn(expectedResponse);
 
         ChargeDetailsResponse result = tariffService.getChargeDetails(1L, true);
@@ -118,7 +116,7 @@ class PdaPortTariffHdrServiceImplTest {
 
         when(tariffHdrRepository.findByTransactionPoid(1L)).thenReturn(Optional.of(tariff));
         // second call from getChargeDetails inside bulkSave
-        when(chargeDtlRepository.findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(1L)).thenReturn(Collections.emptyList());
+        when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
         when(mapper.toChargeDetailsResponse(any(), eq(1L))).thenReturn(expectedResponse);
 
         ChargeDetailsResponse result = tariffService.bulkSaveChargeDetails(1L, request);
@@ -145,7 +143,7 @@ class PdaPortTariffHdrServiceImplTest {
             when(mapper.toEntity(request)).thenReturn(savedTariff);
             when(tariffHdrRepository.save(savedTariff)).thenReturn(savedTariff);
             when(tariffHdrRepository.findByTransactionPoid(1L)).thenReturn(Optional.of(savedTariff));
-            when(chargeDtlRepository.findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(1L)).thenReturn(Collections.emptyList());
+            when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
             when(mapper.toResponseWithChargeDetails(eq(savedTariff), any())).thenReturn(expectedResponse);
 
             PdaPortTariffMasterResponse result = tariffService.createTariff(request);
@@ -172,7 +170,7 @@ class PdaPortTariffHdrServiceImplTest {
             when(tariffHdrRepository.existsOverlappingPeriod(any(), any(), any(), any(), any(), any())).thenReturn(false);
             when(tariffHdrRepository.findByTransactionPoid(1L)).thenReturn(Optional.of(existingTariff));
             when(tariffHdrRepository.save(existingTariff)).thenReturn(existingTariff);
-            when(chargeDtlRepository.findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(1L)).thenReturn(Collections.emptyList());
+            when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
             when(mapper.toResponseWithChargeDetails(eq(existingTariff), any())).thenReturn(expectedResponse);
 
             PdaPortTariffMasterResponse result = tariffService.updateTariff(1L, request);
@@ -206,7 +204,7 @@ class PdaPortTariffHdrServiceImplTest {
             when(tariffHdrRepository.existsOverlappingPeriod(any(), any(), any(), any(), any(), any())).thenReturn(false);
             when(mapper.toEntity(any())).thenReturn(savedTariff);
             when(tariffHdrRepository.save(savedTariff)).thenReturn(savedTariff);
-            when(chargeDtlRepository.findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(1L)).thenReturn(Collections.emptyList());
+            when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
             when(mapper.toResponseWithChargeDetails(any(), any())).thenReturn(expectedResponse);
 
             PdaPortTariffMasterResponse result = tariffService.copyTariff(1L, request);
