@@ -69,7 +69,7 @@ public class PdaRateTypeControllerTest {
         requestDTO.setRateTypeName2("تحميل");
         requestDTO.setRateTypeFormula("(UNIT * DAYS)");
         requestDTO.setDefQty("UNIT");
-        requestDTO.setDefDays(new BigDecimal("5"));
+        requestDTO.setDefDays(5L);
         requestDTO.setSeqNo(BigInteger.valueOf(1));
         requestDTO.setActive("Y");
 

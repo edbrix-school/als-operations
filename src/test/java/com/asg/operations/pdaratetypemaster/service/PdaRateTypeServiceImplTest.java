@@ -56,7 +56,7 @@ public class PdaRateTypeServiceImplTest {
         requestDTO.setRateTypeName("Gross Tonnage Rate");
         requestDTO.setRateTypeFormula("GRT * 0.5");
         requestDTO.setDefQty("GRT");
-        requestDTO.setDefDays(BigDecimal.ONE);
+        requestDTO.setDefDays(1L);
         requestDTO.setSeqNo(BigInteger.ONE);
         requestDTO.setActive("Y");
 
@@ -67,7 +67,7 @@ public class PdaRateTypeServiceImplTest {
                 .rateTypeName("Gross Tonnage Rate")
                 .rateTypeFormula("GRT * 0.5")
                 .defQty("GRT")
-                .defDays(BigDecimal.ONE)
+                .defDays(1L)
                 .seqno(BigInteger.ONE)
                 .active("Y")
                 .deleted("N")
