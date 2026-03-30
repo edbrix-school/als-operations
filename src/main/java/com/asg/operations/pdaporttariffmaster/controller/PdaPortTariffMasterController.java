@@ -45,38 +45,27 @@ public class PdaPortTariffMasterController {
     })
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
-    public ResponseEntity<?> getTariffList(
-            @RequestBody(required = false) FilterRequestDto filterRequest,
-            @ParameterObject Pageable pageable,
-            @RequestParam(required = false) LocalDate periodFrom,
-            @RequestParam(required = false) LocalDate periodTo) {
+    public ResponseEntity<?> getTariffList(@RequestBody(required = false) FilterRequestDto filterRequest,
+                                           @ParameterObject Pageable pageable,
+                                           @RequestParam(required = false) LocalDate periodFrom,
+                                           @RequestParam(required = false) LocalDate periodTo) {
 
-        try {
-            Map<String, Object> tariffPage = tariffService.getAllTariffsWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
-            return success("Tariff list fetched successfully", tariffPage);
-        }
-        catch (Exception ex){
-            return internalServerError("Unable to fetch tariff list: " + ex.getMessage());
-        }
-
+        Map<String, Object> tariffPage = tariffService.getAllTariffsWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+        return success("Tariff list fetched successfully", tariffPage);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}")
-    public ResponseEntity<?> getTariffById(
-            @PathVariable @NotNull @Positive Long transactionPoid
-    ) {
-        PdaPortTariffMasterResponse response = tariffService.getTariffById(transactionPoid, UserContext.getGroupPoid());
+    public ResponseEntity<?> getTariffById(@PathVariable @NotNull @Positive Long transactionPoid) {
+        PdaPortTariffMasterResponse response = tariffService.getTariffById(transactionPoid);
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return ApiResponse.success("Tariff retrieved successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
-    public ResponseEntity<?> createTariff(
-            @Valid @RequestBody PdaPortTariffMasterRequest request
-    ) {
-        PdaPortTariffMasterResponse response = tariffService.createTariff(request, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId());
+    public ResponseEntity<?> createTariff(@Valid @RequestBody PdaPortTariffMasterRequest request) {
+        PdaPortTariffMasterResponse response = tariffService.createTariff(request);
         return ApiResponse.success("Tariff created successfully", response);
     }
 
@@ -84,50 +73,40 @@ public class PdaPortTariffMasterController {
     @PutMapping("/{transactionPoid}")
     public ResponseEntity<?> updateTariff(
             @PathVariable @NotNull @Positive Long transactionPoid,
-            @Valid @RequestBody PdaPortTariffMasterRequest request
-    ) {
-        PdaPortTariffMasterResponse response = tariffService.updateTariff(transactionPoid, request, UserContext.getGroupPoid(), UserContext.getUserId());
+            @Valid @RequestBody PdaPortTariffMasterRequest request) {
+        PdaPortTariffMasterResponse response = tariffService.updateTariff(transactionPoid, request);
         return ApiResponse.success("Tariff updated successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}")
-    public ResponseEntity<?> deleteTariff(
-            @PathVariable @NotNull @Positive Long transactionPoid,
-            @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
-    ) {
-        tariffService.deleteTariff(transactionPoid, UserContext.getGroupPoid(), UserContext.getUserId(), deleteReasonDto);
+    public ResponseEntity<?> deleteTariff(@PathVariable @NotNull @Positive Long transactionPoid,
+                                          @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
+        tariffService.deleteTariff(transactionPoid, deleteReasonDto);
         return ApiResponse.success("Tariff deleted successfully");
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping("/{transactionPoid}/copy")
-    public ResponseEntity<?> copyTariff(
-            @PathVariable @NotNull @Positive Long transactionPoid,
-            @Valid @RequestBody CopyTariffRequest request
-    ) {
-        PdaPortTariffMasterResponse response = tariffService.copyTariff(transactionPoid, request, UserContext.getGroupPoid(), UserContext.getUserId());
+    public ResponseEntity<?> copyTariff(@PathVariable @NotNull @Positive Long transactionPoid,
+                                        @Valid @RequestBody CopyTariffRequest request) {
+        PdaPortTariffMasterResponse response = tariffService.copyTariff(transactionPoid, request);
         return ApiResponse.success("Tariff copied successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/charges")
-    public ResponseEntity<?> getChargeDetails(
-            @PathVariable @NotNull @Positive Long transactionPoid,
-            @RequestParam(defaultValue = "true") boolean includeSlabs
-    ) {
-        ChargeDetailsResponse response = tariffService.getChargeDetails(transactionPoid, UserContext.getGroupPoid(), includeSlabs);
+    public ResponseEntity<?> getChargeDetails(@PathVariable @NotNull @Positive Long transactionPoid,
+                                              @RequestParam(defaultValue = "true") boolean includeSlabs) {
+        ChargeDetailsResponse response = tariffService.getChargeDetails(transactionPoid, includeSlabs);
         return ApiResponse.success("Charge details retrieved successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/charges/bulk")
-    public ResponseEntity<?> bulkSaveChargeDetails(
-            @PathVariable @NotNull @Positive Long transactionPoid,
-            @Valid @RequestBody ChargeDetailsRequest request,
-            @RequestHeader("X-User-Id") String userId
-    ) {
-        ChargeDetailsResponse response = tariffService.bulkSaveChargeDetails(transactionPoid, request, UserContext.getGroupPoid(), userId);
+    public ResponseEntity<?> bulkSaveChargeDetails(@PathVariable @NotNull @Positive Long transactionPoid,
+                                                   @Valid @RequestBody ChargeDetailsRequest request) {
+        ChargeDetailsResponse response = tariffService.bulkSaveChargeDetails(transactionPoid, request);
         return ApiResponse.success("Charge details saved successfully", response);
     }
 }
