@@ -14,6 +14,8 @@ public class FFManifestHdrDto {
     private LocalDate transactionDate;
     private Long companyPoid;
 
+    private String docId;
+
     private String ffJobNo;
     private String ffJobType;
 

@@ -595,4 +595,8 @@ public class FFManifestHdr extends BaseEntity {
     @Size(max = 300)
     private String truckTransportTo;
 
+    @Column(name = "DOC_ID")
+    @Size(max = 20)
+    private String docId;
+
 }

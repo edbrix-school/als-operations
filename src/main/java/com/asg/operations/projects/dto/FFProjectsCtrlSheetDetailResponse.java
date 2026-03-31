@@ -16,6 +16,7 @@ public class FFProjectsCtrlSheetDetailResponse {
     private Long detRowId;
     private String freightType;
     private Long jobNoPoid;
+    private String jobNo;
     private Long originPoid;
     private LovGetListDto originLov;
     private Long destinationPoid;
