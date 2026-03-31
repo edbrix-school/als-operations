@@ -13,4 +13,9 @@ public class ProjectJobRequest extends FFManifestHdrDto {
     private List<ProjectJobChargesDtoRequest> charges;
     private List<ProjectJobContainerDtoRequest> containers;
     private List<ProjectJobTruckDtoRequest> truckDetails;
+
+    // Control sheet linking — optional, supplied when creating a job from a control sheet row
+    private Long controlSheetTransactionPoid;
+    private Long controlSheetDetRowId;
+    private String controlSheetDocId;
 }

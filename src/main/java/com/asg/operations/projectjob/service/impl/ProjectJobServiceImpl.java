@@ -20,6 +20,8 @@ import com.asg.operations.projectjob.repository.*;
 import com.asg.operations.projectjob.service.ProjectJobService;
 import com.asg.operations.projectjob.util.ProjectJobMapper;
 import com.asg.operations.projectjob.util.TriConsumer;
+import com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl;
+import com.asg.operations.projects.repository.FFProjectsCtrlSheetDtlRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,12 +57,31 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
+    private final FFProjectsCtrlSheetDtlRepository ctrlSheetDtlRepository;
 
     private static final String TRANSACTION_POID = "TRANSACTION_POID";
 
     @Override
     @Transactional
     public ProjectJobResponse create(ProjectJobRequest request) {
+
+        Long controlSheetTxnPoid = request.getControlSheetTransactionPoid();
+        Long controlSheetDetRowId = request.getControlSheetDetRowId();
+
+        FFProjectsCtrlSheetDtl ctrlSheetRow = null;
+        if (controlSheetTxnPoid != null && controlSheetDetRowId != null) {
+            ctrlSheetRow = ctrlSheetDtlRepository
+                    .findByTransactionPoidAndDetRowId(controlSheetTxnPoid, controlSheetDetRowId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Control Sheet", "id",
+                            controlSheetTxnPoid + "/" + controlSheetDetRowId));
+
+            if (ctrlSheetRow.getJobNoPoid() != null) {
+                List<ValidationError> errors = new ArrayList<>();
+                errors.add(new ValidationError(0, "controlSheetTransactionPoid",
+                        "This control sheet row already has a job assigned"));
+                throw new ValidationException("Validation errors occurred", errors);
+            }
+        }
 
         FFManifestHdr hdr = new FFManifestHdr();
         ProjectJobMapper.mapHdrFromDto(request, hdr);
@@ -69,16 +90,31 @@ public class ProjectJobServiceImpl implements ProjectJobService {
 
         hdr.setCompanyPoid(companyPoid);
         hdr.setGroupPoid(groupPoid);
+        hdr.setDocId(request.getDocId());
 
+        // saveAndFlush ensures the INSERT hits the DB immediately so the trigger runs
+        FFManifestHdr savedHdr = hdrRepository.saveAndFlush(hdr);
 
-        FFManifestHdr savedHdr = hdrRepository.save(hdr);
+        // Refresh entity to pick up the trigger-generated ffJobNo
+        FFManifestHdr refreshedHdr = hdrRepository.findById(savedHdr.getTransactionPoid())
+                .orElseThrow(() -> new RuntimeException("Job not found after save"));
 
-        saveDetails(savedHdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
+        saveDetails(refreshedHdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
                 request.getContainers(), request.getTruckDetails());
 
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedHdr.getTransactionPoid().toString(), "Project Job Created");
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), refreshedHdr.getTransactionPoid().toString(), "Project Job Created");
 
-        return getById(hdr.getTransactionPoid());
+        if (ctrlSheetRow != null) {
+            ctrlSheetRow.setJobNoPoid(refreshedHdr.getTransactionPoid());
+            ctrlSheetDtlRepository.save(ctrlSheetRow);
+
+            String ctrlDocId = request.getControlSheetDocId();
+            if (ctrlDocId != null && !ctrlDocId.isBlank()) {
+                loggingService.createLogSummaryEntry(ctrlDocId, controlSheetTxnPoid.toString(), "Job number updated from Project Job creation");
+            }
+        }
+
+        return getById(refreshedHdr.getTransactionPoid());
     }
 
     @Override

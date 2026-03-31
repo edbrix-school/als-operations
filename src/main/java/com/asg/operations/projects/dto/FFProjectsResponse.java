@@ -28,8 +28,8 @@ public class FFProjectsResponse {
     private LovGetListDto projectCustomerLov;
     private Long principalPoid;
     private LovGetListDto principalLov;
-    private String shipmentMode;
-    private LovGetListDto shipmentModeLov;
+    private List<String> shipmentMode;
+    private List<LovGetListDto> shipmentModeLov;
     private String mode;
     private LovGetListDto modeLov;
     private String projectReference;
