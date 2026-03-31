@@ -3,7 +3,6 @@ package com.asg.operations.projectjob.service.impl;
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.dto.RawSearchResult;
-import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
@@ -13,11 +12,11 @@ import com.asg.operations.exceptions.ValidationException;
 import com.asg.operations.projectjob.dto.*;
 import com.asg.operations.projectjob.entity.*;
 import com.asg.operations.projectjob.repository.*;
+import com.asg.operations.projects.repository.FFProjectsCtrlSheetDtlRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,34 +32,30 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ProjectJobServiceImplTest {
 
-    @Mock
-    private FFManifestHdrRepository hdrRepository;
-    @Mock
-    private FFManifestChargesDtlRepository chargesRepository;
-    @Mock
-    private FFManifestAirPkgDtlRepository airPkgRepository;
-    @Mock
-    private FFManifestBayanDtlRepository bayanRepository;
-    @Mock
-    private FFManifestContainerDtlRepository containerRepository;
-    @Mock
-    private FFManifestTruckDtlRepository truckRepository;
-    @Mock
-    private ProjectJobStoredProcRepository spRepostirory;
-    @Mock
-    private LoggingService loggingService;
-    @Mock
-    private DocumentDeleteService documentDeleteService;
-    @Mock
-    private DocumentSearchService documentSearchService;
+    @Mock private FFManifestHdrRepository hdrRepository;
+    @Mock private FFManifestChargesDtlRepository chargesRepository;
+    @Mock private FFManifestAirPkgDtlRepository airPkgRepository;
+    @Mock private FFManifestBayanDtlRepository bayanRepository;
+    @Mock private FFManifestContainerDtlRepository containerRepository;
+    @Mock private FFManifestTruckDtlRepository truckRepository;
+    @Mock private ProjectJobStoredProcRepository spRepostirory;
+    @Mock private LoggingService loggingService;
+    @Mock private DocumentDeleteService documentDeleteService;
+    @Mock private DocumentSearchService documentSearchService;
+    @Mock private FFProjectsCtrlSheetDtlRepository ctrlSheetDtlRepository;
 
-    @InjectMocks
     private ProjectJobServiceImpl projectJobService;
-
     private MockedStatic<UserContext> userContextMockedStatic;
 
     @BeforeEach
     void setUp() {
+        // Explicit constructor injection avoids @InjectMocks matching issues with
+        // @RequiredArgsConstructor when the constructor arity changes.
+        projectJobService = new ProjectJobServiceImpl(
+                hdrRepository, chargesRepository, airPkgRepository, bayanRepository,
+                containerRepository, truckRepository, spRepostirory, loggingService,
+                documentDeleteService, documentSearchService, ctrlSheetDtlRepository);
+
         userContextMockedStatic = mockStatic(UserContext.class);
         userContextMockedStatic.when(UserContext::getGroupPoid).thenReturn(1L);
         userContextMockedStatic.when(UserContext::getCompanyPoid).thenReturn(2L);
@@ -74,16 +69,23 @@ class ProjectJobServiceImplTest {
         userContextMockedStatic.close();
     }
 
+    private void stubSaveAndFlush(FFManifestHdr hdr) {
+        doReturn(hdr).when(hdrRepository).saveAndFlush(any());
+    }
+
+    // Stubs findById for both the post-save refresh and the final getById call.
+    private void stubFindById(FFManifestHdr hdr) {
+        doReturn(Optional.of(hdr)).when(hdrRepository).findById(any());
+    }
+
     @Test
     void testCreate() {
         ProjectJobRequest request = new ProjectJobRequest();
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
 
-        when(hdrRepository.save(any(FFManifestHdr.class))).thenReturn(hdr);
-        // create() calls getById(hdr.getTransactionPoid()) on the unsaved hdr (poid = null),
-        // so stub findById with any() to cover both null and 100L
-        lenient().when(hdrRepository.findById(nullable(Long.class))).thenReturn(Optional.of(hdr));
+        stubSaveAndFlush(hdr);
+        stubFindById(hdr);
 
         ProjectJobResponse response = projectJobService.create(request);
 
@@ -108,23 +110,21 @@ class ProjectJobServiceImplTest {
 
     @Test
     void testUpdate_NotFound() {
-        ProjectJobRequest request = new ProjectJobRequest();
         when(hdrRepository.findById(100L)).thenReturn(Optional.empty());
-
-        assertThrows(RuntimeException.class, () -> projectJobService.update(100L, request));
+        assertThrows(RuntimeException.class, () -> projectJobService.update(100L, new ProjectJobRequest()));
     }
 
     @Test
     void testProcessDetails_ISCREATED_New() {
-        ProjectJobRequest request = new ProjectJobRequest();
         ProjectJobAirPkgDtoRequest airPkgDto = new ProjectJobAirPkgDtoRequest();
         airPkgDto.setActionType("ISCREATED");
+        ProjectJobRequest request = new ProjectJobRequest();
         request.setAirPackages(Collections.singletonList(airPkgDto));
 
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
-        when(hdrRepository.save(any(FFManifestHdr.class))).thenReturn(hdr);
-        lenient().when(hdrRepository.findById(nullable(Long.class))).thenReturn(Optional.of(hdr));
+        stubSaveAndFlush(hdr);
+        stubFindById(hdr);
         when(airPkgRepository.getMaxDetRowId(100L)).thenReturn(0L);
         when(airPkgRepository.saveAll(anyList())).thenReturn(Collections.emptyList());
 
@@ -135,39 +135,39 @@ class ProjectJobServiceImplTest {
 
     @Test
     void testProcessDetails_ISCREATED_ExistingDetRowId() {
-        ProjectJobRequest request = new ProjectJobRequest();
         ProjectJobAirPkgDtoRequest airPkgDto = new ProjectJobAirPkgDtoRequest();
         airPkgDto.setActionType("ISCREATED");
         airPkgDto.setDetRowId(5L);
+        ProjectJobRequest request = new ProjectJobRequest();
         request.setAirPackages(Collections.singletonList(airPkgDto));
 
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
-        when(hdrRepository.save(any(FFManifestHdr.class))).thenReturn(hdr);
-        lenient().when(hdrRepository.findById(nullable(Long.class))).thenReturn(Optional.of(hdr));
+        stubSaveAndFlush(hdr);
+        stubFindById(hdr);
         when(airPkgRepository.getMaxDetRowId(100L)).thenReturn(0L);
         when(airPkgRepository.saveAll(anyList())).thenReturn(Collections.emptyList());
 
         projectJobService.create(request);
 
-        verify(airPkgRepository).saveAll(argThat(list -> ((List<FFManifestAirPkgDtl>) list).get(0).getDetRowId() == 5L));
+        verify(airPkgRepository).saveAll(argThat(list ->
+                ((List<FFManifestAirPkgDtl>) list).get(0).getDetRowId() == 5L));
     }
 
     @Test
     void testProcessDetails_ISUPDATED_Success() {
-        ProjectJobRequest request = new ProjectJobRequest();
         ProjectJobAirPkgDtoRequest airPkgDto = new ProjectJobAirPkgDtoRequest();
         airPkgDto.setActionType("ISUPDATED");
         airPkgDto.setDetRowId(1L);
+        ProjectJobRequest request = new ProjectJobRequest();
         request.setAirPackages(Collections.singletonList(airPkgDto));
 
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
-        when(hdrRepository.save(any(FFManifestHdr.class))).thenReturn(hdr);
-        lenient().when(hdrRepository.findById(nullable(Long.class))).thenReturn(Optional.of(hdr));
-
-        FFManifestAirPkgDtl existing = new FFManifestAirPkgDtl();
-        when(airPkgRepository.findByTransactionPoidAndDetRowId(100L, 1L)).thenReturn(Optional.of(existing));
+        stubSaveAndFlush(hdr);
+        stubFindById(hdr);
+        when(airPkgRepository.findByTransactionPoidAndDetRowId(100L, 1L))
+                .thenReturn(Optional.of(new FFManifestAirPkgDtl()));
 
         projectJobService.create(request);
 
@@ -177,15 +177,16 @@ class ProjectJobServiceImplTest {
 
     @Test
     void testProcessDetails_ISUPDATED_NotFound() {
-        ProjectJobRequest request = new ProjectJobRequest();
         ProjectJobAirPkgDtoRequest airPkgDto = new ProjectJobAirPkgDtoRequest();
         airPkgDto.setActionType("ISUPDATED");
         airPkgDto.setDetRowId(1L);
+        ProjectJobRequest request = new ProjectJobRequest();
         request.setAirPackages(Collections.singletonList(airPkgDto));
 
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
-        when(hdrRepository.save(any(FFManifestHdr.class))).thenReturn(hdr);
+        stubSaveAndFlush(hdr);
+        stubFindById(hdr);
         when(airPkgRepository.findByTransactionPoidAndDetRowId(100L, 1L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> projectJobService.create(request));
@@ -193,16 +194,16 @@ class ProjectJobServiceImplTest {
 
     @Test
     void testProcessDetails_ISDELETED() {
-        ProjectJobRequest request = new ProjectJobRequest();
         ProjectJobAirPkgDtoRequest airPkgDto = new ProjectJobAirPkgDtoRequest();
         airPkgDto.setActionType("ISDELETED");
         airPkgDto.setDetRowId(1L);
+        ProjectJobRequest request = new ProjectJobRequest();
         request.setAirPackages(Collections.singletonList(airPkgDto));
 
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
-        when(hdrRepository.save(any(FFManifestHdr.class))).thenReturn(hdr);
-        lenient().when(hdrRepository.findById(nullable(Long.class))).thenReturn(Optional.of(hdr));
+        stubSaveAndFlush(hdr);
+        stubFindById(hdr);
 
         projectJobService.create(request);
 
@@ -212,32 +213,33 @@ class ProjectJobServiceImplTest {
 
     @Test
     void testProcessDetails_ActionTypeMissing() {
-        ProjectJobRequest request = new ProjectJobRequest();
         ProjectJobAirPkgDtoRequest airPkgDto = new ProjectJobAirPkgDtoRequest();
         airPkgDto.setActionType("");
+        ProjectJobRequest request = new ProjectJobRequest();
         request.setAirPackages(Collections.singletonList(airPkgDto));
 
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
-        when(hdrRepository.save(any(FFManifestHdr.class))).thenReturn(hdr);
+        stubSaveAndFlush(hdr);
+        stubFindById(hdr);
 
         assertThrows(ValidationException.class, () -> projectJobService.create(request));
     }
 
     @Test
     void testProcessDetails_DefaultAction() {
-        ProjectJobRequest request = new ProjectJobRequest();
         ProjectJobAirPkgDtoRequest airPkgDto = new ProjectJobAirPkgDtoRequest();
         airPkgDto.setActionType("UNKNOWN");
+        ProjectJobRequest request = new ProjectJobRequest();
         request.setAirPackages(Collections.singletonList(airPkgDto));
 
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
-        when(hdrRepository.save(any(FFManifestHdr.class))).thenReturn(hdr);
-        lenient().when(hdrRepository.findById(nullable(Long.class))).thenReturn(Optional.of(hdr));
+        stubSaveAndFlush(hdr);
+        stubFindById(hdr);
 
         projectJobService.create(request);
-        // Should not save, update, or delete
+
         verify(airPkgRepository, never()).saveAll(anyList());
     }
 
@@ -279,17 +281,15 @@ class ProjectJobServiceImplTest {
     @Test
     void testDeleteById_NotFound() {
         when(hdrRepository.findById(100L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> projectJobService.deleteById(100L, 1L, 2L, 3L, new DeleteReasonDto()));
+        assertThrows(ResourceNotFoundException.class,
+                () -> projectJobService.deleteById(100L, 1L, 2L, 3L, new DeleteReasonDto()));
     }
 
     @Test
     void testGetAllProjectJobsWithFilters() {
         FilterRequestDto filterRequest = new FilterRequestDto("AND", "N", new ArrayList<>());
+        RawSearchResult rawResult = new RawSearchResult(new ArrayList<>(), new HashMap<>(), 1L);
 
-        List<Map<String, Object>> records = new ArrayList<>();
-        Map<String, String> displayFields = new HashMap<>();
-
-        RawSearchResult rawResult = new RawSearchResult(records, displayFields, 1L);
         when(documentSearchService.resolveOperator(any())).thenReturn("AND");
         when(documentSearchService.resolveIsDeleted(any())).thenReturn("N");
         when(documentSearchService.resolveDateFilters(any(), anyString(), any(), any())).thenReturn(new ArrayList<>());
@@ -297,7 +297,8 @@ class ProjectJobServiceImplTest {
                 anyString(), anyList(), anyString(), any(Pageable.class),
                 anyString(), anyString(), anyString())).thenReturn(rawResult);
 
-        Map<String, Object> result = projectJobService.getAllProjectJobsWithFilters("DOC123", filterRequest, Pageable.unpaged(), null, null);
+        Map<String, Object> result = projectJobService.getAllProjectJobsWithFilters(
+                "DOC123", filterRequest, Pageable.unpaged(), null, null);
 
         assertNotNull(result);
     }
@@ -305,15 +306,13 @@ class ProjectJobServiceImplTest {
     @Test
     void testReopenJob() {
         when(spRepostirory.callReopenJobProc(anyLong(), anyLong())).thenReturn("Success");
-        String result = projectJobService.reopenJob(100L);
-        assertEquals("Success", result);
+        assertEquals("Success", projectJobService.reopenJob(100L));
     }
 
     @Test
     void testLoadJobs() {
         ProjectLoadInJobsProcResponse response = new ProjectLoadInJobsProcResponse();
         when(spRepostirory.callProjectsLoadInJobsProc(100L)).thenReturn(response);
-        ProjectLoadInJobsProcResponse result = projectJobService.loadJobs(100L);
-        assertEquals(response, result);
+        assertEquals(response, projectJobService.loadJobs(100L));
     }
 }
