@@ -3200,7 +3200,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Update entity status
         entry.setCancelRemark(cancelRemark);
         entry.setStatus("CANCELLED");
-        // Audit is handled by BaseEntity
+        entry.setDeleted("Y");
         entryHdrRepository.save(entry);
 
         // Return the actual stored procedure result or success message
