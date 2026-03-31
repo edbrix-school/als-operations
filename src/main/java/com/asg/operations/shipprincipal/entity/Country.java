@@ -1,5 +1,6 @@
 package com.asg.operations.shipprincipal.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ public class Country {
     @Column(name = "COUNTRY_POID")
     private Long countryPoid;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
 
@@ -39,15 +41,19 @@ public class Country {
     @Column(name = "SEQNO")
     private Integer seqNo;
 
+    @AuditIgnore
     @Column(name = "CREATED_BY")
     private String createdBy;
 
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY")
     private String lastModifiedBy;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 

@@ -1,10 +1,9 @@
 package com.asg.operations.finaldisbursementaccount.util;
 
+import com.asg.operations.finaldisbursementaccount.dto.CreateFdaHeaderRequest;
 import com.asg.operations.finaldisbursementaccount.dto.FdaHeaderDto;
 import com.asg.operations.finaldisbursementaccount.dto.UpdateFdaHeaderRequest;
 import com.asg.operations.finaldisbursementaccount.entity.PdaFdaHdr;
-
-import java.time.LocalDateTime;
 
 public class HeaderMapper {
 
@@ -102,6 +101,75 @@ public class HeaderMapper {
         return dto;
     }
 
+    /**
+     * Maps CreateFdaHeaderRequest to entity for create operation
+     * Note: docRef and transactionPoid are handled by backend/triggers
+     */
+    public static void mapCreateHeaderRequestToEntity(CreateFdaHeaderRequest dto, PdaFdaHdr entity, Long groupPoid, Long companyPoid, String userId) {
+        // transactionDate is set in service after null/default resolution
+        entity.setGroupPoid(groupPoid);
+        entity.setCompanyPoid(companyPoid);
+        entity.setPrincipalPoid(dto.getPrincipalPoid());
+        entity.setPrincipalContact(dto.getPrincipalContact());
+        // docRef will be set by backend/trigger
+        entity.setVoyagePoid(dto.getVoyagePoid());
+        entity.setVesselPoid(dto.getVesselPoid());
+        entity.setArrivalDate(dto.getArrivalDate());
+        entity.setSailDate(dto.getSailDate());
+        entity.setPortPoid(dto.getPortPoid());
+        entity.setCommodityPoid(dto.getCommodityPoid());
+        entity.setOperationType(dto.getOperationType());
+        entity.setImportQty(dto.getImportQty());
+        entity.setExportQty(dto.getExportQty());
+        entity.setTotalQuantity(dto.getTotalQuantity());
+        entity.setUnit(dto.getUnit());
+        entity.setHarbourCallType(dto.getHarbourCallType());
+        entity.setCurrencyCode(dto.getCurrencyCode());
+        entity.setCurrencyRate(dto.getCurrencyRate());
+        entity.setCostCentrePoid(dto.getCostCentrePoid());
+        entity.setVesselVerified(dto.getVesselVerified());
+        entity.setVesselVerifiedDate(dto.getVesselVerifiedDate());
+        entity.setVesselVerifiedBy(dto.getVesselVerifiedBy());
+        entity.setUrgentApproval(dto.getUrgentApproval());
+        entity.setPrincipalAprvlDays(dto.getPrincipalAprvlDays());
+        entity.setPrincipalApproved(dto.getPrincipalApproved());
+        entity.setPrincipalApprovedDate(dto.getPrincipalApprovedDate());
+        entity.setPrincipalApprovedBy(dto.getPrincipalApprovedBy());
+        entity.setReminderMinutes(dto.getReminderMinutes());
+        entity.setCargoDetails(dto.getCargoDetails());
+        entity.setRemarks(dto.getRemarks());
+        entity.setPdaRef(dto.getPdaRef());
+        entity.setAddressPoid(dto.getAddressPoid());
+        entity.setSalesmanPoid(dto.getSalesmanPoid());
+        entity.setTranshipmentQty(dto.getTranshipmentQty());
+        entity.setDwt(dto.getDwt());
+        entity.setGrt(dto.getGrt());
+        entity.setImoNumber(dto.getImoNumber());
+        entity.setNrt(dto.getNrt());
+        entity.setNumberOfDays(dto.getNumberOfDays());
+        entity.setPortDescription(dto.getPortDescription());
+        entity.setTermsPoid(dto.getTermsPoid());
+        entity.setVesselTypePoid(dto.getVesselTypePoid());
+        entity.setLinePoid(dto.getLinePoid());
+        entity.setPrintPrincipal(dto.getPrintPrincipal());
+        entity.setVoyageNo(dto.getVoyageNo());
+        entity.setRefType(dto.getRefType());
+        entity.setSupplementary(dto.getSupplementary());
+        entity.setBusinessRefBy(dto.getBusinessRefBy());
+        entity.setFdaWithoutCharges(dto.getFdaWithoutCharges());
+        entity.setPrintBankPoid(dto.getPrintBankPoid());
+        entity.setPortCallNumber(dto.getPortCallNumber());
+        entity.setNominatedPartyType(dto.getNominatedPartyType());
+        entity.setNominatedPartyPoid(dto.getNominatedPartyPoid());
+        entity.setFdaSubType(dto.getFdaSubType());
+        entity.setSubCategory(dto.getSubCategory());
+        entity.setVesselHandledBy(dto.getVesselHandledBy());
+        entity.setVesselSailDate(dto.getVesselSailDate());
+
+        // Set default values for system-managed fields
+        entity.setDeleted("N");
+    }
+
     public static void mapHeaderDtoToEntity(FdaHeaderDto dto, PdaFdaHdr entity, String userId) {
 
         entity.setTransactionDate(dto.getTransactionDate());
@@ -185,18 +253,20 @@ public class HeaderMapper {
         entity.setOpsCorrectionRemarks(dto.getOpsCorrectionRemarks());
         entity.setOpsReturnedDate(dto.getOpsReturnedDate());
 
-        entity.setLastModifiedBy(userId);
-        entity.setLastModifiedDate(LocalDateTime.now());
-
         if (entity.getDeleted() == null)
             entity.setDeleted("N");
     }
 
     public static void mapUpdateHeaderDtoToEntity(UpdateFdaHeaderRequest dto, PdaFdaHdr entity, String userId) {
-
+        // transactionDate is set in service after null/default resolution
         entity.setPrincipalPoid(dto.getPrincipalPoid());
         entity.setPortPoid(dto.getPortPoid());
         entity.setOperationType(dto.getOperationType());
+        // Quantities persisted on update/edit
+        entity.setImportQty(dto.getImportQty());
+        entity.setExportQty(dto.getExportQty());
+        entity.setTranshipmentQty(dto.getTranshipmentQty());
+        entity.setTotalQuantity(dto.getTotalQuantity());
         entity.setUnit(dto.getUnit());
         entity.setHarbourCallType(dto.getHarbourCallType());
         entity.setCargoDetails(dto.getCargoDetails());
@@ -209,9 +279,7 @@ public class HeaderMapper {
         entity.setPortDescription(dto.getPortDescription());
         entity.setFdaSubType(dto.getFdaSubType());
         entity.setSubCategory(dto.getSubCategory());
-
-        entity.setLastModifiedBy(userId);
-        entity.setLastModifiedDate(LocalDateTime.now());
+        entity.setPrintBankPoid(dto.getPrintBankPoid());
 
         if (entity.getDeleted() == null) {
             entity.setDeleted("N");

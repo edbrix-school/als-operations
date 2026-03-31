@@ -1,19 +1,21 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "PDA_FDA_HDR")
-public class PdaFdaHdr {
+public class PdaFdaHdr extends BaseEntity {
 
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID", nullable = false)
@@ -22,9 +24,11 @@ public class PdaFdaHdr {
     @Column(name = "TRANSACTION_DATE", nullable = false)
     private LocalDate transactionDate;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
 
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
@@ -34,6 +38,7 @@ public class PdaFdaHdr {
     @Column(name = "PRINCIPAL_CONTACT", length = 50)
     private String principalContact;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", length = 25)
     private String docRef;
 
@@ -124,23 +129,12 @@ public class PdaFdaHdr {
     @Column(name = "TOTAL_AMOUNT")
     private BigDecimal totalAmount;
 
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
-    @Column(name = "PDA_REF", length = 100)
-    private String pdaRef;
+    @Column(name = "PDA_REF")
+    private Long pdaRef;
 
     @Column(name = "ADDRESS_POID")
     private Long addressPoid;

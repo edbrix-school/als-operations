@@ -1,10 +1,11 @@
 package com.asg.operations.pdaporttariffmaster.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -18,12 +19,13 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ShipVesselTypeMaster {
+public class ShipVesselTypeMaster extends BaseEntity {
 
     @Id
     @Column(name = "VESSEL_TYPE_POID", nullable = false)
     private BigDecimal vesselTypePoid;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private BigDecimal groupPoid;
 
@@ -42,18 +44,7 @@ public class ShipVesselTypeMaster {
     @Column(name = "SEQNO")
     private BigDecimal seqNo;
 
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 }

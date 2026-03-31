@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -20,7 +21,7 @@ public class GLBankMaster {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "BANK_POID")
     private Long bankPoid;
-
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
 
@@ -74,28 +75,28 @@ public class GLBankMaster {
 
     @Column(name = "REMARKS", length = 500)
     private String remarks;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 
     @Column(name = "ACTIVE", length = 1)
     private String active;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
     @Column(name = "OD_LIMIT")
     private BigDecimal odLimit;
-
+    @AuditIgnore
     @Column(name = "COMPANY_POID", length = 20)
     private String companyPoid;
 

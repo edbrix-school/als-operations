@@ -1,10 +1,12 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDate;
+
 
 @Getter
 @Setter
@@ -19,19 +21,21 @@ import java.util.Date;
 )
 public class ShipVoyageHdr {
 
+    @AuditIgnore
     @Id
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID", nullable = false)
     private Long groupPoid;
 
+    @AuditIgnore
     @Column(name = "COMPANY_POID", nullable = false)
     private Long companyPoid;
 
     @Column(name = "TRANSACTION_DATE", nullable = false)
-    @Temporal(TemporalType.DATE)
-    private Date transactionDate;
+    private LocalDate transactionDate;
 
     @Column(name = "JOB_NO", nullable = false, length = 20)
     private String jobNo;
@@ -49,8 +53,7 @@ public class ShipVoyageHdr {
     private Long agentPoid;
 
     @Column(name = "SAIL_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date sailDate;
+    private LocalDate sailDate;
 
     @Column(name = "START_PORT_POID")
     private Long startPortPoid;
@@ -62,52 +65,48 @@ public class ShipVoyageHdr {
     private Long destinationPortPoid;
 
     @Column(name = "EXPECTED_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date expectedDate;
+    private LocalDate expectedDate;
 
     @Column(name = "BERTH_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date berthDate;
+    private LocalDate berthDate;
 
     @Column(name = "ARRIVAL_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date arrivalDate;
+    private LocalDate arrivalDate;
 
     @Column(name = "SHIPPED_ONBOARD_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date shippedOnboardDate;
+    private LocalDate shippedOnboardDate;
 
     @Column(name = "ENTRY_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date entryDate;
+    private LocalDate entryDate;
 
     @Column(name = "CUSTOM_REGNO", length = 50)
     private String customRegNo;
 
     @Column(name = "CUSTOM_REGDATE")
-    @Temporal(TemporalType.DATE)
-    private Date customRegDate;
+    private LocalDate customRegDate;
 
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
 
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
+    private LocalDate createdDate;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date lastModifiedDate;
+    private LocalDate lastModifiedDate;
 
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
     @Column(name = "EXPECTED_DEPARTURE_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date expectedDepartureDate;
+    private LocalDate expectedDepartureDate;
 
     @Column(name = "CURRENCY_CODE", length = 20)
     private String currencyCode;
@@ -118,16 +117,15 @@ public class ShipVoyageHdr {
     @Column(name = "JOBNO_OLD", length = 20)
     private String jobNoOld;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", length = 25)
     private String docRef;
 
     @Column(name = "OPERATION_START_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date operationStartDate;
+    private LocalDate operationStartDate;
 
     @Column(name = "OPERATION_END_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date operationEndDate;
+    private LocalDate operationEndDate;
 
     @Column(name = "MSC_VESSEL_VOYAGE_REFF", length = 100)
     private String mscVesselVoyageReff;
@@ -142,19 +140,14 @@ public class ShipVoyageHdr {
     private Long nextPortPoid;
 
     @Column(name = "PRE_ARRIVAL_MSG_VESSEL")
-    @Temporal(TemporalType.DATE)
-    private Date preArrivalMsgVessel;
+    private LocalDate preArrivalMsgVessel;
 
     @Column(name = "PRE_ARRIVAL_MSG_PORT")
-    @Temporal(TemporalType.DATE)
-    private Date preArrivalMsgPort;
+    private LocalDate preArrivalMsgPort;
 
     @Column(name = "ENTRY_IN_GCTOS")
-    @Temporal(TemporalType.DATE)
-    private Date entryInGctos;
+    private LocalDate entryInGctos;
 
     @Column(name = "ENTRY_IN_MARASSI")
-    @Temporal(TemporalType.DATE)
-    private Date entryInMarassi;
-
+    private LocalDate entryInMarassi;
 }

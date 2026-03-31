@@ -25,4 +25,5 @@ public interface PortCallReportHdrRepository extends JpaRepository<PortCallRepor
             "(:id IS NULL OR p.portCallReportPoid != :id)")
     boolean existsByPortCallReportNameIgnoreCaseAndNotDeleted(@Param("name") String name, @Param("id") Long id);
 
+    boolean existsByPortCallReportPoid(Long id);
 }

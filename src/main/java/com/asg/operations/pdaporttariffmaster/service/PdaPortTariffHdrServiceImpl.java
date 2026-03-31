@@ -1,9 +1,18 @@
 package com.asg.operations.pdaporttariffmaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
-import com.asg.operations.commonlov.dto.LovItem;
-import com.asg.operations.commonlov.service.LovService;
-import com.asg.operations.pdaentryform.dto.PdaEntryResponse;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.dto.FilterDto;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.utility.PaginationUtil;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.validation.Valid;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffChargeDtl;
 import com.asg.operations.pdaporttariffmaster.entity.PdaPortTariffHdr;
@@ -13,26 +22,20 @@ import com.asg.operations.pdaporttariffmaster.key.PdaPortTariffSlabDtlId;
 import com.asg.operations.pdaporttariffmaster.repository.*;
 import com.asg.operations.portcallreport.enums.ActionType;
 import com.asg.operations.exceptions.ResourceNotFoundException;
-import com.asg.operations.pdaporttariffmaster.util.DateOverlapValidator;
 import com.asg.operations.pdaporttariffmaster.util.PdaPortTariffMapper;
-import com.asg.operations.pdaporttariffmaster.util.PortTariffDocumentRefGenerator;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -47,253 +50,40 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     private final ShipVesselTypeMasterRepository shipVesselTypeMasterRepository;
     private final ShipChargeMasterRepository shipChargeMasterRepository;
     private final PdaPortTariffMapper mapper;
-    private final DateOverlapValidator overlapValidator;
-    private final PortTariffDocumentRefGenerator docRefGenerator;
     private final EntityManager entityManager;
-    private final LovService lovService;
+    private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
+    private final DocumentSearchService documentSearchService;
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PdaPortTariffListResponse> getAllTariffsWithFilters(
-            Long groupPoid, Long companyPoid,
-            GetAllTariffFilterRequest filterRequest,
-            int page, int size, String sort) {
+    public Map<String, Object> getAllTariffsWithFilters(String documentId, FilterRequestDto filterRequestDto, Pageable pageable, LocalDate periodFrom, LocalDate periodTo) {
 
-        // Build dynamic SQL query
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT t.TRANSACTION_POID, t.DOC_REF, t.TRANSACTION_DATE, t.PORTS, ");
-        sqlBuilder.append("t.VESSEL_TYPES, t.PERIOD_FROM, t.PERIOD_TO, t.REMARKS, t.DELETED, ");
-        sqlBuilder.append("t.CREATED_DATE, t.LASTMODIFIED_DATE ");
-        sqlBuilder.append("FROM PDA_PORT_TARIFF_HDR t ");
-        sqlBuilder.append("WHERE t.GROUP_POID = :groupPoid AND t.COMPANY_POID = :companyPoid ");
+        String operator = documentSearchService.resolveOperator(filterRequestDto);
+        String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto, "TRANSACTION_DATE", periodFrom, periodTo);
 
-        // Apply isDeleted filter
-        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND (t.DELETED IS NULL OR t.DELETED != 'Y') ");
-        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND t.DELETED = 'Y' ");
-        }
+        RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
+                "DOC_REF",
+                "TRANSACTION_POID");
 
-        // Apply date range filters
-        if (StringUtils.hasText(filterRequest.getFrom())) {
-            sqlBuilder.append("AND TRUNC(t.TRANSACTION_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
-        }
-        if (StringUtils.hasText(filterRequest.getTo())) {
-            sqlBuilder.append("AND TRUNC(t.TRANSACTION_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
-        }
+        Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
-        // Build filter conditions with sequential parameter indexing
-        List<String> filterConditions = new java.util.ArrayList<>();
-        List<GetAllTariffFilterRequest.FilterItem> validFilters = new java.util.ArrayList<>();
-        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
-            for (GetAllTariffFilterRequest.FilterItem filter : filterRequest.getFilters()) {
-                if (StringUtils.hasText(filter.getSearchField()) && StringUtils.hasText(filter.getSearchValue())) {
-                    validFilters.add(filter);
-                    String columnName = mapTariffSearchFieldToColumn(filter.getSearchField());
-                    int paramIndex = validFilters.size() - 1;
-                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
-                }
-            }
-        }
-
-        // Add filter conditions with operator
-        if (!filterConditions.isEmpty()) {
-            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
-            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
-        }
-
-        // Apply sorting
-        String orderBy = "ORDER BY t.TRANSACTION_DATE DESC";
-        if (StringUtils.hasText(sort)) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                String sortField = mapTariffSortFieldToColumn(sortParts[0].trim());
-                String sortDirection = sortParts[1].trim().toUpperCase();
-                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
-                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
-                }
-            }
-        }
-        sqlBuilder.append(orderBy);
-
-        // Create count query
-        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
-
-        // Create query
-        Query query = entityManager.createNativeQuery(sqlBuilder.toString());
-        Query countQuery = entityManager.createNativeQuery(countSql);
-
-        // Set parameters
-        query.setParameter("groupPoid", groupPoid);
-        query.setParameter("companyPoid", companyPoid);
-        countQuery.setParameter("groupPoid", groupPoid);
-        countQuery.setParameter("companyPoid", companyPoid);
-
-        if (StringUtils.hasText(filterRequest.getFrom())) {
-            query.setParameter("fromDate", filterRequest.getFrom());
-            countQuery.setParameter("fromDate", filterRequest.getFrom());
-        }
-        if (StringUtils.hasText(filterRequest.getTo())) {
-            query.setParameter("toDate", filterRequest.getTo());
-            countQuery.setParameter("toDate", filterRequest.getTo());
-        }
-
-        // Set filter parameters using sequential indexing
-        if (!validFilters.isEmpty()) {
-            for (int i = 0; i < validFilters.size(); i++) {
-                GetAllTariffFilterRequest.FilterItem filter = validFilters.get(i);
-                String paramValue = "%" + filter.getSearchValue() + "%";
-                query.setParameter("filterValue" + i, paramValue);
-                countQuery.setParameter("filterValue" + i, paramValue);
-            }
-        }
-
-        // Get total count
-        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
-
-        // Apply pagination
-        int offset = page * size;
-        query.setFirstResult(offset);
-        query.setMaxResults(size);
-
-        // Execute query and map results
-        @SuppressWarnings("unchecked")
-        List<Object[]> results = query.getResultList();
-        List<PdaPortTariffListResponse> dtos = results.stream()
-                .map(this::mapToTariffListResponseDto)
-                .collect(Collectors.toList());
-
-        // Create page
-        Pageable pageable = PageRequest.of(page, size);
-        return new PageImpl<>(dtos, pageable, totalCount);
+        return PaginationUtil.wrapPage(page, raw.displayFields());
     }
-
-    private String mapTariffSearchFieldToColumn(String searchField) {
-        if (searchField == null) {
-            return null;
-        }
-        // Normalize the field name by removing underscores and converting to uppercase
-        String normalizedField = searchField.toUpperCase().replace("_", "");
-
-        switch (normalizedField) {
-            case "DOCREF":
-                return "t.DOC_REF";
-            case "PORTS":
-            case "PORT":
-                return "t.PORTS";
-            case "VESSELTYPES":
-            case "VESSELTYPE":
-            case "VESSEL":
-                return "t.VESSEL_TYPES";
-            case "REMARKS":
-                return "t.REMARKS";
-            case "PERIODFROM":
-                return "t.PERIOD_FROM";
-            case "PERIODTO":
-                return "t.PERIOD_TO";
-            default:
-                // Fallback: assume it's a direct column name from t table
-                String columnName = searchField.toUpperCase().replace(" ", "_");
-                return "t." + columnName;
-        }
-    }
-
-    private String mapTariffSortFieldToColumn(String sortField) {
-        if (sortField == null) {
-            return "t.TRANSACTION_DATE";
-        }
-        String normalizedField = sortField.toUpperCase().replace("_", "");
-
-        switch (normalizedField) {
-            case "TRANSACTIONPOID":
-                return "t.TRANSACTION_POID";
-            case "DOCREF":
-                return "t.DOC_REF";
-            case "TRANSACTIONDATE":
-                return "t.TRANSACTION_DATE";
-            case "PORTS":
-            case "PORT":
-                return "t.PORTS";
-            case "VESSELTYPES":
-            case "VESSELTYPE":
-            case "VESSEL":
-                return "t.VESSEL_TYPES";
-            case "PERIODFROM":
-                return "t.PERIOD_FROM";
-            case "PERIODTO":
-                return "t.PERIOD_TO";
-            case "REMARKS":
-                return "t.REMARKS";
-            case "DELETED":
-                return "t.DELETED";
-            case "CREATEDDATE":
-                return "t.CREATED_DATE";
-            case "LASTMODIFIEDDATE":
-                return "t.LASTMODIFIED_DATE";
-            default:
-                String columnName = sortField.toUpperCase().replace(" ", "_");
-                return "t." + columnName;
-        }
-    }
-
-    private PdaPortTariffListResponse mapToTariffListResponseDto(Object[] row) {
-        PdaPortTariffListResponse dto = new PdaPortTariffListResponse();
-
-        dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setDocRef(convertToString(row[1]));
-        dto.setTransactionDate(row[2] != null ? ((Timestamp) row[2]).toLocalDateTime().toLocalDate() : null);
-        dto.setPort(convertToString(row[3]));
-        dto.setPeriodFrom(row[5] != null ? ((Timestamp) row[5]).toLocalDateTime().toLocalDate() : null);
-        dto.setPeriodTo(row[6] != null ? ((Timestamp) row[6]).toLocalDateTime().toLocalDate() : null);
-        dto.setRemarks(convertToString(row[7]));
-        dto.setDeleted(convertToString(row[8]));
-        dto.setCreatedDate(row[9] != null ? ((Timestamp) row[9]).toLocalDateTime() : null);
-        dto.setLastModifiedDate(row[10] != null ? ((Timestamp) row[10]).toLocalDateTime() : null);
-        LovItem lovItem = dto.getPort() != null ? lovService.getLovItemByPoid(Long.parseLong(dto.getPort()), "PDA_PORT_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()) : null;
-        dto.setPortName(lovItem != null ? lovItem.getLabel() : null);
-        return dto;
-    }
-
-    private String convertToString(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof String) {
-            return (String) value;
-        }
-        if (value instanceof Character) {
-            return String.valueOf((Character) value);
-        }
-        return value.toString();
-    }
-
-    private List<String> convertToStringList(Object value) {
-        if (value == null) {
-            return null;
-        }
-        String str = convertToString(value);
-        if (str == null || str.trim().isEmpty()) {
-            return new java.util.ArrayList<>();
-        }
-        return java.util.Arrays.asList(str.split(","));
-    }
-
 
     @Override
     @Transactional(readOnly = true)
-    public PdaPortTariffMasterResponse getTariffById(Long transactionPoid, Long groupPoid) {
-        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
+    public PdaPortTariffMasterResponse getTariffById(Long transactionPoid) {
 
-        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoid(
-                        transactionPoid, groupPoidBD)
+        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoid(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
-        List<PdaPortTariffChargeDtl> chargeDetails = chargeDtlRepository.findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(transactionPoid);
+        List<PdaPortTariffChargeDtl> chargeDetails = chargeDtlRepository.findByTransactionPoid(transactionPoid);
 
         for (PdaPortTariffChargeDtl chargeDetail : chargeDetails) {
             if (!entityManager.contains(chargeDetail)) {
-                List<PdaPortTariffSlabDtl> slabDetails = slabDtlRepository.findByTransactionPoidAndChargeDetRowIdOrderByDetRowIdAsc(
-                        transactionPoid, chargeDetail.getId().getDetRowId());
+                List<PdaPortTariffSlabDtl> slabDetails = slabDtlRepository.findByTransactionPoidAndChargeDetRowId(transactionPoid, chargeDetail.getId().getDetRowId());
                 chargeDetail.setSlabDetails(slabDetails);
             }
         }
@@ -302,114 +92,102 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     @Override
-    public PdaPortTariffMasterResponse createTariff(PdaPortTariffMasterRequest request, Long groupPoid, Long companyPoid, String userId) {
-        validateCreateRequest(request, groupPoid);
-
-        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
-        BigDecimal companyPoidBD = BigDecimal.valueOf(companyPoid);
-
-        String docRef = docRefGenerator.generateDocRef(groupPoidBD);
+    public PdaPortTariffMasterResponse createTariff(PdaPortTariffMasterRequest request) {
+        validateCreateRequest(request, UserContext.getCompanyPoid());
 
         String portsStr = request.getPort();
         String vesselTypesStr = mapper.listToString(request.getVesselTypes());
 
-        if (tariffHdrRepository.existsOverlappingPeriod(
-                groupPoidBD, null, request.getPeriodFrom(), request.getPeriodTo(), portsStr, vesselTypesStr)) {
+        if (tariffHdrRepository.existsOverlappingPeriod(UserContext.getGroupPoid(), null, request.getPeriodFrom(), request.getPeriodTo(), portsStr, vesselTypesStr)) {
             throw new ValidationException("A tariff with overlapping period already exists for the selected port and vessel types.");
         }
 
-        PdaPortTariffHdr tariffHdr = mapper.toEntity(request, groupPoidBD, companyPoidBD, docRef, userId);
-        PdaPortTariffHdr savedTariff = tariffHdrRepository.save(tariffHdr);
+        PdaPortTariffHdr tariffHdr = mapper.toEntity(request);
+        tariffHdrRepository.saveAndFlush(tariffHdr);
+        entityManager.refresh(tariffHdr);
+
+        PdaPortTariffHdr savedTariff = tariffHdrRepository.findByTransactionPoid(tariffHdr.getTransactionPoid())
+                .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", tariffHdr.getTransactionPoid()));
+
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedTariff.getTransactionPoid().toString());
 
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {
-            saveChargeDetails(savedTariff, request.getChargeDetails(), userId);
+            saveChargeDetails(savedTariff, request.getChargeDetails());
         }
-
-        return getTariffById(savedTariff.getTransactionPoid(), groupPoid);
+        return getTariffById(savedTariff.getTransactionPoid());
     }
 
     @Override
-    public PdaPortTariffMasterResponse updateTariff(Long transactionPoid, PdaPortTariffMasterRequest request, Long groupPoid, String userId) {
-        validateUpdateRequest(request, groupPoid);
+    public PdaPortTariffMasterResponse updateTariff(Long transactionPoid, PdaPortTariffMasterRequest request) {
+        validateUpdateRequest(request, UserContext.getGroupPoid());
 
-        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
-
-        PdaPortTariffHdr existingTariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                        transactionPoid, groupPoidBD, "N")
+        PdaPortTariffHdr existingTariff = tariffHdrRepository.findByTransactionPoid(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
+
+        PdaPortTariffHdr oldTariff = new PdaPortTariffHdr();
+        BeanUtils.copyProperties(existingTariff, oldTariff);
 
         String portsStr = request.getPort();
         String vesselTypesStr = mapper.listToString(request.getVesselTypes());
 
-        if (tariffHdrRepository.existsOverlappingPeriod(
-                groupPoidBD, transactionPoid, request.getPeriodFrom(), request.getPeriodTo(), portsStr, vesselTypesStr)) {
+        if (tariffHdrRepository.existsOverlappingPeriod(UserContext.getGroupPoid(), transactionPoid, request.getPeriodFrom(), request.getPeriodTo(), portsStr, vesselTypesStr)) {
             throw new ValidationException("A tariff with overlapping period already exists for the selected port and vessel types.");
         }
 
-        mapper.updateEntityFromRequest(existingTariff, request, userId);
+        mapper.updateEntityFromRequest(existingTariff, request);
         tariffHdrRepository.save(existingTariff);
 
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {
-            updateChargeDetails(existingTariff, request.getChargeDetails(), userId);
+            updateChargeDetails(existingTariff, request.getChargeDetails());
         }
 
         entityManager.flush();
         entityManager.clear();
 
-        return getTariffById(transactionPoid, groupPoid);
+        loggingService.logChanges(oldTariff, existingTariff, PdaPortTariffHdr.class, UserContext.getDocumentId(), transactionPoid.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
+        return getTariffById(transactionPoid);
     }
 
     @Override
-    public void deleteTariff(Long transactionPoid, Long groupPoid, String userId, boolean hardDelete) {
-        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
-
-        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                        transactionPoid, groupPoidBD, "N")
+    public void deleteTariff(Long transactionPoid, @Valid DeleteReasonDto deleteReasonDto) {
+        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoid(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
-        if (hardDelete) {
-            slabDtlRepository.deleteByTransactionPoid(transactionPoid);
-            chargeDtlRepository.deleteByTransactionPoid(transactionPoid);
-            tariffHdrRepository.delete(tariff);
-        } else {
-            tariff.setDeleted("Y");
-            tariff.setLastModifiedBy(userId);
-            tariff.setLastModifiedDate(LocalDateTime.now());
-            tariffHdrRepository.save(tariff);
-        }
+        documentDeleteService.deleteDocument(
+                transactionPoid,
+                "PDA_PORT_TARIFF_HDR",
+                "TRANSACTION_POID",
+                deleteReasonDto,
+                tariff.getTransactionDate()
+        );
     }
 
     @Override
-    public PdaPortTariffMasterResponse copyTariff(Long sourceTransactionPoid, CopyTariffRequest request, Long groupPoid, String userId) {
-        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
+    public PdaPortTariffMasterResponse copyTariff(Long sourceTransactionPoid, CopyTariffRequest request) {
 
-        PdaPortTariffHdr sourceTariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                        sourceTransactionPoid, groupPoidBD, "N")
+        PdaPortTariffHdr sourceTariff = tariffHdrRepository.findByTransactionPoid(sourceTransactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", sourceTransactionPoid));
 
         PdaPortTariffMasterRequest copyRequest = mapper.toRequest(sourceTariff);
         copyRequest.setPeriodFrom(request.getNewPeriodFrom());
         copyRequest.setPeriodTo(request.getNewPeriodTo());
 
-        return createTariff(copyRequest, groupPoid, sourceTariff.getCompanyPoid().longValue(), userId);
+        return createTariff(copyRequest);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ChargeDetailsResponse getChargeDetails(Long transactionPoid, Long groupPoid, boolean includeSlabs) {
-        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
+    public ChargeDetailsResponse getChargeDetails(Long transactionPoid, boolean includeSlabs) {
 
-        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                        transactionPoid, groupPoidBD, "N")
+        tariffHdrRepository.findByTransactionPoid(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
-        List<PdaPortTariffChargeDtl> chargeDetails = chargeDtlRepository.findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(transactionPoid);
+        List<PdaPortTariffChargeDtl> chargeDetails = chargeDtlRepository.findByTransactionPoid(transactionPoid);
 
         if (includeSlabs) {
             for (PdaPortTariffChargeDtl chargeDetail : chargeDetails) {
                 if (!entityManager.contains(chargeDetail)) {
-                    List<PdaPortTariffSlabDtl> slabDetails = slabDtlRepository.findByTransactionPoidAndChargeDetRowIdOrderByDetRowIdAsc(
-                            transactionPoid, chargeDetail.getId().getDetRowId());
+                    List<PdaPortTariffSlabDtl> slabDetails = slabDtlRepository.findByTransactionPoidAndChargeDetRowId(transactionPoid, chargeDetail.getId().getDetRowId());
                     chargeDetail.setSlabDetails(slabDetails);
                 }
             }
@@ -419,24 +197,22 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     @Override
-    public ChargeDetailsResponse bulkSaveChargeDetails(Long transactionPoid, ChargeDetailsRequest request, Long groupPoid, String userId) {
-        BigDecimal groupPoidBD = BigDecimal.valueOf(groupPoid);
+    public ChargeDetailsResponse bulkSaveChargeDetails(Long transactionPoid, ChargeDetailsRequest request) {
 
-        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoidAndGroupPoidAndDeleted(
-                        transactionPoid, groupPoidBD, "N")
+        PdaPortTariffHdr tariff = tariffHdrRepository.findByTransactionPoid(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {
-            updateChargeDetails(tariff, request.getChargeDetails(), userId);
+            updateChargeDetails(tariff, request.getChargeDetails());
         }
 
         entityManager.flush();
         entityManager.clear();
 
-        return getChargeDetails(transactionPoid, groupPoid, true);
+        return getChargeDetails(transactionPoid, true);
     }
 
-    private void updateChargeDetails(PdaPortTariffHdr tariffHdr, List<PdaPortTariffChargeDetailRequest> chargeDetails, String currentUser) {
+    private void updateChargeDetails(PdaPortTariffHdr tariffHdr, List<PdaPortTariffChargeDetailRequest> chargeDetails) {
         for (PdaPortTariffChargeDetailRequest chargeRequest : chargeDetails) {
             ActionType action = chargeRequest.getActionType();
 
@@ -445,27 +221,29 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
             }
 
             if (action == ActionType.isCreated) {
-                createChargeDetail(tariffHdr, chargeRequest, currentUser);
+                createChargeDetail(tariffHdr, chargeRequest);
             } else if (action == ActionType.isUpdated) {
                 PdaPortTariffChargeDtlId chargeId = new PdaPortTariffChargeDtlId();
                 chargeId.setTransactionPoid(tariffHdr.getTransactionPoid());
                 chargeId.setDetRowId(chargeRequest.getDetRowId());
 
                 chargeDtlRepository.findById(chargeId).ifPresent(existing -> {
-                    existing.setChargePoid(chargeRequest.getChargePoid().longValue());
-                    existing.setRateTypePoid(chargeRequest.getRateTypePoid().longValue());
+                    PdaPortTariffChargeDtl oldCharge = new PdaPortTariffChargeDtl();
+                    BeanUtils.copyProperties(existing, oldCharge);
+                    existing.setChargePoid(chargeRequest.getChargePoid() != null ? chargeRequest.getChargePoid().longValue() : null);
+                    existing.setRateTypePoid(chargeRequest.getRateTypePoid() != null ? chargeRequest.getRateTypePoid().longValue() : null);
                     existing.setTariffSlab(chargeRequest.getTariffSlab());
                     existing.setFixRate(chargeRequest.getFixRate());
                     existing.setHarborCallType(chargeRequest.getHarborCallType());
                     existing.setIsEnabled(chargeRequest.getIsEnabled() != null ? chargeRequest.getIsEnabled() : "Y");
                     existing.setRemarks(chargeRequest.getRemarks());
                     existing.setSeqNo(chargeRequest.getSeqNo());
-                    existing.setLastModifiedBy(currentUser);
-                    existing.setLastModifiedDate(LocalDateTime.now());
-                    chargeDtlRepository.save(existing);
+                    existing = chargeDtlRepository.save(existing);
+                    String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getDetRowId());
+                    loggingService.createLog(oldCharge, existing, PdaPortTariffChargeDtl.class, UserContext.getDocumentId(), tariffHdr.getTransactionPoid().toString(), logDetail);
 
                     if (chargeRequest.getSlabDetails() != null) {
-                        updateSlabDetails(tariffHdr.getTransactionPoid(), chargeRequest.getDetRowId(), chargeRequest.getSlabDetails(), currentUser);
+                        updateSlabDetails(tariffHdr.getTransactionPoid(), chargeRequest.getDetRowId(), chargeRequest.getSlabDetails());
                     }
                 });
             } else if (action == ActionType.isDeleted) {
@@ -474,11 +252,13 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 chargeId.setDetRowId(chargeRequest.getDetRowId());
                 slabDtlRepository.deleteByTransactionPoidAndChargeDetRowId(tariffHdr.getTransactionPoid(), chargeRequest.getDetRowId());
                 chargeDtlRepository.deleteById(chargeId);
+                String logDetail = String.format("Row Deleted on [PDA Port Tariff Master Charge Details] with detRowId: %s", chargeRequest.getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), tariffHdr.getTransactionPoid().toString(), logDetail);
             }
         }
     }
 
-    private void updateSlabDetails(Long transactionPoid, Long chargeDetRowId, List<PdaPortTariffSlabDetailRequest> slabDetails, String currentUser) {
+    private void updateSlabDetails(Long transactionPoid, Long chargeDetRowId, List<PdaPortTariffSlabDetailRequest> slabDetails) {
         for (PdaPortTariffSlabDetailRequest slabRequest : slabDetails) {
             ActionType action = slabRequest.getActionType();
 
@@ -487,7 +267,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
             }
 
             if (action == ActionType.isCreated) {
-                createSlabDetail(transactionPoid, chargeDetRowId, slabRequest, currentUser);
+                createSlabDetail(transactionPoid, chargeDetRowId, slabRequest);
             } else if (action == ActionType.isUpdated) {
                 PdaPortTariffSlabDtlId slabId = new PdaPortTariffSlabDtlId();
                 slabId.setTransactionPoid(transactionPoid);
@@ -495,6 +275,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 slabId.setDetRowId(slabRequest.getDetRowId());
 
                 slabDtlRepository.findById(slabId).ifPresent(existing -> {
+                    PdaPortTariffSlabDtl oldSlab = new PdaPortTariffSlabDtl();
+                    BeanUtils.copyProperties(existing, oldSlab);
                     existing.setQuantityFrom(slabRequest.getQuantityFrom());
                     existing.setQuantityTo(slabRequest.getQuantityTo());
                     existing.setDays1(slabRequest.getDays1());
@@ -507,9 +289,9 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                     existing.setRate4(slabRequest.getRate4());
                     existing.setCallByPort(slabRequest.getCallByPort());
                     existing.setRemarks(slabRequest.getRemarks());
-                    existing.setLastModifiedBy(currentUser);
-                    existing.setLastModifiedDate(LocalDateTime.now());
-                    slabDtlRepository.save(existing);
+                    existing = slabDtlRepository.save(existing);
+                    String logDetail = String.format("KeyId = TRANSACTION_POID %s: CHARGE_DET_ROW_ID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getChargeDetRowId(), existing.getId().getDetRowId());
+                    loggingService.createLog(oldSlab, existing, PdaPortTariffSlabDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
                 });
             } else if (action == ActionType.isDeleted) {
                 PdaPortTariffSlabDtlId slabId = new PdaPortTariffSlabDtlId();
@@ -517,16 +299,22 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 slabId.setChargeDetRowId(chargeDetRowId);
                 slabId.setDetRowId(slabRequest.getDetRowId());
                 slabDtlRepository.deleteById(slabId);
+                String logDetail = String.format("Row Deleted on [PDA Port Tariff Master Slab Details] with detRowId: %s", slabId.getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), slabId.getTransactionPoid().toString(), logDetail);
             }
         }
     }
 
-    private void createChargeDetail(PdaPortTariffHdr tariffHdr, PdaPortTariffChargeDetailRequest chargeRequest, String currentUser) {
-        if (!shipChargeMasterRepository.existsByChargePoidAndActiveIgnoreCaseAndDeletedIgnoreCase(chargeRequest.getChargePoid(), "Y", "N")) {
-            throw new ResourceNotFoundException("Charge Master", "Charge Poid", chargeRequest.getChargePoid());
+    private void createChargeDetail(PdaPortTariffHdr tariffHdr, PdaPortTariffChargeDetailRequest chargeRequest) {
+        if (chargeRequest.getChargePoid() != null) {
+            if (!shipChargeMasterRepository.existsByChargePoid(chargeRequest.getChargePoid())) {
+                throw new ResourceNotFoundException("Charge Master", "Charge Poid", chargeRequest.getChargePoid());
+            }
         }
-        if (!pdaRateTypeMasterRepository.existsByRateTypePoidAndDeletedIgnoreCase(chargeRequest.getRateTypePoid(), "N")) {
-            throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
+        if (chargeRequest.getRateTypePoid() != null) {
+            if (!pdaRateTypeMasterRepository.existsByRateTypePoid(chargeRequest.getRateTypePoid())) {
+                throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
+            }
         }
 
         PdaPortTariffChargeDtlId chargeId = new PdaPortTariffChargeDtlId();
@@ -535,29 +323,27 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         PdaPortTariffChargeDtl chargeDtl = new PdaPortTariffChargeDtl();
         chargeDtl.setId(chargeId);
         chargeDtl.setTariffHdr(tariffHdr);
-        chargeDtl.setChargePoid(chargeRequest.getChargePoid().longValue());
-        chargeDtl.setRateTypePoid(chargeRequest.getRateTypePoid().longValue());
+        chargeDtl.setChargePoid(chargeRequest.getChargePoid() != null ? chargeRequest.getChargePoid().longValue() : null);
+        chargeDtl.setRateTypePoid(chargeRequest.getRateTypePoid() != null ? chargeRequest.getRateTypePoid().longValue() : null);
         chargeDtl.setTariffSlab(chargeRequest.getTariffSlab());
         chargeDtl.setFixRate(chargeRequest.getFixRate());
         chargeDtl.setHarborCallType(chargeRequest.getHarborCallType());
         chargeDtl.setIsEnabled(chargeRequest.getIsEnabled() != null ? chargeRequest.getIsEnabled() : "Y");
         chargeDtl.setRemarks(chargeRequest.getRemarks());
         chargeDtl.setSeqNo(chargeRequest.getSeqNo());
-        chargeDtl.setCreatedBy(currentUser);
-        chargeDtl.setCreatedDate(LocalDateTime.now());
-        chargeDtl.setLastModifiedBy(currentUser);
-        chargeDtl.setLastModifiedDate(LocalDateTime.now());
 
         PdaPortTariffChargeDtl savedChargeDtl = chargeDtlRepository.save(chargeDtl);
 
         if (chargeRequest.getSlabDetails() != null && !chargeRequest.getSlabDetails().isEmpty()) {
             for (PdaPortTariffSlabDetailRequest slabRequest : chargeRequest.getSlabDetails()) {
-                createSlabDetail(tariffHdr.getTransactionPoid(), savedChargeDtl.getId().getDetRowId(), slabRequest, currentUser);
+                createSlabDetail(tariffHdr.getTransactionPoid(), savedChargeDtl.getId().getDetRowId(), slabRequest);
             }
         }
+        String logDetail = String.format("Row Created on [PDA Port Tariff Master Charge Details] with detRowId: %s", savedChargeDtl.getId().getDetRowId());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), tariffHdr.getTransactionPoid().toString(), logDetail);
     }
 
-    private void createSlabDetail(Long transactionPoid, Long chargeDetRowId, PdaPortTariffSlabDetailRequest slabRequest, String currentUser) {
+    private void createSlabDetail(Long transactionPoid, Long chargeDetRowId, PdaPortTariffSlabDetailRequest slabRequest) {
         PdaPortTariffSlabDtlId slabId = new PdaPortTariffSlabDtlId();
         slabId.setTransactionPoid(transactionPoid);
         slabId.setChargeDetRowId(chargeDetRowId);
@@ -576,23 +362,24 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         slabDtl.setRate4(slabRequest.getRate4());
         slabDtl.setCallByPort(slabRequest.getCallByPort());
         slabDtl.setRemarks(slabRequest.getRemarks());
-        slabDtl.setCreatedBy(currentUser);
-        slabDtl.setCreatedDate(LocalDateTime.now());
-        slabDtl.setLastModifiedBy(currentUser);
-        slabDtl.setLastModifiedDate(LocalDateTime.now());
 
-        slabDtlRepository.save(slabDtl);
+        PdaPortTariffSlabDtl savedSlabDetails = slabDtlRepository.save(slabDtl);
+        String logDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", savedSlabDetails.getId().getDetRowId());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), slabId.getTransactionPoid().toString(), logDetail);
     }
 
-    private void saveChargeDetails(PdaPortTariffHdr tariffHdr, List<PdaPortTariffChargeDetailRequest> chargeDetails, String currentUser) {
+    private void saveChargeDetails(PdaPortTariffHdr tariffHdr, List<PdaPortTariffChargeDetailRequest> chargeDetails) {
         int seqNo = 1;
         for (PdaPortTariffChargeDetailRequest chargeRequest : chargeDetails) {
-
-            if (!shipChargeMasterRepository.existsByChargePoidAndActiveIgnoreCaseAndDeletedIgnoreCase(chargeRequest.getChargePoid(), "Y", "N")) {
-                throw new ResourceNotFoundException("Charge Master", "Charge Poid", chargeRequest.getChargePoid());
+            if (chargeRequest.getChargePoid() != null) {
+                if (!shipChargeMasterRepository.existsByChargePoid(chargeRequest.getChargePoid())) {
+                    throw new ResourceNotFoundException("Charge Master", "Charge Poid", chargeRequest.getChargePoid());
+                }
             }
-            if (!pdaRateTypeMasterRepository.existsByRateTypePoidAndDeletedIgnoreCase(chargeRequest.getRateTypePoid(), "N")) {
-                throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
+            if (chargeRequest.getRateTypePoid() != null) {
+                if (!pdaRateTypeMasterRepository.existsByRateTypePoid(chargeRequest.getRateTypePoid())) {
+                    throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
+                }
             }
 
             if (chargeRequest.getSeqNo() == null) {
@@ -607,23 +394,22 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
             PdaPortTariffChargeDtl chargeDtl = new PdaPortTariffChargeDtl();
             chargeDtl.setId(chargeId);
             chargeDtl.setTariffHdr(tariffHdr);
-            chargeDtl.setChargePoid(chargeRequest.getChargePoid().longValue());
+            chargeDtl.setChargePoid(chargeRequest.getChargePoid() != null ? chargeRequest.getChargePoid().longValue() : null);
 //            chargeDtl(chargeRequest.getChargePoid());
 
 
-            chargeDtl.setRateTypePoid(chargeRequest.getRateTypePoid().longValue());
+            chargeDtl.setRateTypePoid(chargeRequest.getRateTypePoid() != null ? chargeRequest.getRateTypePoid().longValue() : null);
             chargeDtl.setTariffSlab(chargeRequest.getTariffSlab());
             chargeDtl.setFixRate(chargeRequest.getFixRate());
             chargeDtl.setHarborCallType(chargeRequest.getHarborCallType());
             chargeDtl.setIsEnabled(chargeRequest.getIsEnabled() != null ? chargeRequest.getIsEnabled() : "Y");
             chargeDtl.setRemarks(chargeRequest.getRemarks());
             chargeDtl.setSeqNo(chargeRequest.getSeqNo());
-            chargeDtl.setCreatedBy(currentUser);
-            chargeDtl.setCreatedDate(LocalDateTime.now());
-            chargeDtl.setLastModifiedBy(currentUser);
-            chargeDtl.setLastModifiedDate(LocalDateTime.now());
 
             PdaPortTariffChargeDtl savedChargeDtl = chargeDtlRepository.save(chargeDtl);
+
+            String logDetail = String.format("Row Created on [PDA Port Tariff Master Charge Details] with detRowId: %s", savedChargeDtl.getId().getDetRowId());
+            loggingService.createLogSummaryEntry(UserContext.getDocumentId(), tariffHdr.getTransactionPoid().toString(), logDetail);
 
             if (chargeRequest.getSlabDetails() != null && !chargeRequest.getSlabDetails().isEmpty()) {
                 for (PdaPortTariffSlabDetailRequest slabRequest : chargeRequest.getSlabDetails()) {
@@ -646,35 +432,32 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                     slabDtl.setRate4(slabRequest.getRate4());
                     slabDtl.setCallByPort(slabRequest.getCallByPort());
                     slabDtl.setRemarks(slabRequest.getRemarks());
-                    slabDtl.setCreatedBy(currentUser);
-                    slabDtl.setCreatedDate(LocalDateTime.now());
-                    slabDtl.setLastModifiedBy(currentUser);
-                    slabDtl.setLastModifiedDate(LocalDateTime.now());
 
-                    slabDtlRepository.save(slabDtl);
+                    PdaPortTariffSlabDtl savedSlabDtl = slabDtlRepository.saveAndFlush(slabDtl);
+
+                    String slabLogDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", savedSlabDtl.getId().getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), slabId.getTransactionPoid().toString(), slabLogDetail);
                 }
             }
         }
     }
 
     private void validateCreateRequest(PdaPortTariffMasterRequest request, Long groupPoid) {
-        if (request.getPort() == null || request.getPort().trim().isEmpty()) {
-            throw new ValidationException("Port cannot be empty");
-        }
-        if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(request.getPort())), BigDecimal.valueOf(groupPoid))) {
-            throw new ResourceNotFoundException("Port", "Port Poid", request.getPort());
+        if (StringUtils.isNotBlank(request.getPort())) {
+            if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(request.getPort())), BigDecimal.valueOf(groupPoid))) {
+                throw new ResourceNotFoundException("Port", "Port Poid", request.getPort());
+            }
         }
         for (String vesselPoid : request.getVesselTypes()) {
-            if (!shipVesselTypeMasterRepository.existsByVesselTypePoidAndGroupPoid(BigDecimal.valueOf(Long.parseLong(vesselPoid)), BigDecimal.valueOf(groupPoid))) {
-                throw new ResourceNotFoundException("Vessel", "Vessel Poid", vesselPoid);
+            if (StringUtils.isNotBlank(vesselPoid)) {
+                if (!shipVesselTypeMasterRepository.existsByVesselTypePoidAndGroupPoid(BigDecimal.valueOf(Long.parseLong(vesselPoid)), BigDecimal.valueOf(groupPoid))) {
+                    throw new ResourceNotFoundException("Vessel", "Vessel Poid", vesselPoid);
+                }
             }
         }
     }
 
     private void validateUpdateRequest(PdaPortTariffMasterRequest request, Long groupPoid) {
-        if (request.getPort() == null || request.getPort().trim().isEmpty()) {
-            throw new ValidationException("Port cannot be empty");
-        }
         if (!shipPortMasterRepository.existsByIdPortPoidAndIdGroupPoid(BigDecimal.valueOf(Long.parseLong(request.getPort())), BigDecimal.valueOf(groupPoid))) {
             throw new ResourceNotFoundException("Port", "Port Poid", request.getPort());
         }

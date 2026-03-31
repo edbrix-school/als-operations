@@ -1,8 +1,12 @@
 package com.asg.operations.crew.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.crew.dto.*;
 import com.asg.operations.crew.service.ContractCrewService;
@@ -13,14 +17,19 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
+import java.time.LocalDate;
 import java.util.Map;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 /**
  * REST Controller for Contract Crew Master operations
@@ -28,14 +37,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/v1/contract-crew-masters")
 @Tag(name = "Contract Crew Master", description = "APIs for managing Contract Crew Master records and visa details")
+@RequiredArgsConstructor
 public class ContractCrewController {
 
     private final ContractCrewService crewService;
-
-    @Autowired
-    public ContractCrewController(ContractCrewService crewService) {
-        this.crewService = crewService;
-    }
+    private final LoggingService loggingService;
 
     @Operation(summary = "Get all Crew", description = "Returns paginated list of Crew with optional filters. Supports pagination with page and size parameters.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Crew list fetched successfully", content = @Content(schema = @Schema(implementation = Page.class)))
@@ -43,37 +49,17 @@ public class ContractCrewController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     public ResponseEntity<?> getCrewList(
-            @RequestBody(required = false) GetAllCrewFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort) {
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo) {
 
-        // If filterRequest is null, create a default one
-        if (filterRequest == null) {
-            filterRequest = new GetAllCrewFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+        try {
+            Map<String, Object> crewPage = crewService.getAllCrewWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            return success("Crew list fetched successfully", crewPage);
+        } catch (Exception ex) {
+            return internalServerError("Unable to fetch crew list: " + ex.getMessage());
         }
-
-        org.springframework.data.domain.Page<ContractCrewListResponse> crewPage = crewService
-                .getAllCrewWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
-
-        // Create displayFields
-        Map<String, String> displayFields = new HashMap<>();
-        displayFields.put("CREW_NAME", "text");
-
-        // Create paginated response with new structure
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", crewPage.getContent());
-        response.put("pageNumber", crewPage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", crewPage.getSize());
-        response.put("totalElements", crewPage.getTotalElements());
-        response.put("totalPages", crewPage.getTotalPages());
-        response.put("last", crewPage.isLast());
-
-        return ApiResponse.success("Crew list fetched successfully", response);
     }
 
     /**
@@ -118,6 +104,7 @@ public class ContractCrewController {
             @Parameter(description = "Primary key of the crew master", required = true)
             @PathVariable Long crewPoid) {
         ContractCrewResponse response = crewService.getCrewById(crewPoid);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), crewPoid.toString());
         return ApiResponse.success("Crew retrieved successfully", response);
     }
 
@@ -281,9 +268,9 @@ public class ContractCrewController {
             @Parameter(description = "Primary key of the crew master to delete", required = true)
             @PathVariable Long crewPoid,
             @Parameter(description = "If true, performs hard delete (physical deletion). Default is false (soft delete).")
-            @RequestParam(defaultValue = "false") boolean hardDelete
+            @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        crewService.deleteCrew(UserContext.getCompanyPoid(), crewPoid);
+        crewService.deleteCrew(UserContext.getCompanyPoid(), crewPoid, deleteReasonDto);
         return ApiResponse.success("Crew master deleted successfully");
     }
 

@@ -1,8 +1,12 @@
 package com.asg.operations.portcallreport.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.portcallreport.dto.GetAllPortCallReportFilterRequest;
 import com.asg.operations.portcallreport.dto.PortActivityResponseDto;
@@ -17,13 +21,19 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 /**
  * Controller for managing port call reports.
@@ -37,15 +47,8 @@ import java.util.Map;
 public class PortCallReportController {
 
     private final PortCallReportService portCallReportService;
+    private final LoggingService loggingService;
 
-    /**
-     * Retrieves paginated list of port call reports.
-     *
-     * @param page   page number (0-based)
-     * @param size   page size
-     * @param sort   sort field and direction
-     * @return paginated list of port call reports
-     */
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     @Operation(
@@ -54,35 +57,20 @@ public class PortCallReportController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> getReportList(
-            @RequestBody(required = false) GetAllPortCallReportFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo
     ) {
-        if (filterRequest == null) {
-            filterRequest = new GetAllPortCallReportFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+
+        try {
+            Map<String, Object> portActivityPage = portCallReportService.getAllPortCallReportsWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            return success("Port call retrieved successfully", portActivityPage);
+        }
+        catch (Exception ex){
+            return internalServerError("Unable to fetch Reports list: " + ex.getMessage());
         }
 
-        org.springframework.data.domain.Page<PortCallReportListResponse> reportPage = portCallReportService
-                .getAllPortCallReportsWithFilters(UserContext.getGroupPoid(), filterRequest, page, size, sort);
-
-        Map<String, String> displayFields = new LinkedHashMap<>();
-        displayFields.put("PORT_CALL_REPORT_ID", "text");
-        displayFields.put("PORT_CALL_REPORT_NAME", "text");
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", reportPage.getContent());
-        response.put("pageNumber", reportPage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", reportPage.getSize());
-        response.put("totalElements", reportPage.getTotalElements());
-        response.put("totalPages", reportPage.getTotalPages());
-        response.put("last", reportPage.isLast());
-
-        return ApiResponse.success("Reports retrieved successfully", response);
     }
 
     /**
@@ -101,10 +89,11 @@ public class PortCallReportController {
     public ResponseEntity<?> getReportById(@Parameter(description = "Report ID") @PathVariable Long id) {
 
         PortCallReportResponseDto report = portCallReportService.getReportById(id);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), id.toString());
         if (report == null) {
-            return ApiResponse.notFound("Report not found");
+            return ApiResponse.notFound("Port call not found");
         }
-        return ApiResponse.success("Report retrieved successfully", report);
+        return ApiResponse.success("Port call retrieved successfully", report);
     }
 
     /**
@@ -123,7 +112,7 @@ public class PortCallReportController {
     public ResponseEntity<?> createReport(
             @Valid @RequestBody PortCallReportDto dto) {
         PortCallReportResponseDto created = portCallReportService.createReport(dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
-        return ApiResponse.success("Report created successfully", created);
+        return ApiResponse.success("Port call created successfully", created);
     }
 
     /**
@@ -144,7 +133,7 @@ public class PortCallReportController {
             @Parameter(description = "Report ID") @PathVariable Long id,
             @Valid @RequestBody PortCallReportDto dto) {
         PortCallReportResponseDto updated = portCallReportService.updateReport(id, dto, UserContext.getUserPoid(), UserContext.getGroupPoid());
-        return ApiResponse.success("Report updated successfully", updated);
+        return ApiResponse.success("Port call updated successfully", updated);
     }
 
     /**
@@ -160,9 +149,9 @@ public class PortCallReportController {
             description = "Delete a port call report",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<?> deleteReport(@Parameter(description = "Report ID") @PathVariable Long id) {
-        portCallReportService.deleteReport(id);
-        return ApiResponse.success("Report deleted successfully");
+    public ResponseEntity<?> deleteReport(@Parameter(description = "Report ID") @PathVariable Long id,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
+        portCallReportService.deleteReport(id,deleteReasonDto);
+        return ApiResponse.success("Port call deleted successfully");
     }
 
     /**

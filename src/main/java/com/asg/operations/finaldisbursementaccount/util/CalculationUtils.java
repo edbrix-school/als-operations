@@ -21,9 +21,7 @@ public class CalculationUtils {
         BigDecimal currRate = zero(entity.getCurrencyRate());
 
         BigDecimal base = qty.multiply(days).multiply(rate);
-        BigDecimal amount = currRate.compareTo(BigDecimal.ZERO) > 0
-                ? base.multiply(currRate)
-                : base;
+        BigDecimal amount = currRate.compareTo(BigDecimal.ZERO) > 0 ? base.multiply(currRate) : base;
 
         entity.setAmount(amount);
 
@@ -35,28 +33,22 @@ public class CalculationUtils {
         }
     }
 
-    public static void computeProfitLossRuntime(List<FdaChargeDto> charges, FdaHeaderDto headerDto) {
 
+    public static void computeProfitLossRuntime(List<FdaChargeDto> charges, FdaHeaderDto headerDto) {
         BigDecimal profitTotal = BigDecimal.ZERO;
-        BigDecimal lossTotal = BigDecimal.ZERO;
+        BigDecimal lossTotal = BigDecimal.ZERO;  // negative or zero
+        BigDecimal totalFdaAmount = BigDecimal.ZERO;
         BigDecimal totalCost = BigDecimal.ZERO;
 
         for (FdaChargeDto d : charges) {
             BigDecimal fdaAmt = zero(d.getFdaAmount() != null ? d.getFdaAmount() : d.getAmount());
             BigDecimal costAmt = zero(d.getCostAmount());
-            BigDecimal dnAmt = zero(d.getDnAmount());
-            BigDecimal cnAmt = zero(d.getCnAmount());
 
-            BigDecimal pl = fdaAmt
-                    .subtract(costAmt)
-                    .subtract(dnAmt)
-                    .add(cnAmt);
-
+            BigDecimal pl = fdaAmt.subtract(costAmt);
             d.setProfitLoss(pl);
 
             if (costAmt.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal per = pl
-                        .multiply(BigDecimal.valueOf(100))
+                BigDecimal per = pl.multiply(BigDecimal.valueOf(100))
                         .divide(costAmt, 2, RoundingMode.HALF_UP);
                 d.setProfitLossPer(per);
             } else {
@@ -67,8 +59,9 @@ public class CalculationUtils {
                 if (pl.compareTo(BigDecimal.ZERO) > 0) {
                     profitTotal = profitTotal.add(pl);
                 } else if (pl.compareTo(BigDecimal.ZERO) < 0) {
-                    lossTotal = lossTotal.add(pl.abs());
+                    lossTotal = lossTotal.add(pl);  // keep negative
                 }
+                totalFdaAmount = totalFdaAmount.add(fdaAmt);
                 totalCost = totalCost.add(costAmt);
             }
         }
@@ -77,26 +70,20 @@ public class CalculationUtils {
             headerDto.setProfitTotal(profitTotal);
             headerDto.setLossTotal(lossTotal);
 
-            BigDecimal headerPl = profitTotal.subtract(lossTotal);
+            BigDecimal headerPl = profitTotal.add(lossTotal);  // lossTotal already negative
             headerDto.setProfitLossAmount(headerPl);
+            // Keep GET response consistent with charges: legacy total amount = sum(FdaAmount)
+            headerDto.setTotalAmount(totalFdaAmount);
 
-            if (totalCost.compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal per = headerPl
-                        .multiply(BigDecimal.valueOf(100))
-                        .divide(totalCost, 2, RoundingMode.HALF_UP);
-                headerDto.setProfitLossPer(per.toPlainString());
+            // Legacy: totalProfitLossPercentage = (ProfitLossAmount / FdaAmount rounded to 2) * 100, plus '%' suffix
+            // If FdaAmount == 0 => "0%"
+            if (totalFdaAmount.compareTo(BigDecimal.ZERO) == 0) {
+                headerDto.setProfitLossPer("0%");
             } else {
-                headerDto.setProfitLossPer("0");
+                BigDecimal ratio = headerPl.divide(totalFdaAmount, 2, RoundingMode.HALF_UP);
+                BigDecimal per = ratio.multiply(BigDecimal.valueOf(100));
+                headerDto.setProfitLossPer(per.toString() + "%");
             }
         }
     }
-
-    public static String getReportFileName(String reportType) {
-        return switch (reportType.toLowerCase()) {
-            case "usd" -> "PDA/FDAreportUSD.jrxml";
-            case "default", "standard" -> "PDA/FDAreport1.jrxml";
-            default -> "PDA/FDAreport1.jrxml";
-        };
-    }
-
 }

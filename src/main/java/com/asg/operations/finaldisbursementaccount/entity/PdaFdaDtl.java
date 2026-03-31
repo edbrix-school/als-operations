@@ -1,18 +1,18 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.entity.BaseEntity;
 import com.asg.operations.finaldisbursementaccount.key.PdaFdaDtlId;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "PDA_FDA_DTL")
-public class PdaFdaDtl {
+public class PdaFdaDtl extends BaseEntity {
 
     @EmbeddedId
     private PdaFdaDtlId id;
@@ -49,18 +49,6 @@ public class PdaFdaDtl {
 
     @Column(name = "REMARKS", length = 1000)
     private String remarks;
-
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
 
     @Column(name = "REMARK_QTY_DAYS", length = 100)
     private String remarkQtyDays;

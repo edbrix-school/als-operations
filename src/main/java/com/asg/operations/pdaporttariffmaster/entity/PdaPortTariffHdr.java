@@ -1,9 +1,8 @@
 package com.asg.operations.pdaporttariffmaster.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 import lombok.*;
 import jakarta.validation.constraints.NotNull;
@@ -19,24 +18,27 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Table(name = "PDA_PORT_TARIFF_HDR")
-public class PdaPortTariffHdr {
+public class PdaPortTariffHdr extends BaseEntity {
 
+    @AuditIgnore
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pda_port_tariff_hdr_seq")
-    @SequenceGenerator(name = "pda_port_tariff_hdr_seq", sequenceName = "PDA_PORT_TARIFF_HDR_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
 
     @Column(name = "TRANSACTION_DATE")
     private LocalDate transactionDate;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID", nullable = false)
     @NotNull
     private Long groupPoid;
 
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
+    @AuditIgnore
     @Column(name = "DOC_REF", unique = true, length = 25)
     @Size(max = 25)
     private String docRef;
@@ -61,25 +63,11 @@ public class PdaPortTariffHdr {
     @Size(max = 500)
     private String remarks;
 
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     @Size(max = 1)
     private String deleted;
 
-    @Column(name = "CREATED_BY", length = 20)
-    @Size(max = 20)
-    private String createdBy;
-
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    @Size(max = 20)
-    private String lastModifiedBy;
-
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
     @OneToMany(mappedBy = "tariffHdr", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PdaPortTariffChargeDtl> chargeDetails;
-
 }

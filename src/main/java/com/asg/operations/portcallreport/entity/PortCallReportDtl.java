@@ -1,27 +1,26 @@
 package com.asg.operations.portcallreport.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import com.asg.operations.portactivitiesmaster.entity.PortActivityMaster;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
+import lombok.*;
 
 @Entity
 @Table(name = "OPS_PORT_CALL_REPORT_DTL")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @IdClass(PortCallReportDtlId.class)
-public class PortCallReportDtl {
+public class PortCallReportDtl extends BaseEntity {
 
     @Id
     @Column(name = "PORT_CALL_REPORT_POID")
     private Long portCallReportPoid;
 
+    @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID")
     private Long detRowId;
@@ -36,30 +35,10 @@ public class PortCallReportDtl {
     @Column(name = "ACTIVITY_MANDATORY", length = 1)
     private String activityMandatory;
 
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
     @PrePersist
     protected void onCreate() {
-        if (createdDate == null) {
-            createdDate = LocalDateTime.now();
-        }
         if (activityMandatory == null) {
             activityMandatory = "N";
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        lastModifiedDate = LocalDateTime.now();
     }
 }

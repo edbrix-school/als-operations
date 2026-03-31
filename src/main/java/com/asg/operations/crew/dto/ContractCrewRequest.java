@@ -25,6 +25,7 @@ public class ContractCrewRequest {
     @NotNull(message = "Nationality is mandatory")
     private Long crewNationalityPoid;
 
+    @NotBlank(message = "CDC number is required")
     @Size(max = 50, message = "CDC number must not exceed 50 characters")
     private String crewCdcNumber;
 

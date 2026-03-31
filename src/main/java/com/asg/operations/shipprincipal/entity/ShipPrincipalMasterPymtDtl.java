@@ -1,21 +1,23 @@
 package com.asg.operations.shipprincipal.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "SHIP_PRINCIPAL_MASTER_PYMT_DTL")
 @IdClass(ShipPrincipalMasterDtlId.class)
-public class ShipPrincipalMasterPymtDtl {
+public class ShipPrincipalMasterPymtDtl extends BaseEntity {
+
     @Id
     @Column(name = "PRINCIPAL_POID", nullable = false)
     private Long principalPoid;
 
+    @AuditIgnore
     @Id
     @Column(name = "DET_ROW_ID", nullable = false)
     private Long detRowId;
@@ -28,18 +30,6 @@ public class ShipPrincipalMasterPymtDtl {
 
     @Column(name = "ACCOUNT_NUMBER", length = 50)
     private String accountNumber;
-
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
 
     @Column(name = "REMARKS", length = 250)
     private String remarks;

@@ -1,9 +1,11 @@
 package com.asg.operations.pdaentryform.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -30,6 +33,9 @@ class PdaEntryControllerTest {
     @Mock
     private PdaEntryService pdaEntryService;
 
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
     @InjectMocks
     private PdaEntryController pdaEntryController;
 
@@ -43,8 +49,11 @@ class PdaEntryControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(pdaEntryController).build();
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        mockMvc = MockMvcBuilders.standaloneSetup(pdaEntryController)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
         groupPoid = 1L;
         companyPoid = 100L;
         userId = "USER123";
@@ -57,41 +66,6 @@ class PdaEntryControllerTest {
         mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(companyPoid);
         mockedUserContext.when(UserContext::getUserId).thenReturn(userId);
         mockedUserContext.when(UserContext::getUserPoid).thenReturn(userPoid);
-    }
-
-    @Test
-    void testGetPdaEntryList_Success() throws Exception {
-        GetAllPdaFilterRequest filterRequest = new GetAllPdaFilterRequest();
-        filterRequest.setIsDeleted("N");
-        filterRequest.setOperator("AND");
-        filterRequest.setFilters(new ArrayList<>());
-
-        PdaEntryListResponse listResponse = new PdaEntryListResponse();
-        listResponse.setTransactionPoid(transactionPoid);
-        listResponse.setDocRef("DOC123");
-
-        org.springframework.data.domain.Page<PdaEntryListResponse> page = 
-            new org.springframework.data.domain.PageImpl<>(List.of(listResponse));
-
-        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
-            mockUserContext(mockedUserContext);
-
-            when(pdaEntryService.getAllPdaWithFilters(
-                    eq(groupPoid), eq(companyPoid), any(GetAllPdaFilterRequest.class),
-                    eq(0), eq(20), eq(null)))
-                    .thenReturn(page);
-
-            mockMvc.perform(post("/v1/pda-entries/search")
-                    .param("page", "0")
-                    .param("size", "20")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(filterRequest)))
-                    .andExpect(status().isOk());
-
-            verify(pdaEntryService, times(1)).getAllPdaWithFilters(
-                    eq(groupPoid), eq(companyPoid), any(GetAllPdaFilterRequest.class),
-                    eq(0), eq(20), eq(null));
-        }
     }
 
     @Test
@@ -169,13 +143,13 @@ class PdaEntryControllerTest {
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
 
-            doNothing().when(pdaEntryService).deletePdaEntry(transactionPoid, groupPoid, companyPoid, userPoid);
+            doNothing().when(pdaEntryService).deletePdaEntry(eq(transactionPoid), eq(groupPoid), eq(companyPoid), eq(userPoid), any());
 
             mockMvc.perform(delete("/v1/pda-entries/{transactionPoid}", transactionPoid)
                     .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
-            verify(pdaEntryService, times(1)).deletePdaEntry(transactionPoid, groupPoid, companyPoid, userPoid);
+            verify(pdaEntryService, times(1)).deletePdaEntry(eq(transactionPoid), eq(groupPoid), eq(companyPoid), eq(userPoid), any());
         }
     }
 
@@ -608,14 +582,14 @@ class PdaEntryControllerTest {
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
 
-            when(pdaEntryService.createFda(transactionPoid, groupPoid, companyPoid, userPoid))
+            when(pdaEntryService.createFdaFromPda(groupPoid, companyPoid, userPoid, transactionPoid.toString()))
                     .thenReturn(fdaResult);
 
             mockMvc.perform(post("/v1/pda-entries/{transactionPoid}/create-fda", transactionPoid)
                     .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk());
 
-            verify(pdaEntryService, times(1)).createFda(transactionPoid, groupPoid, companyPoid, userPoid);
+            verify(pdaEntryService, times(1)).createFdaFromPda(groupPoid, companyPoid, userPoid, transactionPoid.toString());
         }
     }
 }

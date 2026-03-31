@@ -12,9 +12,9 @@ import java.util.List;
 
 @Repository
 public interface PdaPortTariffChargeDtlRepository extends JpaRepository<PdaPortTariffChargeDtl, PdaPortTariffChargeDtlId> {
-    
-    @Query("SELECT c FROM PdaPortTariffChargeDtl c WHERE c.id.transactionPoid = :transactionPoid ORDER BY c.seqNo ASC, c.id.detRowId ASC")
-    List<PdaPortTariffChargeDtl> findByTransactionPoidOrderBySeqNoAscDetRowIdAsc(@Param("transactionPoid") Long transactionPoid);
+
+    @Query("SELECT c FROM PdaPortTariffChargeDtl c WHERE c.id.transactionPoid = :transactionPoid")
+    List<PdaPortTariffChargeDtl> findByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
 
     @Modifying
     @Query("DELETE FROM PdaPortTariffChargeDtl c WHERE c.id.transactionPoid = :transactionPoid")

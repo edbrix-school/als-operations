@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,8 +44,8 @@ public class PdaRateTypeMapper {
         response.setActive(entity.getActive());
         response.setCreatedBy(entity.getCreatedBy());
         response.setCreatedDate(entity.getCreatedDate());
-        response.setModifiedBy(entity.getLastmodifiedBy());
-        response.setModifiedDate(entity.getLastmodifiedDate());
+        response.setModifiedBy(entity.getLastModifiedBy());
+        response.setModifiedDate(entity.getLastModifiedDate());
         response.setGroupPoid(entity.getGroupPoid());
         response.setGroupDet(lovService.getLovItemByPoid(entity.getGroupPoid(), "GROUP", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
 
@@ -88,11 +87,6 @@ public class PdaRateTypeMapper {
         entity.setActive(activeValue.equals("true") || activeValue.equals("Y") ? "Y" : "N");
         entity.setDeleted("N");
 
-        entity.setCreatedBy(userId);
-        entity.setCreatedDate(LocalDateTime.now());
-        entity.setLastmodifiedBy(userId);
-        entity.setLastmodifiedDate(LocalDateTime.now());
-
         entity.setGroupPoid(Long.valueOf(String.valueOf(groupPoid)));
 
         return entity;
@@ -106,6 +100,9 @@ public class PdaRateTypeMapper {
             return;
         }
 
+        if (request.getRateTypeCode() != null) {
+            entity.setRateTypeCode(request.getRateTypeCode().trim().toUpperCase());
+        }
         if (request.getRateTypeName() != null) {
             entity.setRateTypeName(request.getRateTypeName().trim());
         }
@@ -125,9 +122,6 @@ public class PdaRateTypeMapper {
         if (request.getActive() != null) {
             entity.setActive(request.getActive());
         }
-
-        entity.setLastmodifiedBy(userId);
-        entity.setLastmodifiedDate(LocalDateTime.now());
     }
 
     /**

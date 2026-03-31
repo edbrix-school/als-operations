@@ -5,6 +5,7 @@ import com.asg.operations.common.PageResponse;
 import com.asg.operations.finaldisbursementaccount.dto.*;
 import com.asg.operations.finaldisbursementaccount.service.FdaService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +15,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -32,6 +34,9 @@ class FdaControllerTest {
     @Mock
     private FdaService fdaService;
 
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
     @InjectMocks
     private FdaController fdaController;
 
@@ -40,34 +45,12 @@ class FdaControllerTest {
 
     @BeforeEach
     void setUp() {
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
         mockMvc = MockMvcBuilders.standaloneSetup(fdaController)
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
-        objectMapper = new ObjectMapper();
-    }
-
-    @Test
-    void getFdaList_ShouldReturnPageResponse() throws Exception {
-        org.springframework.data.domain.Page<FdaListResponse> page =
-            new org.springframework.data.domain.PageImpl<>(java.util.List.of(new FdaListResponse()));
-
-        try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
-            mockedUserContext.when(UserContext::getGroupPoid).thenReturn(1L);
-            mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
-
-            when(fdaService.getAllFdaWithFilters(eq(1L), eq(100L), any(GetAllFdaFilterRequest.class), eq(0), eq(20), isNull()))
-                    .thenReturn(page);
-
-            String filterJson = "{\"isDeleted\":\"N\",\"operator\":\"AND\",\"filters\":[]}";
-
-            mockMvc.perform(post("/v1/fdas/search")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(filterJson)
-                            .param("page", "0")
-                            .param("size", "20"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.result.data.totalElements").value(1));
-        }
     }
 
     @Test
@@ -89,10 +72,11 @@ class FdaControllerTest {
 
     @Test
     void createFda_ShouldCreateAndReturnFda() throws Exception {
-        FdaHeaderDto requestDto = new FdaHeaderDto();
+        CreateFdaHeaderRequest requestDto = new CreateFdaHeaderRequest();
+        requestDto.setTransactionDate(java.time.LocalDate.now());
         requestDto.setPrincipalPoid(1L);
         requestDto.setSalesmanPoid(1L);
-        requestDto.setPortPoid(1L);
+        requestDto.setNominatedPartyPoid(1L);
         requestDto.setGrt(BigDecimal.valueOf(1000));
 
         FdaHeaderDto responseDto = new FdaHeaderDto();
@@ -103,7 +87,7 @@ class FdaControllerTest {
             mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
             mockedUserContext.when(UserContext::getUserId).thenReturn("user1");
 
-            when(fdaService.createFdaHeader(any(FdaHeaderDto.class), eq(1L), eq(100L), eq("user1")))
+            when(fdaService.createFdaHeader(any(CreateFdaHeaderRequest.class), eq(1L), eq(100L), eq("user1")))
                     .thenReturn(responseDto);
 
             mockMvc.perform(post("/v1/fdas")
@@ -117,6 +101,7 @@ class FdaControllerTest {
     @Test
     void updateFda_ShouldUpdateAndReturnFda() throws Exception {
         UpdateFdaHeaderRequest requestDto = new UpdateFdaHeaderRequest();
+        requestDto.setTransactionDate(java.time.LocalDate.now());
         requestDto.setPrincipalPoid(1L);
         requestDto.setSalesmanPoid(1L);
         requestDto.setPortPoid(1L);

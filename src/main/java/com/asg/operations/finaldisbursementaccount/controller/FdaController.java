@@ -1,8 +1,13 @@
 package com.asg.operations.finaldisbursementaccount.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.common.PageResponse;
+import com.asg.operations.finaldisbursementaccount.dto.CreateFdaHeaderRequest;
 import com.asg.operations.finaldisbursementaccount.dto.*;
 import com.asg.operations.finaldisbursementaccount.service.FdaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,22 +19,23 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.asg.common.lib.annotation.AllowedAction;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 
-import java.util.HashMap;
+import java.time.LocalDate;
 import java.util.Map;
-//import org.springframework.core.io.Resource;
-//import org.springframework.http.HttpHeaders;
-//import org.springframework.http.MediaType;
-//import io.swagger.v3.oas.annotations.media.Content;
-//import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @RestController
 @RequestMapping("/v1/fdas")
@@ -38,49 +44,25 @@ import java.util.List;
 public class FdaController {
 
     private final FdaService fdaService;
+    private final LoggingService loggingService;
 
     @Operation(summary = "Get all FDA", description = "Returns paginated list of FDA with optional filters. Supports pagination with page and size parameters.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA list fetched successfully", content = @Content(schema = @Schema(implementation = Page.class)))
     })
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
-    public ResponseEntity<?> getFdaList(
-            @RequestBody(required = false) GetAllFdaFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort) {
+    public ResponseEntity<?> getFdaList(@RequestBody(required = false) FilterRequestDto filterRequest,
+                                        @ParameterObject Pageable pageable,
+                                        @RequestParam(required = false) LocalDate fromDate,
+                                        @RequestParam(required = false) LocalDate toDate) {
+        try {
 
-        // If filterRequest is null, create a default one
-        if (filterRequest == null) {
-            filterRequest = new GetAllFdaFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+            Map<String, Object> fdaPage = fdaService.getAllFdaWithFilters(UserContext.getDocumentId(), filterRequest, pageable, fromDate, toDate);
+
+            return success("FDA list fetched successfully", fdaPage);
+        } catch (Exception ex) {
+            return internalServerError("Unable to fetch fda list: " + ex.getMessage());
         }
-
-        org.springframework.data.domain.Page<FdaListResponse> fdaPage = fdaService
-                .getAllFdaWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
-
-        // Create displayFields
-        Map<String, String> displayFields = new HashMap<>();
-        displayFields.put("TRANSACTION_DATE", "date");
-        displayFields.put("DOC_REF", "text");
-        displayFields.put("PDA_REF", "text");
-        displayFields.put("VESSEL_NAME", "text");
-        displayFields.put("PRINCIPAL_NAME", "text");
-        displayFields.put("VOYAGE_NO", "text");
-
-        // Create paginated response with new structure
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", fdaPage.getContent());
-        response.put("pageNumber", fdaPage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", fdaPage.getSize());
-        response.put("totalElements", fdaPage.getTotalElements());
-        response.put("totalPages", fdaPage.getTotalPages());
-        response.put("last", fdaPage.isLast());
-
-        return ApiResponse.success("FDA list fetched successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
@@ -90,9 +72,8 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA retrieved successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
     })
-    public ResponseEntity<?> getFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
-    ) {
+    public ResponseEntity<?> getFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid) {
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return ApiResponse.success("FDA fetched successfully", fdaService.getFdaHeader(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid()));
     }
 
@@ -103,9 +84,7 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA created successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid FDA data")
     })
-    public ResponseEntity<?> createFda(
-            @Parameter(description = "FDA header data", required = true) @Valid @RequestBody FdaHeaderDto dto
-    ) {
+    public ResponseEntity<?> createFda(@Parameter(description = "FDA header data", required = true) @Valid @RequestBody CreateFdaHeaderRequest dto) {
         return ApiResponse.success("FDA created successfully", fdaService.createFdaHeader(dto, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId()));
     }
 
@@ -117,9 +96,8 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid update data")
     })
-    public ResponseEntity<?> updateFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
-            @Parameter(description = "FDA update data", required = true) @Valid @RequestBody UpdateFdaHeaderRequest dto
+    public ResponseEntity<?> updateFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
+                                       @Parameter(description = "FDA update data", required = true) @Valid @RequestBody UpdateFdaHeaderRequest dto
     ) {
         return ApiResponse.success("FDA updated successfully", fdaService.updateFdaHeader(transactionPoid, dto, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId()));
     }
@@ -131,10 +109,8 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA deleted successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
     })
-    public ResponseEntity<?> deleteFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
-    ) {
-        fdaService.softDeleteFda(transactionPoid, UserContext.getUserId());
+    public ResponseEntity<?> deleteFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid, @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
+        fdaService.softDeleteFda(transactionPoid, UserContext.getUserId(), deleteReasonDto);
         return ApiResponse.success("FDA soft deleted successfully");
     }
 
@@ -145,9 +121,8 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Charges retrieved successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
     })
-    public ResponseEntity<?> getCharges(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
-            @Parameter(description = "Pagination parameters") Pageable pageable
+    public ResponseEntity<?> getCharges(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
+                                        @Parameter(description = "Pagination parameters") Pageable pageable
     ) {
         PageResponse<FdaChargeDto> charges = fdaService.getCharges(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), pageable);
         return ApiResponse.success("Charges fetched successfully", charges);
@@ -160,9 +135,8 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Charges saved successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid charge data")
     })
-    public ResponseEntity<?> saveCharges(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
-            @Parameter(description = "List of charges to save", required = true) @RequestBody List<FdaChargeDto> charges
+    public ResponseEntity<?> saveCharges(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
+                                         @Parameter(description = "List of charges to save", required = true) @RequestBody List<FdaChargeDto> charges
     ) {
         fdaService.saveCharges(transactionPoid, charges, UserContext.getUserId(), UserContext.getGroupPoid(), UserContext.getCompanyPoid());
         return ApiResponse.success("Charges saved successfully");
@@ -175,9 +149,8 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Charge deleted successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Charge not found")
     })
-    public ResponseEntity<?> deleteFdaDetail(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
-            @Parameter(description = "Detail row identifier", required = true) @PathVariable Long detRowId
+    public ResponseEntity<?> deleteFdaDetail(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
+                                             @Parameter(description = "Detail row identifier", required = true) @PathVariable Long detRowId
     ) {
         fdaService.deleteCharge(transactionPoid, detRowId, UserContext.getUserId());
         return ApiResponse.success("FDA detail deleted successfully");
@@ -190,9 +163,7 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA closed successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "FDA cannot be closed")
     })
-    public ResponseEntity<?> closeFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
-    ) {
+    public ResponseEntity<?> closeFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid) {
         String result = fdaService.closeFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid);
 
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
@@ -212,9 +183,8 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA reopened successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "FDA cannot be reopened")
     })
-    public ResponseEntity<?> reopenFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
-            @Parameter(description = "Reopen request data", required = true) @RequestBody FdaReOpenDto fdaReOpenDto
+    public ResponseEntity<?> reopenFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
+                                       @Parameter(description = "Reopen request data", required = true) @RequestBody FdaReOpenDto fdaReOpenDto
     ) {
         String result = fdaService.reopenFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid, fdaReOpenDto);
 
@@ -235,9 +205,7 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA submitted successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "FDA cannot be submitted")
     })
-    public ResponseEntity<?> submitFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
-    ) {
+    public ResponseEntity<?> submitFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid) {
         String result = fdaService.submitFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid);
 
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
@@ -257,9 +225,7 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA verified successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "FDA cannot be verified")
     })
-    public ResponseEntity<?> verifyFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
-    ) {
+    public ResponseEntity<?> verifyFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid) {
         String result = fdaService.verifyFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid);
 
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
@@ -279,9 +245,8 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA returned successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "FDA cannot be returned")
     })
-    public ResponseEntity<?> returnFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
-            @Parameter(description = "Return request with correction remarks", required = true) @RequestBody @Valid FdaReturnDto request
+    public ResponseEntity<?> returnFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
+                                       @Parameter(description = "Return request with correction remarks", required = true) @RequestBody @Valid FdaReturnDto request
     ) {
         String result = fdaService.returnFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid, request.getCorrectionRemarks());
 
@@ -302,9 +267,7 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Supplementary FDA created successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Supplementary FDA cannot be created")
     })
-    public ResponseEntity<?> supplementaryFda(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
-    ) {
+    public ResponseEntity<?> supplementaryFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid) {
         String result = fdaService.supplementaryFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid);
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
             return ApiResponse.success("Created FDA as supplementary successfully");
@@ -323,9 +286,7 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Supplementary info retrieved successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
     })
-    public ResponseEntity<?> getSupplementaryInfo(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
-    ) {
+    public ResponseEntity<?> getSupplementaryInfo(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid) {
         List<FdaSupplementaryInfoDto> dtos = fdaService.getSupplementaryInfo(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Supplementary info fetched successfully", dtos);
     }
@@ -337,9 +298,8 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA closed without amount successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "FDA cannot be closed")
     })
-    public ResponseEntity<?> closeWithoutAmount(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
-            @Parameter(description = "Closure remarks", required = true) @RequestParam String closedRemark
+    public ResponseEntity<?> closeWithoutAmount(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
+                                                @Parameter(description = "Closure remarks", required = true) @RequestParam String closedRemark
     ) {
         String result = fdaService.closeFdaWithoutAmount(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), closedRemark);
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCESS")) {
@@ -359,10 +319,9 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Party GL retrieved successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Party GL not found")
     })
-    public ResponseEntity<?> getPartyGl(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
-            @Parameter(description = "Party identifier", required = true) @RequestParam Long partyPoid,
-            @Parameter(description = "Party type", required = true) @RequestParam String partyType
+    public ResponseEntity<?> getPartyGl(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
+                                        @Parameter(description = "Party identifier", required = true) @RequestParam Long partyPoid,
+                                        @Parameter(description = "Party type", required = true) @RequestParam String partyType
     ) {
         PartyGlResponse response = fdaService.getPartyGl(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), partyPoid, partyType);
         return ApiResponse.success("Party General Ledger fetched successfully", response);
@@ -375,9 +334,7 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA created from PDA successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "FDA cannot be created from PDA")
     })
-    public ResponseEntity<?> createFromPda(
-            @Parameter(description = "PDA transaction identifier", required = true) @PathVariable Long pdaTransactionPoid
-    ) {
+    public ResponseEntity<?> createFromPda(@Parameter(description = "PDA transaction identifier", required = true) @PathVariable Long pdaTransactionPoid) {
         String result = fdaService.createFdaFromPda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), pdaTransactionPoid);
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
             return ApiResponse.success("FDA created from PDA successfully");
@@ -396,33 +353,35 @@ public class FdaController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "PDA logs retrieved successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
     })
-    public ResponseEntity<?> getPdaLogs(
-            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid
-    ) {
+    public ResponseEntity<?> getPdaLogs(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid) {
 
         List<PdaLogResponse> logs = fdaService.getPdaLogs(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
 
         return ApiResponse.success("Logs fetched successfully", logs);
     }
 
-//    @AllowedAction(UserRolesRightsEnum.PRINT)
-//    @GetMapping(path = "/{transactionPoid}/print", produces = MediaType.APPLICATION_PDF_VALUE)
-//    @Operation(summary = "Print FDA report", description = "Generate and download PDF report for an FDA")
-//    @ApiResponses({
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "PDF report generated successfully",
-//                    content = @Content(mediaType = "application/pdf")),
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
-//    })
-//    public ResponseEntity<Resource> printFda(
-//            @Parameter(description = "Transaction identifier", required = true) @PathVariable("transactionPoid") Long transactionPoid,
-//            @Parameter(description = "Report type", schema = @Schema(defaultValue = "default")) @RequestParam(value = "type", defaultValue = "default") String reportType) {
-//
-//        Resource pdfResource = fdaService.generateFdaReport(transactionPoid, reportType, UserContext.getCompanyPoid(), UserContext.getUserPoid(), UserContext.getGroupPoid());
-//
-//        return ResponseEntity.ok()
-//                .header(HttpHeaders.CONTENT_DISPOSITION,
-//                        "attachment; filename=\"FDA_Report_" + transactionPoid + "_" + reportType + ".pdf\"")
-//                .contentType(MediaType.APPLICATION_PDF)
-//                .body(pdfResource);
-//    }
+    @AllowedAction(UserRolesRightsEnum.PRINT)
+    @GetMapping(path = "/{transactionPoid}/print", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Print FDA report", description = "Generate and download PDF report for an FDA")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "PDF report generated successfully",
+                    content = @Content(mediaType = "application/pdf")),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "FDA not found")
+    })
+    public ResponseEntity<byte[]> printFda(
+            @Parameter(description = "Transaction identifier", required = true) @PathVariable("transactionPoid") Long transactionPoid,
+            @Parameter(description = "Currency (BHD or USD)", schema = @Schema(defaultValue = "BHD")) @RequestParam(value = "currency", defaultValue = "BHD") String currency) {
+
+        try {
+            byte[] pdfBytes = fdaService.printFda(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), currency);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"FDA_Report_" + transactionPoid + "_" + currency + ".pdf\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate FDA PDF: " + e.getMessage(), e);
+        }
+    }
 }

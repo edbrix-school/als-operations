@@ -1,8 +1,12 @@
 package com.asg.operations.pdaRoRoVehicle.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import com.asg.operations.pdaRoRoVehicle.service.PdaRoRoEntryService;
@@ -14,13 +18,19 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @RestController
 @RequiredArgsConstructor
@@ -32,6 +42,7 @@ import java.util.Map;
 public class PdaRoRoEntryController {
 
     private final PdaRoRoEntryService pdaRoroEntryService;
+    private final LoggingService loggingService;
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
@@ -54,13 +65,14 @@ public class PdaRoRoEntryController {
     @GetMapping("/{transactionPoid}")
     public ResponseEntity<?> getRoRoEntryById(@PathVariable @NotNull @Positive Long transactionPoid) {
         PdaRoRoEntryHdrResponseDto response = pdaRoroEntryService.getRoRoEntry(transactionPoid);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return ApiResponse.success("PDA Ro-Ro Entry retrieved successfully", response);
     }
 
     @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}")
-    public ResponseEntity<?> deleteRoRoEntry(@PathVariable @NotNull @Positive Long transactionPoid) {
-        pdaRoroEntryService.deleteRoRoEntry(transactionPoid);
+    public ResponseEntity<?> deleteRoRoEntry(@PathVariable @NotNull @Positive Long transactionPoid,@Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
+        pdaRoroEntryService.deleteRoRoEntry(transactionPoid,deleteReasonDto);
         return ApiResponse.success("PDA Ro-Ro Entry deleted successfully");
     }
 
@@ -78,38 +90,19 @@ public class PdaRoRoEntryController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     public ResponseEntity<?> getRoRoVehicleList(
-            @RequestBody(required = false) GetAllRoRoVehicleFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort) {
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo) {
 
-        if (filterRequest == null) {
-            filterRequest = new GetAllRoRoVehicleFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+        try {
+            Map<String, Object> rateTypePage = pdaRoroEntryService.getRoRoVehicleList(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            return success("Ro Ro Vehicle list fetched successfully", rateTypePage);
+        }
+        catch (Exception ex){
+            return internalServerError("Unable to fetch Ro Ro Vehicle list: " + ex.getMessage());
         }
 
-        Page<RoRoVehicleListResponse> roroVehiclePage = pdaRoroEntryService
-                .getRoRoVehicleList(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
-
-        Map<String, String> displayFields = new LinkedHashMap<>();
-        displayFields.put("TRANSACTION_DATE", "date");
-        displayFields.put("DOC_REF", "text");
-        displayFields.put("LINE_NAME", "text");
-        displayFields.put("VOYAGE_NO", "text");
-        displayFields.put("VESSEL_NAME", "text");
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", roroVehiclePage.getContent());
-        response.put("pageNumber", roroVehiclePage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", roroVehiclePage.getSize());
-        response.put("totalElements", roroVehiclePage.getTotalElements());
-        response.put("totalPages", roroVehiclePage.getTotalPages());
-        response.put("last", roroVehiclePage.isLast());
-
-        return ApiResponse.success("Ro Ro Vehicle list fetched successfully", response);
     }
 
     @Operation(
@@ -151,5 +144,29 @@ public class PdaRoRoEntryController {
     public ResponseEntity<?> clearVehicleDetails(@PathVariable @NotNull @Positive Long transactionPoid) {
         String status = pdaRoroEntryService.clearRoRoVehicleDetails(transactionPoid);
         return ApiResponse.success(status);
+    }
+
+    @Operation(
+            summary = "Print Tally Sheet",
+            description = "Generate and download Tally Sheet PDF for RoRo vehicle entry"
+    )
+    @AllowedAction(UserRolesRightsEnum.PRINT)
+    @GetMapping("/{transactionPoid}/print-tally-sheet")
+    public ResponseEntity<byte[]> printTallySheet(@PathVariable @NotNull @Positive Long transactionPoid) {
+        try {
+            byte[] pdfBytes = pdaRoroEntryService.printTallySheet(
+                    transactionPoid,
+                    UserContext.getGroupPoid(),
+                    UserContext.getCompanyPoid(),
+                    UserContext.getUserPoid()
+            );
+            
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"RoRo_TallySheet_" + transactionPoid + ".pdf\"")
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate Tally Sheet PDF: " + e.getMessage(), e);
+        }
     }
 }

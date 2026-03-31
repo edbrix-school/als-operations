@@ -1,23 +1,26 @@
 package com.asg.operations.finaldisbursementaccount.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.common.PageResponse;
-//import org.springframework.core.io.Resource;
+import com.asg.operations.finaldisbursementaccount.dto.CreateFdaHeaderRequest;
 import com.asg.operations.finaldisbursementaccount.dto.*;
-import org.springframework.data.domain.Page;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public interface FdaService {
 
     FdaHeaderDto getFdaHeader(Long fdaPoid, Long groupPoid, Long companyPoid);
 
-    FdaHeaderDto createFdaHeader(FdaHeaderDto dto, Long groupPoid, Long companyPoid, String userId);
+    FdaHeaderDto createFdaHeader(CreateFdaHeaderRequest dto, Long groupPoid, Long companyPoid, String userId);
 
     FdaHeaderDto updateFdaHeader(Long fdaPoid, UpdateFdaHeaderRequest dto, Long groupPoid, Long companyPoid, String userId);
 
-    void softDeleteFda(Long fdaPoid, String userId);
+    void softDeleteFda(Long fdaPoid, String userId, @Valid DeleteReasonDto deleteReasonDto);
 
     PageResponse<FdaHeaderDto> getFdaList(Long groupPoid, Long companyPoid, Long transactionPoid, String vesselName, LocalDate etaFrom, LocalDate etaTo, Pageable pageable);
 
@@ -49,8 +52,8 @@ public interface FdaService {
 
     List<PdaLogResponse> getPdaLogs(Long transactionPoid, Long groupPoid, Long companyPoid);
 
-//    Resource generateFdaReport(Long transactionPoid, String reportType, Long companyId, Long userId, Long groupId);
+    Map<String, Object> getAllFdaWithFilters(String documentId, FilterRequestDto filters, Pageable pageable, LocalDate periodFrom, LocalDate periodTo);
 
-    Page<FdaListResponse> getAllFdaWithFilters(Long groupPoid, Long companyPoid, GetAllFdaFilterRequest filterRequest, int page, int size, String sort);
+    byte[] printFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String currency) throws Exception;
 
 }

@@ -1,11 +1,17 @@
 package com.asg.operations.pdaentryform.controller;
 
 import com.asg.common.lib.annotation.AllowedAction;
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
+import com.asg.operations.pdaentryform.service.impl.PdaEntryServiceImpl.TaxInfo;
+import java.util.Map;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,7 +19,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springdoc.core.annotations.ParameterObject;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,10 +29,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.asg.operations.common.ApiResponse;
+
+import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
+import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 /**
  * REST Controller for PDA Entry Form operations
@@ -32,14 +44,11 @@ import com.asg.operations.common.ApiResponse;
 @RestController
 @RequestMapping("/v1/pda-entries")
 @Tag(name = "PDA Entry", description = "APIs for managing PDA Entry forms and related details")
+@RequiredArgsConstructor
 public class PdaEntryController {
 
     private final PdaEntryService pdaEntryService;
-
-    @Autowired
-    public PdaEntryController(PdaEntryService pdaEntryService) {
-        this.pdaEntryService = pdaEntryService;
-    }
+    private final LoggingService loggingService;
 
     // ==================== Header CRUD Operations ====================
 
@@ -74,42 +83,20 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     public ResponseEntity<?> getPdaEntryList(
-            @RequestBody(required = false) GetAllPdaFilterRequest filterRequest,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String sort) {
+            @RequestBody(required = false) FilterRequestDto filterRequest,
+            @ParameterObject Pageable pageable,
+            @RequestParam(required = false) LocalDate periodFrom,
+            @RequestParam(required = false) LocalDate periodTo) {
 
-        // If filterRequest is null, create a default one
-        if (filterRequest == null) {
-            filterRequest = new GetAllPdaFilterRequest();
-            filterRequest.setIsDeleted("N");
-            filterRequest.setOperator("AND");
-            filterRequest.setFilters(new java.util.ArrayList<>());
+
+        try {
+            Map<String, Object> pdaPage = pdaEntryService.getAllPdaWithFilters(UserContext.getDocumentId(), filterRequest, pageable, periodFrom, periodTo);
+            return success("PDA entries retrieved successfully", pdaPage);
+        }
+        catch (Exception ex){
+            return internalServerError("Unable to fetch PDA entries list: " + ex.getMessage());
         }
 
-        org.springframework.data.domain.Page<PdaEntryListResponse> pdaPage = pdaEntryService
-                .getAllPdaWithFilters(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), filterRequest, page, size, sort);
-
-        // Create displayFields
-        Map<String, String> displayFields = new HashMap<>();
-        displayFields.put("TRANSACTION_DATE", "date");
-        displayFields.put("DOC_REF", "text");
-        displayFields.put("FDA_REF", "text");
-        displayFields.put("PRINCIPAL_NAME", "text");
-        displayFields.put("VESSEL_NAME", "text");
-        displayFields.put("VOYAGE_NO", "text");
-
-        // Create paginated response with new structure
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", pdaPage.getContent());
-        response.put("pageNumber", pdaPage.getNumber());
-        response.put("displayFields", displayFields);
-        response.put("pageSize", pdaPage.getSize());
-        response.put("totalElements", pdaPage.getTotalElements());
-        response.put("totalPages", pdaPage.getTotalPages());
-        response.put("last", pdaPage.isLast());
-
-        return ApiResponse.success("PDA entry list fetched successfully", response);
     }
 
     @Operation(
@@ -146,6 +133,7 @@ public class PdaEntryController {
             @PathVariable Long transactionPoid
     ) {
         PdaEntryResponse response = pdaEntryService.getPdaEntryById(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
+        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return ApiResponse.success("PDA entry retrieved successfully", response);
     }
 
@@ -271,9 +259,10 @@ public class PdaEntryController {
     @DeleteMapping("/{transactionPoid}")
     public ResponseEntity<?> deletePdaEntry(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable Long transactionPoid,
+            @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
-        pdaEntryService.deletePdaEntry(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        pdaEntryService.deletePdaEntry(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(),deleteReasonDto);
         return ApiResponse.success("PDA entry deleted successfully", null);
     }
 
@@ -362,6 +351,46 @@ public class PdaEntryController {
     ) {
         List<PdaEntryChargeDetailResponse> response = pdaEntryService.bulkSaveChargeDetails(transactionPoid, request, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId());
         return ApiResponse.success("Charge details saved successfully", response);
+    }
+
+    @Operation(
+            summary = "Delete charge detail",
+            description = "Deletes a single charge detail and recalculates the header total amount.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully deleted charge detail",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "403",
+                            description = "Forbidden - Entry cannot be edited",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "PDA entry or charge detail not found",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PutMapping("/{transactionPoid}/charge-details/{detRowId}")
+    public ResponseEntity<?> updateChargeDetail(
+            @PathVariable Long transactionPoid,
+            @PathVariable Long detRowId,
+            @Valid @RequestBody PdaEntryChargeDetailRequest request
+    ) {
+        PdaEntryChargeDetailResponse response = pdaEntryService.updateChargeDetail(
+                transactionPoid, detRowId, request, UserContext.getGroupPoid(), 
+                UserContext.getCompanyPoid(), UserContext.getUserId());
+        return ApiResponse.success("Charge detail updated successfully", response);
     }
 
     @Operation(
@@ -885,8 +914,8 @@ public class PdaEntryController {
             @PathVariable Long transactionPoid,
             @RequestParam(value = "file", required = false) org.springframework.web.multipart.MultipartFile file
     ) {
-        String result = pdaEntryService.uploadTdrDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), file);
-        return ApiResponse.success(result, null);
+        List<PdaEntryTdrDetailResponse> result = pdaEntryService.uploadTdrDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), file);
+        return ApiResponse.success("Successfully loaded TDR Details...", result);
     }
 
     @Operation(
@@ -1056,7 +1085,18 @@ public class PdaEntryController {
     public ResponseEntity<?> loadAcknowledgmentDetails(
             @PathVariable Long transactionPoid
     ) {
-        return ApiResponse.success("Acknowledgment details loaded successfully", pdaEntryService.uploadAcknowledgmentDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+        List<PdaEntryAcknowledgmentDetailResponse> result = pdaEntryService.uploadAcknowledgmentDetails(
+                transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        
+        if (result == null || result.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "PDA documents are already submitted State.",
+                "statusCode", 400
+            ));
+        }
+        
+        return ApiResponse.success("Acknowledgment details loaded successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -1188,10 +1228,98 @@ public class PdaEntryController {
     }
 
     @Operation(
+            summary = "Get voyage details",
+            description = "Gets voyage details when voyage LOV is changed (auto-population). " +
+                    "Calls stored procedure to retrieve voyage number, vessel, line, port, dates, and other voyage details. " +
+                    "Transaction POID is optional (can be null for new records).",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved voyage details",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid input parameters - Voyage POID is required",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/voyage-details")
+    public ResponseEntity<?> getVoyageDetails(
+            @Parameter(description = "Voyage POID", required = true)
+            @RequestParam BigDecimal voyagePoid,
+            @Parameter(description = "Transaction POID (optional, for existing records)")
+            @RequestParam(required = false) Long transactionPoid
+    ) {
+        Map<String, Object> response = pdaEntryService.getVoyageDetails(voyagePoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return ApiResponse.success("Voyage details retrieved successfully", response);
+    }
+
+    @Operation(
+            summary = "Get charge tax information",
+            description = "Gets tax percentage and tax POID for a specific charge and party combination. " +
+                    "Used by frontend to calculate tax amounts in charge details. " +
+                    "Calls PROC_GET_CHARGE_TAX_PER_V3 stored procedure.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved tax information",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid input parameters",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/charge-tax-info")
+    public ResponseEntity<?> getChargeTaxInfo(
+            @Parameter(description = "Charge POID", required = true)
+            @RequestParam BigDecimal chargePoid,
+            @Parameter(description = "Party POID (Principal POID)", required = true)
+            @RequestParam BigDecimal partyPoid,
+            @Parameter(description = "Party Type (default: PRINCIPAL)")
+            @RequestParam(defaultValue = "PRINCIPAL") String partyType,
+            @Parameter(description = "Transaction Date (default: current date)")
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate transactionDate
+    ) {
+        java.util.Date date = transactionDate != null ? 
+            java.sql.Date.valueOf(transactionDate) : new java.util.Date();
+            
+        TaxInfo taxInfo = ((com.asg.operations.pdaentryform.service.impl.PdaEntryServiceImpl) pdaEntryService)
+            .getChargeTaxInfo(UserContext.getCompanyPoid(), date, partyType, partyPoid, chargePoid);
+        
+        if (taxInfo != null) {
+            return ApiResponse.success("Tax information retrieved successfully", Map.of(
+                "taxPoid", taxInfo.getTaxPoid(),
+                "taxPercentage", taxInfo.getTaxPercentage()
+            ));
+        }
+        
+        return ApiResponse.success("No tax information found", Map.of());
+    }
+
+    @Operation(
             summary = "Create FDA from PDA",
             description = "Creates an FDA (Freight Disbursement Account) from a PDA entry. " +
-                    "Calls PROC_PDA_DTL_UPDATE_FDA stored procedure to create FDA in database. " +
-                    "Returns FDA_POID which can be used to redirect to FDA screen. " +
+                    "Calls PROC_PDA_FDA_CREATE_FROM_PDA stored procedure to create FDA in database. " +
+                    "Returns FDA creation result message. " +
                     "Entry must be in editable state.",
             responses = {
                     @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -1219,14 +1347,63 @@ public class PdaEntryController {
     )
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping("/{transactionPoid}/create-fda")
-    public ResponseEntity<?> createFda(
+    public ResponseEntity<?> createFdaFromPda(
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
-        String result = pdaEntryService.createFda(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        String result = pdaEntryService.createFdaFromPda(
+                UserContext.getGroupPoid(), 
+                UserContext.getCompanyPoid(), 
+                UserContext.getUserPoid(), 
+                transactionPoid.toString()
+        );
+        
+        // Parse the result to extract FDA reference
+        Map<String, String> parsedResult = pdaEntryService.parseFdaCreationResult(result);
+        
+        return ApiResponse.success("FDA creation completed", parsedResult);
+    }
+
+    @Operation(
+            summary = "Update FDA from PDA",
+            description = "Updates an existing FDA from a PDA entry. " +
+                    "Calls PROC_PDA_DTL_UPDATE_FDA stored procedure to update FDA in database. " +
+                    "Returns FDA_POID which can be used to redirect to FDA screen. " +
+                    "Entry must be in editable state.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully updated FDA",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "400",
+                            description = "FDA update failed",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "PDA entry not found",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.CREATE)
+    @PostMapping("/{transactionPoid}/update-fda")
+    public ResponseEntity<?> updateFda(
+            @Parameter(description = "Transaction POID", required = true)
+            @PathVariable Long transactionPoid
+    ) {
+        String result = pdaEntryService.updateFda(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         Map<String, String> responseData = new HashMap<>();
         responseData.put("result", result);
-        return ApiResponse.success("FDA created successfully", responseData);
+        return ApiResponse.success("FDA Updated successfully", responseData);
     }
 
     // ==================== FDA Document Operations ====================
@@ -1272,9 +1449,9 @@ public class PdaEntryController {
             @PathVariable Long transactionPoid,
             @Valid @RequestBody CancelPdaRequest request
     ) {
-        pdaEntryService.cancelPdaEntry(transactionPoid, UserContext.getGroupPoid(),
+        String result = pdaEntryService.cancelPdaEntry(transactionPoid, UserContext.getGroupPoid(),
                 UserContext.getCompanyPoid(), UserContext.getUserPoid(), request.getCancelRemark());
-        return ApiResponse.success("PDA entry cancelled successfully", null);
+        return ApiResponse.success("PDA entry cancelled successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
@@ -1283,6 +1460,35 @@ public class PdaEntryController {
         SubmissionLogResponse response = pdaEntryService.getSubmissionLogInfo(
                 transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
         return ApiResponse.success("Submission log info retrieved successfully", response);
+    }
+
+    @Operation(
+            summary = "Print PDA",
+            description = "Generates PDF report for PDA entry with optional principal-wise printing"
+    )
+    @AllowedAction(UserRolesRightsEnum.PRINT)
+    @GetMapping("/{transactionPoid}/print")
+    public ResponseEntity<byte[]> printPda(
+            @PathVariable Long transactionPoid,
+            @RequestParam(required = false) BigDecimal otherPrincipalPoid
+    ) {
+        try {
+            byte[] pdf = pdaEntryService.printPda(transactionPoid, UserContext.getGroupPoid(), 
+                    UserContext.getCompanyPoid(), UserContext.getUserPoid(), otherPrincipalPoid);
+            
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(
+                org.springframework.http.ContentDisposition.builder("inline")
+                    .filename("PDA_" + transactionPoid + ".pdf")
+                    .build()
+            );
+            
+            return ResponseEntity.ok().headers(headers).body(pdf);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     // ==================== Helper Methods ====================

@@ -1,5 +1,6 @@
 package com.asg.operations.pdaratetypemaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.common.Util.FormulaValidator;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeRequestDTO;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeResponseDTO;
@@ -36,6 +37,12 @@ public class PdaRateTypeServiceImplTest {
     @Mock
     private FormulaValidator formulaValidator;
 
+    @Mock
+    private com.asg.common.lib.service.DocumentDeleteService documentDeleteService;
+
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
     @InjectMocks
     private PdaRateTypeServiceImpl service;
 
@@ -49,7 +56,7 @@ public class PdaRateTypeServiceImplTest {
         requestDTO.setRateTypeName("Gross Tonnage Rate");
         requestDTO.setRateTypeFormula("GRT * 0.5");
         requestDTO.setDefQty("GRT");
-        requestDTO.setDefDays(BigDecimal.ONE);
+        requestDTO.setDefDays(1L);
         requestDTO.setSeqNo(BigInteger.ONE);
         requestDTO.setActive("Y");
 
@@ -60,12 +67,10 @@ public class PdaRateTypeServiceImplTest {
                 .rateTypeName("Gross Tonnage Rate")
                 .rateTypeFormula("GRT * 0.5")
                 .defQty("GRT")
-                .defDays(BigDecimal.ONE)
+                .defDays(1L)
                 .seqno(BigInteger.ONE)
                 .active("Y")
                 .deleted("N")
-                .createdBy("SYSTEM")
-                .createdDate(LocalDateTime.now())
                 .build();
     }
 
@@ -73,9 +78,6 @@ public class PdaRateTypeServiceImplTest {
     void testCreate_Success() {
         when(repository.existsByRateTypeCodeAndGroupPoid("GRT", BigDecimal.ONE)).thenReturn(false);
         when(repository.existsByRateTypeNameAndGroupPoid("Gross Tonnage Rate", BigDecimal.ONE)).thenReturn(false);
-        when(formulaValidator.validate(anyString(), any())).thenReturn(
-            new FormulaValidator.FormulaValidationResult(true, new ArrayList<>(), new ArrayList<>(), "GRT * 0.5", Arrays.asList("GRT"))
-        );
         when(mapper.toEntity(requestDTO, BigDecimal.ONE, "testUser")).thenReturn(entity);
         when(repository.save(any(PdaRateTypeMaster.class))).thenReturn(entity);
         when(mapper.toResponse(entity)).thenReturn(new PdaRateTypeResponseDTO());
@@ -120,11 +122,10 @@ public class PdaRateTypeServiceImplTest {
     @Test
     void testSoftDelete_Success() {
         when(repository.findByRateTypePoidAndGroupPoid(1L, BigDecimal.ONE)).thenReturn(Optional.of(entity));
-        when(repository.save(any(PdaRateTypeMaster.class))).thenReturn(entity);
 
-        assertDoesNotThrow(() -> service.deleteRateType(1L, 1L, "testUser", false));
+        assertDoesNotThrow(() -> service.deleteRateType(1L, 1L, "testUser",  new DeleteReasonDto()));
         
-        verify(repository).save(argThat(e -> "Y".equals(e.getDeleted()) && "N".equals(e.getActive())));
+        verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }
 
 

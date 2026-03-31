@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -8,18 +9,19 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.Base64;
-import java.util.Date;
 
 @Entity
 @Table(name = "GLOBAL_COMPANY_MASTER")
 @Getter
 @Setter
 public class CompanyMaster {
-
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
-
+    
+    @AuditIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "COMPANY_POID")
@@ -57,27 +59,27 @@ public class CompanyMaster {
 
     @NotNull(message = "Financial Period Start is required")
     @Column(name = "FINANCIAL_PERIOD_START")
-    private Date financialPeriodStart;
+    private LocalDate financialPeriodStart;
 
     @NotNull(message = "Financial Period End is required")
     @Column(name = "FINANCIAL_PERION_END")
-    private Date financialPeriodEnd;
+    private LocalDate financialPeriodEnd;
 
     @NotNull(message = "Report Period Start is required")
     @Column(name = "REPORT_PERIOD_START")
-    private Date reportPeriodStart;
+    private LocalDate reportPeriodStart;
 
     @NotNull(message = "Report Period End is required")
     @Column(name = "REPORT_PERIOD_END")
-    private Date reportPeriodEnd;
+    private LocalDate reportPeriodEnd;
 
     @NotNull(message = "Trans Period Start is required")
     @Column(name = "TRANS_PERIOD_START")
-    private Date transPeriodStart;
+    private LocalDate transPeriodStart;
 
     @NotNull(message = "Trans Period End is required")
     @Column(name = "TRANS_PERIOD_END")
-    private Date transPeriodEnd;
+    private LocalDate transPeriodEnd;
 
     @Column(name = "ACTIVE")
     private String active;
@@ -85,29 +87,28 @@ public class CompanyMaster {
     @Column(name = "SEQNO")
     private Integer seqNo;
 
+    @AuditIgnore
     @Column(name = "CREATED_BY")
     private String createdBy;
 
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
+    private LocalDate createdDate;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY")
     private String lastModifiedBy;
 
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date lastModifiedDate;
+    private LocalDate lastModifiedDate;
 
+    @AuditIgnore
     @Column(name = "DELETED")
     private String deleted;
 
-//    @Lob
-//    @Column(name = "LOGO_HDR_IMAGE")
-//    private Byte[] logoHdrImage;
-
     @Column(name = "PROVISIONAL_CLOSED_DATE")
-    private Date provisionalClosedDate;
+    private LocalDate provisionalClosedDate;
 
     @Column(name = "BANK_DETAIL")
     private String bankDetail;
@@ -119,19 +120,19 @@ public class CompanyMaster {
     private String tinNumber;
 
     @Column(name = "VAT_REGISTRATION_DATE")
-    private Date vatRegistrationDate;
+    private LocalDate vatRegistrationDate;
 
     @Column(name = "VAT_LAST_FILED_DATE")
-    private Date vatLastFiledDate;
+    private LocalDate vatLastFiledDate;
 
     @Column(name = "ACCOUNT_PERSON")
     private String accountPerson;
 
     @Column(name = "STOCK_PERIOD_START")
-    private Date stockPeriodStart;
+    private LocalDate stockPeriodStart;
 
     @Column(name = "STOCK_PERIOD_END")
-    private Date stockPeriodEnd;
+    private LocalDate stockPeriodEnd;
 
     @Column(name = "VAT_FILING_PERIOD")
     private String vatFilingPeriod;
@@ -143,31 +144,31 @@ public class CompanyMaster {
     private String vatLastFiledBy;
 
     @Column(name = "VAT_LAST_FILED_CREATED_DATE")
-    private Date vatLastFiledCreatedDate;
+    private LocalDate vatLastFiledCreatedDate;
 
     @Column(name = "FINANCIAL_DATE_UPDATED_BY")
     private String financialDateUpdatedBy;
 
     @Column(name = "FINANCIAL_DATE_UPDATED_DATE")
-    private Date financialDateUpdatedDate;
+    private LocalDate financialDateUpdatedDate;
 
     @Column(name = "TRANS_DATE_UPDATED_BY")
     private String transDateUpdatedBy;
 
     @Column(name = "TRANS_DATE_UPDATED_DATE")
-    private Date transDateUpdatedDate;
+    private LocalDate transDateUpdatedDate;
 
     @Column(name = "REPORT_DATE_UPDATED_BY")
     private String reportDateUpdatedBy;
 
     @Column(name = "REPORT_DATE_UPDATED_DATE")
-    private Date reportDateUpdatedDate;
+    private LocalDate reportDateUpdatedDate;
 
     @Column(name = "INVENTORY_DATE_UPDATED_BY")
     private String inventoryDateUpdatedBy;
 
     @Column(name = "INVENTORY_DATE_UPDATED_DATE")
-    private Date inventoryDateUpdatedDate;
+    private LocalDate inventoryDateUpdatedDate;
 
     @Lob
     @Column(name = "LOGO_IMAGE")
@@ -201,9 +202,6 @@ public class CompanyMaster {
     @Column(name = "CURRENCY_POID")
     private Long currencyPoid;
 
-//    @Transient
-//    private List<CompanyDivisionEntity> divisions;
-
     @Column(name = "STATE")
     private String stateId;
 
@@ -212,6 +210,5 @@ public class CompanyMaster {
 
     @Column(name = "SUBMISSION_PERIOD")
     private Long submissionPeriod;
-
 }
 

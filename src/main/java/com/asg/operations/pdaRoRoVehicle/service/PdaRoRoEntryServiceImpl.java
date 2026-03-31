@@ -1,18 +1,28 @@
 package com.asg.operations.pdaRoRoVehicle.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.exception.ValidationException;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDeleteService;
+import com.asg.common.lib.service.DocumentSearchService;
+import com.asg.common.lib.dto.FilterDto;
+import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.utility.DateUtil;
+import com.asg.common.lib.utility.PaginationUtil;
+import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.validation.Valid;
+import org.springframework.beans.BeanUtils;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryHdr;
 import com.asg.operations.pdaRoRoVehicle.repository.PdaRoroEntryDtlRepository;
 import com.asg.operations.pdaRoRoVehicle.repository.PdaRoRoEntryHdrRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import oracle.jdbc.internal.OracleTypes;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlOutParameter;
@@ -20,47 +30,48 @@ import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 
 public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PdaRoRoEntryServiceImpl.class);
+
     private final PdaRoRoEntryHdrRepository hdrRepository;
     private final PdaRoroEntryDtlRepository dtlRepository;
     private final JdbcTemplate jdbcTemplate;
-    private final EntityManager entityManager;
     private final com.asg.operations.commonlov.service.LovService lovService;
+    private final com.asg.common.lib.service.PrintService printService;
+    private final javax.sql.DataSource dataSource;
+    private final LoggingService loggingService;
+    private final DocumentDeleteService documentDeleteService;
+    private final DocumentSearchService documentSearchService;
 
     @Override
     public PdaRoRoEntryHdrResponseDto createRoRoEntry(PdaRoroEntryHdrRequestDto request) {
         Map<String, Object> voyageDetails = getVoyageDetails(request.getVesselVoyagePoid());
-        
+
+        LocalDate transactionDate = request.getTransactionDate() != null
+                ? request.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
         PdaRoRoEntryHdr entity = PdaRoRoEntryHdr.builder()
                 .vesselVoyagePoid(request.getVesselVoyagePoid())
                 .vesselName((String) voyageDetails.get("VESSEL_NAME"))
                 .voyageNo((String) voyageDetails.get("VOYAGE_NO"))
-                .transactionDate(LocalDate.now())
+                .transactionDate(transactionDate)
                 .deleted("N")
                 .companyPoid(UserContext.getCompanyPoid())
                 .groupPoid(UserContext.getGroupPoid())
-                .createdBy(getCurrentUser())
-                .createdDate(LocalDateTime.now())
-                .lastModifiedBy(getCurrentUser())
-                .lastModifiedDate(LocalDateTime.now())
                 .remarks(request.getRemarks())
                 .build();
 
         hdrRepository.save(entity);
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entity.getTransactionPoid().toString());
         return mapToResponse(entity);
     }
 
@@ -89,15 +100,22 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                 .orElseThrow(() -> new com.asg.operations.exceptions.ResourceNotFoundException(
                         "PDA Ro-Ro Entry not found with ID: " + transactionPoid));
 
+        PdaRoRoEntryHdr oldEntity = new PdaRoRoEntryHdr();
+        BeanUtils.copyProperties(entity, oldEntity);
+
         Map<String, Object> voyageDetails = getVoyageDetails(request.getVesselVoyagePoid());
-        
+
+        LocalDate transactionDate = request.getTransactionDate() != null
+                ? request.getTransactionDate()
+                : DateUtil.getCurrentDateInUserTimeZone();
         entity.setVesselVoyagePoid(request.getVesselVoyagePoid());
         entity.setVesselName((String) voyageDetails.get("VESSEL_NAME"));
         entity.setVoyageNo((String) voyageDetails.get("VOYAGE_NO"));
+        entity.setTransactionDate(transactionDate);
         entity.setRemarks(request.getRemarks());
         entity.setDeleted("N");
-        entity.setLastModifiedBy(getCurrentUser());
-        entity.setLastModifiedDate(LocalDateTime.now());
+        entity = hdrRepository.save(entity);
+        loggingService.logChanges(oldEntity, entity, PdaRoRoEntryHdr.class, UserContext.getDocumentId(), entity.getTransactionPoid().toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return mapToResponse(entity);
     }
 
@@ -162,117 +180,36 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     }
 
     @Override
-    public void deleteRoRoEntry(Long transactionPoid) {
+    public void deleteRoRoEntry(Long transactionPoid, @Valid DeleteReasonDto deleteReasonDto) {
         PdaRoRoEntryHdr hdr = hdrRepository.findById(transactionPoid)
                 .orElseThrow(() -> new com.asg.operations.exceptions.ResourceNotFoundException(
                         "PDA Ro-Ro Entry not found with ID: " + transactionPoid));
 
-        hdr.setDeleted("Y");
-        hdr.setLastModifiedBy(getCurrentUser());
-        hdr.setLastModifiedDate(LocalDateTime.now());
-        hdrRepository.save(hdr);
+        documentDeleteService.deleteDocument(
+                transactionPoid,
+                "PDA_RORO_ENTRY_HDR",
+                "TRANSACTION_POID",
+                deleteReasonDto,
+                hdr.getTransactionDate()
+        );
     }
 
     @Override
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
-    public Page<RoRoVehicleListResponse> getRoRoVehicleList(
-            Long groupPoid, Long companyPoid,
-            GetAllRoRoVehicleFilterRequest filterRequest,
-            int page, int size, String sort) {
+    public Map<String, Object> getRoRoVehicleList(
+            String documentId, FilterRequestDto filterRequestDto, Pageable pageable, LocalDate periodFrom, LocalDate periodTo) {
 
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT PRE.TRANSACTION_POID, PRE.DELETED, PRE.COMPANY_POID, ");
-        sqlBuilder.append("PRE.TRANSACTION_DATE, PRE.DOC_REF, SLM.LINE_NAME, ");
-        sqlBuilder.append("SVH.VOYAGE_NO, SVM.VESSEL_NAME ");
-        sqlBuilder.append("FROM PDA_RORO_ENTRY_HDR PRE ");
-        sqlBuilder.append("INNER JOIN SHIP_VOYAGE_HDR SVH ON SVH.TRANSACTION_POID = PRE.VESSEL_VOYAGE_POID ");
-        sqlBuilder.append("INNER JOIN SHIP_VESSEL_MASTER SVM ON SVM.VESSEL_POID = SVH.VESSEL_POID ");
-        sqlBuilder.append("INNER JOIN SHIP_LINE_MASTER SLM ON SLM.LINE_POID = SVH.LINE_POID ");
-        sqlBuilder.append("WHERE PRE.GROUP_POID = :groupPoid AND PRE.COMPANY_POID = :companyPoid ");
+        String operator = documentSearchService.resolveOperator(filterRequestDto);
+        String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto,"TRANSACTION_DATE", periodFrom, periodTo);
 
-        if (filterRequest.getIsDeleted() != null && "N".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND (PRE.DELETED IS NULL OR PRE.DELETED != 'Y') ");
-        } else if (filterRequest.getIsDeleted() != null && "Y".equalsIgnoreCase(filterRequest.getIsDeleted())) {
-            sqlBuilder.append("AND PRE.DELETED = 'Y' ");
-        }
+        RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
+                "DOC_REF",
+                "TRANSACTION_POID");
 
-        if (StringUtils.hasText(filterRequest.getFrom())) {
-            sqlBuilder.append("AND TRUNC(PRE.TRANSACTION_DATE) >= TO_DATE(:fromDate, 'YYYY-MM-DD') ");
-        }
-        if (StringUtils.hasText(filterRequest.getTo())) {
-            sqlBuilder.append("AND TRUNC(PRE.TRANSACTION_DATE) <= TO_DATE(:toDate, 'YYYY-MM-DD') ");
-        }
+        Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
-        List<String> filterConditions = new ArrayList<>();
-        List<GetAllRoRoVehicleFilterRequest.FilterItem> validFilters = new ArrayList<>();
-        if (filterRequest.getFilters() != null && !filterRequest.getFilters().isEmpty()) {
-            for (GetAllRoRoVehicleFilterRequest.FilterItem filter : filterRequest.getFilters()) {
-                if (StringUtils.hasText(filter.getSearchField()) && StringUtils.hasText(filter.getSearchValue())) {
-                    validFilters.add(filter);
-                    String columnName = mapSearchFieldToColumn(filter.getSearchField());
-                    int paramIndex = validFilters.size() - 1;
-                    filterConditions.add("LOWER(" + columnName + ") LIKE LOWER(:filterValue" + paramIndex + ")");
-                }
-            }
-        }
-
-        if (!filterConditions.isEmpty()) {
-            String operator = "AND".equalsIgnoreCase(filterRequest.getOperator()) ? " AND " : " OR ";
-            sqlBuilder.append("AND (").append(String.join(operator, filterConditions)).append(") ");
-        }
-
-        String orderBy = "ORDER BY PRE.TRANSACTION_DATE DESC";
-        if (StringUtils.hasText(sort)) {
-            String[] sortParts = sort.split(",");
-            if (sortParts.length == 2) {
-                String sortField = mapSortFieldToColumn(sortParts[0].trim());
-                String sortDirection = sortParts[1].trim().toUpperCase();
-                if ("ASC".equals(sortDirection) || "DESC".equals(sortDirection)) {
-                    orderBy = "ORDER BY " + sortField + " " + sortDirection + " NULLS LAST";
-                }
-            }
-        }
-        sqlBuilder.append(orderBy);
-
-        String countSql = "SELECT COUNT(*) FROM (" + sqlBuilder.toString() + ")";
-        Query query = entityManager.createNativeQuery(sqlBuilder.toString());
-        Query countQuery = entityManager.createNativeQuery(countSql);
-
-        query.setParameter("groupPoid", groupPoid);
-        query.setParameter("companyPoid", companyPoid);
-        countQuery.setParameter("groupPoid", groupPoid);
-        countQuery.setParameter("companyPoid", companyPoid);
-
-        if (StringUtils.hasText(filterRequest.getFrom())) {
-            query.setParameter("fromDate", filterRequest.getFrom());
-            countQuery.setParameter("fromDate", filterRequest.getFrom());
-        }
-        if (StringUtils.hasText(filterRequest.getTo())) {
-            query.setParameter("toDate", filterRequest.getTo());
-            countQuery.setParameter("toDate", filterRequest.getTo());
-        }
-
-        if (!validFilters.isEmpty()) {
-            for (int i = 0; i < validFilters.size(); i++) {
-                GetAllRoRoVehicleFilterRequest.FilterItem filter = validFilters.get(i);
-                String paramValue = "%" + filter.getSearchValue() + "%";
-                query.setParameter("filterValue" + i, paramValue);
-                countQuery.setParameter("filterValue" + i, paramValue);
-            }
-        }
-
-        Long totalCount = ((Number) countQuery.getSingleResult()).longValue();
-        query.setFirstResult(page * size);
-        query.setMaxResults(size);
-
-        @SuppressWarnings("unchecked")
-        List<Object[]> results = query.getResultList();
-        List<RoRoVehicleListResponse> dtos = results.stream()
-                .map(this::mapToRoRoVehicleListResponse)
-                .collect(Collectors.toList());
-
-        Pageable pageable = PageRequest.of(page, size);
-        return new PageImpl<>(dtos, pageable, totalCount);
+        return PaginationUtil.wrapPage(page, raw.displayFields());
     }
 
     @Override
@@ -356,17 +293,16 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         List<PdaRoRoVehicleDtlResponseDto> vehicleDetails = (List<PdaRoRoVehicleDtlResponseDto>) result.get("OUTDATA");
 
         if (status != null && (status.contains("ERROR") || status.contains("WARNING"))) {
-            return PdaRoroVehicleUploadResponse.builder()
-                    .status(status)
-                    .vehicleDetails(vehicleDetails)
-                    .build();
+            throw new ValidationException(status);
         }
+
 
         List<PdaRoRoVehicleDtlResponseDto> savedDetails = null;
         if (vehicleDetails != null && !vehicleDetails.isEmpty()) {
             savedDetails = saveVehicleDetailsToTable(request.getTransactionPoid(), vehicleDetails);
         }
 
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), request.getTransactionPoid().toString(), "Vehicle details uploaded successfully");
         return PdaRoroVehicleUploadResponse.builder()
                 .status(status)
                 .vehicleDetails(savedDetails != null ? savedDetails : vehicleDetails)
@@ -374,34 +310,48 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     }
 
     private List<PdaRoRoVehicleDtlResponseDto> saveVehicleDetailsToTable(Long transactionPoid, List<PdaRoRoVehicleDtlResponseDto> vehicleDetails) {
-        String sql = """
-            INSERT INTO PDA_RORO_ENTRY_DTL 
-            (TRANSACTION_POID, DET_ROW_ID, BL_NUMBER, SHIPPER, CONSIGNEE, 
-             VIN_NUMBER, DESCRIPTION, BL_GWT, BL_CBM, PORT_OF_LOAD, AGENT,
-             CREATED_BY, CREATED_DATE, LASTMODIFIED_BY, LASTMODIFIED_DATE)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, ?, SYSDATE)
-            """;
-
-        List<Object[]> batchArgs = new ArrayList<>();
         List<PdaRoRoVehicleDtlResponseDto> savedDetails = new ArrayList<>();
         int detRowId = 1;
 
         for (PdaRoRoVehicleDtlResponseDto detail : vehicleDetails) {
-            batchArgs.add(new Object[]{
-                    transactionPoid,
-                    detRowId,
-                    detail.getBlNumber(),
-                    detail.getShipper(),
-                    detail.getConsignee(),
-                    detail.getVinNumber(),
-                    detail.getDescription(),
-                    detail.getBlGwt(),
-                    detail.getBlCbm(),
-                    detail.getPortOfLoad(),
-                    detail.getAgent(),
-                    getCurrentUser(),
-                    getCurrentUser()
-            });
+            com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtlId id = 
+                new com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtlId(transactionPoid, (long) detRowId);
+            
+            com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl entity = 
+                dtlRepository.findById(id).orElse(null);
+            
+            boolean isUpdate = entity != null;
+            com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl oldEntity = null;
+            
+            if (isUpdate) {
+                oldEntity = new com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl();
+                BeanUtils.copyProperties(entity, oldEntity);
+            } else {
+                entity = new com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl();
+                entity.setId(id);
+            }
+            
+            entity.setBlNumber(detail.getBlNumber());
+            entity.setShipper(detail.getShipper());
+            entity.setConsignee(detail.getConsignee());
+            entity.setVinNumber(detail.getVinNumber());
+            entity.setDescription(detail.getDescription());
+            entity.setBlGwt(detail.getBlGwt());
+            entity.setBlCbm(detail.getBlCbm());
+            entity.setPortOfLoad(detail.getPortOfLoad());
+            entity.setAgent(detail.getAgent());
+            
+            entity = dtlRepository.save(entity);
+            
+            if (isUpdate && oldEntity != null) {
+                String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", 
+                    entity.getId().getTransactionPoid(), entity.getId().getDetRowId());
+                loggingService.createLog(oldEntity, entity, com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryDtl.class, 
+                    UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+            } else if (!isUpdate) {
+                String logDetail = String.format("Row Created on [PDA RoRo Vehicle Details] with detRowId: %s", entity.getId().getDetRowId());
+                loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+            }
 
             savedDetails.add(PdaRoRoVehicleDtlResponseDto.builder()
                     .detRowId((long) detRowId++)
@@ -417,7 +367,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                     .build());
         }
 
-        jdbcTemplate.batchUpdate(sql, batchArgs);
         return savedDetails;
     }
 
@@ -428,7 +377,6 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                         "PDA Ro-Ro Entry not found with ID: " + transactionPoid));
         
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                .withSchemaName("PRODUCTION")
                 .withProcedureName("PROC_PDA_RORO_DTLS_CLEAR")
                 .declareParameters(
                         new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
@@ -446,12 +394,12 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
                         .addValue("P_TRANSACTION_POID", transactionPoid)
         );
 
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(),"Vehicle details cleared successfully");
         return (String) result.get("P_STATUS");
     }
 
     private ExcelConfig getExcelConfig(String docId) {
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                .withSchemaName("PRODUCTION")
                 .withProcedureName("PROC_GLOB_EXCEL_IMPORT_SHEETS")
                 .declareParameters(
                         new SqlParameter("P_COMPANY_POID", Types.NUMERIC),
@@ -476,7 +424,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
             throw new RuntimeException("No Excel configuration found for DOC_ID: " + docId);
         }
 
-        Map<String, Object> configRow = configs.get(0);
+        Map<String, Object> configRow = configs.getFirst();
         ExcelConfig config = new ExcelConfig();
         config.startRowNumber = ((Number) configRow.get("START_ROW_NUMBER")).intValue();
         config.startColNumber = ((Number) configRow.get("START_COL_NUMBER")).intValue();
@@ -514,65 +462,20 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         String tempTableName;
     }
 
-    private String mapSearchFieldToColumn(String searchField) {
-        if (searchField == null) return null;
+    @Override
+    public byte[] printTallySheet(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) throws Exception {
+        logger.info("Generating Tally Sheet PDF for RoRo Entry: {}", transactionPoid);
         
-        String normalizedField = searchField.toUpperCase().replace("_", "");
-        switch (normalizedField) {
-            case "TRANSACTIONPOID": return "PRE.TRANSACTION_POID";
-            case "DOCREF": return "PRE.DOC_REF";
-            case "TRANSACTIONDATE": return "PRE.TRANSACTION_DATE";
-            case "VOYAGENO": return "SVH.VOYAGE_NO";
-            case "VESSELNAME": return "SVM.VESSEL_NAME";
-            case "LINENAME": return "SLM.LINE_NAME";
-            case "DELETED": return "PRE.DELETED";
-            default: return "PRE." + searchField.toUpperCase().replace(" ", "_");
-        }
-    }
+        try {
+            Map<String, Object> params = printService.buildBaseParams(transactionPoid, "110-162");
+            params.put("SUB_RORO_DETAIL", printService.load("PDA/PDARoRoEntryTallySheetSubreport.jrxml"));
 
-    private String mapSortFieldToColumn(String sortField) {
-        if (sortField == null) return "PRE.TRANSACTION_DATE";
-        
-        String normalizedField = sortField.toUpperCase().replace("_", "");
-        switch (normalizedField) {
-            case "TRANSACTIONPOID": return "PRE.TRANSACTION_POID";
-            case "DOCREF": return "PRE.DOC_REF";
-            case "TRANSACTIONDATE": return "PRE.TRANSACTION_DATE";
-            case "VOYAGENO": return "SVH.VOYAGE_NO";
-            case "VESSELNAME": return "SVM.VESSEL_NAME";
-            case "LINENAME": return "SLM.LINE_NAME";
-            case "DELETED": return "PRE.DELETED";
-            default: return "PRE." + sortField.toUpperCase().replace(" ", "_");
+            net.sf.jasperreports.engine.JasperReport mainReport = printService.load("RORO/PDARoRoEntryTallySheetReport.jrxml");
+            return printService.fillReportToPdf(mainReport, params, dataSource);
+            
+        } catch (RuntimeException e) {
+            logger.error("Error generating Tally Sheet PDF for RoRo Entry: {}", transactionPoid, e);
+            throw new RuntimeException("Tally Sheet PDF generation failed: " + e.getMessage(), e);
         }
-    }
-
-    private RoRoVehicleListResponse mapToRoRoVehicleListResponse(Object[] row) {
-        RoRoVehicleListResponse dto = new RoRoVehicleListResponse();
-        dto.setTransactionPoid(row[0] != null ? ((Number) row[0]).longValue() : null);
-        dto.setDeleted(convertToString(row[1]));
-        dto.setCompanyPoid(row[2] != null ? ((Number) row[2]).longValue() : null);
-        dto.setTransactionDate(row[3] != null ? ((Timestamp) row[3]).toLocalDateTime().toLocalDate() : null);
-        dto.setDocRef(convertToString(row[4]));
-        dto.setLineName(convertToString(row[5]));
-        dto.setVoyageNo(convertToString(row[6]));
-        dto.setVesselName(convertToString(row[7]));
-        return dto;
-    }
-
-    private String convertToString(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof String) {
-            return (String) value;
-        }
-        if (value instanceof Character) {
-            return String.valueOf(value);
-        }
-        return value.toString();
-    }
-
-    public static String getCurrentUser() {
-        return UserContext.getUserId() != null ? String.valueOf(UserContext.getUserId()) : "SYSTEM";
     }
 }

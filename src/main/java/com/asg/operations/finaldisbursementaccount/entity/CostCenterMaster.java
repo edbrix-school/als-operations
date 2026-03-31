@@ -1,5 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,7 +16,7 @@ public class CostCenterMaster {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "COST_CENTER_POID")
     private Long costCenterPoid;
-
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
 
@@ -30,7 +31,7 @@ public class CostCenterMaster {
 
     @Column(name = "COST_CENTER_GROUP", length = 50)
     private String costGroupType;
-
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
@@ -48,22 +49,22 @@ public class CostCenterMaster {
 
     @Column(name = "ACTIVE", length = 1)
     private String active;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
     @Column(name = "SEQNO")
     private Integer seqNo;
-
+    @AuditIgnore
     @Column(name = "CREATED_BY")
     private String createdBy;
-
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY")
     private String lastModifiedBy;
-
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
     private LocalDateTime lastModifiedDate;
 

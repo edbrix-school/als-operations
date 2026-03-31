@@ -1,7 +1,14 @@
 package com.asg.operations.crew.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.crew.dto.*;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.time.LocalDate;
+import java.util.Map;
 
 /**
  * Service interface for Contract Crew Master operations
@@ -25,7 +32,7 @@ public interface ContractCrewService {
     /**
      * Delete crew master (soft or hard delete)
      */
-    void deleteCrew(Long companyPoid, Long crewPoid);
+    void deleteCrew(Long companyPoid, Long crewPoid, @Valid DeleteReasonDto deleteReasonDto);
 
     /**
      * Get crew details list
@@ -45,6 +52,6 @@ public interface ContractCrewService {
     /**
      * Get all crew with filters
      */
-    Page<ContractCrewListResponse> getAllCrewWithFilters(Long groupPoid, Long companyPoid, GetAllCrewFilterRequest filterRequest, int page, int size, String sort);
+    Map<String, Object> getAllCrewWithFilters(String documentId, FilterRequestDto filters, Pageable pageable, LocalDate periodFrom, LocalDate periodTo);
 }
 

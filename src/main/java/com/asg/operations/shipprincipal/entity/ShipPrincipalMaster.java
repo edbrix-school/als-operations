@@ -1,18 +1,20 @@
 package com.asg.operations.shipprincipal.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "SHIP_PRINCIPAL_MASTER")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ShipPrincipalMaster {
+public class ShipPrincipalMaster extends BaseEntity {
 
     @Id
     @Column(name = "PRINCIPAL_POID", nullable = false)
@@ -28,9 +30,11 @@ public class ShipPrincipalMaster {
     @Column(name = "PRINCIPAL_NAME2", length = 100)
     private String principalName2;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
 
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
@@ -88,36 +92,17 @@ public class ShipPrincipalMaster {
     @Column(name = "PRINCIPAL_CODE_OLD", length = 20)
     private String principalCodeOld;
 
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
     @PrePersist
     protected void onCreate() {
-        if (createdDate == null) {
-            createdDate = LocalDateTime.now();
-        }
         if (deleted == null) {
             deleted = "N";
         }
         if (active == null) {
             active = "Y";
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        lastModifiedDate = LocalDateTime.now();
     }
 }

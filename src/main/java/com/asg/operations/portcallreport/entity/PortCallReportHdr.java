@@ -1,26 +1,25 @@
 package com.asg.operations.portcallreport.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
+import lombok.*;
 
 @Entity
 @Table(name = "OPS_PORT_CALL_REPORT_HDR")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PortCallReportHdr {
+public class PortCallReportHdr extends BaseEntity {
 
     @Id
     @Column(name = "PORT_CALL_REPORT_POID", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long portCallReportPoid;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
 
@@ -39,18 +38,7 @@ public class PortCallReportHdr {
     @Column(name = "SEQNO")
     private Long seqno;
 
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
@@ -59,19 +47,11 @@ public class PortCallReportHdr {
 
     @PrePersist
     protected void onCreate() {
-        if (createdDate == null) {
-            createdDate = LocalDateTime.now();
-        }
         if (deleted == null) {
             deleted = "N";
         }
         if (active == null) {
             active = "Y";
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        lastModifiedDate = LocalDateTime.now();
     }
 }

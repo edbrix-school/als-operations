@@ -1,22 +1,28 @@
 package com.asg.operations.shipprincipal.service;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.shipprincipal.dto.AddressDetailsDTO;
+import com.asg.operations.shipprincipal.dto.AddressLoadListResponse;
 import com.asg.operations.shipprincipal.dto.AddressMasterResponse;
 import com.asg.operations.shipprincipal.dto.AddressTypeMapDTO;
 import com.asg.operations.shipprincipal.entity.AddressDetails;
 import com.asg.operations.shipprincipal.entity.AddressMaster;
 import com.asg.operations.shipprincipal.repository.AddressDetailsRepository;
 import com.asg.operations.shipprincipal.repository.AddressMasterRepository;
+import com.asg.operations.shipprincipal.repository.AddressStoredProcRepository;
 import com.asg.operations.shipprincipal.repository.CountryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +31,9 @@ public class AddressMasterServiceImpl implements AddressMasterService {
     private final CountryRepository countryRepo;
     private final AddressMasterRepository masterRepo;
     private final AddressDetailsRepository detailsRepo;
+    private final AddressStoredProcRepository addressStoredProcRepository;
     private final LovService lovService;
+    private final LoggingService loggingService;
 
     /**
      * Get single Address Master with all department details (tabs).
@@ -86,22 +94,22 @@ public class AddressMasterServiceImpl implements AddressMasterService {
         master.setIsForwarder(Boolean.TRUE.equals(req.getIsForwarder()) ? "Y" : "N");
         master.setActive(req.getActive());
         master.setSeqno(req.getSeqno());
-        master.setLastModifiedBy(currentUser);
-        master.setLastModifiedDate(LocalDateTime.now());
 
         return master;
     }
 
     @Override
-    public void saveAllDetails(AddressTypeMapDTO typeMap, AddressMaster master, String currentUser) {
+    public void saveAllDetails(AddressTypeMapDTO typeMap, AddressMaster master, String currentUser, String parentPoid) {
         if (typeMap == null) return;
 
-        //  Fetch existing details from DB
+        String entityId = (parentPoid != null && !parentPoid.isEmpty()) ? parentPoid : String.valueOf(master.getAddressMasterPoid());
+
         List<AddressDetails> existingDetails = detailsRepo.findByAddressMasterPoidOrderByAddressType(master.getAddressMasterPoid());
         Map<String, AddressDetails> existingMap = existingDetails.stream()
                 .collect(Collectors.toMap(d -> String.valueOf(d.getAddressPoid()), d -> d));
 
         List<AddressDetails> toSave = new ArrayList<>();
+        List<AddressDetails> toDelete = new ArrayList<>();
 
         Map<String, List<AddressDetailsDTO>> typedLists = Map.of(
                 "MAIN", Optional.ofNullable(typeMap.getMAIN()).orElse(List.of()),
@@ -121,21 +129,46 @@ public class AddressMasterServiceImpl implements AddressMasterService {
         for (Map.Entry<String, List<AddressDetailsDTO>> entry : typedLists.entrySet()) {
             String type = entry.getKey();
             for (AddressDetailsDTO dto : entry.getValue()) {
-                AddressDetails detail;
-                if (dto.getAddressPoid() != null && existingMap.containsKey(dto.getAddressPoid())) {
-                    detail = existingMap.get(dto.getAddressPoid());
-                    updateDetail(detail, dto, currentUser);
-                } else {
-                    detail = buildDetail(dto, master, type, counter++, currentUser);
+                String actionType = dto.getActionType() != null ? dto.getActionType() : "isCreated";
+
+                if ("isDeleted".equalsIgnoreCase(actionType)) {
+                    if (dto.getAddressPoid() != null && existingMap.containsKey(dto.getAddressPoid())) {
+                        AddressDetails detail = existingMap.get(dto.getAddressPoid());
+                        toDelete.add(detail);
+                        String logDetail = String.format("Row Deleted on Address Detail with addressPoid: %s", detail.getAddressPoid());
+                        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), entityId, logDetail);
+                    }
+                } else if ("isUpdated".equalsIgnoreCase(actionType)) {
+                    if (dto.getAddressPoid() != null && existingMap.containsKey(dto.getAddressPoid())) {
+                        AddressDetails detail = existingMap.get(dto.getAddressPoid());
+                        AddressDetails oldDetail = new AddressDetails();
+                        BeanUtils.copyProperties(detail, oldDetail);
+                        updateDetail(detail, dto, currentUser);
+                        toSave.add(detail);
+                        String logDetail = String.format("KeyId = ADDRESS_MASTER_POID %s: ADDRESS_POID %s", master.getAddressMasterPoid(), detail.getAddressPoid());
+                        loggingService.createLog(oldDetail, detail, AddressDetails.class, UserContext.getDocumentId(), entityId, logDetail);
+                    }
+                } else if ("isCreated".equalsIgnoreCase(actionType)) {
+                    AddressDetails detail = buildDetail(dto, master, type, counter++, currentUser);
+                    toSave.add(detail);
+                    String logDetail = String.format("Row Created on Address Detail with addressPoid: %s", detail.getAddressPoid());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), entityId, logDetail);
                 }
-                toSave.add(detail);
             }
         }
 
-        //  Save updated and new details
         if (!toSave.isEmpty()) {
             detailsRepo.saveAll(toSave);
         }
+        if (!toDelete.isEmpty()) {
+            detailsRepo.deleteAll(toDelete);
+        }
+    }
+
+    @Override
+    public AddressLoadListResponse loadAddressCollection(BigDecimal addressMasterPoid) {
+        BigDecimal groupPoid = BigDecimal.valueOf(UserContext.getGroupPoid());
+        return addressStoredProcRepository.callAddressLoadListProc(groupPoid, addressMasterPoid);
     }
 
     private void updateDetail(AddressDetails entity, AddressDetailsDTO dto, String currentUser) {
@@ -179,8 +212,6 @@ public class AddressMasterServiceImpl implements AddressMasterService {
         entity.setVerified(dto.getVerified());
         entity.setVerifiedBy(dto.getVerifiedBy());
         entity.setVerifiedDate(dto.getVerifiedDate());
-        entity.setLastModifiedBy(currentUser);
-        entity.setLastModifiedDate(LocalDateTime.now());
 
         entity.setWhatsappNo(dto.getWhatsappNo());
         entity.setLinkedIn(dto.getLinkedIn());
@@ -244,8 +275,6 @@ public class AddressMasterServiceImpl implements AddressMasterService {
         detail.setVerifiedDate(dto.getVerifiedDate());
         detail.setCreatedBy(currentUser);
         detail.setCreatedDate(LocalDateTime.now());
-        detail.setLastModifiedBy(currentUser);
-        detail.setLastModifiedDate(LocalDateTime.now());
         detail.setWhatsappNo(dto.getWhatsappNo());
         detail.setLinkedIn(dto.getLinkedIn());
         detail.setInstagram(dto.getInstagram());

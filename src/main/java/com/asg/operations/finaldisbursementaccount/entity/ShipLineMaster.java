@@ -1,10 +1,12 @@
 package com.asg.operations.finaldisbursementaccount.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDate;
+
 
 @Getter
 @Setter
@@ -24,6 +26,7 @@ public class ShipLineMaster {
     @Column(name = "LINE_POID")
     private Long linePoid;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID")
     private Long groupPoid;
 
@@ -52,12 +55,10 @@ public class ShipLineMaster {
     private Integer blRemarksCount;
 
     @Column(name = "AGENCY_STARTED_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date agencyStartedDate;
+    private LocalDate agencyStartedDate;
 
     @Column(name = "NEXT_RENEWAL_DATE")
-    @Temporal(TemporalType.DATE)
-    private Date nextRenewalDate;
+    private LocalDate nextRenewalDate;
 
     @Column(name = "ACTIVE", length = 1)
     private String active;
@@ -65,20 +66,23 @@ public class ShipLineMaster {
     @Column(name = "SEQNO")
     private Integer seqNo;
 
+    @AuditIgnore
     @Column(name = "CREATED_BY", length = 20)
     private String createdBy;
-
+    
+    @AuditIgnore
     @Column(name = "CREATED_DATE")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
-
+    private LocalDate createdDate;
+    
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_BY", length = 20)
     private String lastModifiedBy;
-
+    
+    @AuditIgnore
     @Column(name = "LASTMODIFIED_DATE")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date lastModifiedDate;
-
+    private LocalDate lastModifiedDate;
+    
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
@@ -89,16 +93,13 @@ public class ShipLineMaster {
     private Double bankGuaranteeAmt;
 
     @Column(name = "BANK_GUARANTEE_PERIOD_FROM")
-    @Temporal(TemporalType.DATE)
-    private Date bankGuaranteePeriodFrom;
+    private LocalDate bankGuaranteePeriodFrom;
 
     @Column(name = "BANK_GUARANTEE_PERIOD_TO")
-    @Temporal(TemporalType.DATE)
-    private Date bankGuaranteePeriodTo;
+    private LocalDate bankGuaranteePeriodTo;
 
     @Column(name = "BANK_GUARANTEE_EXPIRY")
-    @Temporal(TemporalType.DATE)
-    private Date bankGuaranteeExpiry;
+    private LocalDate bankGuaranteeExpiry;
 
     @Column(name = "LINE_TYPE", length = 20)
     private String lineType;
@@ -107,9 +108,9 @@ public class ShipLineMaster {
     private Long chamberOfCommerce;
 
     @Column(name = "CHAMBER_OF_COMMERCE_EXPIRY")
-    @Temporal(TemporalType.DATE)
-    private Date chamberOfCommerceExpiry;
+    private LocalDate chamberOfCommerceExpiry;
 
+    @AuditIgnore
     @Column(name = "COMPANY_POID")
     private Long companyPoid;
 
@@ -123,12 +124,10 @@ public class ShipLineMaster {
     private String terminalLineCode;
 
     @Column(name = "AGENCY_CONTRACT_START")
-    @Temporal(TemporalType.DATE)
-    private Date agencyContractStart;
+    private LocalDate agencyContractStart;
 
     @Column(name = "AGENCY_CONTRACT_END")
-    @Temporal(TemporalType.DATE)
-    private Date agencyContractEnd;
+    private LocalDate agencyContractEnd;
 
     @Column(name = "BANK_GUARANTEE_NO", length = 25)
     private String bankGuaranteeNo;
@@ -204,5 +203,4 @@ public class ShipLineMaster {
 
     @Column(name = "ADDRESS_POID")
     private Long addressPoid;
-
 }

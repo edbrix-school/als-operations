@@ -1,12 +1,15 @@
 package com.asg.operations.pdaentryform.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.pdaentryform.dto.*;
-import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service interface for PDA Entry operations
@@ -31,7 +34,7 @@ public interface PdaEntryService {
     /**
      * Soft delete PDA entry
      */
-    void deletePdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    void deletePdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, @Valid DeleteReasonDto deleteReasonDto);
 
     /**
      * Get charge details for a PDA entry
@@ -42,6 +45,11 @@ public interface PdaEntryService {
      * Bulk save charge details (create, update, delete)
      */
     List<PdaEntryChargeDetailResponse> bulkSaveChargeDetails(Long transactionPoid, BulkSaveChargeDetailsRequest request, Long groupPoid, Long companyPoid, String userId);
+
+    /**
+     * Update single charge detail
+     */
+    PdaEntryChargeDetailResponse updateChargeDetail(Long transactionPoid, Long detRowId, PdaEntryChargeDetailRequest request, Long groupPoid, Long companyPoid, String userId);
 
     /**
      * Delete single charge detail
@@ -124,9 +132,24 @@ public interface PdaEntryService {
     VesselDetailsResponse getVesselDetails(BigDecimal vesselPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
+     * Get voyage details (auto-population from LOV change)
+     */
+    Map<String, Object> getVoyageDetails(BigDecimal voyagePoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
      * Create FDA from PDA entry
      */
-    String createFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    String updateFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
+     * Create FDA from PDA
+     */
+    String createFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, String pdaPoid);
+
+    /**
+     * Parse FDA creation result to extract FDA reference
+     */
+    Map<String, String> parseFdaCreationResult(String spResult);
 
     /**
      * Upload acknowledgment details
@@ -141,7 +164,7 @@ public interface PdaEntryService {
     /**
      * Get all PDA entries with filters
      */
-    org.springframework.data.domain.Page<PdaEntryListResponse> getAllPdaWithFilters(Long groupPoid, Long companyPoid, GetAllPdaFilterRequest filterRequest, int page, int size, String sort);
+    Map<String, Object> getAllPdaWithFilters(String documentId, FilterRequestDto filters, Pageable pageable, LocalDate periodFrom, LocalDate periodTo);
 
     /**
      * Get FDA document info for viewing
@@ -186,7 +209,7 @@ public interface PdaEntryService {
     /**
      * Upload TDR details
      */
-    String uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file);
+    List<PdaEntryTdrDetailResponse> uploadTdrDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, org.springframework.web.multipart.MultipartFile file);
 
     /**
      * Clear TDR details
@@ -197,6 +220,11 @@ public interface PdaEntryService {
      * Process TDR charges
      */
     String processTdrCharges(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
+     * Print PDA entry as PDF
+     */
+    byte[] printPda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, BigDecimal otherPrincipalPoid) throws Exception;
 
 }
 

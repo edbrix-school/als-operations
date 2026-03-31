@@ -1,9 +1,13 @@
 package com.asg.operations.pdaporttariffmaster.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.pdaporttariffmaster.dto.*;
 import com.asg.operations.pdaporttariffmaster.service.PdaPortTariffHdrService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,14 +15,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -36,116 +39,87 @@ class PdaPortTariffMasterControllerTest {
     @Mock
     private PdaPortTariffHdrService tariffService;
 
+    @Mock
+    private LoggingService loggingService;
+
     @InjectMocks
     private PdaPortTariffMasterController controller;
 
     @BeforeEach
     void setUp() {
         mockedUserContext = mockStatic(UserContext.class);
-        mockedUserContext.when(UserContext::getCompanyPoid).thenReturn(100L);
-        mockedUserContext.when(UserContext::getGroupPoid).thenReturn(200L);
-        mockedUserContext.when(UserContext::getUserId).thenReturn("user1");
+        mockedUserContext.when(UserContext::getDocumentId).thenReturn("DOC_ID");
 
         objectMapper = new ObjectMapper();
-        objectMapper.findAndRegisterModules();
+        objectMapper.registerModule(new JavaTimeModule());
 
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
     }
 
-    @org.junit.jupiter.api.AfterEach
+    @AfterEach
     void tearDown() {
-        if (mockedUserContext != null) {
-            mockedUserContext.close();
-        }
-    }
-
-    @Test
-    void getTariffList_Success() throws Exception {
-        GetAllTariffFilterRequest filterRequest = new GetAllTariffFilterRequest();
-        filterRequest.setIsDeleted("N");
-        filterRequest.setOperator("AND");
-        filterRequest.setFilters(Collections.emptyList());
-
-        Page<PdaPortTariffListResponse> page = new PageImpl<>(List.of(createMockListResponse()));
-        when(tariffService.getAllTariffsWithFilters(eq(200L), eq(100L), any(GetAllTariffFilterRequest.class), eq(0), eq(20), any()))
-                .thenReturn(page);
-
-        mockMvc.perform(post("/v1/pda-port-tariffs/search")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(filterRequest))
-                .param("page", "0")
-                .param("size", "20"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Tariff list fetched successfully"));
-
-        verify(tariffService).getAllTariffsWithFilters(eq(200L), eq(100L), any(GetAllTariffFilterRequest.class), eq(0), eq(20), any());
+        if (mockedUserContext != null) mockedUserContext.close();
     }
 
     @Test
     void getTariffById_Success() throws Exception {
-        PdaPortTariffMasterResponse response = createMockResponse();
-        when(tariffService.getTariffById(1L, 200L)).thenReturn(response);
+        when(tariffService.getTariffById(1L)).thenReturn(createMockResponse());
 
         mockMvc.perform(get("/v1/pda-port-tariffs/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Tariff retrieved successfully"));
 
-        verify(tariffService).getTariffById(1L, 200L);
+        verify(tariffService).getTariffById(1L);
     }
 
     @Test
     void createTariff_Success() throws Exception {
-        PdaPortTariffMasterRequest request = createMockRequest();
-        PdaPortTariffMasterResponse response = createMockResponse();
-
-        when(tariffService.createTariff(any(), eq(200L), eq(100L), eq("user1"))).thenReturn(response);
+        when(tariffService.createTariff(any(PdaPortTariffMasterRequest.class))).thenReturn(createMockResponse());
 
         mockMvc.perform(post("/v1/pda-port-tariffs")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(createMockRequest())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Tariff created successfully"));
 
-        verify(tariffService).createTariff(any(), eq(200L), eq(100L), eq("user1"));
+        verify(tariffService).createTariff(any(PdaPortTariffMasterRequest.class));
     }
 
     @Test
     void updateTariff_Success() throws Exception {
-        PdaPortTariffMasterRequest request = createMockRequest();
-        PdaPortTariffMasterResponse response = createMockResponse();
-
-        when(tariffService.updateTariff(eq(1L), any(), eq(200L), eq("user1"))).thenReturn(response);
+        when(tariffService.updateTariff(eq(1L), any(PdaPortTariffMasterRequest.class))).thenReturn(createMockResponse());
 
         mockMvc.perform(put("/v1/pda-port-tariffs/1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(createMockRequest())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Tariff updated successfully"));
 
-        verify(tariffService).updateTariff(eq(1L), any(), eq(200L), eq("user1"));
+        verify(tariffService).updateTariff(eq(1L), any(PdaPortTariffMasterRequest.class));
     }
 
     @Test
     void deleteTariff_Success() throws Exception {
-        doNothing().when(tariffService).deleteTariff(1L, 200L, "user1", false);
+        doNothing().when(tariffService).deleteTariff(eq(1L), any());
 
         mockMvc.perform(delete("/v1/pda-port-tariffs/1")
-                .param("hardDelete", "false"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Tariff deleted successfully"));
 
-        verify(tariffService).deleteTariff(1L, 200L, "user1", false);
+        verify(tariffService).deleteTariff(eq(1L), any());
     }
 
     @Test
     void getChargeDetails_Success() throws Exception {
-        ChargeDetailsResponse chargeResponse = new ChargeDetailsResponse();
-        when(tariffService.getChargeDetails(eq(1L), eq(200L), eq(true))).thenReturn(chargeResponse);
+        when(tariffService.getChargeDetails(eq(1L), eq(true))).thenReturn(new ChargeDetailsResponse());
 
         mockMvc.perform(get("/v1/pda-port-tariffs/1/charges")
                 .param("includeSlabs", "true"))
@@ -153,26 +127,27 @@ class PdaPortTariffMasterControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Charge details retrieved successfully"));
 
-        verify(tariffService).getChargeDetails(eq(1L), eq(200L), eq(true));
+        verify(tariffService).getChargeDetails(eq(1L), eq(true));
     }
 
     @Test
     void bulkSaveChargeDetails_Success() throws Exception {
+        PdaPortTariffChargeDetailRequest chargeDetail = new PdaPortTariffChargeDetailRequest();
+        chargeDetail.setChargePoid(new BigDecimal("1"));
+        chargeDetail.setRateTypePoid(new BigDecimal("1"));
         ChargeDetailsRequest chargeRequest = new ChargeDetailsRequest();
-        chargeRequest.setChargeDetails(List.of(new PdaPortTariffChargeDetailRequest()));
-        ChargeDetailsResponse chargeResponse = new ChargeDetailsResponse();
+        chargeRequest.setChargeDetails(List.of(chargeDetail));
 
-        when(tariffService.bulkSaveChargeDetails(eq(1L), any(), eq(200L), eq("user1"))).thenReturn(chargeResponse);
+        when(tariffService.bulkSaveChargeDetails(eq(1L), any(ChargeDetailsRequest.class))).thenReturn(new ChargeDetailsResponse());
 
         mockMvc.perform(post("/v1/pda-port-tariffs/1/charges/bulk")
-                .header("X-User-Id", "user1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(chargeRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Charge details saved successfully"));
 
-        verify(tariffService).bulkSaveChargeDetails(eq(1L), any(), eq(200L), eq("user1"));
+        verify(tariffService).bulkSaveChargeDetails(eq(1L), any(ChargeDetailsRequest.class));
     }
 
     @Test
@@ -180,9 +155,8 @@ class PdaPortTariffMasterControllerTest {
         CopyTariffRequest copyRequest = new CopyTariffRequest();
         copyRequest.setNewPeriodFrom(LocalDate.of(2024, 1, 1));
         copyRequest.setNewPeriodTo(LocalDate.of(2024, 12, 31));
-        PdaPortTariffMasterResponse response = createMockResponse();
 
-        when(tariffService.copyTariff(eq(1L), any(), eq(200L), eq("user1"))).thenReturn(response);
+        when(tariffService.copyTariff(eq(1L), any(CopyTariffRequest.class))).thenReturn(createMockResponse());
 
         mockMvc.perform(post("/v1/pda-port-tariffs/1/copy")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -191,13 +165,11 @@ class PdaPortTariffMasterControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Tariff copied successfully"));
 
-        verify(tariffService).copyTariff(eq(1L), any(), eq(200L), eq("user1"));
+        verify(tariffService).copyTariff(eq(1L), any(CopyTariffRequest.class));
     }
 
     private PdaPortTariffMasterRequest createMockRequest() {
         PdaPortTariffMasterRequest request = new PdaPortTariffMasterRequest();
-        request.setDocRef("DOC001");
-        request.setRemarks("Test tariff");
         request.setPort("1");
         request.setVesselTypes(List.of("1", "2"));
         request.setPeriodFrom(LocalDate.of(2024, 1, 1));
@@ -207,13 +179,6 @@ class PdaPortTariffMasterControllerTest {
 
     private PdaPortTariffMasterResponse createMockResponse() {
         PdaPortTariffMasterResponse response = new PdaPortTariffMasterResponse();
-        response.setTransactionPoid(1L);
-        response.setDocRef("DOC001");
-        return response;
-    }
-
-    private PdaPortTariffListResponse createMockListResponse() {
-        PdaPortTariffListResponse response = new PdaPortTariffListResponse();
         response.setTransactionPoid(1L);
         response.setDocRef("DOC001");
         return response;

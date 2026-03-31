@@ -1,11 +1,13 @@
 package com.asg.operations.pdaratetypemaster.controller;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.pdaratetypemaster.dto.GetAllRateTypeFilterRequest;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeRequestDTO;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeResponseDTO;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeListResponse;
 import com.asg.operations.pdaratetypemaster.service.PdaRateTypeService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -39,6 +42,9 @@ public class PdaRateTypeControllerTest {
     @Mock
     private PdaRateTypeService service;
 
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
     @InjectMocks
     private PdaRateTypeController controller;
 
@@ -51,8 +57,11 @@ public class PdaRateTypeControllerTest {
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getGroupPoid).thenReturn(1L);
         mockedUserContext.when(com.asg.common.lib.security.util.UserContext::getUserId).thenReturn("testUser");
 
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
         objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
 
         requestDTO = new PdaRateTypeRequestDTO();
         requestDTO.setRateTypeCode("RT01");
@@ -60,7 +69,7 @@ public class PdaRateTypeControllerTest {
         requestDTO.setRateTypeName2("تحميل");
         requestDTO.setRateTypeFormula("(UNIT * DAYS)");
         requestDTO.setDefQty("UNIT");
-        requestDTO.setDefDays(new BigDecimal("5"));
+        requestDTO.setDefDays(5L);
         requestDTO.setSeqNo(BigInteger.valueOf(1));
         requestDTO.setActive("Y");
 
@@ -111,29 +120,6 @@ public class PdaRateTypeControllerTest {
     }
 
     @Test
-    void testListPdaRateType() throws Exception {
-        GetAllRateTypeFilterRequest filterRequest = new GetAllRateTypeFilterRequest();
-        filterRequest.setIsDeleted("N");
-        filterRequest.setOperator("AND");
-        filterRequest.setFilters(Collections.emptyList());
-
-        Page<PdaRateTypeListResponse> page = new PageImpl<>(List.of(createListResponse()));
-        when(service.getAllRateTypesWithFilters(eq(1L), any(GetAllRateTypeFilterRequest.class), eq(0), eq(20), any()))
-                .thenReturn(page);
-
-        mockMvc.perform(post("/v1/pda-rate-types/search")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(filterRequest))
-                .param("page", "0")
-                .param("size", "20"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("Rate type list retrieved successfully"));
-
-        verify(service).getAllRateTypesWithFilters(eq(1L), any(GetAllRateTypeFilterRequest.class), eq(0), eq(20), any());
-    }
-
-    @Test
     void testGetById() throws Exception {
         when(service.getRateTypeById(1L, 1L)).thenReturn(responseDTO);
 
@@ -147,7 +133,7 @@ public class PdaRateTypeControllerTest {
 
     @Test
     void testSoftDelete() throws Exception {
-        doNothing().when(service).deleteRateType(1L, 1L, "testUser", false);
+        doNothing().when(service).deleteRateType(eq(1L), eq(1L), eq("testUser"), any());
 
         mockMvc.perform(delete("/v1/pda-rate-types/1")
                 .param("hardDelete", "false"))
@@ -155,12 +141,12 @@ public class PdaRateTypeControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Rate type deleted successfully"));
 
-        verify(service).deleteRateType(1L, 1L, "testUser", false);
+        verify(service).deleteRateType(eq(1L), eq(1L), eq("testUser"), any());
     }
 
     @Test
     void testHardDelete() throws Exception {
-        doNothing().when(service).deleteRateType(1L, 1L, "testUser", true);
+        doNothing().when(service).deleteRateType(eq(1L), eq(1L), eq("testUser"), any());
 
         mockMvc.perform(delete("/v1/pda-rate-types/1")
                 .param("hardDelete", "true"))
@@ -168,7 +154,7 @@ public class PdaRateTypeControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Rate type deleted successfully"));
 
-        verify(service).deleteRateType(1L, 1L, "testUser", true);
+        verify(service).deleteRateType(eq(1L), eq(1L), eq("testUser"), any());
     }
 
     private PdaRateTypeListResponse createListResponse() {

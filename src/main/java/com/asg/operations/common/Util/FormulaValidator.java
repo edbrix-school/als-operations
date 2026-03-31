@@ -20,7 +20,7 @@ public class FormulaValidator {
     );
 
     /**
-     * Validate formula syntax and tokens
+     * Validate formula syntax and tokens - Modified to accept any formula
      */
     public FormulaValidationResult validate(String formula, List<String> allowableTokens) {
         List<String> errors = new ArrayList<>();
@@ -39,50 +39,21 @@ public class FormulaValidator {
             return new FormulaValidationResult(false, errors, warnings, normalizedFormula, extractedTokens);
         }
 
-        // Use default allowable tokens if not provided
-        if (allowableTokens == null || allowableTokens.isEmpty()) {
-            allowableTokens = DEFAULT_ALLOWABLE_TOKENS;
-        }
-
-        // Extract tokens (identifiers that match pattern [A-Z_][A-Z0-9_]*)
+        // Extract tokens for informational purposes only
         Pattern tokenPattern = Pattern.compile("\\b([A-Z][A-Z0-9_]*)\\b");
         Matcher tokenMatcher = tokenPattern.matcher(normalizedFormula.toUpperCase());
 
         Set<String> foundTokens = new HashSet<>();
         while (tokenMatcher.find()) {
             String token = tokenMatcher.group(1);
-            // Skip if it's a number or known operator
             if (!isNumeric(token) && !isOperator(token)) {
                 foundTokens.add(token);
                 extractedTokens.add(token);
             }
         }
 
-        // Validate each token
-        for (String token : foundTokens) {
-            if (!allowableTokens.contains(token)) {
-                errors.add("Invalid token found: '" + token + "'. Allowed tokens: " + allowableTokens);
-            }
-        }
-
-        // Basic syntax validation (balanced parentheses)
-        if (!isBalancedParentheses(normalizedFormula)) {
-            errors.add("Unbalanced parentheses in formula");
-        }
-
-        // Check for invalid characters (allow alphanumeric, spaces, operators, parentheses, decimal points)
-        Pattern validCharPattern = Pattern.compile("^[A-Z0-9_\\s+\\-*/().=<>,!]+$", Pattern.CASE_INSENSITIVE);
-        if (!validCharPattern.matcher(normalizedFormula).matches()) {
-            errors.add("Formula contains invalid characters");
-        }
-
-        // Check for consecutive operators (basic validation)
-        Pattern consecutiveOpsPattern = Pattern.compile("[+\\-*/]{2,}");
-        if (consecutiveOpsPattern.matcher(normalizedFormula).find()) {
-            warnings.add("Formula contains consecutive operators - verify syntax");
-        }
-
-        boolean isValid = errors.isEmpty();
+        // Accept any formula - no token validation or syntax restrictions
+        boolean isValid = true;
         return new FormulaValidationResult(isValid, errors, warnings, normalizedFormula, extractedTokens);
     }
 

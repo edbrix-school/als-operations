@@ -1,5 +1,6 @@
 package com.asg.operations.portactivitiesmaster.service;
 
+import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.exceptions.ResourceNotFoundException;
@@ -20,7 +21,6 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 
-import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -42,6 +42,12 @@ class PortActivityMasterServiceImplTest {
 
     @Mock
     private EntityManager entityManager;
+
+    @Mock
+    private com.asg.common.lib.service.LoggingService loggingService;
+
+    @Mock
+    private com.asg.common.lib.service.DocumentDeleteService documentDeleteService;
 
     @Mock
     private Query query;
@@ -75,8 +81,6 @@ class PortActivityMasterServiceImplTest {
                 .portActivityTypeName2("Test Activity 2")
                 .active("Y")
                 .seqno(1L)
-                .createdBy(userId)
-                .createdDate(LocalDateTime.now())
                 .deleted("N")
                 .remarks("Test remarks")
                 .build();
@@ -103,33 +107,6 @@ class PortActivityMasterServiceImplTest {
         if (mockedUserContext != null) {
             mockedUserContext.close();
         }
-    }
-
-    @Test
-    void getAllPortActivitiesWithFilters_ShouldReturnPageResponse() {
-        Object[] mockRow = {
-            1L, 1L, "PA1", "Test Activity", "Test Activity 2", "Y", 1L,
-            "testUser", Timestamp.valueOf(LocalDateTime.now()), "testUser",
-            Timestamp.valueOf(LocalDateTime.now()), "N", "Test remarks"
-        };
-
-        when(entityManager.createNativeQuery(anyString())).thenReturn(query).thenReturn(countQuery);
-        when(query.setParameter(anyString(), any())).thenReturn(query);
-        when(query.setFirstResult(anyInt())).thenReturn(query);
-        when(query.setMaxResults(anyInt())).thenReturn(query);
-        when(countQuery.setParameter(anyString(), any())).thenReturn(countQuery);
-        List<Object[]> mockResultList = new java.util.ArrayList<>();
-        mockResultList.add(mockRow);
-        when(query.getResultList()).thenReturn(mockResultList);
-        when(countQuery.getSingleResult()).thenReturn(1L);
-
-        Page<PortActivityListResponse> result = service.getAllPortActivitiesWithFilters(
-                groupPoid, filterRequest, 0, 20, null);
-
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
-        assertEquals("PA1", result.getContent().get(0).getPortActivityTypeCode());
-        verify(entityManager, times(2)).createNativeQuery(anyString());
     }
 
     @Test
@@ -190,12 +167,9 @@ class PortActivityMasterServiceImplTest {
         when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        service.deletePortActivity(1L, groupPoid, userId, false);
+        service.deletePortActivity(1L, groupPoid, userId, new DeleteReasonDto());
 
-        assertEquals("Y", entity.getDeleted());
-        assertEquals("N", entity.getActive());
-        verify(repository).save(entity);
-        verify(repository, never()).delete(any());
+        verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }
 
     @Test
@@ -203,10 +177,9 @@ class PortActivityMasterServiceImplTest {
         when(repository.findByPortActivityTypePoidAndGroupPoid(1L, groupPoid))
                 .thenReturn(Optional.of(entity));
 
-        service.deletePortActivity(1L, groupPoid, userId, true);
+        service.deletePortActivity(1L, groupPoid, userId,  new DeleteReasonDto());
 
-        verify(repository).delete(entity);
-        verify(repository, never()).save(any());
+        verify(documentDeleteService).deleteDocument(eq(1L), anyString(), anyString(), any(), any());
     }
 
     @Test
@@ -215,6 +188,6 @@ class PortActivityMasterServiceImplTest {
                 .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () ->
-                service.deletePortActivity(1L, groupPoid, userId, false));
+                service.deletePortActivity(1L, groupPoid, userId,  new DeleteReasonDto()));
     }
 }

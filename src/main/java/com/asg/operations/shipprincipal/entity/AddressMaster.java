@@ -1,17 +1,19 @@
 package com.asg.operations.shipprincipal.entity;
 
+import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "GLOBAL_ADDRESS_MASTER")
 @Getter
 @Setter
-public class AddressMaster {
+public class AddressMaster extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "address_master_seq")
     @SequenceGenerator(
@@ -22,6 +24,7 @@ public class AddressMaster {
     @Column(name = "ADDRESS_MASTER_POID")
     private Long addressMasterPoid;
 
+    @AuditIgnore
     @Column(name = "GROUP_POID", nullable = false)
     private Long groupPoid;
 
@@ -64,21 +67,10 @@ public class AddressMaster {
     @Column(name = "SEQNO")
     private Long seqno;
 
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
-
     @Column(name = "OLD_ACCTNO", length = 20)
     private String oldAcctNo;
 
+    @AuditIgnore
     @Column(name = "DELETED", length = 1)
     private String deleted;
 
