@@ -22,8 +22,7 @@ public class PdaPortTariffHdr extends BaseEntity {
 
     @AuditIgnore
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pda_port_tariff_hdr_seq")
-    @SequenceGenerator(name = "pda_port_tariff_hdr_seq", sequenceName = "PDA_PORT_TARIFF_HDR_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
 
