@@ -403,7 +403,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         List<PdaEntryDtl> details = entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid);
 
         return details.stream()
-                .map(this::toChargeDetailResponse)
+                .map(detail -> toChargeDetailResponse(detail, groupPoid, companyPoid))
                 .collect(Collectors.toList());
     }
 
@@ -488,7 +488,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Charge detail not found with id: " + detRowId
                 ));
-        return toChargeDetailResponse(detail);
+        return toChargeDetailResponse(detail, groupPoid, companyPoid);
     }
 
     @Override
@@ -1918,7 +1918,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
-    private PdaEntryChargeDetailResponse toChargeDetailResponse(PdaEntryDtl entity) {
+    private PdaEntryChargeDetailResponse toChargeDetailResponse(PdaEntryDtl entity, Long groupPoid, Long companyPoid) {
         PdaEntryChargeDetailResponse response = new PdaEntryChargeDetailResponse();
         response.setTransactionPoid(entity.getTransactionPoid());
         response.setDetRowId(entity.getDetRowId());
@@ -1938,6 +1938,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setFdaDocRef(entity.getFdaDocRef());
         response.setFdaPoid(entity.getFdaPoid());
         response.setFdaCreationType(entity.getFdaCreationType());
+        
+        // Get FDA creation type detail using LOV service
+        response.setFdaCreationTypeDet(lovService.getLovItemByCode(
+            entity.getFdaCreationType(), 
+            "FDA_CREATION_TYPE", 
+            groupPoid, 
+            companyPoid, 
+            null));
+        
         response.setDataSource(entity.getDataSource());
         response.setDetailFrom(entity.getDetailFrom());
         response.setManual(entity.getManual());
