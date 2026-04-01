@@ -46,7 +46,6 @@ public class AddressDetailsDTO {
     @Size(max = 30, message = "Fax must not exceed 30 characters")
     private String fax;
 
-    @NotEmpty(message = "Email is required")
     private List<@Email(message = "Invalid email format") String> email;
 
     @Size(max = 500, message = "Website must not exceed 500 characters")
