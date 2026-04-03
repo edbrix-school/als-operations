@@ -850,12 +850,12 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         callUpdateFdaFromPda(groupPoid, companyPoid, userPoid, transactionPoid);
     }
 
-    public void submitPdaToFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
-        callSubmitPdaToFda(groupPoid, companyPoid, userPoid, transactionPoid);
+    public Map<String, Object> submitPdaToFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        return callSubmitPdaToFda(groupPoid, companyPoid, userPoid, transactionPoid);
     }
 
-    public void rejectFdaDocs(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String correctionRemarks) {
-        callRejectFdaDocs(groupPoid, companyPoid, userPoid, transactionPoid, correctionRemarks);
+    public Map<String, Object> rejectFdaDocs(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String correctionRemarks) {
+        return callRejectFdaDocs(groupPoid, companyPoid, userPoid, transactionPoid, correctionRemarks);
     }
 
     public List<PdaEntryAcknowledgmentDetailResponse> uploadAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
@@ -2834,7 +2834,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    public String callSubmitPdaToFda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
+    public Map<String, Object> callSubmitPdaToFda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
         try {
             logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - transactionPoid: {}", transactionPoid);
 
@@ -2847,7 +2847,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                             new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
                             new SqlParameter("P_PDA_POID", Types.NUMERIC),
                             new SqlOutParameter("P_RESULT", Types.VARCHAR),
-                            new SqlOutParameter("OUTDATA", Types.REF_CURSOR)
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
                     );
 
             Map<String, Object> inputMap = new HashMap<>();
@@ -2859,17 +2859,31 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             Map<String, Object> result = jdbcCall.execute(inputMap);
 
             String status = (String) result.get("P_RESULT");
+            List<Map<String, Object>> outData = (List<Map<String, Object>>) result.get("OUTDATA");
 
             logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - Completed. Status: {}", status);
-            return status != null ? status : "Success";
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", status != null ? status : "Success");
+            
+            if (outData != null && !outData.isEmpty()) {
+                Map<String, Object> cursorData = outData.get(0);
+                response.put("documentSubmittedDate", cursorData.get("DOCUMENT_SUBMITTED_DATE"));
+                response.put("documentSubmittedBy", cursorData.get("DOCUMENT_SUBMITTED_BY"));
+                response.put("documentSubmittedStatus", cursorData.get("DOCUMENT_SUBMITTED_STATUS"));
+            }
+            
+            return response;
 
         } catch (Exception e) {
             logger.error("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - Error: {}", e.getMessage(), e);
-            return "Error: " + e.getMessage();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "Error: " + e.getMessage());
+            return errorResponse;
         }
     }
 
-    public String callRejectFdaDocs(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid, String correctionRemarks) {
+    public Map<String, Object> callRejectFdaDocs(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid, String correctionRemarks) {
         try {
             logger.info("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - transactionPoid: {}", transactionPoid);
 
@@ -2883,7 +2897,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                             new SqlParameter("P_PDA_POID", Types.NUMERIC),
                             new SqlParameter("P_CORRECTION_REMARKS", Types.VARCHAR),
                             new SqlOutParameter("P_RESULT", Types.VARCHAR),
-                            new SqlOutParameter("OUTDATA", Types.REF_CURSOR)
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
                     );
 
             Map<String, Object> inputMap = new HashMap<>();
@@ -2896,13 +2910,37 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             Map<String, Object> result = jdbcCall.execute(inputMap);
 
             String status = (String) result.get("P_RESULT");
+            List<Map<String, Object>> outData = (List<Map<String, Object>>) result.get("OUTDATA");
 
             logger.info("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - Completed. Status: {}", status);
-            return status != null ? status : "Success";
 
+            // Check for warnings or errors
+            if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+                throw new ValidationException(
+                        "FDA document rejection failed",
+                        List.of(new ValidationError("general", status))
+                );
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", status != null ? status : "Success");
+            response.put("correctionRemarks", correctionRemarks);
+            
+            if (outData != null && !outData.isEmpty()) {
+                Map<String, Object> cursorData = outData.get(0);
+                response.put("documentReceivedStatus", cursorData.get("DOCUMENT_RECEIVED_STATUS"));
+            }
+            
+            return response;
+
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - Error: {}", e.getMessage(), e);
-            return "Error: " + e.getMessage();
+            throw new ValidationException(
+                    "FDA document rejection failed",
+                    List.of(new ValidationError("general", "Error rejecting FDA documents: " + e.getMessage()))
+            );
         }
     }
 
@@ -3105,18 +3143,20 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Override
-    public void acceptFdaDocuments(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public Map<String, Object> acceptFdaDocuments(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
         logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - transactionPoid: {}", transactionPoid);
 
         try {
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_VERIFY_THE_FDA_DOCS")
+                    .withoutProcedureColumnMetaDataAccess()
                     .declareParameters(
                             new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
                             new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
                             new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
                             new SqlParameter("P_PDA_POID", Types.NUMERIC),
-                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                            new SqlOutParameter("P_RESULT", Types.VARCHAR),
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
                     );
 
             Map<String, Object> inputMap = new HashMap<>();
@@ -3126,10 +3166,33 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
 
             Map<String, Object> result = jdbcCall.execute(inputMap);
-            String status = (String) result.get("P_STATUS");
+            String status = (String) result.get("P_RESULT");
+            List<Map<String, Object>> outData = (List<Map<String, Object>>) result.get("OUTDATA");
 
             logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Completed. Status: {}", status);
 
+            // Check for warnings or errors
+            if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+                throw new ValidationException(
+                        "FDA document verification failed",
+                        List.of(new ValidationError("general", status))
+                );
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", status != null ? status : "Success");
+            
+            if (outData != null && !outData.isEmpty()) {
+                Map<String, Object> cursorData = outData.get(0);
+                response.put("verificationAcceptedDate", cursorData.get("VERIFICATION_ACCEPTED_DATE"));
+                response.put("verificationAcceptedBy", cursorData.get("VERIFICATION_ACCEPTED_BY"));
+                response.put("documentReceivedStatus", cursorData.get("DOCUMENT_RECEIVED_STATUS"));
+            }
+            
+            return response;
+
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Error: {}", e.getMessage(), e);
             throw new ValidationException(
@@ -3137,15 +3200,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     List.of(new ValidationError("general", "Error verifying FDA documents: " + e.getMessage()))
             );
         }
-
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
-
-        entry.setVerificationAcceptedDate(LocalDate.now());
-        entry.setVerificationAcceptedBy(UserContext.getUserId());
-        entry.setDocumentReceivedStatus("ACCEPTED");
-        // Audit is handled by BaseEntity
-
-        entryHdrRepository.save(entry);
     }
 
 

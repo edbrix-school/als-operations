@@ -174,7 +174,7 @@ public interface PdaEntryService {
     /**
      * Accept FDA documents
      */
-    void acceptFdaDocuments(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    Map<String, Object> acceptFdaDocuments(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
      * Cancel PDA entry
@@ -189,12 +189,12 @@ public interface PdaEntryService {
     /**
      * Reject FDA documents
      */
-    void rejectFdaDocs(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String correctionRemarks);
+    Map<String, Object> rejectFdaDocs(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String correctionRemarks);
 
     /**
      * Submit PDA to FDA
      */
-    void submitPdaToFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    Map<String, Object> submitPdaToFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
      * Upload acknowledgment details from Excel file
