@@ -1,5 +1,6 @@
 package com.asg.operations.pdaporttariffmaster.dto;
 
+import com.asg.common.lib.dto.HasDetRowId;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class PdaPortTariffChargeDetailResponse {
+public class PdaPortTariffChargeDetailResponse implements HasDetRowId {
 
     private Long detRowId;
 

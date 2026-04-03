@@ -1,6 +1,7 @@
 package com.asg.operations.pdaporttariffmaster.util;
 
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.dto.DetRowIdSort;
 import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.commonlov.service.LovService;
 import com.asg.operations.pdaporttariffmaster.dto.*;
@@ -100,6 +101,7 @@ public class PdaPortTariffMapper {
                             .map(this::toChargeDetailResponse)
                             .collect(Collectors.toList())
             );
+            sortChargeAndSlabDetails(response.getChargeDetails());
         }
 
         return response;
@@ -162,6 +164,7 @@ public class PdaPortTariffMapper {
                             .map(this::toSlabDetailResponse)
                             .collect(Collectors.toList())
             );
+            DetRowIdSort.sortAscending(response.getSlabDetails());
         }
 
         return response;
@@ -234,6 +237,7 @@ public class PdaPortTariffMapper {
                             .map(this::toChargeDetailResponse)
                             .collect(Collectors.toList())
             );
+            sortChargeAndSlabDetails(response.getChargeDetails());
         }
         return response;
     }
@@ -248,6 +252,7 @@ public class PdaPortTariffMapper {
                             .map(this::toChargeDetailResponse)
                             .collect(Collectors.toList())
             );
+            sortChargeAndSlabDetails(response.getChargeDetails());
         }
         return response;
     }
@@ -297,5 +302,15 @@ public class PdaPortTariffMapper {
         response.setLastModifiedBy(entity.getLastModifiedBy());
         response.setLastModifiedDate(entity.getLastModifiedDate());
         return response;
+    }
+
+    private void sortChargeAndSlabDetails(List<PdaPortTariffChargeDetailResponse> chargeDetails) {
+        if (chargeDetails == null || chargeDetails.isEmpty()) {
+            return;
+        }
+        DetRowIdSort.sortAscending(chargeDetails);
+        for (PdaPortTariffChargeDetailResponse charge : chargeDetails) {
+            DetRowIdSort.sortAscending(charge.getSlabDetails());
+        }
     }
 }
