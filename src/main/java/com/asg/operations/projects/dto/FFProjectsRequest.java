@@ -26,7 +26,7 @@ public class FFProjectsRequest {
 
     private Long principalPoid;
 
-    private String shipmentMode;
+    private List<String> shipmentMode;
 
     private String mode;
 

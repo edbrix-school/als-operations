@@ -1,6 +1,8 @@
 package com.asg.operations.pdaentryform.service;
 
 import com.asg.common.lib.service.LoggingService;
+import com.asg.operations.commonlov.service.LovService;
+import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaentryform.entity.*;
 import com.asg.operations.pdaentryform.repository.*;
@@ -42,6 +44,8 @@ class PdaEntryServiceTest {
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     @Mock
     private jakarta.persistence.EntityManager entityManager;
+    @Mock
+    private LovService lovService;
 
     @InjectMocks
     private PdaEntryServiceImpl pdaEntryService;
@@ -153,23 +157,69 @@ class PdaEntryServiceTest {
     void testGetChargeDetails() {
         PdaEntryHdr entry = new PdaEntryHdr();
         entry.setTransactionPoid(transactionPoid);
+        entry.setGroupPoid(groupPoid);
+        entry.setCompanyPoid(companyPoid);
 
         PdaEntryDtl detail = new PdaEntryDtl();
         detail.setTransactionPoid(transactionPoid);
         detail.setDetRowId(1L);
         detail.setChargePoid(new BigDecimal(100));
         detail.setQty(new BigDecimal(5));
+        detail.setFdaCreationType("AUTO");
+        detail.setEntryHdr(entry);
+
+        LovItem fdaCreationTypeLov = new LovItem();
+        fdaCreationTypeLov.setCode("AUTO");
+        fdaCreationTypeLov.setDescription("Automatic");
 
         when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
         when(entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid))
                 .thenReturn(List.of(detail));
+        when(lovService.getLovItemByCode(any(), any(), any(), any(), any()))
+                .thenReturn(fdaCreationTypeLov);
 
         List<PdaEntryChargeDetailResponse> result = pdaEntryService.getChargeDetails(
                 transactionPoid, groupPoid, companyPoid);
 
         assertNotNull(result);
         assertEquals(1, result.size());
+        assertEquals("AUTO", result.get(0).getFdaCreationType());
+        assertNotNull(result.get(0).getFdaCreationTypeDet());
+        assertEquals("Automatic", result.get(0).getFdaCreationTypeDet().getDescription());
+    }
+
+    @Test
+    void testGetChargeDetailsWithNullFdaCreationType() {
+        PdaEntryHdr entry = new PdaEntryHdr();
+        entry.setTransactionPoid(transactionPoid);
+        entry.setGroupPoid(groupPoid);
+        entry.setCompanyPoid(companyPoid);
+
+        PdaEntryDtl detail = new PdaEntryDtl();
+        detail.setTransactionPoid(transactionPoid);
+        detail.setDetRowId(1L);
+        detail.setChargePoid(new BigDecimal(100));
+        detail.setQty(new BigDecimal(5));
+        detail.setFdaCreationType(null);
+        detail.setEntryHdr(entry);
+
+        LovItem emptyLovItem = new LovItem();
+
+        when(entryHdrRepository.findByTransactionPoid(transactionPoid))
+                .thenReturn(Optional.of(entry));
+        when(entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid))
+                .thenReturn(List.of(detail));
+        when(lovService.getLovItemByCode(any(), any(), any(), any(), any()))
+                .thenReturn(emptyLovItem);
+
+        List<PdaEntryChargeDetailResponse> result = pdaEntryService.getChargeDetails(
+                transactionPoid, groupPoid, companyPoid);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertNull(result.get(0).getFdaCreationType());
+        assertNotNull(result.get(0).getFdaCreationTypeDet());
     }
 
     @Test

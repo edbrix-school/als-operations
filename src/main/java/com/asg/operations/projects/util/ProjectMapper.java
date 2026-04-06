@@ -3,6 +3,8 @@ package com.asg.operations.projects.util;
 import com.asg.common.lib.dto.LovGetListDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LovDataService;
+import com.asg.operations.projectjob.entity.FFManifestHdr;
+import com.asg.operations.projectjob.repository.FFManifestHdrRepository;
 import com.asg.operations.projects.dto.*;
 import com.asg.operations.projects.entity.FFProjectsChargesDtl;
 import com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl;
@@ -21,6 +23,9 @@ public class ProjectMapper {
     @Autowired
     private LovDataService lovDataService;
 
+    @Autowired
+    private FFManifestHdrRepository manifestHdrRepository;
+
     public static void applyUpdate(FFProjectsRequest request, FFProjectsHdr existingProjectsHdr) {
         existingProjectsHdr.setQuotationReferencePoid(request.getQuotationReferencePoid());
         existingProjectsHdr.setProjectDescription(request.getProjectDescription());
@@ -28,7 +33,7 @@ public class ProjectMapper {
         existingProjectsHdr.setBillingPartyPoid(request.getBillingPartyPoid());
         existingProjectsHdr.setProjectCustomerPoid(request.getProjectCustomerPoid());
         existingProjectsHdr.setPrincipalPoid(request.getPrincipalPoid());
-        existingProjectsHdr.setShipmentMode(request.getShipmentMode());
+        existingProjectsHdr.setShipmentMode(request.getShipmentMode() != null ? String.join(",", request.getShipmentMode()) : null);
         existingProjectsHdr.setMode(request.getMode());
         existingProjectsHdr.setProjectReference(request.getProjectReference());
         existingProjectsHdr.setPeriodFrom(request.getPeriodFrom());
@@ -109,7 +114,7 @@ public class ProjectMapper {
                 .billingPartyPoid(request.getBillingPartyPoid())
                 .projectCustomerPoid(request.getProjectCustomerPoid())
                 .principalPoid(request.getPrincipalPoid())
-                .shipmentMode(request.getShipmentMode())
+                .shipmentMode(request.getShipmentMode() != null ? String.join(",", request.getShipmentMode()) : null)
                 .mode(request.getMode())
                 .projectReference(request.getProjectReference())
                 .periodFrom(request.getPeriodFrom())
@@ -153,8 +158,10 @@ public class ProjectMapper {
                 .projectCustomerLov(getLov(hdr.getProjectCustomerPoid(), "CUSTOMER_SUPPLIER_MASTER"))
                 .principalPoid(hdr.getPrincipalPoid())
                 .principalLov(getLov(hdr.getPrincipalPoid(), "PRINCIPAL_MASTER"))
-                .shipmentMode(hdr.getShipmentMode())
-                .shipmentModeLov(getLovByCode(hdr.getShipmentMode(), "PROJECTS_SHIPMENT_MODE"))
+                .shipmentMode(hdr.getShipmentMode() != null ? List.of(hdr.getShipmentMode().split(",")) : List.of())
+                .shipmentModeLov(hdr.getShipmentMode() != null
+                        ? List.of(hdr.getShipmentMode().split(",")).stream().map(code -> getLovByCode(code.trim(), "PROJECTS_SHIPMENT_MODE")).collect(Collectors.toList())
+                        : List.of())
                 .mode(hdr.getMode())
                 .modeLov(getLovByCode(hdr.getMode(), "PROJECTS_MODE"))
                 .projectReference(hdr.getProjectReference())
@@ -215,11 +222,18 @@ public class ProjectMapper {
     }
 
     public FFProjectsCtrlSheetDetailResponse mapCtrlSheetDetailToResponse(FFProjectsCtrlSheetDtl dtl) {
+        String jobNo = null;
+        if (dtl.getJobNoPoid() != null) {
+            jobNo = manifestHdrRepository.findById(dtl.getJobNoPoid())
+                    .map(FFManifestHdr::getFfJobNo)
+                    .orElse(null);
+        }
         return FFProjectsCtrlSheetDetailResponse.builder()
                 .transactionPoid(dtl.getTransactionPoid())
                 .detRowId(dtl.getDetRowId())
                 .freightType(dtl.getFreightType())
                 .jobNoPoid(dtl.getJobNoPoid())
+                .jobNo(jobNo)
                 .originPoid(dtl.getOrigin())
                 .originLov(getLov(dtl.getOrigin(), "FF_AIRPORTS"))
                 .destinationPoid(dtl.getDestination())

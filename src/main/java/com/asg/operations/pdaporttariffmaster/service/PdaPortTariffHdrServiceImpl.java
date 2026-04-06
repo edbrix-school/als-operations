@@ -103,7 +103,11 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         }
 
         PdaPortTariffHdr tariffHdr = mapper.toEntity(request);
-        PdaPortTariffHdr savedTariff = tariffHdrRepository.save(tariffHdr);
+        tariffHdrRepository.saveAndFlush(tariffHdr);
+        entityManager.refresh(tariffHdr);
+
+        PdaPortTariffHdr savedTariff = tariffHdrRepository.findByTransactionPoid(tariffHdr.getTransactionPoid())
+                .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", tariffHdr.getTransactionPoid()));
 
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedTariff.getTransactionPoid().toString());
 
@@ -359,7 +363,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         slabDtl.setCallByPort(slabRequest.getCallByPort());
         slabDtl.setRemarks(slabRequest.getRemarks());
 
-        PdaPortTariffSlabDtl savedSlabDetails =  slabDtlRepository.save(slabDtl);
+        PdaPortTariffSlabDtl savedSlabDetails = slabDtlRepository.save(slabDtl);
         String logDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", savedSlabDetails.getId().getDetRowId());
         loggingService.createLogSummaryEntry(UserContext.getDocumentId(), slabId.getTransactionPoid().toString(), logDetail);
     }
@@ -431,8 +435,8 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
 
                     PdaPortTariffSlabDtl savedSlabDtl = slabDtlRepository.saveAndFlush(slabDtl);
 
-                     String slabLogDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", savedSlabDtl.getId().getDetRowId());
-                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), slabId.getTransactionPoid().toString(), slabLogDetail);
+                    String slabLogDetail = String.format("Row Created on [PDA Port Tariff Master Slab Details] with detRowId: %s", savedSlabDtl.getId().getDetRowId());
+                    loggingService.createLogSummaryEntry(UserContext.getDocumentId(), slabId.getTransactionPoid().toString(), slabLogDetail);
                 }
             }
         }

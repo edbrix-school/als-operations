@@ -1,6 +1,6 @@
 package com.asg.operations.salesquotationprojects.entity;
 
-import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import com.asg.operations.salesquotationprojects.key.GlobalTermsCustomChangesId;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Table(name = "GLOBAL_TERMS_CUSTOM_CHANGES")
 @NoArgsConstructor
 @AllArgsConstructor
-public class GlobalTermsCustomChanges {
+public class GlobalTermsCustomChanges extends BaseEntity {
 
     @EmbeddedId
     private GlobalTermsCustomChangesId id;
@@ -30,19 +30,4 @@ public class GlobalTermsCustomChanges {
     @Column(name = "ACTIVE", length = 1)
     private String active;
 
-    @AuditIgnore
-    @Column(name = "CREATED_BY", length = 20)
-    private String createdBy;
-
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY", length = 20)
-    private String lastModifiedBy;
-
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
 }
