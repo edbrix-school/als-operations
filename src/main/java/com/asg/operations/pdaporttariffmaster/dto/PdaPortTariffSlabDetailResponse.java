@@ -1,6 +1,5 @@
 package com.asg.operations.pdaporttariffmaster.dto;
 
-import com.asg.common.lib.dto.HasDetRowId;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class PdaPortTariffSlabDetailResponse implements HasDetRowId {
+public class PdaPortTariffSlabDetailResponse {
 
     private Long detRowId;
 
