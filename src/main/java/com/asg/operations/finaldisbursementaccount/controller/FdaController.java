@@ -111,7 +111,7 @@ public class FdaController {
     })
     public ResponseEntity<?> deleteFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid, @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto) {
         fdaService.softDeleteFda(transactionPoid, UserContext.getUserId(), deleteReasonDto);
-        return ApiResponse.success("FDA soft deleted successfully");
+        return ApiResponse.success("FDA deleted successfully");
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
