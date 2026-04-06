@@ -299,7 +299,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             updateNotesDetails(existingEntity.getTransactionPoid(), request.getNotesDetails());
         }
         if (request.getTcDetails() != null && !request.getTcDetails().isEmpty()) {
-            updateTcDetails(existingEntity, request.getTcDetails());
+            saveTcDetails(existingEntity, request.getTcDetails());
         }
 
         loggingService.logChanges(oldHeader, existingEntity, SalesQuoteProjectsHdr.class, UserContext.getDocumentId(), transactionPoid.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
@@ -611,10 +611,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 entity.setClauseNo(request.getClauseRef());
                 entity.setClauseDetails(request.getTermsDescription());
                 entity.setActive("Y");
-                entity.setCreatedBy(UserContext.getUserId());
-                entity.setCreatedDate(LocalDateTime.now());
-                entity.setLastModifiedBy(UserContext.getUserId());
-                entity.setLastModifiedDate(LocalDateTime.now());
                 GlobalTermsCustomChanges saved = globalTermsCustomChangesRepository.save(entity);
                 String logDetail = String.format("Row Created on [Global Terms Custom Changes] with detRowId: %s", saved.getId().getDetRowId());
                 loggingService.createLogSummaryEntry(UserContext.getDocumentId(), existingEntity.getTransactionPoid().toString(), logDetail);
@@ -625,8 +621,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                     BeanUtils.copyProperties(existing, oldDetail);
                     existing.setClauseNo(request.getClauseRef());
                     existing.setClauseDetails(request.getTermsDescription());
-                    existing.setLastModifiedBy(UserContext.getUserId());
-                    existing.setLastModifiedDate(LocalDateTime.now());
                     globalTermsCustomChangesRepository.save(existing);
                     String logDetail = String.format("KeyId = DOC_ID %s: DOC_KEY_POID %s: REF_TERMS_POID %s: DET_ROW_ID %s", existing.getId().getDocId(), existing.getId().getDocKeyPoid(), existing.getId().getRefTermsPoid(), existing.getId().getDetRowId());
                     loggingService.createLog(oldDetail, existing, GlobalTermsCustomChanges.class, UserContext.getDocumentId(), existingEntity.getTransactionPoid().toString(), logDetail);
@@ -829,10 +823,6 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             entity.setClauseNo(request.getClauseRef());
             entity.setClauseDetails(request.getTermsDescription());
             entity.setActive("Y");
-            entity.setCreatedBy(UserContext.getUserId());
-            entity.setCreatedDate(LocalDateTime.now());
-            entity.setLastModifiedBy(UserContext.getUserId());
-            entity.setLastModifiedDate(LocalDateTime.now());
             globalTermsCustomChangesRepository.save(entity);
             String logDetail = String.format("Row Created on [Global Terms Custom Changes] with detRowId: %s", entity.getId().getDetRowId());
             loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
