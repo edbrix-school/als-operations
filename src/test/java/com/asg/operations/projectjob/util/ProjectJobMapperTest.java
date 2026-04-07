@@ -138,7 +138,7 @@ class ProjectJobMapperTest {
         dto.setPrintGroup("GRP");
         dto.setRemarks("REM");
         dto.setShChargeInv("SH");
-        dto.setUnitType(LocalDate.now());
+        dto.setUnitType("1");
         dto.setTaxPoid(BigDecimal.valueOf(60L));
         dto.setTaxPercentage(BigDecimal.valueOf(5.0));
         dto.setTaxAmount(BigDecimal.valueOf(12.5));
