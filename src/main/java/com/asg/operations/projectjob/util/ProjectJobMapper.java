@@ -105,7 +105,7 @@ public class ProjectJobMapper {
         entity.setRemarks(dto.getRemarks());
         entity.setShChargeInv(dto.getShChargeInv());
 
-        entity.setUnitType(dto.getUnitType() != null ? dto.getUnitType().atStartOfDay() : null);
+        entity.setUnitType(dto.getUnitType());
 
         entity.setTaxPoid(dto.getTaxPoid());
         entity.setTaxPercentage(dto.getTaxPercentage());
