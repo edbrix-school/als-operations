@@ -526,7 +526,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 entity.setId(id);
                 mapChargeRequestToEntity(request, entity);
                 SalesQuoteProjectsChargeDtl saved = chargeDtlRepository.save(entity);
-                String logDetail = String.format("Row Created on [Sales Quote Projects Charge Details] with detRowId: %s", saved.getId().getDetRowId());
+                String logDetail = String.format("Row Created on [Sales Quotation Projects Charge Details] with detRowId: %s", saved.getId().getDetRowId());
                 loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
             } else if (action == ActionType.isUpdated) {
                 SalesQuoteProjectsChargeDtlId id = new SalesQuoteProjectsChargeDtlId(transactionPoid, request.getDetRowId());
@@ -558,7 +558,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 entity.setId(id);
                 entity.setNotes(request.getNotes());
                 SalesQuoteProjectsNotesDtl saved = notesDtlRepository.save(entity);
-                String logDetail = String.format("Row Created on [Sales Quote Projects Notes Details] with detRowId: %s", saved.getId().getDetRowId());
+                String logDetail = String.format("Row Created on [Sales Quotation Projects Notes Details] with detRowId: %s", saved.getId().getDetRowId());
                 loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
             } else if (action == ActionType.isUpdated) {
                 SalesQuoteProjectsNotesDtlId id = new SalesQuoteProjectsNotesDtlId(transactionPoid, request.getDetRowId());
@@ -614,7 +614,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
                 entity.setClauseDetails(request.getTermsDescription());
                 entity.setActive("Y");
                 GlobalTermsCustomChanges saved = globalTermsCustomChangesRepository.save(entity);
-                String logDetail = String.format("Row Created on [Global Terms Custom Changes] with detRowId: %s", saved.getId().getDetRowId());
+                String logDetail = String.format("Row Created on [Sales Quotation Projects Terms and Condition Details] with detRowId: %s", saved.getId().getDetRowId());
                 loggingService.createLogSummaryEntry(UserContext.getDocumentId(), existingEntity.getTransactionPoid().toString(), logDetail);
             } else if (action == ActionType.isUpdated) {
                 GlobalTermsCustomChangesId id = new GlobalTermsCustomChangesId(docId, existingEntity.getTransactionPoid(), refTermsPoid, request.getDetRowId());
@@ -780,7 +780,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             entity.setId(id);
             mapChargeRequestToEntity(request, entity);
             chargeDtlRepository.save(entity);
-            String logDetail = String.format("Row Created on [Sales Quote Projects Charge Details] with detRowId: %s", entity.getId().getDetRowId());
+            String logDetail = String.format("Row Created on [Sales Quotation Projects Charge Details] with detRowId: %s", entity.getId().getDetRowId());
             loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
         }
     }
@@ -793,7 +793,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             entity.setId(id);
             entity.setNotes(request.getNotes());
             notesDtlRepository.save(entity);
-            String logDetail = String.format("Row Created on [Sales Quote Projects Notes Details] with detRowId: %s", entity.getId().getDetRowId());
+            String logDetail = String.format("Row Created on [Sales Quotation Projects Notes Details] with detRowId: %s", entity.getId().getDetRowId());
             loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
         }
     }
@@ -826,7 +826,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             entity.setClauseDetails(request.getTermsDescription());
             entity.setActive("Y");
             globalTermsCustomChangesRepository.save(entity);
-            String logDetail = String.format("Row Created on [Global Terms Custom Changes] with detRowId: %s", entity.getId().getDetRowId());
+            String logDetail = String.format("Row Created on [Sales Quotation Projects Terms and Condition Details] with detRowId: %s", entity.getId().getDetRowId());
             loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
         }
     }
