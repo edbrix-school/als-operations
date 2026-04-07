@@ -1,9 +1,6 @@
 package com.asg.operations.portcallreport.service;
 
-import com.asg.common.lib.dto.DeleteReasonDto;
-import com.asg.common.lib.dto.FilterDto;
-import com.asg.common.lib.dto.FilterRequestDto;
-import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.dto.*;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
@@ -133,6 +130,7 @@ public class PortCallReportServiceImpl implements PortCallReportService {
                         .portActivityDet(finalPortActivityMap.get(dtl.getPortActivityTypePoid()))
                         .build())
                 .collect(Collectors.toList());
+        DetRowIdSort.sortAscending(detailDtos);
 
         return PortCallReportResponseDto.builder()
                 .portCallReportPoid(hdr.getPortCallReportPoid())

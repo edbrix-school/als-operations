@@ -377,16 +377,18 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         }
 
         // Fetch and set child entities
-        response.setChargeDetails(chargeDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapChargeDetailToResponse).toList());
-        response.setNotesDetails(notesDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapNotesDetailToResponse).toList());
+        response.setChargeDetails(new ArrayList<>(chargeDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapChargeDetailToResponse).toList()));
+        response.setNotesDetails(new ArrayList<>(notesDtlRepository.findByIdTransactionPoid(entity.getTransactionPoid()).stream().map(this::mapNotesDetailToResponse).toList()));
         String docId = UserContext.getDocumentId();
         Long refTermsPoid = entity.getTermsPoid();
         if (refTermsPoid != null) {
-            response.setTcDetails(globalTermsCustomChangesRepository.findByIdDocIdAndIdDocKeyPoidAndIdRefTermsPoid(docId, entity.getTransactionPoid(), refTermsPoid).stream().map(this::mapTcDetailToResponse).toList());
+            response.setTcDetails(new ArrayList<>(globalTermsCustomChangesRepository.findByIdDocIdAndIdDocKeyPoidAndIdRefTermsPoid(docId, entity.getTransactionPoid(), refTermsPoid).stream().map(this::mapTcDetailToResponse).toList()));
         } else {
             response.setTcDetails(new ArrayList<>());
         }
-
+        DetRowIdSort.sortAscending(response.getChargeDetails());
+        DetRowIdSort.sortAscending(response.getNotesDetails());
+        DetRowIdSort.sortAscending(response.getTcDetails());
         return response;
     }
 
