@@ -175,17 +175,37 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
 
         // Auto-populate vessel details if vesselPoid is provided (fallback if not from voyage)
-        if (request.getVesselPoid() != null && entry.getVesselTypePoid() == null) {
+        // Only auto-populate if values are not already provided in the request
+        if (request.getVesselPoid() != null && 
+                (entry.getGrt() == null || entry.getNrt() == null || entry.getDwt() == null || entry.getVesselTypePoid() == null)) {
             VesselDetailsResponse vesselDetails = getVesselDetails(request.getVesselPoid(), groupPoid, companyPoid, userPoid);
             if (vesselDetails != null) {
-                entry.setVesselTypePoid(vesselDetails.getVesselTypePoid());
+                logger.info("Auto-populating vessel details - GRT: {}, NRT: {}, DWT: {}", 
+                        vesselDetails.getGrt(), vesselDetails.getNrt(), vesselDetails.getDwt());
+                
+                // Only set values that are null (not provided in request)
+                if (entry.getVesselTypePoid() == null) {
+                    entry.setVesselTypePoid(vesselDetails.getVesselTypePoid());
+                }
+                if (entry.getGrt() == null) {
+                    entry.setGrt(vesselDetails.getGrt());
+                }
+                if (entry.getNrt() == null) {
+                    entry.setNrt(vesselDetails.getNrt());
+                }
+                if (entry.getDwt() == null) {
+                    entry.setDwt(vesselDetails.getDwt());
+                }
+                
                 // Only set IMO number if not provided in request
-                if (request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) {
+                if ((request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) && entry.getImoNumber() == null) {
                     entry.setImoNumber(vesselDetails.getImoNumber());
                 }
-                entry.setGrt(vesselDetails.getGrt());
-                entry.setNrt(vesselDetails.getNrt());
-                entry.setDwt(vesselDetails.getDwt());
+                
+                logger.info("Vessel details set on entry - GRT: {}, NRT: {}, DWT: {}", 
+                        entry.getGrt(), entry.getNrt(), entry.getDwt());
+            } else {
+                logger.warn("No vessel details returned for vesselPoid: {}", request.getVesselPoid());
             }
         }
 
@@ -748,6 +768,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         try {
             logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - START - pdaPoid: {}", pdaPoid);
 
+            // Check if charge details exist
+            Long transactionPoid = Long.parseLong(pdaPoid);
+            List<PdaEntryDtl> chargeDetails = entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid);
+            if (chargeDetails == null || chargeDetails.isEmpty()) {
+                logger.warn("[SP-10] No charge details found for transactionPoid: {}", transactionPoid);
+                return "WARNING: No details in this Transaction...";
+            }
+
             // Try with schema prefix first
             String sqlWithSchema = "{ call PROC_PDA_FDA_CREATE_FROM_PDA(?, ?, ?, ?, ?) }";
             
@@ -1134,7 +1162,16 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                             new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
                             new SqlParameter("P_VESSEL_POID", Types.NUMERIC),
                             new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
-                    );
+                    )
+                    .returningResultSet("OUTDATA", (rs, rowNum) -> {
+                        VesselDetailsResponse response = new VesselDetailsResponse();
+                        response.setVesselTypePoid(rs.getBigDecimal("VESSEL_TYPE_POID"));
+                        response.setImoNumber(rs.getString("IMO_NUMBER"));
+                        response.setGrt(rs.getBigDecimal("GRT"));
+                        response.setNrt(rs.getBigDecimal("NRT"));
+                        response.setDwt(rs.getBigDecimal("DWT"));
+                        return response;
+                    });
 
             Map<String, Object> inParams = new HashMap<>();
             inParams.put("P_LOGIN_GROUP_POID", groupPoid);
@@ -1144,20 +1181,17 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> result = jdbcCall.execute(inParams);
 
-            List<Map<String, Object>> rows = (List<Map<String, Object>>) result.get("OUTDATA");
+            List<VesselDetailsResponse> vesselDetailsList = (List<VesselDetailsResponse>) result.get("OUTDATA");
 
-            VesselDetailsResponse response = new VesselDetailsResponse();
-            if (!rows.isEmpty()) {
-                Map<String, Object> row = rows.getFirst();
-                response.setVesselTypePoid((BigDecimal) row.get("VESSEL_TYPE_POID"));
-                response.setImoNumber((String) row.get("IMO_NUMBER"));
-                response.setGrt((BigDecimal) row.get("GRT"));
-                response.setNrt((BigDecimal) row.get("NRT"));
-                response.setDwt((BigDecimal) row.get("DWT"));
+            if (vesselDetailsList != null && !vesselDetailsList.isEmpty()) {
+                VesselDetailsResponse vesselDetails = vesselDetailsList.get(0);
+                logger.info("[SP-20] PROC_PDA_DEFAULT_VESSEL_DTLS - Completed. GRT: {}, NRT: {}, DWT: {}", 
+                        vesselDetails.getGrt(), vesselDetails.getNrt(), vesselDetails.getDwt());
+                return vesselDetails;
             }
 
-            logger.info("[SP-20] PROC_PDA_DEFAULT_VESSEL_DTLS - Completed");
-            return response;
+            logger.warn("[SP-20] No vessel details returned for vesselPoid: {}", vesselPoid);
+            return new VesselDetailsResponse();
 
         } catch (Exception e) {
             logger.error("[SP-20] PROC_PDA_DEFAULT_VESSEL_DTLS - Error: {}", e.getMessage(), e);
@@ -1311,9 +1345,18 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entity.setVoyageNo(request.getVoyageNo());
         entity.setVesselPoid(request.getVesselPoid());
         entity.setVesselTypePoid(request.getVesselTypePoid());
+        
+        // Log vessel details from request
+        logger.info("Mapping request to entity - GRT from request: {}, NRT from request: {}, DWT from request: {}",
+                request.getGrt(), request.getNrt(), request.getDwt());
+        
         entity.setGrt(request.getGrt());
         entity.setNrt(request.getNrt());
         entity.setDwt(request.getDwt());
+        
+        logger.info("After mapping - GRT on entity: {}, NRT on entity: {}, DWT on entity: {}",
+                entity.getGrt(), entity.getNrt(), entity.getDwt());
+        
         entity.setImoNumber(request.getImoNumber());
         entity.setArrivalDate(request.getArrivalDate());
         entity.setSailDate(request.getSailDate());
