@@ -1361,7 +1361,17 @@ public class PdaEntryController {
         // Parse the result to extract FDA reference
         Map<String, String> parsedResult = pdaEntryService.parseFdaCreationResult(result);
         
-        return ApiResponse.success("FDA creation completed", parsedResult);
+        // Determine the appropriate message based on the result
+        String message;
+        if (result != null && result.toUpperCase().startsWith("WARNING")) {
+            message = result; // Use the warning message as-is
+        } else if (result != null && result.toUpperCase().startsWith("ERROR")) {
+            message = result; // Use the error message as-is
+        } else {
+            message = "FDA creation completed"; // Success message
+        }
+        
+        return ApiResponse.success(message, parsedResult);
     }
 
     @Operation(
