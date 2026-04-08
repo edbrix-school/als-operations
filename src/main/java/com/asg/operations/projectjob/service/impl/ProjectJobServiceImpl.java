@@ -11,6 +11,11 @@ import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.utility.PaginationUtil;
+import com.asg.operations.common.entity.GlobalAddressDetails;
+import com.asg.operations.common.entity.GlobalAddressMaster;
+import com.asg.operations.common.repository.GlobalAddressDetailsRepository;
+import com.asg.operations.common.repository.GlobalAddressMasterRepository;
+import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.crew.dto.ValidationError;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
@@ -59,6 +64,8 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
     private final FFProjectsCtrlSheetDtlRepository ctrlSheetDtlRepository;
+    private final GlobalAddressMasterRepository addressMasterRepository;
+    private final GlobalAddressDetailsRepository addressDetailsRepository;
 
     private static final String TRANSACTION_POID = "TRANSACTION_POID";
 
@@ -336,6 +343,47 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         response.setTruckDetails(trucksDto);
 
         return response;
+    }
+
+    @Override
+    public LovItem getNotifyById(BigDecimal notifyPoid) {
+
+        if (notifyPoid == null) {
+            return new LovItem(null, "", "", "", null, 0);
+        }
+
+        GlobalAddressMaster addressMaster = addressMasterRepository
+                .findById(notifyPoid.longValue())
+                .orElse(new GlobalAddressMaster());
+
+        GlobalAddressDetails addressDetails = addressDetailsRepository
+                .findById(notifyPoid)
+                .orElse(new GlobalAddressDetails());
+
+        String address = String.format(
+                "%s, Type-%s, CONTACT-%s, TEL1-%s TEL2-%s, MOB-%s EMAIL1-%s EMAIL2-%s",
+                safe(addressMaster.getAddressName()),
+                safe(addressDetails.getAddressType()),
+                safe(addressDetails.getContactPerson()),
+                safe(addressDetails.getOffTel1()),
+                safe(addressDetails.getOffTel2()),
+                safe(addressDetails.getMobile()),
+                safe(addressDetails.getEmail1()),
+                safe(addressDetails.getEmail2())
+        );
+
+        return new LovItem(
+                notifyPoid.longValue(),
+                addressDetails.getAddressPoid() != null ? addressDetails.getAddressPoid().toString() : "",
+                address,
+                address,
+                addressMaster.getAddressMasterPoid(),
+                0
+        );
+    }
+
+    private String safe(Object value) {
+        return value != null ? value.toString() : "";
     }
 
     @Override
