@@ -144,12 +144,12 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + transactionPoid));
 
         FFProjectsHdr backUpProjectsHdr = new FFProjectsHdr();
-        BeanUtils.copyProperties(request, backUpProjectsHdr);
+        BeanUtils.copyProperties(existingProjectsHdr, backUpProjectsHdr);
 
         ProjectMapper.applyUpdate(request, existingProjectsHdr);
 
         loggingService.logChanges(backUpProjectsHdr, existingProjectsHdr, FFProjectsHdr.class, UserContext.getDocumentId(),
-                transactionPoid.toString(), LogDetailsEnum.MODIFIED, "Project POID");
+                transactionPoid.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
 
         projectsHdrRepository.save(existingProjectsHdr);
 
@@ -1115,8 +1115,32 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                             .findByTransactionPoidAndDetRowId(transactionPoid, charge.getDetRowId())
                             .orElseThrow(() -> new ResourceNotFoundException("Charge not found"));
 
-                    FFProjectsChargesDtl oldCharge = new FFProjectsChargesDtl();
-                    BeanUtils.copyProperties(existingCharge, oldCharge);
+                    FFProjectsChargesDtl oldCharge = FFProjectsChargesDtl.builder()
+                            .transactionPoid(existingCharge.getTransactionPoid())
+                            .detRowId(existingCharge.getDetRowId())
+                            .quotationReferencePoid(existingCharge.getQuotationReferencePoid())
+                            .chargeDetailsPoid(existingCharge.getChargeDetailsPoid())
+                            .printableChargeDescription(existingCharge.getPrintableChargeDescription())
+                            .quantity(existingCharge.getQuantity())
+                            .unit(existingCharge.getUnit())
+                            .buyingCurrencyCode(existingCharge.getBuyingCurrencyCode())
+                            .currencyRate(existingCharge.getCurrencyRate())
+                            .buyingUnitRate(existingCharge.getBuyingUnitRate())
+                            .buyingTotalBhd(existingCharge.getBuyingTotalBhd())
+                            .sellingUnitRate(existingCharge.getSellingUnitRate())
+                            .sellingTotal(existingCharge.getSellingTotal())
+                            .taxIdPoid(existingCharge.getTaxIdPoid())
+                            .taxPercentage(existingCharge.getTaxPercentage())
+                            .taxAmount(existingCharge.getTaxAmount())
+                            .sellingGrandTotal(existingCharge.getSellingGrandTotal())
+                            .sellingGrandTotalBhd(existingCharge.getSellingGrandTotalBhd())
+                            .marginBhd(existingCharge.getMarginBhd())
+                            .remarks(existingCharge.getRemarks())
+                            .createdBy(existingCharge.getCreatedBy())
+                            .createdDate(existingCharge.getCreatedDate())
+                            .lastModifiedBy(existingCharge.getLastModifiedBy())
+                            .lastModifiedDate(existingCharge.getLastModifiedDate())
+                            .build();
 
                     existingCharge.setQuotationReferencePoid(charge.getQuotationReferencePoid());
                     existingCharge.setChargeDetailsPoid(charge.getChargePoid());
@@ -1218,8 +1242,31 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                             .findByTransactionPoidAndDetRowId(transactionPoid, ctrl.getDetRowId())
                             .orElseThrow(() -> new ResourceNotFoundException("Control sheet not found"));
 
-                    FFProjectsCtrlSheetDtl oldCtrl = new FFProjectsCtrlSheetDtl();
-                    BeanUtils.copyProperties(existingCtrl, oldCtrl);
+                    FFProjectsCtrlSheetDtl oldCtrl = FFProjectsCtrlSheetDtl.builder()
+                            .transactionPoid(existingCtrl.getTransactionPoid())
+                            .detRowId(existingCtrl.getDetRowId())
+                            .freightType(existingCtrl.getFreightType())
+                            .jobNoPoid(existingCtrl.getJobNoPoid())
+                            .origin(existingCtrl.getOrigin())
+                            .destination(existingCtrl.getDestination())
+                            .etd(existingCtrl.getEtd())
+                            .etaAta(existingCtrl.getEtaAta())
+                            .arrivalDate(existingCtrl.getArrivalDate())
+                            .noOfPackages(existingCtrl.getNoOfPackages())
+                            .weight(existingCtrl.getWeight())
+                            .cbm(existingCtrl.getCbm())
+                            .carrierPoid(existingCtrl.getCarrierPoid())
+                            .line(existingCtrl.getLine())
+                            .truckNumber(existingCtrl.getTruckNumber())
+                            .description(existingCtrl.getDescription())
+                            .sailDate(existingCtrl.getSailDate())
+                            .pod(existingCtrl.getPod())
+                            .pol(existingCtrl.getPol())
+                            .createdBy(existingCtrl.getCreatedBy())
+                            .createdDate(existingCtrl.getCreatedDate())
+                            .lastModifiedBy(existingCtrl.getLastModifiedBy())
+                            .lastModifiedDate(existingCtrl.getLastModifiedDate())
+                            .build();
 
                     existingCtrl.setFreightType(ctrl.getFreightType());
                     existingCtrl.setJobNoPoid(ctrl.getJobNoPoid());
