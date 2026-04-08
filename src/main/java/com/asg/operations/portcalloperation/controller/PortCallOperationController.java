@@ -555,7 +555,7 @@ public class PortCallOperationController {
                                               @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         PortCallOperationEstBertDetailResponseDto result = portCallOperationService.getEstBertDetail(transactionPoid, detRowId);
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
-        return success("EstBertDetail retrieved successfully", result);
+        return success("Berthing Prospects Details retrieved successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
@@ -572,7 +572,7 @@ public class PortCallOperationController {
                                                  @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationEstBertDetailResponseDto result = portCallOperationService.createEstBertDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
-        return success("EstBertDetail created successfully", result);
+        return success("Berthing Prospects Details created successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -590,7 +590,7 @@ public class PortCallOperationController {
                                                  @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationEstBertDetailResponseDto result = portCallOperationService.updateEstBertDetail(transactionPoid, detRowId, dto, nonEmptyFiles, remarks, checklistNames);
-        return success("EstBertDetail updated successfully", result);
+        return success("Berthing Prospects Details updated successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
@@ -603,7 +603,7 @@ public class PortCallOperationController {
     public ResponseEntity<?> listEstPrearrivalActDetailsActivities(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid) {
         Map<String, Object> result = portCallOperationService.listEstPrearrivalActDetails(transactionPoid);
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
-        return success("EstPrearrivalActDetails retrieved successfully", result);
+        return success("Pre-arrival estimates retrieved successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
@@ -621,7 +621,7 @@ public class PortCallOperationController {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
-        return success("EstPrearrivalActDetail created successfully", result);
+        return success("Pre-arrival estimates created successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -640,7 +640,7 @@ public class PortCallOperationController {
                                                           @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, preActivityDtlPoid, dto, nonEmptyFiles, remarks, checklistNames);
-        return success("EstPrearrivalActDetail updated successfully", result);
+        return success("Pre-arrival estimates updated successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
@@ -654,7 +654,7 @@ public class PortCallOperationController {
                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         List<PortCallOperationActTimingsActvtyDetailResponseDto> result = portCallOperationService.listActTimingsActvtyDetails(transactionPoid, detRowId);
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
-        return success("ActTimingsActvtyDetails retrieved successfully", result);
+        return success("Timings retrieved successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
@@ -672,7 +672,7 @@ public class PortCallOperationController {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
-        return success("ActTimingsActvtyDetail created successfully", result);
+        return success("Timings created successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -691,7 +691,7 @@ public class PortCallOperationController {
                                                           @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto, nonEmptyFiles, remarks, checklistNames);
-        return success("ActTimingsActvtyDetail updated successfully", result);
+        return success("Timings updated successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
@@ -705,7 +705,7 @@ public class PortCallOperationController {
                                                @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.getDocsCopyDetail(transactionPoid, detRowId);
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
-        return success("DocsCopyDetail retrieved successfully", result);
+        return success("Docs Copy Detail retrieved successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
@@ -723,7 +723,7 @@ public class PortCallOperationController {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.createDocsCopyDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
-        return success("DocsCopyDetail created successfully", result);
+        return success("Docs Copy Detail created successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -741,7 +741,7 @@ public class PortCallOperationController {
                                                   @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.updateDocsCopyDetail(transactionPoid, detRowId, dto, nonEmptyFiles, remarks, checklistNames);
-        return success("DocsCopyDetail updated successfully", result);
+        return success("Docs Copy Detail updated successfully", result);
     }
 
     // ------------------- PC Info Attachments (via common attachment service) -------------------
@@ -764,9 +764,7 @@ public class PortCallOperationController {
             return badRequest("No files provided for upload.");
         }
         PcInfoAttachmentUploadResponseDto response = pcInfoAttachmentService.uploadPcInfoAttachments(transactionPoid, files, remarks, checklistNames);
-        String message = response.isHasErrors()
-                ? "Files uploaded with some errors. Check 'errors' in response."
-                : "PC Info attachments uploaded successfully.";
+        String message = response.isHasErrors() ? "Files uploaded with some errors. Check 'errors' in response." : "PC Info attachments uploaded successfully.";
         return success(message, response);
     }
 
