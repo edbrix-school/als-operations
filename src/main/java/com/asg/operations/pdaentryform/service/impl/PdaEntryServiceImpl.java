@@ -257,8 +257,37 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Check edit permissions
         if (!canEdit(entry)) {
+            // Specific validation for GENERAL type with Principal Approved
+            if ("GENERAL".equals(entry.getRefType()) && "Y".equals(entry.getPrincipalApproved())) {
+                throw new ValidationException(
+                        "Already Principal Approved..",
+                        List.of(new ValidationError("status", "Already Principal Approved.."))
+                );
+            }
+            // Specific validation for GENERAL type with CONFIRMED status
+            if ("GENERAL".equals(entry.getRefType()) && "CONFIRMED".equals(entry.getStatus())) {
+                throw new ValidationException(
+                        "Already Principal Approved..",
+                        List.of(new ValidationError("status", "Entry is Confirmed and cannot be edited"))
+                );
+            }
+            // Specific validation for other ref types with CONFIRMED status
+            if ("CONFIRMED".equals(entry.getStatus())) {
+                throw new ValidationException(
+                        "Already Principal Approved..",
+                        List.of(new ValidationError("status", "Entry is Confirmed and cannot be edited"))
+                );
+            }
+            // Specific validation for other ref types with CLOSED status
+            if ("CLOSED".equals(entry.getStatus())) {
+                throw new ValidationException(
+                        "Already Principal Approved..",
+                        List.of(new ValidationError("status", "Entry is Closed and cannot be edited"))
+                );
+            }
+            // Generic validation for any other cases
             throw new ValidationException(
-                    "Entry cannot be edited",
+                    "Already Principal Approved..",
                     List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
             );
         }
@@ -768,12 +797,27 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         try {
             logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - START - pdaPoid: {}", pdaPoid);
 
-            // Check if charge details exist
             Long transactionPoid = Long.parseLong(pdaPoid);
+            
+            // Get PDA entry to check validations
+            PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
+                    .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
+            
+            // Check if charge details exist
             List<PdaEntryDtl> chargeDetails = entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid);
             if (chargeDetails == null || chargeDetails.isEmpty()) {
                 logger.warn("[SP-10] No charge details found for transactionPoid: {}", transactionPoid);
                 return "WARNING: No details in this Transaction...";
+            }
+            
+            // Check approval status for GENERAL type PDA
+            if ("GENERAL".equalsIgnoreCase(entry.getRefType())) {
+                String status = entry.getStatus();
+                if (!"PRINCIPAL_APPROVAL_WAITING".equalsIgnoreCase(status) && 
+                    !"CONFIRMED".equalsIgnoreCase(status)) {
+                    logger.warn("[SP-10] Accounts Approval is not done for transactionPoid: {}, status: {}", transactionPoid, status);
+                    return "WARNING: Accounts Approval is not done...";
+                }
             }
 
             // Try with schema prefix first
@@ -908,7 +952,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         if (!canEdit(entry)) {
             throw new ValidationException(
-                    "Entry cannot be edited",
+                    "Already Principal Approved..",
                     List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
             );
         }
