@@ -32,6 +32,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -272,6 +273,15 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         ProjectJobResponse response = new ProjectJobResponse();
 
         ProjectJobMapper.toHdrDto(hdr, response);
+
+        Optional.ofNullable(response.getProjectPoid())
+                .map(BigDecimal::longValue)
+                .map(spRepostirory::callProjectsLoadInJobsProc)
+                .map(ProjectLoadInJobsProcResponse::getHeader)
+                .filter(list -> list != null && !list.isEmpty())
+                .map(list -> list.get(0))
+                .map(h -> h.getProjectCustomerPoid())
+                .ifPresent(response::setProjectCustomerPoid);
 
         List<FFManifestAirPkgDtl> airPkg = airPkgRepository.findByTransactionPoid(transactionPoid);
         List<FFManifestBayanDtl> bayan = bayanRepository.findByTransactionPoid(transactionPoid);

@@ -166,6 +166,7 @@ public class FFManifestHdrDto {
     private String recievedFrom;
     private String deliveryTo;
     private BigDecimal projectPoid;
+    private Long projectCustomerPoid;
 
     private LocalDateTime blIssueDate;
     private String airTransPort;
