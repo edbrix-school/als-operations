@@ -109,7 +109,7 @@ public class FFManifestHdrDto {
     private String createdBy;
     private LocalDateTime createdDate;
     private String lastModifiedBy;
-    private LocalDateTime latModifiedDate;
+    private LocalDateTime lastModifiedDate;
 
     private String airArrivalport;
     private String airDeparturePort;

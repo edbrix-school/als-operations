@@ -493,7 +493,7 @@ class ProjectJobMapperTest {
         dto.setCreatedBy("USER");
         dto.setCreatedDate(LocalDateTime.now());
         dto.setLastModifiedBy("USER");
-        dto.setLatModifiedDate(LocalDateTime.now());
+        dto.setLastModifiedDate(LocalDateTime.now());
         dto.setAirArrivalport("ARR");
         dto.setAirDeparturePort("DEP");
         dto.setCarrierCode("CARRIER");

@@ -769,6 +769,10 @@ public class ProjectJobMapper {
         dto.setTransportationMode(entity.getTransportationMode());
         dto.setTruckTransportFrom(entity.getTruckTransportFrom());
         dto.setTruckTransportTo(entity.getTruckTransportTo());
+        dto.setCreatedBy(entity.getCreatedBy());
+        dto.setCreatedDate(entity.getCreatedDate());
+        dto.setLastModifiedBy(entity.getLastModifiedBy());
+        dto.setLastModifiedDate(entity.getLastModifiedDate());
     }
 
 }

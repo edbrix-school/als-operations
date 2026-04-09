@@ -24,10 +24,10 @@ public class ProjectJobAirPkgDto {
 	private Long height;
 
 	private String createdBy;
-	private LocalDate createdDate;
+	private LocalDateTime createdDate;
 
 	private String lastModifiedBy;
-	private LocalDate lastModifiedDate;
+	private LocalDateTime lastModifiedDate;
 
 	private String imcoClassUnno;
 	private String properShippingName;
