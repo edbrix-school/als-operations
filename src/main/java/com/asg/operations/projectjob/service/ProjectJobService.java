@@ -2,12 +2,14 @@ package com.asg.operations.projectjob.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.projectjob.dto.ProjectJobRequest;
 import com.asg.operations.projectjob.dto.ProjectJobResponse;
 import com.asg.operations.projectjob.dto.ProjectLoadInJobsProcResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 
@@ -17,6 +19,8 @@ public interface ProjectJobService {
     ProjectJobResponse update(Long transactionPoid, ProjectJobRequest request);
 
     ProjectJobResponse getById(Long transactionPoid);
+
+    LovItem getNotifyById(BigDecimal notifyPoid);
 
     void deleteById(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid,
                     @Valid DeleteReasonDto deleteReasonDto);

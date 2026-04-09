@@ -134,8 +134,8 @@ public class FFManifestChargesDtl implements BaseDetailEntity {
     @Size(max = 25)
     private String shChargeInv;
 
-    @Column(name = "UNIT_TYPE")
-    private LocalDateTime unitType;
+    @Column(name = "UNIT_TYPE", length = 25)
+    private String unitType;
 
     @Column(name = "TAX_POID")
     private BigDecimal taxPoid;

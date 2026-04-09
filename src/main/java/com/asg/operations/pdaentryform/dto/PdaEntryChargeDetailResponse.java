@@ -1,5 +1,6 @@
 package com.asg.operations.pdaentryform.dto;
 
+import com.asg.operations.commonlov.dto.LovItem;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,6 +37,7 @@ public class PdaEntryChargeDetailResponse {
     private String fdaDocRef;
     private BigDecimal fdaPoid;
     private String fdaCreationType;
+    private LovItem fdaCreationTypeDet;
     private String dataSource;
     private String detailFrom;
     private String manual;

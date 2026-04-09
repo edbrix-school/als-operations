@@ -7,6 +7,8 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
+import com.asg.operations.common.repository.GlobalAddressDetailsRepository;
+import com.asg.operations.common.repository.GlobalAddressMasterRepository;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
 import com.asg.operations.projectjob.dto.*;
@@ -43,6 +45,8 @@ class ProjectJobServiceImplTest {
     @Mock private DocumentDeleteService documentDeleteService;
     @Mock private DocumentSearchService documentSearchService;
     @Mock private FFProjectsCtrlSheetDtlRepository ctrlSheetDtlRepository;
+    @Mock private GlobalAddressMasterRepository addressMasterRepository;
+    @Mock private GlobalAddressDetailsRepository addressDetailsRepository;
 
     private ProjectJobServiceImpl projectJobService;
     private MockedStatic<UserContext> userContextMockedStatic;
@@ -54,7 +58,8 @@ class ProjectJobServiceImplTest {
         projectJobService = new ProjectJobServiceImpl(
                 hdrRepository, chargesRepository, airPkgRepository, bayanRepository,
                 containerRepository, truckRepository, spRepostirory, loggingService,
-                documentDeleteService, documentSearchService, ctrlSheetDtlRepository);
+                documentDeleteService, documentSearchService, ctrlSheetDtlRepository,
+                addressMasterRepository, addressDetailsRepository);
 
         userContextMockedStatic = mockStatic(UserContext.class);
         userContextMockedStatic.when(UserContext::getGroupPoid).thenReturn(1L);

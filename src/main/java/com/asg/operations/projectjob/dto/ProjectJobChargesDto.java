@@ -47,7 +47,7 @@ public class ProjectJobChargesDto {
     private String remarks;
     private String shChargeInv;
 
-    private LocalDate unitType;
+    private String unitType;
 
     private BigDecimal taxPoid;
     private BigDecimal taxPercentage;

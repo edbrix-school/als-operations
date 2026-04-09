@@ -133,7 +133,7 @@ class FdaControllerTest {
 
             mockMvc.perform(delete("/v1/fdas/1"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.message").value("FDA soft deleted successfully"));
+                    .andExpect(jsonPath("$.message").value("FDA deleted successfully"));
         }
     }
 

@@ -1361,7 +1361,17 @@ public class PdaEntryController {
         // Parse the result to extract FDA reference
         Map<String, String> parsedResult = pdaEntryService.parseFdaCreationResult(result);
         
-        return ApiResponse.success("FDA creation completed", parsedResult);
+        // Determine the appropriate message based on the result
+        String message;
+        if (result != null && result.toUpperCase().startsWith("WARNING")) {
+            message = result; // Use the warning message as-is
+        } else if (result != null && result.toUpperCase().startsWith("ERROR")) {
+            message = result; // Use the error message as-is
+        } else {
+            message = "FDA creation completed"; // Success message
+        }
+        
+        return ApiResponse.success(message, parsedResult);
     }
 
     @Operation(
@@ -1419,9 +1429,10 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/fda-documents/accept")
     public ResponseEntity<?> acceptFdaDocuments(@PathVariable Long transactionPoid) {
-        pdaEntryService.acceptFdaDocuments(transactionPoid, UserContext.getGroupPoid(), 
+        Map<String, Object> result = pdaEntryService.acceptFdaDocuments(
+                transactionPoid, UserContext.getGroupPoid(), 
                 UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ApiResponse.success("FDA documents accepted successfully", null);
+        return ApiResponse.success("FDA documents accepted successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -1430,17 +1441,19 @@ public class PdaEntryController {
             @PathVariable Long transactionPoid,
             @Valid @RequestBody FdaDocumentReturnRequest request
     ) {
-        pdaEntryService.rejectFdaDocs(transactionPoid, UserContext.getGroupPoid(), 
+        Map<String, Object> result = pdaEntryService.rejectFdaDocs(
+                transactionPoid, UserContext.getGroupPoid(), 
                 UserContext.getCompanyPoid(), UserContext.getUserPoid(), request.getCorrectionRemarks());
-        return ApiResponse.success("FDA documents returned successfully", null);
+        return ApiResponse.success("FDA documents returned successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/documents/submit-to-accounts")
     public ResponseEntity<?> submitDocumentsToAccounts(@PathVariable Long transactionPoid) {
-        pdaEntryService.submitPdaToFda(transactionPoid, UserContext.getGroupPoid(), 
+        Map<String, Object> result = pdaEntryService.submitPdaToFda(
+                transactionPoid, UserContext.getGroupPoid(), 
                 UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ApiResponse.success("Documents submitted to accounts successfully", null);
+        return ApiResponse.success("Documents submitted to accounts successfully", result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)

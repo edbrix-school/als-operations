@@ -175,17 +175,37 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
 
         // Auto-populate vessel details if vesselPoid is provided (fallback if not from voyage)
-        if (request.getVesselPoid() != null && entry.getVesselTypePoid() == null) {
+        // Only auto-populate if values are not already provided in the request
+        if (request.getVesselPoid() != null && 
+                (entry.getGrt() == null || entry.getNrt() == null || entry.getDwt() == null || entry.getVesselTypePoid() == null)) {
             VesselDetailsResponse vesselDetails = getVesselDetails(request.getVesselPoid(), groupPoid, companyPoid, userPoid);
             if (vesselDetails != null) {
-                entry.setVesselTypePoid(vesselDetails.getVesselTypePoid());
+                logger.info("Auto-populating vessel details - GRT: {}, NRT: {}, DWT: {}", 
+                        vesselDetails.getGrt(), vesselDetails.getNrt(), vesselDetails.getDwt());
+                
+                // Only set values that are null (not provided in request)
+                if (entry.getVesselTypePoid() == null) {
+                    entry.setVesselTypePoid(vesselDetails.getVesselTypePoid());
+                }
+                if (entry.getGrt() == null) {
+                    entry.setGrt(vesselDetails.getGrt());
+                }
+                if (entry.getNrt() == null) {
+                    entry.setNrt(vesselDetails.getNrt());
+                }
+                if (entry.getDwt() == null) {
+                    entry.setDwt(vesselDetails.getDwt());
+                }
+                
                 // Only set IMO number if not provided in request
-                if (request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) {
+                if ((request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) && entry.getImoNumber() == null) {
                     entry.setImoNumber(vesselDetails.getImoNumber());
                 }
-                entry.setGrt(vesselDetails.getGrt());
-                entry.setNrt(vesselDetails.getNrt());
-                entry.setDwt(vesselDetails.getDwt());
+                
+                logger.info("Vessel details set on entry - GRT: {}, NRT: {}, DWT: {}", 
+                        entry.getGrt(), entry.getNrt(), entry.getDwt());
+            } else {
+                logger.warn("No vessel details returned for vesselPoid: {}", request.getVesselPoid());
             }
         }
 
@@ -237,8 +257,37 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Check edit permissions
         if (!canEdit(entry)) {
+            // Specific validation for GENERAL type with Principal Approved
+            if ("GENERAL".equals(entry.getRefType()) && "Y".equals(entry.getPrincipalApproved())) {
+                throw new ValidationException(
+                        "Already Principal Approved..",
+                        List.of(new ValidationError("status", "Already Principal Approved.."))
+                );
+            }
+            // Specific validation for GENERAL type with CONFIRMED status
+            if ("GENERAL".equals(entry.getRefType()) && "CONFIRMED".equals(entry.getStatus())) {
+                throw new ValidationException(
+                        "Already Principal Approved..",
+                        List.of(new ValidationError("status", "Entry is Confirmed and cannot be edited"))
+                );
+            }
+            // Specific validation for other ref types with CONFIRMED status
+            if ("CONFIRMED".equals(entry.getStatus())) {
+                throw new ValidationException(
+                        "Already Principal Approved..",
+                        List.of(new ValidationError("status", "Entry is Confirmed and cannot be edited"))
+                );
+            }
+            // Specific validation for other ref types with CLOSED status
+            if ("CLOSED".equals(entry.getStatus())) {
+                throw new ValidationException(
+                        "Already Principal Approved..",
+                        List.of(new ValidationError("status", "Entry is Closed and cannot be edited"))
+                );
+            }
+            // Generic validation for any other cases
             throw new ValidationException(
-                    "Entry cannot be edited",
+                    "Already Principal Approved..",
                     List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
             );
         }
@@ -403,7 +452,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         List<PdaEntryDtl> details = entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid);
 
         return details.stream()
-                .map(this::toChargeDetailResponse)
+                .map(detail -> toChargeDetailResponse(detail, groupPoid, companyPoid))
                 .collect(Collectors.toList());
     }
 
@@ -488,7 +537,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Charge detail not found with id: " + detRowId
                 ));
-        return toChargeDetailResponse(detail);
+        return toChargeDetailResponse(detail, groupPoid, companyPoid);
     }
 
     @Override
@@ -748,6 +797,29 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         try {
             logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - START - pdaPoid: {}", pdaPoid);
 
+            Long transactionPoid = Long.parseLong(pdaPoid);
+            
+            // Get PDA entry to check validations
+            PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
+                    .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
+            
+            // Check if charge details exist
+            List<PdaEntryDtl> chargeDetails = entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid);
+            if (chargeDetails == null || chargeDetails.isEmpty()) {
+                logger.warn("[SP-10] No charge details found for transactionPoid: {}", transactionPoid);
+                return "WARNING: No details in this Transaction...";
+            }
+            
+            // Check approval status for GENERAL type PDA
+            if ("GENERAL".equalsIgnoreCase(entry.getRefType())) {
+                String status = entry.getStatus();
+                if (!"PRINCIPAL_APPROVAL_WAITING".equalsIgnoreCase(status) && 
+                    !"CONFIRMED".equalsIgnoreCase(status)) {
+                    logger.warn("[SP-10] Accounts Approval is not done for transactionPoid: {}, status: {}", transactionPoid, status);
+                    return "WARNING: Accounts Approval is not done...";
+                }
+            }
+
             // Try with schema prefix first
             String sqlWithSchema = "{ call PROC_PDA_FDA_CREATE_FROM_PDA(?, ?, ?, ?, ?) }";
             
@@ -850,12 +922,12 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         callUpdateFdaFromPda(groupPoid, companyPoid, userPoid, transactionPoid);
     }
 
-    public void submitPdaToFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
-        callSubmitPdaToFda(groupPoid, companyPoid, userPoid, transactionPoid);
+    public Map<String, Object> submitPdaToFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        return callSubmitPdaToFda(groupPoid, companyPoid, userPoid, transactionPoid);
     }
 
-    public void rejectFdaDocs(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String correctionRemarks) {
-        callRejectFdaDocs(groupPoid, companyPoid, userPoid, transactionPoid, correctionRemarks);
+    public Map<String, Object> rejectFdaDocs(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String correctionRemarks) {
+        return callRejectFdaDocs(groupPoid, companyPoid, userPoid, transactionPoid, correctionRemarks);
     }
 
     public List<PdaEntryAcknowledgmentDetailResponse> uploadAcknowledgmentDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
@@ -880,7 +952,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         if (!canEdit(entry)) {
             throw new ValidationException(
-                    "Entry cannot be edited",
+                    "Already Principal Approved..",
                     List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
             );
         }
@@ -1134,7 +1206,16 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                             new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
                             new SqlParameter("P_VESSEL_POID", Types.NUMERIC),
                             new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
-                    );
+                    )
+                    .returningResultSet("OUTDATA", (rs, rowNum) -> {
+                        VesselDetailsResponse response = new VesselDetailsResponse();
+                        response.setVesselTypePoid(rs.getBigDecimal("VESSEL_TYPE_POID"));
+                        response.setImoNumber(rs.getString("IMO_NUMBER"));
+                        response.setGrt(rs.getBigDecimal("GRT"));
+                        response.setNrt(rs.getBigDecimal("NRT"));
+                        response.setDwt(rs.getBigDecimal("DWT"));
+                        return response;
+                    });
 
             Map<String, Object> inParams = new HashMap<>();
             inParams.put("P_LOGIN_GROUP_POID", groupPoid);
@@ -1144,20 +1225,17 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> result = jdbcCall.execute(inParams);
 
-            List<Map<String, Object>> rows = (List<Map<String, Object>>) result.get("OUTDATA");
+            List<VesselDetailsResponse> vesselDetailsList = (List<VesselDetailsResponse>) result.get("OUTDATA");
 
-            VesselDetailsResponse response = new VesselDetailsResponse();
-            if (!rows.isEmpty()) {
-                Map<String, Object> row = rows.getFirst();
-                response.setVesselTypePoid((BigDecimal) row.get("VESSEL_TYPE_POID"));
-                response.setImoNumber((String) row.get("IMO_NUMBER"));
-                response.setGrt((BigDecimal) row.get("GRT"));
-                response.setNrt((BigDecimal) row.get("NRT"));
-                response.setDwt((BigDecimal) row.get("DWT"));
+            if (vesselDetailsList != null && !vesselDetailsList.isEmpty()) {
+                VesselDetailsResponse vesselDetails = vesselDetailsList.get(0);
+                logger.info("[SP-20] PROC_PDA_DEFAULT_VESSEL_DTLS - Completed. GRT: {}, NRT: {}, DWT: {}", 
+                        vesselDetails.getGrt(), vesselDetails.getNrt(), vesselDetails.getDwt());
+                return vesselDetails;
             }
 
-            logger.info("[SP-20] PROC_PDA_DEFAULT_VESSEL_DTLS - Completed");
-            return response;
+            logger.warn("[SP-20] No vessel details returned for vesselPoid: {}", vesselPoid);
+            return new VesselDetailsResponse();
 
         } catch (Exception e) {
             logger.error("[SP-20] PROC_PDA_DEFAULT_VESSEL_DTLS - Error: {}", e.getMessage(), e);
@@ -1311,9 +1389,18 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entity.setVoyageNo(request.getVoyageNo());
         entity.setVesselPoid(request.getVesselPoid());
         entity.setVesselTypePoid(request.getVesselTypePoid());
+        
+        // Log vessel details from request
+        logger.info("Mapping request to entity - GRT from request: {}, NRT from request: {}, DWT from request: {}",
+                request.getGrt(), request.getNrt(), request.getDwt());
+        
         entity.setGrt(request.getGrt());
         entity.setNrt(request.getNrt());
         entity.setDwt(request.getDwt());
+        
+        logger.info("After mapping - GRT on entity: {}, NRT on entity: {}, DWT on entity: {}",
+                entity.getGrt(), entity.getNrt(), entity.getDwt());
+        
         entity.setImoNumber(request.getImoNumber());
         entity.setArrivalDate(request.getArrivalDate());
         entity.setSailDate(request.getSailDate());
@@ -1918,7 +2005,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
-    private PdaEntryChargeDetailResponse toChargeDetailResponse(PdaEntryDtl entity) {
+    private PdaEntryChargeDetailResponse toChargeDetailResponse(PdaEntryDtl entity, Long groupPoid, Long companyPoid) {
         PdaEntryChargeDetailResponse response = new PdaEntryChargeDetailResponse();
         response.setTransactionPoid(entity.getTransactionPoid());
         response.setDetRowId(entity.getDetRowId());
@@ -1938,6 +2025,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setFdaDocRef(entity.getFdaDocRef());
         response.setFdaPoid(entity.getFdaPoid());
         response.setFdaCreationType(entity.getFdaCreationType());
+        
+        // Get FDA creation type detail using LOV service
+        response.setFdaCreationTypeDet(lovService.getLovItemByCode(
+            entity.getFdaCreationType(), 
+            "FDA_CREATION_TYPE", 
+            groupPoid, 
+            companyPoid, 
+            null));
+        
         response.setDataSource(entity.getDataSource());
         response.setDetailFrom(entity.getDetailFrom());
         response.setManual(entity.getManual());
@@ -2825,7 +2921,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    public String callSubmitPdaToFda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
+    public Map<String, Object> callSubmitPdaToFda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
         try {
             logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - transactionPoid: {}", transactionPoid);
 
@@ -2838,7 +2934,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                             new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
                             new SqlParameter("P_PDA_POID", Types.NUMERIC),
                             new SqlOutParameter("P_RESULT", Types.VARCHAR),
-                            new SqlOutParameter("OUTDATA", Types.REF_CURSOR)
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
                     );
 
             Map<String, Object> inputMap = new HashMap<>();
@@ -2850,17 +2946,31 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             Map<String, Object> result = jdbcCall.execute(inputMap);
 
             String status = (String) result.get("P_RESULT");
+            List<Map<String, Object>> outData = (List<Map<String, Object>>) result.get("OUTDATA");
 
             logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - Completed. Status: {}", status);
-            return status != null ? status : "Success";
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", status != null ? status : "Success");
+            
+            if (outData != null && !outData.isEmpty()) {
+                Map<String, Object> cursorData = outData.get(0);
+                response.put("documentSubmittedDate", cursorData.get("DOCUMENT_SUBMITTED_DATE"));
+                response.put("documentSubmittedBy", cursorData.get("DOCUMENT_SUBMITTED_BY"));
+                response.put("documentSubmittedStatus", cursorData.get("DOCUMENT_SUBMITTED_STATUS"));
+            }
+            
+            return response;
 
         } catch (Exception e) {
             logger.error("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - Error: {}", e.getMessage(), e);
-            return "Error: " + e.getMessage();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "Error: " + e.getMessage());
+            return errorResponse;
         }
     }
 
-    public String callRejectFdaDocs(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid, String correctionRemarks) {
+    public Map<String, Object> callRejectFdaDocs(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid, String correctionRemarks) {
         try {
             logger.info("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - transactionPoid: {}", transactionPoid);
 
@@ -2874,7 +2984,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                             new SqlParameter("P_PDA_POID", Types.NUMERIC),
                             new SqlParameter("P_CORRECTION_REMARKS", Types.VARCHAR),
                             new SqlOutParameter("P_RESULT", Types.VARCHAR),
-                            new SqlOutParameter("OUTDATA", Types.REF_CURSOR)
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
                     );
 
             Map<String, Object> inputMap = new HashMap<>();
@@ -2887,13 +2997,37 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             Map<String, Object> result = jdbcCall.execute(inputMap);
 
             String status = (String) result.get("P_RESULT");
+            List<Map<String, Object>> outData = (List<Map<String, Object>>) result.get("OUTDATA");
 
             logger.info("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - Completed. Status: {}", status);
-            return status != null ? status : "Success";
 
+            // Check for warnings or errors
+            if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+                throw new ValidationException(
+                        "FDA document rejection failed",
+                        List.of(new ValidationError("general", status))
+                );
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", status != null ? status : "Success");
+            response.put("correctionRemarks", correctionRemarks);
+            
+            if (outData != null && !outData.isEmpty()) {
+                Map<String, Object> cursorData = outData.get(0);
+                response.put("documentReceivedStatus", cursorData.get("DOCUMENT_RECEIVED_STATUS"));
+            }
+            
+            return response;
+
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("[SP-11] PROC_PDA_REJECT_THE_FDA_DOCS - Error: {}", e.getMessage(), e);
-            return "Error: " + e.getMessage();
+            throw new ValidationException(
+                    "FDA document rejection failed",
+                    List.of(new ValidationError("general", "Error rejecting FDA documents: " + e.getMessage()))
+            );
         }
     }
 
@@ -3096,18 +3230,20 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Override
-    public void acceptFdaDocuments(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public Map<String, Object> acceptFdaDocuments(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
         logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - transactionPoid: {}", transactionPoid);
 
         try {
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_VERIFY_THE_FDA_DOCS")
+                    .withoutProcedureColumnMetaDataAccess()
                     .declareParameters(
                             new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
                             new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
                             new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
                             new SqlParameter("P_PDA_POID", Types.NUMERIC),
-                            new SqlOutParameter("P_STATUS", Types.VARCHAR)
+                            new SqlOutParameter("P_RESULT", Types.VARCHAR),
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
                     );
 
             Map<String, Object> inputMap = new HashMap<>();
@@ -3117,10 +3253,33 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
 
             Map<String, Object> result = jdbcCall.execute(inputMap);
-            String status = (String) result.get("P_STATUS");
+            String status = (String) result.get("P_RESULT");
+            List<Map<String, Object>> outData = (List<Map<String, Object>>) result.get("OUTDATA");
 
             logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Completed. Status: {}", status);
 
+            // Check for warnings or errors
+            if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+                throw new ValidationException(
+                        "FDA document verification failed",
+                        List.of(new ValidationError("general", status))
+                );
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", status != null ? status : "Success");
+            
+            if (outData != null && !outData.isEmpty()) {
+                Map<String, Object> cursorData = outData.get(0);
+                response.put("verificationAcceptedDate", cursorData.get("VERIFICATION_ACCEPTED_DATE"));
+                response.put("verificationAcceptedBy", cursorData.get("VERIFICATION_ACCEPTED_BY"));
+                response.put("documentReceivedStatus", cursorData.get("DOCUMENT_RECEIVED_STATUS"));
+            }
+            
+            return response;
+
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Error: {}", e.getMessage(), e);
             throw new ValidationException(
@@ -3128,15 +3287,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     List.of(new ValidationError("general", "Error verifying FDA documents: " + e.getMessage()))
             );
         }
-
-        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
-
-        entry.setVerificationAcceptedDate(LocalDate.now());
-        entry.setVerificationAcceptedBy(UserContext.getUserId());
-        entry.setDocumentReceivedStatus("ACCEPTED");
-        // Audit is handled by BaseEntity
-
-        entryHdrRepository.save(entry);
     }
 
 
