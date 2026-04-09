@@ -23,12 +23,6 @@ public class ProjectJobAirPkgDto {
 	private BigDecimal width;
 	private Long height;
 
-	private String createdBy;
-	private LocalDateTime createdDate;
-
-	private String lastModifiedBy;
-	private LocalDateTime lastModifiedDate;
-
 	private String imcoClassUnno;
 	private String properShippingName;
 	private String imcoClassDivision;

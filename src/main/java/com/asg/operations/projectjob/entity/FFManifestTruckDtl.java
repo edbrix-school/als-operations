@@ -1,6 +1,7 @@
 package com.asg.operations.projectjob.entity;
 
 import com.asg.common.lib.annotation.AuditIgnore;
+import com.asg.common.lib.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "FF_MANIFEST_TRUCK_DTL")
 @IdClass(FFManifestTruckDtlId.class)
-public class FFManifestTruckDtl implements BaseDetailEntity {
+public class FFManifestTruckDtl extends BaseEntity implements BaseDetailEntity{
 
     @AuditIgnore
     @Id
@@ -65,24 +66,6 @@ public class FFManifestTruckDtl implements BaseDetailEntity {
     @Column(name = "DOCUMENT_STATUS")
     @Size(max = 50)
     private String documentStatus;
-
-    @AuditIgnore
-    @Column(name = "CREATED_BY")
-    @Size(max = 20)
-    private String createdBy;
-
-    @AuditIgnore
-    @Column(name = "CREATED_DATE")
-    private LocalDateTime createdDate;
-
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_BY")
-    @Size(max = 20)
-    private String lastModifiedBy;
-
-    @AuditIgnore
-    @Column(name = "LASTMODIFIED_DATE")
-    private LocalDateTime lastModifiedDate;
 
     @Column(name = "TRUCK_NUMBER")
     @Size(max = 100)

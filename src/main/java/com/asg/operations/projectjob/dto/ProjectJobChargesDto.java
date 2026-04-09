@@ -19,11 +19,6 @@ public class ProjectJobChargesDto {
     private BigDecimal billingPrecharge;
     private BigDecimal paidAtPortPoid;
 
-    private String createdBy;
-    private LocalDate createdDate;
-    private String lastModifiedBy;
-    private LocalDate lastModifiedDate;
-
     private String currencyCode;
     private String payMode;
     private String rcptNoOld;
