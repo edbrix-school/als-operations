@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.asg.operations.projectjob.entity.FFManifestTruckDtl;
@@ -22,5 +23,5 @@ public interface FFManifestTruckDtlRepository extends JpaRepository<FFManifestTr
 	List<FFManifestTruckDtl> findByTransactionPoidIn(List<Long> transactionPoids);
 
 	@Query("SELECT COALESCE(MAX(d.detRowId), 0) FROM FFManifestTruckDtl d WHERE d.transactionPoid = :transactionPoid")
-	Long getMaxDetRowId(Long transactionPoid);
+	Long getMaxDetRowId(@Param("transactionPoid") Long transactionPoid);
 }
