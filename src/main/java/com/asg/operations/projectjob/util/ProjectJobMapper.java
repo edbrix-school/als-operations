@@ -1,5 +1,6 @@
 package com.asg.operations.projectjob.util;
 
+import com.asg.common.lib.utility.DateUtil;
 import com.asg.operations.projectjob.dto.*;
 import com.asg.operations.projectjob.entity.*;
 
@@ -210,11 +211,6 @@ public class ProjectJobMapper {
 
         entity.setDocumentStatus(dto.getDocumentStatus());
 
-        entity.setCreatedBy(dto.getCreatedBy());
-        entity.setCreatedDate(dto.getCreatedDate());
-        entity.setLastModifiedBy(dto.getLastModifiedBy());
-        entity.setLastModifiedDate(dto.getLastModifiedDate());
-
         entity.setTruckNumber(dto.getTruckNumber());
     }
 
@@ -341,11 +337,6 @@ public class ProjectJobMapper {
 
         dto.setDocumentStatus(entity.getDocumentStatus());
 
-        dto.setCreatedBy(entity.getCreatedBy());
-        dto.setCreatedDate(entity.getCreatedDate());
-        dto.setLastModifiedBy(entity.getLastModifiedBy());
-        dto.setLastModifiedDate(entity.getLastModifiedDate());
-
         dto.setTruckNumber(entity.getTruckNumber());
 
     }
@@ -355,7 +346,7 @@ public class ProjectJobMapper {
         if (dto == null || entity == null)
             return;
 
-        entity.setTransactionDate(dto.getTransactionDate());
+        entity.setTransactionDate(dto.getTransactionDate()!=null?dto.getTransactionDate(): DateUtil.getCurrentDateInUserTimeZone());
         entity.setCompanyPoid(dto.getCompanyPoid());
 
         entity.setFfJobNo(dto.getFfJobNo());

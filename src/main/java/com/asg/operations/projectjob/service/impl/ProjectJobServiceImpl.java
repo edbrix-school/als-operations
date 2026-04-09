@@ -155,9 +155,6 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         if (details == null || details.isEmpty())
             return;
 
-        String currentUser = UserContext.getUserId();
-        LocalDateTime now = LocalDateTime.now();
-
         Long maxDetRowId = getMaxRowIdFn.apply(transactionPoid);
 
         List<E> toSave = new ArrayList<>();
@@ -188,8 +185,6 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                     mapperFn.accept(dto, newEntity, transactionPoid);
 
                     newEntity.setDetRowId(detRowId != null ? detRowId : ++maxDetRowId);
-                    newEntity.setCreatedBy(currentUser);
-                    newEntity.setCreatedDate(now);
 
                     toSave.add(newEntity);
                     break;
@@ -203,8 +198,6 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                     BeanUtils.copyProperties(existing, oldEntity);
 
                     mapperFn.accept(dto, existing, transactionPoid);
-                    existing.setLastModifiedBy(currentUser);
-                    existing.setLastModifiedDate(now);
 
                     toUpdate.add(existing);
                     logRequests.add(new LogRequestDto<>(oldEntity, existing, (Class<E>) existing.getClass(), docId,

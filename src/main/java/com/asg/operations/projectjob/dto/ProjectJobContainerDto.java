@@ -62,10 +62,4 @@ public class ProjectJobContainerDto {
     private String docStatus;
     private String remarks;
 
-    private String createdBy;
-    private LocalDateTime createdDate;
-
-    private String lastModifiedBy;
-    private LocalDateTime lastModifiedDate;
-
 }

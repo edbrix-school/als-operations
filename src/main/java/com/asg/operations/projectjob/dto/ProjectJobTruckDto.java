@@ -28,11 +28,5 @@ public class ProjectJobTruckDto {
 
     private String documentStatus;
 
-    private String createdBy;
-    private LocalDateTime createdDate;
-
-    private String lastModifiedBy;
-    private LocalDateTime lastModifiedDate;
-
     private String truckNumber;
 }
