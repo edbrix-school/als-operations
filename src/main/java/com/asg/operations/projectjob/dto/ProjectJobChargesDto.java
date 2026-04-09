@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -23,14 +23,14 @@ public class ProjectJobChargesDto {
     private String payMode;
     private String rcptNoOld;
     private String chargeCideOld;
-    private LocalDate rcptDaeOld;
+    private LocalDateTime rcptDaeOld;
     private String costInvOld;
 
     private BigDecimal equipmentPoid;
     private BigDecimal totalBuyingCharge;
     private BigDecimal totalSellingCharge;
 
-    private LocalDate costInvDtOld;
+    private LocalDateTime costInvDtOld;
     private String rcptIvPoid;
     private BigDecimal totalCostBooked;
 

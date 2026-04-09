@@ -123,12 +123,12 @@ class ProjectJobMapperTest {
         dto.setPayMode("C"); // payMode is String(1)
         dto.setRcptNoOld("RCPT");
         dto.setChargeCideOld("CHARGE");
-        dto.setRcptDaeOld(LocalDate.now());
+        dto.setRcptDaeOld(LocalDateTime.now());
         dto.setCostInvOld("INV");
         dto.setEquipmentPoid(BigDecimal.valueOf(30L));
         dto.setTotalBuyingCharge(BigDecimal.valueOf(250.0));
         dto.setTotalSellingCharge(BigDecimal.valueOf(300.0));
-        dto.setCostInvDtOld(LocalDate.now());
+        dto.setCostInvDtOld(LocalDateTime.now());
         dto.setRcptIvPoid("40"); // rcptIvPoid is String
         dto.setTotalCostBooked(BigDecimal.valueOf(250.0));
         dto.setDataRowId("50"); // dataRowId is String
