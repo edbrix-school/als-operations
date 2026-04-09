@@ -193,7 +193,7 @@ public class ProjectMapper {
                 .transactionPoid(dtl.getTransactionPoid())
                 .detRowId(dtl.getDetRowId())
                 .quotationReferencePoid(dtl.getQuotationReferencePoid())
-                .quotationReferenceLov(getLov(dtl.getChargeDetailsPoid(), "PROJECTS_QUOTATIONS_SUPP"))
+                .quotationReferenceLov(getLov(dtl.getQuotationReferencePoid(), "PROJECTS_QUOTATIONS_SUPP"))
                 .chargeDetailsPoid(dtl.getChargeDetailsPoid())
                 .chargeDetailsLov(getLov(dtl.getChargeDetailsPoid(), "CHARGE_MASTER_FF"))
                 .printableChargeDescription(dtl.getPrintableChargeDescription())
