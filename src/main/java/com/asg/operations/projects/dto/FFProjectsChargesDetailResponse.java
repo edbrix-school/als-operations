@@ -14,6 +14,7 @@ public class FFProjectsChargesDetailResponse {
     private Long transactionPoid;
     private Long detRowId;
     private Long quotationReferencePoid;
+    private LovGetListDto quotationReferenceLov;
     private Long chargeDetailsPoid;
     private LovGetListDto chargeDetailsLov;
     private String printableChargeDescription;
