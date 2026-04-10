@@ -478,9 +478,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Process creates and updates
         if (request.getChargeDetails() != null) {
             for (PdaEntryChargeDetailRequest detailRequest : request.getChargeDetails()) {
-                logger.info("[AUDIT-LOG] Processing charge detail - detRowId: {}, chargePoid: {}", 
-                    detailRequest.getDetRowId(), detailRequest.getChargePoid());
-                if (detailRequest.getDetRowId() == null) {
+                logger.info("[AUDIT-LOG] Processing charge detail - detRowId: {}, chargePoid: {}, actionType: {}", 
+                    detailRequest.getDetRowId(), detailRequest.getChargePoid(), detailRequest.getActionType());
+                
+                // Handle deletion via actionType
+                if ("Deleted".equalsIgnoreCase(detailRequest.getActionType()) && detailRequest.getDetRowId() != null) {
+                    logger.info("[AUDIT-LOG] Deleting charge detail with detRowId: {} via actionType", detailRequest.getDetRowId());
+                    deleteChargeDetailRecord(transactionPoid, detailRequest.getDetRowId());
+                } else if (detailRequest.getDetRowId() == null) {
                     // Create new
                     logger.info("[AUDIT-LOG] Creating new charge detail");
                     createChargeDetail(transactionPoid, detailRequest, userId, now, companyPoid);
@@ -923,6 +928,43 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     public Map<String, Object> submitPdaToFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        // Validate transaction exists
+        PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
+                .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
+
+        // Validate Vessel Sail Date is mandatory
+        if (entry.getVesselSailDate() == null) {
+            throw new ValidationException(
+                    "Vessel sail date is mandatory for PDA document submission. Please enter the data.",
+                    List.of(new ValidationError("vesselSailDate", "Vessel sail date is mandatory"))
+            );
+        }
+
+        // Validate Vessel Sail Date is not before Arrival Date
+        if (entry.getArrivalDate() != null && entry.getVesselSailDate().isBefore(entry.getArrivalDate())) {
+            throw new ValidationException(
+                    "Vessel Sail Date should not be before the Vessel Arrival Date.",
+                    List.of(new ValidationError("vesselSailDate", "Vessel Sail Date should not be before the Vessel Arrival Date"))
+            );
+        }
+
+        // Validate Arrival Date is not after Sail Date
+        if (entry.getArrivalDate() != null && entry.getArrivalDate().isAfter(entry.getVesselSailDate())) {
+            throw new ValidationException(
+                    "Vessel Arrival Date should not be after the Vessel Sail Date.",
+                    List.of(new ValidationError("arrivalDate", "Vessel Arrival Date should not be after the Vessel Sail Date"))
+            );
+        }
+
+        // Validate acknowledgment details exist
+        long acknowledgmentCount = acknowledgmentDtlRepository.countByTransactionPoid(transactionPoid);
+        if (acknowledgmentCount == 0) {
+            throw new ValidationException(
+                    "WARNING: Acknowledgment details must be provided before submission",
+                    List.of(new ValidationError("acknowledgment", "Acknowledgment details must be provided before submission"))
+            );
+        }
+
         return callSubmitPdaToFda(groupPoid, companyPoid, userPoid, transactionPoid);
     }
 
