@@ -28,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -102,12 +101,6 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         validateFormulaString(request.getRateTypeFormula());
 
         PdaRateTypeMaster rateType = mapper.toEntity(request, groupPoidBD, userId);
-
-        if (rateType.getSeqno() == null) {
-            BigInteger maxSeqno = repository.findMaxSeqnoByGroupPoid(groupPoidBD)
-                    .orElse(BigInteger.ZERO);
-            rateType.setSeqno(maxSeqno.add(BigInteger.valueOf(10)));
-        }
 
         PdaRateTypeMaster savedRateType = repository.save(rateType);
         loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedRateType.getRateTypePoid().toString());
