@@ -98,9 +98,7 @@ public class FdaServiceImpl implements FdaService {
 
         validationUtils.validateHeaderBeforeSave(dto);
 
-        LocalDate transactionDate = dto.getTransactionDate() != null
-                ? dto.getTransactionDate()
-                : DateUtil.getCurrentDateInUserTimeZone();
+        LocalDate transactionDate = dto.getTransactionDate() != null                ? dto.getTransactionDate()                : DateUtil.getCurrentDateInUserTimeZone();
         // Validate financial year and transaction period before save
         validationUtils.validateFinancialAndTransactionPeriodForCreate(companyPoid, dto.getTransactionDate());
 

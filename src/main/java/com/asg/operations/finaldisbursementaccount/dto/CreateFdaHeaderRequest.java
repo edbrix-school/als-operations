@@ -1,6 +1,5 @@
 package com.asg.operations.finaldisbursementaccount.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -12,10 +11,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Request DTO for creating a new FDA Header
- * Excludes auto-generated fields (transactionPoid, docRef) and system-managed fields
- */
 @Getter
 @Setter
 public class CreateFdaHeaderRequest {
@@ -33,10 +28,8 @@ public class CreateFdaHeaderRequest {
 
     private Long vesselPoid;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate arrivalDate;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate sailDate;
 
     private Long portPoid;
@@ -69,7 +62,6 @@ public class CreateFdaHeaderRequest {
     @Size(max = 1, message = "Vessel Verified cannot exceed 1 character")
     private String vesselVerified;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate vesselVerifiedDate;
 
     @Size(max = 30, message = "Vessel Verified By cannot exceed 30 characters")
@@ -83,7 +75,6 @@ public class CreateFdaHeaderRequest {
     @Size(max = 1, message = "Principal Approved cannot exceed 1 character")
     private String principalApproved;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate principalApprovedDate;
 
     @Size(max = 30, message = "Principal Approved By cannot exceed 30 characters")
@@ -159,7 +150,7 @@ public class CreateFdaHeaderRequest {
     @NotNull(message = "Nominated Party is required. Select either Principal or Customer")
     private Long nominatedPartyPoid;
 
-    @Size(max = 100, message = "FDA Sub Type cannot exceed 1 character")
+    @Size(max = 100, message = "FDA Sub Type cannot exceed 100 character")
     private String fdaSubType;
 
     @Size(max = 100, message = "Sub Category cannot exceed 100 characters")
@@ -167,7 +158,6 @@ public class CreateFdaHeaderRequest {
 
     private Long vesselHandledBy;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate vesselSailDate;
 
     @Valid
