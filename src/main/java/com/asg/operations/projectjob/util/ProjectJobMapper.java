@@ -1,14 +1,27 @@
 package com.asg.operations.projectjob.util;
 
-import com.asg.common.lib.utility.DateUtil;
-import com.asg.operations.projectjob.dto.*;
-import com.asg.operations.projectjob.entity.*;
-
 import java.math.BigDecimal;
+import java.util.Optional;
+
+import com.asg.common.lib.utility.DateUtil;
+import com.asg.operations.projectjob.dto.FFManifestHdrDto;
+import com.asg.operations.projectjob.dto.FFManifestHdrDtoResponse;
+import com.asg.operations.projectjob.dto.ProjectJobAirPkgDto;
+import com.asg.operations.projectjob.dto.ProjectJobBayanDto;
+import com.asg.operations.projectjob.dto.ProjectJobChargesDto;
+import com.asg.operations.projectjob.dto.ProjectJobContainerDto;
+import com.asg.operations.projectjob.dto.ProjectJobTruckDto;
+import com.asg.operations.projectjob.entity.FFManifestAirPkgDtl;
+import com.asg.operations.projectjob.entity.FFManifestBayanDtl;
+import com.asg.operations.projectjob.entity.FFManifestChargesDtl;
+import com.asg.operations.projectjob.entity.FFManifestContainerDtl;
+import com.asg.operations.projectjob.entity.FFManifestHdr;
+import com.asg.operations.projectjob.entity.FFManifestTruckDtl;
 
 public class ProjectJobMapper {
 
-    private ProjectJobMapper(){}
+    private ProjectJobMapper() {
+    }
 
     public static void mapAirPkgFromDto(ProjectJobAirPkgDto dto, FFManifestAirPkgDtl entity, Long transactionPoid) {
 
@@ -18,15 +31,15 @@ public class ProjectJobMapper {
         entity.setTransactionPoid(transactionPoid);
         entity.setDetRowId(dto.getDetRowId());
 
-        entity.setNoOfPacks(dto.getNoOfPacks());
-        entity.setPackUnit(dto.getPackUnit());
+        entity.setNoOfPacks(Optional.ofNullable(dto.getNoOfPacks()).orElse(0L));
+        entity.setPackUnit(Optional.ofNullable(dto.getPackUnit()).orElse(""));
 
-        entity.setTotalWeight(dto.getTotalWeight());
+        entity.setTotalWeight(Optional.ofNullable(dto.getTotalWeight()).orElse(BigDecimal.ZERO));
         entity.setTotalVolume(dto.getTotalVolume());
 
-        entity.setLength(dto.getLength());
-        entity.setWidth(dto.getWidth());
-        entity.setHeight(dto.getHeight());
+        entity.setLength(Optional.ofNullable(dto.getLength()).orElse(BigDecimal.ZERO));
+        entity.setWidth(Optional.ofNullable(dto.getWidth()).orElse(BigDecimal.ZERO));
+        entity.setHeight(Optional.ofNullable(dto.getHeight()).orElse(0L));
 
         entity.setImcoClassUnno(dto.getImcoClassUnno());
         entity.setProperShippingName(dto.getProperShippingName());
@@ -395,7 +408,7 @@ public class ProjectJobMapper {
         if (dto == null || entity == null)
             return;
 
-        entity.setTransactionDate(dto.getTransactionDate()!=null?dto.getTransactionDate(): DateUtil.getCurrentDateInUserTimeZone());
+        entity.setTransactionDate(Optional.ofNullable(dto.getTransactionDate()).orElse(DateUtil.getCurrentDateInUserTimeZone()));
         entity.setCompanyPoid(dto.getCompanyPoid());
 
         entity.setFfJobNo(dto.getFfJobNo());
