@@ -277,6 +277,9 @@ public class HeaderMapper {
         entity.setNrt(dto.getNrt());
         entity.setNumberOfDays(dto.getNumberOfDays());
         entity.setPortDescription(dto.getPortDescription());
+        entity.setPortCallNumber(dto.getPortCallNumber());
+        entity.setNominatedPartyType(dto.getNominatedPartyType());
+        entity.setNominatedPartyPoid(dto.getNominatedPartyPoid());
         entity.setFdaSubType(dto.getFdaSubType());
         entity.setSubCategory(dto.getSubCategory());
         entity.setPrintBankPoid(dto.getPrintBankPoid());
