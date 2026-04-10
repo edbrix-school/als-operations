@@ -204,7 +204,8 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             saveTcDetails(savedEntity, request.getTcDetails());
         }
 
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString());
+        String key = savedEntity.getTransactionPoid().toString();
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, savedEntity.getDocRef()));
         return mapToResponse(savedEntity);
     }
 

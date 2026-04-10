@@ -216,6 +216,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Save entity
         entry = entryHdrRepository.save(entry);
+        entityManager.refresh(entry);
         logger.info("After initial save - salesmanPoid: {}", entry.getSalesmanPoid());
 
         // Call before save validation stored procedure
@@ -240,7 +241,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 entry.getVoyageNo(), entry.getVoyagePoid()
         );
 
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entry.getTransactionPoid().toString());
+        String key = entry.getTransactionPoid().toString();
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, entry.getDocRef()));
         return toResponse(entry);
     }
 

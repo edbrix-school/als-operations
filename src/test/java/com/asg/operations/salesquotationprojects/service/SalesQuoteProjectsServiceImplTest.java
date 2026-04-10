@@ -147,7 +147,7 @@ class SalesQuoteProjectsServiceImplTest {
             when(termsTemplateRepository.existsByTermsPoid(any())).thenReturn(true);
             when(repository.saveAndFlush(any(SalesQuoteProjectsHdr.class))).thenReturn(mockEntity);
             doNothing().when(entityManager).refresh(any());
-            doNothing().when(loggingService).createLogSummaryEntry(any(LogDetailsEnum.class), any(), any());
+            doNothing().when(loggingService).createLogSummaryEntry(anyString(), anyString(), anyString());
 
             SalesQuoteProjectsResponse result = service.createSalesQuoteProject(mockRequest);
 

@@ -11,6 +11,7 @@ import com.asg.common.lib.utility.DateUtil;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import com.asg.common.lib.service.PrintService;
@@ -64,6 +65,7 @@ public class FdaServiceImpl implements FdaService {
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional(readOnly = true)
@@ -115,12 +117,14 @@ public class FdaServiceImpl implements FdaService {
         // Note: The trigger generates docRef based on FDA_SUB_TYPE and PDA_REF
         // For now, we'll let the trigger handle it, but we can set a fallback if needed
         entity = pdaFdaHdrRepository.save(entity);
+        entityManager.refresh(entity);
 
         if (dto.getCharges() != null && !dto.getCharges().isEmpty()) {
             saveCharges(entity.getTransactionPoid(), dto.getCharges(), userId, groupPoid, companyPoid);
         }
 
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entity.getTransactionPoid().toString());
+        String key = entity.getTransactionPoid().toString();
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, entity.getDocRef()));
         return getFdaHeader(entity.getTransactionPoid(), groupPoid, companyPoid);
     }
 
