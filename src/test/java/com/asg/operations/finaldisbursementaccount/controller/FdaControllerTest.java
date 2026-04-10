@@ -106,6 +106,7 @@ class FdaControllerTest {
         requestDto.setSalesmanPoid(1L);
         requestDto.setPortPoid(1L);
         requestDto.setGrt(BigDecimal.valueOf(1000));
+        requestDto.setNominatedPartyPoid(1L);
 
         FdaHeaderDto responseDto = new FdaHeaderDto();
         responseDto.setTransactionPoid(1L);

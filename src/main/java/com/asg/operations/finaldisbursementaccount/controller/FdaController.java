@@ -33,6 +33,8 @@ import java.time.LocalDate;
 import java.util.Map;
 
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import static com.asg.common.lib.dto.response.ApiResponse.internalServerError;
 import static com.asg.common.lib.dto.response.ApiResponse.success;
@@ -270,7 +272,16 @@ public class FdaController {
     public ResponseEntity<?> supplementaryFda(@Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid) {
         String result = fdaService.supplementaryFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid);
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
-            return ApiResponse.success("Created FDA as supplementary successfully");
+
+            String docRef = "";
+            Pattern pattern = Pattern.compile("\\((.*?)\\)");
+            Matcher matcher = pattern.matcher(result);
+
+            if (matcher.find()) {
+                docRef = matcher.group(1);
+            }
+
+            return ApiResponse.success("Supplementary FDA created successfully - Doc Ref: " + docRef);
         }
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("WARNING")) {
             return ApiResponse.error(result, 400);
