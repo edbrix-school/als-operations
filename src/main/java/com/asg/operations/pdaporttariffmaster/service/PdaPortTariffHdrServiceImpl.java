@@ -92,6 +92,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     @Override
+    @Transactional
     public PdaPortTariffMasterResponse createTariff(PdaPortTariffMasterRequest request) {
         validateCreateRequest(request, UserContext.getCompanyPoid());
 

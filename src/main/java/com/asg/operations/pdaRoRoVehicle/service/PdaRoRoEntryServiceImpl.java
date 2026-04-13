@@ -55,6 +55,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
     private final EntityManager entityManager;
 
     @Override
+    @Transactional
     public PdaRoRoEntryHdrResponseDto createRoRoEntry(PdaRoroEntryHdrRequestDto request) {
         Map<String, Object> voyageDetails = getVoyageDetails(request.getVesselVoyagePoid());
 

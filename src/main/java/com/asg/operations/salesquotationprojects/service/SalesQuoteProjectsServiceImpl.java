@@ -114,6 +114,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     }
 
     @Override
+    @Transactional
     public SalesQuoteProjectsResponse createSalesQuoteProject(SalesQuoteProjectsRequest request) {
         log.info("Creating sales quote project");
 

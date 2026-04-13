@@ -85,6 +85,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Override
+    @Transactional
     public PdaEntryResponse createPdaEntry(PdaEntryRequest request, Long groupPoid, Long companyPoid, Long userPoid) {
         // Validate request
         validatePdaEntryRequest(request, null);
