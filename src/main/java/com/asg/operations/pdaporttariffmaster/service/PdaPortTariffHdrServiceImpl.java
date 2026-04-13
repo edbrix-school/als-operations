@@ -105,6 +105,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
 
         PdaPortTariffHdr tariffHdr = mapper.toEntity(request);
         tariffHdrRepository.saveAndFlush(tariffHdr);
+        entityManager.flush();
         entityManager.refresh(tariffHdr);
 
         PdaPortTariffHdr savedTariff = tariffHdrRepository.findByTransactionPoid(tariffHdr.getTransactionPoid())

@@ -102,6 +102,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         FFProjectsHdr projectsHdr = ProjectMapper.buildCreateProject(request);
 
         projectsHdr = projectsHdrRepository.save(projectsHdr);
+        entityManager.flush();
         entityManager.refresh(projectsHdr);
         Long transactionPoid = projectsHdr.getTransactionPoid();
         
