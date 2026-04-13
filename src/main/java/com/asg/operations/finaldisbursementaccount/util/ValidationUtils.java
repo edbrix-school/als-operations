@@ -48,61 +48,50 @@ public class ValidationUtils {
     private final SalesCustomerMasterRepository customerMasterRepository;
 
     public void validateHeaderBeforeSave(CreateFdaHeaderRequest dto) {
-        if (dto.getPrincipalPoid() != null) {
-            if (!shipPrincipalRepository.existsByPrincipalPoid(dto.getPrincipalPoid())) {
+        if (dto.getPrincipalPoid() != null && !shipPrincipalRepository.existsByPrincipalPoid(dto.getPrincipalPoid())) {
                 throw new ResourceNotFoundException("Principal not found for: " + dto.getPrincipalPoid());
             }
-        }
-        if (dto.getSalesmanPoid() != null) {
-            if (!salesSalesmanMasterRepository.existsBySalesmanPoid(dto.getSalesmanPoid())) {
+
+        if (dto.getSalesmanPoid() != null && !salesSalesmanMasterRepository.existsBySalesmanPoid(dto.getSalesmanPoid())) {
                 throw new ResourceNotFoundException("Salesman not found for: " + dto.getSalesmanPoid());
             }
-        }
-        if (dto.getVoyagePoid() != null) {
-            if (!shipVoyageHdrRepository.existsByTransactionPoid(dto.getVoyagePoid())) {
+
+        if (dto.getVoyagePoid() != null && !shipVoyageHdrRepository.existsByTransactionPoid(dto.getVoyagePoid())) {
                 throw new ResourceNotFoundException("Voyage not found for: " + dto.getVoyagePoid());
             }
-        }
-        if (dto.getPortPoid() != null) {
-            if (!shipPortMasterRepository.existsByIdPortPoid(BigDecimal.valueOf(dto.getPortPoid()))) {
+
+        if (dto.getPortPoid() != null && !shipPortMasterRepository.existsByIdPortPoid(BigDecimal.valueOf(dto.getPortPoid()))) {
                 throw new ResourceNotFoundException("Port not found for: " + dto.getPortPoid());
             }
-        }
-        if (dto.getLinePoid() != null) {
-            if (!shipLineMasterRepository.existsByLinePoid(dto.getLinePoid())) {
+
+        if (dto.getLinePoid() != null && !shipLineMasterRepository.existsByLinePoid(dto.getLinePoid())) {
                 throw new ResourceNotFoundException("Line not found for: " + dto.getLinePoid());
             }
-        }
-        if (dto.getVesselPoid() != null) {
-            if (!shipVesselMasterRepository.existsByVesselPoid(dto.getVesselPoid())) {
+
+        if (dto.getVesselPoid() != null && !shipVesselMasterRepository.existsByVesselPoid(dto.getVesselPoid())) {
                 throw new ResourceNotFoundException("Vessel not found for: " + dto.getVesselPoid());
             }
-        }
-        if (dto.getVesselTypePoid() != null) {
-            if (!shipVesselTypeMasterRepository.existsByVesselTypePoid(BigDecimal.valueOf(Long.parseLong(dto.getVesselTypePoid())))) {
+
+        if (dto.getVesselTypePoid() != null && !shipVesselTypeMasterRepository.existsByVesselTypePoid(BigDecimal.valueOf(Long.parseLong(dto.getVesselTypePoid())))) {
                 throw new ResourceNotFoundException("Vessel Type not found for: " + dto.getVesselTypePoid());
             }
-        }
-        if (dto.getPrintBankPoid() != null) {
-            if (!glBankMasterRepository.existsByBankPoid(dto.getPrintBankPoid())) {
+
+        if (dto.getPrintBankPoid() != null && !glBankMasterRepository.existsByBankPoid(dto.getPrintBankPoid())) {
                 throw new ResourceNotFoundException("Bank not found for: " + dto.getPrintBankPoid());
             }
-        }
-        if (dto.getCostCentrePoid() != null) {
-            if (!costCenterRepository.existsByCostCenterPoid(dto.getCostCentrePoid())) {
+
+        if (dto.getCostCentrePoid() != null && !costCenterRepository.existsByCostCenterPoid(dto.getCostCentrePoid())) {
                 throw new ResourceNotFoundException("Cost Center not found for: " + dto.getCostCentrePoid());
             }
-        }
-        if (dto.getAddressPoid() != null) {
-            if (!addressMasterRepository.existsByAddressMasterPoid(dto.getAddressPoid())) {
+
+        if (dto.getAddressPoid() != null && !addressMasterRepository.existsByAddressMasterPoid(dto.getAddressPoid())) {
                 throw new ResourceNotFoundException("Address not found for: " + dto.getAddressPoid());
             }
-        }
-        if (dto.getTermsPoid() != null) {
-            if (!termsTemplateRepository.existsByTermsPoid(dto.getTermsPoid())) {
+
+        if (dto.getTermsPoid() != null && !termsTemplateRepository.existsByTermsPoid(dto.getTermsPoid())) {
                 throw new ResourceNotFoundException("Terms not found for: " + dto.getTermsPoid());
             }
-        }
+
         if (StringUtils.isNotBlank(dto.getNominatedPartyType())) {
             if (!"PRINCIPAL".equalsIgnoreCase(dto.getNominatedPartyType()) && !"CUSTOMER".equalsIgnoreCase(dto.getNominatedPartyType())) {
                 throw new CustomException("Nominated Party Type should be either PRINCIPAL or CUSTOMER", 400);
@@ -151,21 +140,18 @@ public class ValidationUtils {
     }
 
     public void validateHeaderBeforeUpdate(UpdateFdaHeaderRequest dto, PdaFdaHdr existingEntity) {
-        if (dto.getPrincipalPoid() != null) {
-            if (!shipPrincipalRepository.existsByPrincipalPoid(dto.getPrincipalPoid())) {
+        if (dto.getPrincipalPoid() != null && !shipPrincipalRepository.existsByPrincipalPoid(dto.getPrincipalPoid())) {
                 throw new ResourceNotFoundException("Principal not found for: " + dto.getPrincipalPoid());
             }
-        }
-        if (dto.getSalesmanPoid() != null) {
-            if (!salesSalesmanMasterRepository.existsBySalesmanPoid(dto.getSalesmanPoid())) {
+
+        if (dto.getSalesmanPoid() != null && !salesSalesmanMasterRepository.existsBySalesmanPoid(dto.getSalesmanPoid())) {
                 throw new ResourceNotFoundException("Salesman not found for: " + dto.getSalesmanPoid());
             }
-        }
-        if (dto.getPortPoid() != null) {
-            if (!shipPortMasterRepository.existsByIdPortPoid(BigDecimal.valueOf(dto.getPortPoid()))) {
+
+        if (dto.getPortPoid() != null && !shipPortMasterRepository.existsByIdPortPoid(BigDecimal.valueOf(dto.getPortPoid()))) {
                 throw new ResourceNotFoundException("Port not found for: " + dto.getPortPoid());
             }
-        }
+
 
         // Validate fdaSubType changes (if being updated)
         // Note: The trigger PDA_FDA_HDR_TRG only runs on INSERT, not UPDATE
@@ -181,15 +167,14 @@ public class ValidationUtils {
             }
 
             // If changing to MAIN_FDA, validate no other MAIN_FDA exists for this PDA_REF
-            if (!"MAIN_FDA".equalsIgnoreCase(oldFdaSubType) && "MAIN_FDA".equalsIgnoreCase(newFdaSubType)) {
-                if (pdaRef != null && pdaFdaHdrRepository.existsMainFdaByPdaRef(pdaRef)) {
+            if (!"MAIN_FDA".equalsIgnoreCase(oldFdaSubType) && "MAIN_FDA".equalsIgnoreCase(newFdaSubType) && pdaRef != null && pdaFdaHdrRepository.existsMainFdaByPdaRef(pdaRef)) {
                     throw new CustomException("Cannot change FDA Sub Type to 'MAIN_FDA'. A MAIN_FDA already exists for PDA Reference '" + pdaRef + "'.", 400);
                 }
-            }
+
         }
     }
 
-    public void recalculateHeaderTotals(Long transactionPoid, String userId, Long groupPoid, Long companyPoid) {
+    public void recalculateHeaderTotals(Long transactionPoid, Long groupPoid, Long companyPoid) {
         PdaFdaHdr hdr = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(transactionPoid, groupPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
 
@@ -209,48 +194,44 @@ public class ValidationUtils {
         pdaFdaHdrRepository.save(hdr);
     }
 
-    public void handleCreateOrUpdate(Long transactionPoid, FdaChargeDto dto, List<PdaFdaDtl> toSave, String userId) {
+    public void handleCreate(Long transactionPoid, FdaChargeDto dto, String userId) {
+        if (dto.getChargePoid() == null) throw new CustomException("Charge is required", 400);
+        if (dto.getQty() == null) throw new CustomException("Quantity is required", 400);
+        if (dto.getPdaRate() == null) throw new CustomException("Rate is required", 400);
 
-        if (dto.getChargePoid() == null) {
-            throw new CustomException("Charge is required", 400);
-        }
-        if (dto.getQty() == null) {
-            throw new CustomException("Quantity is required", 400);
-        }
-        if (dto.getPdaRate() == null) {
-            throw new CustomException("Rate is required", 400);
-        }
         if (dto.getDetRowId() == null) {
             dto.setDetRowId(generateNextDetRowId(transactionPoid));
         }
 
         PdaFdaDtlId id = new PdaFdaDtlId(transactionPoid, dto.getDetRowId());
-        PdaFdaDtl entity = pdaFdaDtlRepository.findById(id).orElseGet(() -> ChargesMapper.createNewCharge(id, dto, userId));
-        PdaFdaDtl oldEntity = null;
-        boolean isUpdate = entity.getId() != null && entity.getId().getTransactionPoid() != null;
+        PdaFdaDtl entity = ChargesMapper.createNewCharge(id, dto, userId);
+        CalculationUtils.recalculateAmounts(entity);
+        PdaFdaDtl saved = pdaFdaDtlRepository.save(entity);
+        String logDetail = String.format("Row Created on [FDA Charge Details] with detRowId: %s", saved.getId().getDetRowId());
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), saved.getId().getTransactionPoid().toString(), logDetail);
+    }
 
-        if (isUpdate) {
-            oldEntity = new PdaFdaDtl();
-            BeanUtils.copyProperties(entity, oldEntity);
-        }
+    public void handleUpdate(Long transactionPoid, FdaChargeDto dto, String userId) {
+        if (dto.getDetRowId() == null) throw new CustomException("Det Row Id is required for update", 400);
 
-        String actionType = StringUtils.isNotBlank(dto.getActionType()) ? dto.getActionType().toLowerCase() : "";
+        PdaFdaDtlId id = new PdaFdaDtlId(transactionPoid, dto.getDetRowId());
+        PdaFdaDtl existing = pdaFdaDtlRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("FDA Detail", "detRowId", dto.getDetRowId()));
 
-        if (StringUtils.isNotBlank(entity.getManual()) && "N".equalsIgnoreCase(entity.getManual()) && !"iscreated".equalsIgnoreCase(actionType)) {
+        if (StringUtils.isNotBlank(existing.getManual()) && "N".equalsIgnoreCase(existing.getManual())) {
             throw new CustomException("System-generated charge lines cannot be modified", 403);
         }
 
-        ChargesMapper.updateChargeEntityFromDto(dto, entity, userId);
+        PdaFdaDtl oldEntity = new PdaFdaDtl();
+        BeanUtils.copyProperties(existing, oldEntity);
 
-        CalculationUtils.recalculateAmounts(entity);
+        ChargesMapper.updateChargeEntityFromDto(dto, existing, userId);
+        CalculationUtils.recalculateAmounts(existing);
 
-        toSave.add(entity);
+        existing = pdaFdaDtlRepository.save(existing);
 
-        if (isUpdate && oldEntity != null) {
-            entity = pdaFdaDtlRepository.save(entity);
-            String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", entity.getId().getTransactionPoid(), entity.getId().getDetRowId());
-            loggingService.createLog(oldEntity, entity, PdaFdaDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
-        }
+        String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getId().getTransactionPoid(), existing.getId().getDetRowId());
+        loggingService.createLog(oldEntity, existing, PdaFdaDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
     }
 
     private Long generateNextDetRowId(Long transactionPoid) {

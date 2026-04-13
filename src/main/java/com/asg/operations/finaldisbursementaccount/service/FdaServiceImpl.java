@@ -271,8 +271,6 @@ public class FdaServiceImpl implements FdaService {
             }
         }
 
-        List<PdaFdaDtl> toSave = new ArrayList<>();
-
         for (FdaChargeDto dto : chargeDtos) {
             String action = StringUtils.isNotBlank(dto.getActionType()) ? dto.getActionType().toLowerCase() : "";
 
@@ -285,23 +283,22 @@ public class FdaServiceImpl implements FdaService {
                                 throw new CustomException("Cannot delete system-generated charge lines", 403);
                             }
                             pdaFdaDtlRepository.delete(entity);
+                            loggingService.logDelete(entity,UserContext.getDocumentId(),entity.getId().getTransactionPoid().toString());
                         });
                     }
                     break;
                 case "iscreated":
+                    validationUtils.handleCreate(transactionPoid, dto, userId);
+                    break;
                 case "isupdated":
-                    validationUtils.handleCreateOrUpdate(transactionPoid, dto, toSave, userId);
+                    validationUtils.handleUpdate(transactionPoid, dto, userId);
                     break;
                 default:
                     // ignore unknown actions
             }
         }
 
-        if (!toSave.isEmpty()) {
-            pdaFdaDtlRepository.saveAll(toSave);
-        }
-
-        validationUtils.recalculateHeaderTotals(transactionPoid, userId, groupPoid, companyPoid);
+        validationUtils.recalculateHeaderTotals(transactionPoid, groupPoid, companyPoid);
     }
 
     @Override
@@ -316,6 +313,7 @@ public class FdaServiceImpl implements FdaService {
         }
 
         pdaFdaDtlRepository.delete(entity);
+        loggingService.logDelete(entity,UserContext.getDocumentId(),entity.getId().getTransactionPoid().toString());
     }
 
     @Override
