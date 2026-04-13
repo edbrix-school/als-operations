@@ -26,6 +26,7 @@ import com.asg.operations.projects.repository.FreightJobProjectionRepository;
 import com.asg.operations.projects.util.ProjectMapper;
 import com.asg.operations.projectjob.entity.*;
 import com.asg.operations.projectjob.repository.*;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -63,6 +64,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     private final ProjectMapper mapper;
     private final DocumentSearchService documentSearchService;
     private final LovDataService lovDataService;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional(readOnly = true)
@@ -100,8 +102,11 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         FFProjectsHdr projectsHdr = ProjectMapper.buildCreateProject(request);
 
         projectsHdr = projectsHdrRepository.save(projectsHdr);
+        entityManager.refresh(projectsHdr);
         Long transactionPoid = projectsHdr.getTransactionPoid();
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
+        
+        String key = transactionPoid.toString();
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, projectsHdr.getDocRef()));
 
 
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {

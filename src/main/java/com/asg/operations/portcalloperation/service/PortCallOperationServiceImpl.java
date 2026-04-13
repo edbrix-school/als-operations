@@ -27,6 +27,7 @@ import com.asg.operations.portcallreport.enums.ActionType;
 import com.asg.operations.portcallreport.repository.PortCallReportDtlRepository;
 import com.asg.operations.portcallreport.repository.PortCallReportHdrRepository;
 import com.asg.operations.shipprincipal.repository.ShipPrincipalRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -90,6 +91,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final GlobalParameterRepository globalParameterRepository;
     private final PortCallReportDtlRepository dtlRepository;
     private final PortCallOperationScreenAttachmentService screenAttachmentService;
+    private final EntityManager entityManager;
 
 
     @Override
@@ -505,6 +507,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .build();
 
         hdr = hdrRepository.save(hdr);
+        entityManager.refresh(hdr);
 
         // Save cargo details
         if (dto.getCargoDetails() != null && !dto.getCargoDetails().isEmpty()) {
@@ -565,7 +568,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), hdr.getTransactionPoid().toString());
+        String key = hdr.getTransactionPoid().toString();
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, hdr.getDocRef()));
         return getOperationById(hdr.getTransactionPoid());
     }
 
