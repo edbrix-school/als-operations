@@ -192,6 +192,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         entity.setDeleted("N");
 
         SalesQuoteProjectsHdr savedEntity = repository.saveAndFlush(entity);
+        entityManager.flush();
         entityManager.refresh(savedEntity);
 
         // Save child details

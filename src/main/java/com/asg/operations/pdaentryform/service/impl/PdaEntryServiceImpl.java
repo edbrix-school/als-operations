@@ -217,6 +217,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Save entity
         entry = entryHdrRepository.save(entry);
+        entityManager.flush();
         entityManager.refresh(entry);
         logger.info("After initial save - salesmanPoid: {}", entry.getSalesmanPoid());
 
