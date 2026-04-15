@@ -265,6 +265,8 @@ public class HeaderMapper {
         // Quantities persisted on update/edit
         entity.setImportQty(dto.getImportQty());
         entity.setExportQty(dto.getExportQty());
+        entity.setCurrencyCode(dto.getCurrencyCode());
+        entity.setCurrencyRate(dto.getCurrencyRate());
         entity.setTranshipmentQty(dto.getTranshipmentQty());
         entity.setTotalQuantity(dto.getTotalQuantity());
         entity.setUnit(dto.getUnit());
