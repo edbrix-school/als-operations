@@ -1,5 +1,6 @@
 package com.asg.operations.projectjob.dto;
 
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,10 +20,12 @@ public class ProjectJobChargesDto {
     private BigDecimal billingPrecharge;
     private BigDecimal paidAtPortPoid;
 
+
+    @Size(max = 10,message = "Currency code must be less than or equal to 10 characters")
     private String currencyCode;
     private String payMode;
     private String rcptNoOld;
-    private String chargeCideOld;
+    private String chargeCodeOld;
     private LocalDateTime rcptDaeOld;
     private String costInvOld;
 
