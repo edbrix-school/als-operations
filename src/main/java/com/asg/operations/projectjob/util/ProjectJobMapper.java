@@ -99,7 +99,7 @@ public class ProjectJobMapper {
         entity.setCurrencyCode(dto.getCurrencyCode());
         entity.setPayMode(dto.getPayMode());
         entity.setRcptNoOld(dto.getRcptNoOld());
-        entity.setChargeCideOld(dto.getChargeCideOld());
+        entity.setChargeCodeOld(dto.getChargeCodeOld());
         entity.setRcptDaeOld(dto.getRcptDaeOld());
         entity.setCostInvOld(dto.getCostInvOld());
 
@@ -300,7 +300,7 @@ public class ProjectJobMapper {
         dto.setCurrencyCode(entity.getCurrencyCode());
         dto.setPayMode(entity.getPayMode());
         dto.setRcptNoOld(entity.getRcptNoOld());
-        dto.setChargeCideOld(entity.getChargeCideOld());
+        dto.setChargeCodeOld(entity.getChargeCodeOld());
         dto.setRcptDaeOld(entity.getRcptDaeOld());
         dto.setCostInvOld(entity.getCostInvOld());
         dto.setEquipmentPoid(entity.getEquipmentPoid());

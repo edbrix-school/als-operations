@@ -62,7 +62,7 @@ public class FFManifestChargesDtl extends BaseEntity implements BaseDetailEntity
 
     @Column(name = "CHARGE_CODE_OLD")
     @Size(max = 20)
-    private String chargeCideOld;
+    private String chargeCodeOld;
 
     @Column(name = "RCPT_DAE_OLD")
     private LocalDateTime rcptDaeOld;
