@@ -122,7 +122,7 @@ class ProjectJobMapperTest {
         dto.setCurrencyCode("USD");
         dto.setPayMode("C"); // payMode is String(1)
         dto.setRcptNoOld("RCPT");
-        dto.setChargeCideOld("CHARGE");
+        dto.setChargeCodeOld("CHARGE");
         dto.setRcptDaeOld(LocalDateTime.now());
         dto.setCostInvOld("INV");
         dto.setEquipmentPoid(BigDecimal.valueOf(30L));
