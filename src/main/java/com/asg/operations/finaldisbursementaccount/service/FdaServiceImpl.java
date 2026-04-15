@@ -560,9 +560,7 @@ public class FdaServiceImpl implements FdaService {
 
     private void setDetailsForCharge(FdaChargeDto charge) {
         charge.setChargeDet(lovService.getLovItemByPoid(charge.getChargePoid(), "CHARGE_MASTER_FOR_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-        charge.setRateTypeDet(lovService.getLovItemByPoid(charge.getRateTypePoid(), "PDA_RATE_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         charge.setPrincipalDet(lovService.getLovItemByPoid(charge.getPrincipalPoid(), "PRINCIPAL_MASTER_FOR_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-        charge.setPdaDet(lovService.getLovItemByPoid(charge.getPdaPoid(), "PROCESS_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         charge.setDetailsFromDet(lovService.getLovItemByCode(charge.getDetailsFrom(), "FDA_DETAIL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
     }
 
