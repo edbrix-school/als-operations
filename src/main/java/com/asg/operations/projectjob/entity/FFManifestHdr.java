@@ -500,7 +500,7 @@ public class FFManifestHdr extends BaseEntity {
     private LocalDateTime deliveryDateFrom;
 
     @Column(name = "DELIVERY_DATE_TO")
-    private LocalDateTime deliveryḌateTo;
+    private LocalDateTime deliveryDateTo;
 
     @Column(name = "CUSTOMS_CLEARANCE_INVOLVED")
     @Size(max = 1)
