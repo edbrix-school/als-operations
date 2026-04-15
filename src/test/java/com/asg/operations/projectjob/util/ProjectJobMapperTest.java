@@ -728,7 +728,7 @@ class ProjectJobMapperTest {
         entity.setDocumentStatus("DS");
         entity.setSpecialDocumentRemarks("SDR");
         entity.setDeliveryDateFrom(LocalDateTime.now());
-        entity.setDeliveryḌateTo(LocalDateTime.now());
+        entity.setDeliveryDateTo(LocalDateTime.now());
         entity.setCustomsClearanceInvoved("Y");
         entity.setRoadTransport("Y");
         entity.setDoFreedays(5);

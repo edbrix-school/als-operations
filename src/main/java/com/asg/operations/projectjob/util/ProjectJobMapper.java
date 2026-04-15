@@ -577,7 +577,7 @@ public class ProjectJobMapper {
         entity.setSpecialDocumentRemarks(dto.getSpecialDocumentRemarks());
 
         entity.setDeliveryDateFrom(dto.getDeliveryDateFrom());
-        entity.setDeliveryḌateTo(dto.getDeliveryDateTo());
+        entity.setDeliveryDateTo(dto.getDeliveryDateTo());
 
         entity.setCustomsClearanceInvoved(dto.getCustomsClearanceInvoved());
         entity.setRoadTransport(dto.getRoadTransport());
@@ -789,7 +789,7 @@ public class ProjectJobMapper {
         dto.setSpecialDocumentRemarks(entity.getSpecialDocumentRemarks());
 
         dto.setDeliveryDateFrom(entity.getDeliveryDateFrom());
-        dto.setDeliveryDateTo(entity.getDeliveryḌateTo());
+        dto.setDeliveryDateTo(entity.getDeliveryDateTo());
 
         dto.setCustomsClearanceInvoved(entity.getCustomsClearanceInvoved());
         dto.setRoadTransport(entity.getRoadTransport());
