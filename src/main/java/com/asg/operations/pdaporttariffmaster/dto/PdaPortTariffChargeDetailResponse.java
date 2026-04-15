@@ -1,7 +1,6 @@
 package com.asg.operations.pdaporttariffmaster.dto;
 
 import com.asg.operations.commonlov.dto.LovItem;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -44,12 +43,10 @@ public class PdaPortTariffChargeDetailResponse {
 
     private String createdBy;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdDate;
 
     private String lastModifiedBy;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime lastModifiedDate;
 
 }

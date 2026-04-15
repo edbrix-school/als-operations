@@ -648,6 +648,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Recalculate header total amount
         recalculateHeaderTotalAmount(transactionPoid, UserContext.getUserId());
 
+        // Flush to ensure all changes are persisted
+        entityManager.flush();
+
         // Return updated charge details
         return getChargeDetails(transactionPoid, groupPoid, companyPoid);
     }
@@ -682,6 +685,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Recalculate header total amount
         recalculateHeaderTotalAmount(transactionPoid, UserContext.getUserId());
+
+        // Flush to ensure all changes are persisted
+        entityManager.flush();
 
         // Return loaded charge details
         return getChargeDetails(transactionPoid, groupPoid, companyPoid);
@@ -811,23 +817,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             // Get PDA entry to check validations
             PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
                     .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
-            
-            // Check if charge details exist
-            List<PdaEntryDtl> chargeDetails = entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid);
-            if (chargeDetails == null || chargeDetails.isEmpty()) {
-                logger.warn("[SP-10] No charge details found for transactionPoid: {}", transactionPoid);
-                return "WARNING: No details in this Transaction...";
-            }
-            
-            // Check approval status for GENERAL type PDA
-            if ("GENERAL".equalsIgnoreCase(entry.getRefType())) {
-                String status = entry.getStatus();
-                if (!"PRINCIPAL_APPROVAL_WAITING".equalsIgnoreCase(status) && 
-                    !"CONFIRMED".equalsIgnoreCase(status)) {
-                    logger.warn("[SP-10] Accounts Approval is not done for transactionPoid: {}, status: {}", transactionPoid, status);
-                    return "WARNING: Accounts Approval is not done...";
-                }
-            }
 
             // Try with schema prefix first
             String sqlWithSchema = "{ call PROC_PDA_FDA_CREATE_FROM_PDA(?, ?, ?, ?, ?) }";
@@ -844,8 +833,19 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 });
                 
                 logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Completed with schema. Status: {}", result);
+                
+                // Check for warnings or errors from stored procedure
+                if (result != null && (result.startsWith("WARNING") || result.startsWith("ERROR"))) {
+                    throw new ValidationException(
+                            result,
+                            List.of(new ValidationError("general", result))
+                    );
+                }
+                
                 return result != null ? result : "Success";
                 
+            } catch (ValidationException ve) {
+                throw ve;
             } catch (Exception schemaCallException) {
                 logger.warn("[SP-10] Schema call failed, trying without schema: {}", schemaCallException.getMessage());
                 
@@ -864,8 +864,19 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     });
                     
                     logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Completed without schema. Status: {}", result);
+                    
+                    // Check for warnings or errors from stored procedure
+                    if (result != null && (result.startsWith("WARNING") || result.startsWith("ERROR"))) {
+                        throw new ValidationException(
+                                result,
+                                List.of(new ValidationError("general", result))
+                        );
+                    }
+                    
                     return result != null ? result : "Success";
                     
+                } catch (ValidationException ve) {
+                    throw ve;
                 } catch (Exception directCallException) {
                     logger.warn("[SP-10] Direct call failed, trying SimpleJdbcCall: {}", directCallException.getMessage());
                     
@@ -891,13 +902,27 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     String status = (String) result.get("P_RESULT");
 
                     logger.info("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Completed via SimpleJdbcCall. Status: {}", status);
+                    
+                    // Check for warnings or errors from stored procedure
+                    if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+                        throw new ValidationException(
+                                status,
+                                List.of(new ValidationError("general", status))
+                        );
+                    }
+                    
                     return status != null ? status : "Success";
                 }
             }
 
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("[SP-10] PROC_PDA_FDA_CREATE_FROM_PDA - Error: {}", e.getMessage(), e);
-            return "Error: " + e.getMessage();
+            throw new ValidationException(
+                    "FDA creation failed",
+                    List.of(new ValidationError("general", "Error: " + e.getMessage()))
+            );
         }
     }
 
@@ -935,39 +960,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Validate transaction exists
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
-
-        // Validate Vessel Sail Date is mandatory
-        if (entry.getVesselSailDate() == null) {
-            throw new ValidationException(
-                    "Vessel sail date is mandatory for PDA document submission. Please enter the data.",
-                    List.of(new ValidationError("vesselSailDate", "Vessel sail date is mandatory"))
-            );
-        }
-
-        // Validate Vessel Sail Date is not before Arrival Date
-        if (entry.getArrivalDate() != null && entry.getVesselSailDate().isBefore(entry.getArrivalDate())) {
-            throw new ValidationException(
-                    "Vessel Sail Date should not be before the Vessel Arrival Date.",
-                    List.of(new ValidationError("vesselSailDate", "Vessel Sail Date should not be before the Vessel Arrival Date"))
-            );
-        }
-
-        // Validate Arrival Date is not after Sail Date
-        if (entry.getArrivalDate() != null && entry.getArrivalDate().isAfter(entry.getVesselSailDate())) {
-            throw new ValidationException(
-                    "Vessel Arrival Date should not be after the Vessel Sail Date.",
-                    List.of(new ValidationError("arrivalDate", "Vessel Arrival Date should not be after the Vessel Sail Date"))
-            );
-        }
-
-        // Validate acknowledgment details exist
-        long acknowledgmentCount = acknowledgmentDtlRepository.countByTransactionPoid(transactionPoid);
-        if (acknowledgmentCount == 0) {
-            throw new ValidationException(
-                    "WARNING: Acknowledgment details must be provided before submission",
-                    List.of(new ValidationError("acknowledgment", "Acknowledgment details must be provided before submission"))
-            );
-        }
 
         return callSubmitPdaToFda(groupPoid, companyPoid, userPoid, transactionPoid);
     }
@@ -2178,6 +2170,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     ) {
         try {
             logger.info("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - transactionPoid: {}, vesselPoid: {}", transactionPoid, vesselPoid);
+            logger.info("[SP-2] Parameters - vesselTypePoid: {}, grt: {}, nrt: {}, dwt: {}", vesselTypePoid, grt, nrt, dwt);
+            logger.info("[SP-2] Parameters - portPoid: {}, arrivalDate: {}, sailDate: {}", portPoid, arrivalDate, sailDate);
+            logger.info("[SP-2] Parameters - harbourCallType: {}, totalQuantity: {}, numberOfDays: {}, principalPoid: {}", 
+                    harbourCallType, totalQuantity, numberOfDays, principalPoid);
 
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_LOAD_DEF_CHARGE")
@@ -2225,11 +2221,31 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             String status = (String) result.get("P_STATUS");
 
             logger.info("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - Completed. Status: {}", status);
+            
+            // Check for warnings or errors from stored procedure
+            if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+                throw new ValidationException(
+                        status,
+                        List.of(new ValidationError("general", status))
+                );
+            }
+            
+            // Count inserted charges for logging
+            Integer chargeCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM PDA_ENTRY_DTL WHERE TRANSACTION_POID = ? AND DATA_SOURCE = 'TARIFF'",
+                    Integer.class, transactionPoid);
+            logger.info("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - Inserted {} charges", chargeCount);
+            
             return status != null ? status : "Success";
 
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - Error: {}", e.getMessage(), e);
-            return "Error: " + e.getMessage();
+            throw new ValidationException(
+                    "Failed to load default charges",
+                    List.of(new ValidationError("general", "Error: " + e.getMessage()))
+            );
         }
     }
 
@@ -2971,6 +2987,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         try {
             logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - transactionPoid: {}", transactionPoid);
 
+            // Get PDA entry to retrieve vessel dates
+            PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
+                    .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
+
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_TO_FDA_DOC_SUBMISSION")
                     .withoutProcedureColumnMetaDataAccess()
@@ -2979,6 +2999,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                             new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
                             new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
                             new SqlParameter("P_PDA_POID", Types.NUMERIC),
+                            new SqlParameter("P_VESSEL_ARRIVAL_DATE", Types.DATE),
+                            new SqlParameter("P_VESSEL_SAIL_DATE", Types.DATE),
                             new SqlOutParameter("P_RESULT", Types.VARCHAR),
                             new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
                     );
@@ -2988,6 +3010,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
             inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
             inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
+            inputMap.put("P_VESSEL_ARRIVAL_DATE", entry.getArrivalDate() != null ? java.sql.Date.valueOf(entry.getArrivalDate()) : null);
+            inputMap.put("P_VESSEL_SAIL_DATE", entry.getVesselSailDate() != null ? java.sql.Date.valueOf(entry.getVesselSailDate()) : null);
 
             Map<String, Object> result = jdbcCall.execute(inputMap);
 
@@ -2995,6 +3019,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             List<Map<String, Object>> outData = (List<Map<String, Object>>) result.get("OUTDATA");
 
             logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - Completed. Status: {}", status);
+
+            // Check for warnings or errors from stored procedure
+            if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+                throw new ValidationException(
+                        status,
+                        List.of(new ValidationError("general", status))
+                );
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", status != null ? status : "Success");
@@ -3008,11 +3040,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             
             return response;
 
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - Error: {}", e.getMessage(), e);
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "Error: " + e.getMessage());
-            return errorResponse;
+            throw new ValidationException(
+                    "PDA to FDA document submission failed",
+                    List.of(new ValidationError("general", "Error: " + e.getMessage()))
+            );
         }
     }
 
@@ -3108,11 +3143,25 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             String status = (String) result.get("P_STATUS");
 
             logger.info("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - Completed. Status: {}", status);
+
+            // Check for warnings or errors from stored procedure
+            if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+                throw new ValidationException(
+                        status,
+                        List.of(new ValidationError("general", status))
+                );
+            }
+
             return status != null ? status : "Success";
 
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("[SP-12] PROC_PDA_ACKNOW_DTLS_UPLOAD - Error: {}", e.getMessage(), e);
-            return "Error: " + e.getMessage();
+            throw new ValidationException(
+                    "Failed to upload acknowledgment details",
+                    List.of(new ValidationError("general", "Error: " + e.getMessage()))
+            );
         }
     }
 
@@ -3147,11 +3196,25 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             String status = (String) result.get("P_STATUS");
 
             logger.info("[SP-13] PROC_PDA_ACKNOW_DTL_CLEAR - Completed. Status: {}", status);
+
+            // Check for warnings or errors from stored procedure
+            if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+                throw new ValidationException(
+                        status,
+                        List.of(new ValidationError("general", status))
+                );
+            }
+
             return status != null ? status : "Success";
 
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("[SP-13] PROC_PDA_ACKNOW_DTL_CLEAR - Error: {}", e.getMessage(), e);
-            return "Error: " + e.getMessage();
+            throw new ValidationException(
+                    "Failed to clear acknowledgment details",
+                    List.of(new ValidationError("general", "Error: " + e.getMessage()))
+            );
         }
     }
 
