@@ -1,7 +1,6 @@
 package com.asg.operations.portcalloperation.dto;
 
 import com.asg.operations.portcallreport.enums.ActionType;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -44,7 +43,6 @@ public class PortCallOperationActCargoFigDetailDto {
     private BigDecimal shoreFigureMt;
     private BigDecimal shipFigureBbls;
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime blDate;
 
     private BigDecimal hoseNo;

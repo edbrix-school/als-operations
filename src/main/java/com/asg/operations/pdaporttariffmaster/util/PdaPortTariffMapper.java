@@ -93,6 +93,7 @@ public class PdaPortTariffMapper {
         response.setCreatedDate(entity.getCreatedDate());
         response.setLastModifiedBy(entity.getLastModifiedBy());
         response.setLastModifiedDate(entity.getLastModifiedDate());
+        response.setTransactionDate(entity.getTransactionDate());
 
         // Map charge details if loaded
         if (entity.getChargeDetails() != null && !entity.getChargeDetails().isEmpty()) {
@@ -204,12 +205,13 @@ public class PdaPortTariffMapper {
         entity.setPeriodTo(request.getPeriodTo());
         entity.setRemarks(request.getRemarks());
         entity.setDeleted("N");
-        entity.setTransactionDate(LocalDate.now());
+        entity.setTransactionDate(request.getTransactionDate());
         return entity;
     }
 
     // Update Entity from Request (Header)
     public void updateEntityFromRequest(PdaPortTariffHdr entity, PdaPortTariffMasterRequest request) {
+        entity.setTransactionDate(request.getTransactionDate());
         entity.setPorts(request.getPort());
         entity.setVesselTypes(listToString(request.getVesselTypes()));
         entity.setPeriodFrom(request.getPeriodFrom());
@@ -225,6 +227,7 @@ public class PdaPortTariffMapper {
         request.setPeriodFrom(entity.getPeriodFrom());
         request.setPeriodTo(entity.getPeriodTo());
         request.setRemarks(entity.getRemarks());
+        request.setTransactionDate(entity.getTransactionDate());
         return request;
     }
 
@@ -296,6 +299,7 @@ public class PdaPortTariffMapper {
         response.setPeriodFrom(entity.getPeriodFrom());
         response.setPeriodTo(entity.getPeriodTo());
         response.setRemarks(entity.getRemarks());
+        response.setTransactionDate(entity.getTransactionDate());
         response.setDeleted(entity.getDeleted());
         response.setCreatedBy(entity.getCreatedBy());
         response.setCreatedDate(entity.getCreatedDate());
