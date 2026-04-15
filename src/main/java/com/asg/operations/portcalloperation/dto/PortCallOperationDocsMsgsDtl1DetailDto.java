@@ -1,7 +1,6 @@
 package com.asg.operations.portcalloperation.dto;
 
 import com.asg.operations.portcallreport.enums.ActionType;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +27,6 @@ public class PortCallOperationDocsMsgsDtl1DetailDto {
     @Size(max = 4000)
     private String emailDocuments;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate emailSendOn;
 
     @Size(max = 4000)

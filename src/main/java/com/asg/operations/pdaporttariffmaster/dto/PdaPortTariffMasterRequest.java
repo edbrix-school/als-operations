@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,11 +23,9 @@ public class PdaPortTariffMasterRequest {
     private List<String> vesselTypes; // List of vessel type POIDs as strings
 
     @NotNull(message = "Period from date is mandatory")
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate periodFrom;
 
     @NotNull(message = "Period to date is mandatory")
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate periodTo;
 
     @Size(max = 500, message = "Remarks cannot exceed 500 characters")
@@ -36,6 +33,8 @@ public class PdaPortTariffMasterRequest {
 
     @Size(max = 25, message = "Document reference cannot exceed 25 characters")
     private String docRef;
+
+    private LocalDate transactionDate;
 
     @Valid
     private List<PdaPortTariffChargeDetailRequest> chargeDetails;
