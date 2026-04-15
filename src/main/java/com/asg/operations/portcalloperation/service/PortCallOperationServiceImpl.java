@@ -501,6 +501,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .grt(dto.getGrt())
                 .nrt(dto.getNrt())
                 .dwt(dto.getDwt())
+                .agencyType(dto.getAgencyType())
                 .portOfCallPoid(dto.getPortOfCallPoid())
                 .specialInstructions(dto.getSpecialInstructions())
                 .termsConditions(dto.getTermsConditions())
@@ -631,7 +632,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         hdr.setNrt(dto.getNrt());
         hdr.setDwt(dto.getDwt());
         hdr.setPortOfCallPoid(dto.getPortOfCallPoid());
-
+        hdr.setAgencyType(dto.getAgencyType());
         hdr.setSpecialInstructions(dto.getSpecialInstructions());
         hdr.setTermsConditions(dto.getTermsConditions());
 

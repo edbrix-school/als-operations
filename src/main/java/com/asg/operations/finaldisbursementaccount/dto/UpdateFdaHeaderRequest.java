@@ -32,6 +32,11 @@ public class UpdateFdaHeaderRequest {
     @NotNull(message = "Salesman is required")
     private Long salesmanPoid;
 
+    @Size(max = 20, message = "Currency Code cannot exceed 20 characters")
+    private String currencyCode;
+
+    private BigDecimal currencyRate;
+
     private Long portPoid;
 
     @Size(max = 2000, message = "Remarks cannot exceed 2000 characters")

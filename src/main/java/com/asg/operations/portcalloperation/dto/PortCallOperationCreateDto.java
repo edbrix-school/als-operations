@@ -37,6 +37,8 @@ public class PortCallOperationCreateDto {
 
     private Long dwt;
 
+    private String agencyType;
+
     private String operatorName;
 
     private String chartererName;
