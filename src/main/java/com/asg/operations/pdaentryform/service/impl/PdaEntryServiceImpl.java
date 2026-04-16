@@ -115,14 +115,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
 
         // Generate unique document reference (ignore request docRef)
-        String docRef = docRefGenerator.generateDocRef(BigDecimal.valueOf(groupPoid));
-        int retries = 0;
-        while (entryHdrRepository.existsByDocRef(docRef) && retries < 5) {
-            docRef = docRefGenerator.generateDocRef(BigDecimal.valueOf(groupPoid));
-            retries++;
-        }
-        entry.setDocRef(docRef);
-        logger.info("Generated unique docRef: {}", docRef);
+//        String docRef = docRefGenerator.generateDocRef(BigDecimal.valueOf(groupPoid));
+//        int retries = 0;
+//        while (entryHdrRepository.existsByDocRef(docRef) && retries < 5) {
+//            docRef = docRefGenerator.generateDocRef(BigDecimal.valueOf(groupPoid));
+//            retries++;
+//        }
+//        entry.setDocRef(docRef);
+//        logger.info("Generated unique docRef: {}", docRef);
 
         // Auto-populate voyage details if voyagePoid is provided
         if (request.getVoyagePoid() != null) {
@@ -260,41 +260,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         BeanUtils.copyProperties(entry, oldEntry);
 
         // Check edit permissions
-        if (!canEdit(entry)) {
-            // Specific validation for GENERAL type with Principal Approved
-            if ("GENERAL".equals(entry.getRefType()) && "Y".equals(entry.getPrincipalApproved())) {
-                throw new ValidationException(
-                        "Already Principal Approved..",
-                        List.of(new ValidationError("status", "Already Principal Approved.."))
-                );
-            }
-            // Specific validation for GENERAL type with CONFIRMED status
-            if ("GENERAL".equals(entry.getRefType()) && "CONFIRMED".equals(entry.getStatus())) {
-                throw new ValidationException(
-                        "Already Principal Approved..",
-                        List.of(new ValidationError("status", "Entry is Confirmed and cannot be edited"))
-                );
-            }
-            // Specific validation for other ref types with CONFIRMED status
-            if ("CONFIRMED".equals(entry.getStatus())) {
-                throw new ValidationException(
-                        "Already Principal Approved..",
-                        List.of(new ValidationError("status", "Entry is Confirmed and cannot be edited"))
-                );
-            }
-            // Specific validation for other ref types with CLOSED status
-            if ("CLOSED".equals(entry.getStatus())) {
-                throw new ValidationException(
-                        "Already Principal Approved..",
-                        List.of(new ValidationError("status", "Entry is Closed and cannot be edited"))
-                );
-            }
-            // Generic validation for any other cases
-            throw new ValidationException(
-                    "Already Principal Approved..",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         // For TDR ref type, call edit validation stored procedure
         if ("TDR".equals(entry.getRefType())) {
@@ -470,12 +436,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -524,12 +485,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         // Set detRowId from path parameter to prevent mismatch
         request.setDetRowId(detRowId);
@@ -557,12 +513,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         // Validate detail exists
         PdaEntryDtlId detailId = new PdaEntryDtlId(transactionPoid, detRowId);
@@ -586,12 +537,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         // Check if clearing is allowed
         if ("GENERAL".equals(entry.getRefType()) && !"PROPOSAL".equals(entry.getStatus())) {
@@ -625,12 +571,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         // Validate required header fields
         validateRecalculateFields(entry);
@@ -663,12 +604,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         // Validate required header fields
         validateRecalculateFields(entry);
@@ -721,12 +657,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -762,12 +693,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         // Call stored procedure to import vehicle details
         callImportVehicleDetails(groupPoid, companyPoid, userPoid, transactionPoid);
@@ -781,12 +707,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         // Call stored procedure to clear vehicle details
         callClearVehicleDetails(groupPoid, userPoid, companyPoid, transactionPoid);
@@ -797,12 +718,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         return callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
     }
@@ -988,12 +904,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Already Principal Approved..",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         // Call stored procedure to publish for import
         callPublishForImport(groupPoid, userPoid, companyPoid, transactionPoid);
@@ -1027,12 +938,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -1091,12 +997,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -1398,18 +1299,37 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     private boolean canEdit(PdaEntryHdr entry) {
+        String status = entry.getStatus() != null ? entry.getStatus().trim() : null;
+        String refType = entry.getRefType() != null ? entry.getRefType().trim() : null;
+        String principalApproved = entry.getPrincipalApproved() != null ? entry.getPrincipalApproved().trim() : null;
+        
         // For GENERAL ref type
-        if ("GENERAL".equals(entry.getRefType())) {
-            if ("Y".equals(entry.getPrincipalApproved())) {
-                return false;
+        if ("GENERAL".equals(refType)) {
+            if ("Y".equals(principalApproved)) {
+                throw new ValidationException(
+                        "EAlready Pricipal Aprroved",
+                        List.of(new ValidationError("principalApproved", "Entry cannot be edited because it is already approved by principal"))
+                );
             }
-            if ("CONFIRMED".equals(entry.getStatus())) {
-                return false;
+            if ("CONFIRMED".equalsIgnoreCase(status)) {
+                throw new ValidationException(
+                        "Status is Confirmed",
+                        List.of(new ValidationError("status", "Entry cannot be edited because status is CONFIRMED"))
+                );
             }
         }
         // For other ref types, check status
-        if ("CONFIRMED".equals(entry.getStatus()) || "CLOSED".equals(entry.getStatus())) {
-            return false;
+        if ("CONFIRMED".equalsIgnoreCase(status)) {
+            throw new ValidationException(
+                    "Status is Confirmed",
+                    List.of(new ValidationError("status", "Entry cannot be edited because status is CONFIRMED"))
+            );
+        }
+        if ("CLOSED".equalsIgnoreCase(status)) {
+            throw new ValidationException(
+                    "Status is Closed",
+                    List.of(new ValidationError("status", "Entry cannot be edited because status is CLOSED"))
+            );
         }
         return true;
     }
@@ -3480,13 +3400,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Validate transaction exists and is editable
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
+        
+        logger.info("Entry details - Status: '{}', RefType: '{}', PrincipalApproved: '{}'", 
+                entry.getStatus(), entry.getRefType(), entry.getPrincipalApproved());
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         String docId = "110-160_3";
         ExcelConfig config = getExcelConfig(docId);
@@ -3631,12 +3549,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         // Clear existing TDR details before importing new data
         callClearTdrDetails(groupPoid, userPoid, companyPoid, transactionPoid);
@@ -3683,12 +3596,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         String docId = "110-160_1";
         ExcelConfig config = getExcelConfig(docId);
@@ -3752,12 +3660,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         String result = callClearTdrDetails(groupPoid, userPoid, companyPoid, transactionPoid);
         
@@ -3773,12 +3676,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
-        if (!canEdit(entry)) {
-            throw new ValidationException(
-                    "Entry cannot be edited",
-                    List.of(new ValidationError("status", "Entry is in a state that does not allow editing"))
-            );
-        }
+        canEdit(entry);
 
         String result = callDefaultChargesFromTdr(groupPoid, userPoid, companyPoid, transactionPoid, entry.getArrivalDate());
         

@@ -19,8 +19,7 @@ public class PdaEntryHdr extends BaseEntity {
 
     @AuditIgnore
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pda_entry_hdr_seq")
-    @SequenceGenerator(name = "pda_entry_hdr_seq", sequenceName = "PDA_ENTRY_HDR_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TRANSACTION_POID")
     private Long transactionPoid;
 
@@ -37,8 +36,7 @@ public class PdaEntryHdr extends BaseEntity {
     private Long companyPoid;
 
     @AuditIgnore
-    @Column(name = "DOC_REF", unique = true, length = 25)
-    @Size(max = 25)
+    @Column(name = "DOC_REF")
     private String docRef;
 
     @Column(name = "TRANSACTION_REF", unique = true, length = 30)
