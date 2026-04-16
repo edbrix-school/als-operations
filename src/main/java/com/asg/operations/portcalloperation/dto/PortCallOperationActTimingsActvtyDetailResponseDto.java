@@ -20,5 +20,6 @@ public class PortCallOperationActTimingsActvtyDetailResponseDto {
     private Long activityPoid;
     private String activityName;
     private String details;
+    private String activityMandatory;
     private LocalDateTime estimatedDatetime;
 }

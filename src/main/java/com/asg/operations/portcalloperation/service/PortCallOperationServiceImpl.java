@@ -2205,17 +2205,52 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         log.info("Listing ActTimingsActvtyDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
         List<PortCallOperationActTimingsActvtyDtl> entities = actTimingsActvtyDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        Optional<PortCallOperationActTimingDtl> actualTimingOptional = actTimingDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+
+        if (actualTimingOptional.isEmpty()) {
+            throw new ResourceNotFoundException("ActTimingDtl", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId));
+        }
+        PortCallOperationActTimingDtl actualTiming = actualTimingOptional.get();
+
+        Map<String, Object> spResult = getPortReportActivities(transactionPoid.toString(), actualTiming.getPortReportPoid(), UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+
+        List<Map<String, Object>> outData = (List<Map<String, Object>>) spResult.get("OUTDATA");
+
+        Map<Long, String> activityMandatoryMap = new HashMap<>();
+
+        if (outData != null) {
+            for (Map<String, Object> row : outData) {
+                Long activityTypePoid = row.get("PORT_ACTIVITY_TYPE_POID") != null ? Long.valueOf(row.get("PORT_ACTIVITY_TYPE_POID").toString()) : null;
+
+                String mandatory = row.get("ACTIVITY_MANDATORY") != null ? row.get("ACTIVITY_MANDATORY").toString() : null;
+
+                if (activityTypePoid != null && mandatory != null) {
+                    activityMandatoryMap.put(activityTypePoid, mandatory);
+                }
+            }
+        }
 
         return entities.stream()
-                .map(e -> PortCallOperationActTimingsActvtyDetailResponseDto.builder()
-                        .transactionPoid(e.getTransactionPoid())
-                        .detRowId(e.getDetRowId())
-                        .actualsTimingDtlPoid(e.getActualsTimingDtlPoid())
-                        .activityPoid(e.getActivityPoid())
-                        .activityName(e.getActivityName())
-                        .details(e.getDetails())
-                        .estimatedDatetime(e.getEstimatedDatetime())
-                        .build())
+                .map(e -> {
+                    String activityMandatory = null;
+                    if (e.getActivityPoid() != null) {
+                        String value = activityMandatoryMap.get(e.getActivityPoid());
+
+                        if (value != null) {
+                            activityMandatory = value.equalsIgnoreCase("Y") ? "Y" : "N";
+                        }
+                    }
+                    return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
+                            .transactionPoid(e.getTransactionPoid())
+                            .detRowId(e.getDetRowId())
+                            .actualsTimingDtlPoid(e.getActualsTimingDtlPoid())
+                            .activityPoid(e.getActivityPoid())
+                            .activityMandatory(activityMandatory)
+                            .activityName(e.getActivityName())
+                            .details(e.getDetails())
+                            .estimatedDatetime(e.getEstimatedDatetime())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
