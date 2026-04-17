@@ -730,9 +730,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Long transactionPoid = Long.parseLong(pdaPoid);
             
-            // Get PDA entry to check validations
+            // Get PDA entry to check validations and get createdBy
             PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
                     .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
+            
+            String createdBy = entry.getCreatedBy() != null ? entry.getCreatedBy() : "";
 
             // Try with schema prefix first
             String sqlWithSchema = "{ call PROC_PDA_FDA_CREATE_FROM_PDA(?, ?, ?, ?, ?) }";
@@ -758,7 +760,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     );
                 }
                 
-                return result != null ? result : "Success";
+                return result != null ? result + "|createdBy:" + createdBy : "Success|createdBy:" + createdBy;
                 
             } catch (ValidationException ve) {
                 throw ve;
@@ -789,7 +791,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                         );
                     }
                     
-                    return result != null ? result : "Success";
+                    return result != null ? result + "|createdBy:" + createdBy : "Success|createdBy:" + createdBy;
                     
                 } catch (ValidationException ve) {
                     throw ve;
@@ -827,7 +829,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                         );
                     }
                     
-                    return status != null ? status : "Success";
+                    return status != null ? status + "|createdBy:" + createdBy : "Success|createdBy:" + createdBy;
                 }
             }
 
@@ -847,12 +849,28 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         Map<String, String> result = new HashMap<>();
         
         if (spResult != null) {
-            result.put("message", spResult);
+            // Check if createdBy is appended
+            String actualResult = spResult;
+            String createdBy = null;
+            
+            if (spResult.contains("|createdBy:")) {
+                String[] parts = spResult.split("\\|createdBy:");
+                actualResult = parts[0];
+                if (parts.length > 1) {
+                    createdBy = parts[1];
+                }
+            }
+            
+            result.put("message", actualResult);
+            
+            if (createdBy != null && !createdBy.isEmpty()) {
+                result.put("ApprovedBy", createdBy);
+            }
             
             // Extract FDA reference using regex pattern
             // Pattern matches: "FDA Ref: CSA926" or "FDA REF - CSA926" etc.
             java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("FDA\\s+(?:Ref|REF)\\s*[:-]?\\s*([A-Z0-9,\\s]+)");
-            java.util.regex.Matcher matcher = pattern.matcher(spResult);
+            java.util.regex.Matcher matcher = pattern.matcher(actualResult);
             
             if (matcher.find()) {
                 String fdaRef = matcher.group(1).trim();
@@ -861,7 +879,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 result.put("fdaRef", fdaRef);
                 logger.info("[SP-10] Extracted FDA Reference: {}", fdaRef);
             } else {
-                logger.warn("[SP-10] Could not extract FDA reference from result: {}", spResult);
+                logger.warn("[SP-10] Could not extract FDA reference from result: {}", actualResult);
             }
         }
         
@@ -2950,6 +2968,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", status != null ? status : "Success");
+            response.put("vesselArrivalDate", entry.getArrivalDate());
+            response.put("vesselSailDate", entry.getVesselSailDate());
             
             if (outData != null && !outData.isEmpty()) {
                 Map<String, Object> cursorData = outData.get(0);
@@ -3213,6 +3233,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         int startColNumber;
         int endColNumber;
         String tempTableName;
+        String excelSheetName;
     }
 
     @Override
@@ -3414,7 +3435,24 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         List<List<Object>> rowsCollection = new ArrayList<>();
 
         try (org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(file.getInputStream())) {
-            org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+            if (workbook == null) {
+                throw new ValidationException(
+                        "Excel Workbook not able to open...",
+                        List.of(new ValidationError("file", "Excel Workbook not able to open..."))
+                );
+            }
+            
+            org.apache.poi.ss.usermodel.Sheet sheet = config.excelSheetName != null 
+                ? workbook.getSheet(config.excelSheetName) 
+                : workbook.getSheetAt(0);
+            
+            if (sheet == null) {
+                String sheetName = config.excelSheetName != null ? config.excelSheetName : "at index 0";
+                throw new ValidationException(
+                        "Excel sheet " + sheetName + " not able to open...",
+                        List.of(new ValidationError("file", "Excel sheet " + sheetName + " not able to open..."))
+                );
+            }
 
             for (org.apache.poi.ss.usermodel.Row row : sheet) {
                 List<Object> colCollection = new ArrayList<>();
@@ -3471,6 +3509,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         config.startColNumber = ((Number) configRow.get("START_COL_NUMBER")).intValue();
         config.endColNumber = ((Number) configRow.get("END_COL_NUMBER")).intValue();
         config.tempTableName = (String) configRow.get("TEMP_TABLE_NAME");
+        config.excelSheetName = (String) configRow.get("EXCEL_SHEET_NAME");
         return config;
     }
 
@@ -3608,7 +3647,24 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         List<List<Object>> rowsCollection = new ArrayList<>();
 
         try (org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(file.getInputStream())) {
-            org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+            if (workbook == null) {
+                throw new ValidationException(
+                        "Excel Workbook not able to open...",
+                        List.of(new ValidationError("file", "Excel Workbook not able to open..."))
+                );
+            }
+            
+            org.apache.poi.ss.usermodel.Sheet sheet = config.excelSheetName != null 
+                ? workbook.getSheet(config.excelSheetName) 
+                : workbook.getSheetAt(0);
+            
+            if (sheet == null) {
+                String sheetName = config.excelSheetName != null ? config.excelSheetName : "at index 0";
+                throw new ValidationException(
+                        "Excel sheet " + sheetName + " not able to open...",
+                        List.of(new ValidationError("file", "Excel sheet " + sheetName + " not able to open..."))
+                );
+            }
 
             for (org.apache.poi.ss.usermodel.Row row : sheet) {
                 List<Object> colCollection = new ArrayList<>();

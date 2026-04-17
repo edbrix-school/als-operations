@@ -232,7 +232,18 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         List<List<Object>> rowsCollection = new ArrayList<>();
 
         try (org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(file.getInputStream())) {
-            org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+            if (workbook == null) {
+                throw new RuntimeException("Excel Workbook not able to open...");
+            }
+            
+            org.apache.poi.ss.usermodel.Sheet sheet = config.excelSheetName != null 
+                ? workbook.getSheet(config.excelSheetName) 
+                : workbook.getSheetAt(0);
+            
+            if (sheet == null) {
+                String sheetName = config.excelSheetName != null ? config.excelSheetName : "at index 0";
+                throw new RuntimeException("Excel sheet " + sheetName + " not able to open...");
+            }
             
             for (org.apache.poi.ss.usermodel.Row row : sheet) {
                 List<Object> colCollection = new ArrayList<>();
@@ -436,6 +447,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         config.startColNumber = ((Number) configRow.get("START_COL_NUMBER")).intValue();
         config.endColNumber = ((Number) configRow.get("END_COL_NUMBER")).intValue();
         config.tempTableName = (String) configRow.get("TEMP_TABLE_NAME");
+        config.excelSheetName = (String) configRow.get("EXCEL_SHEET_NAME");
         return config;
     }
 
@@ -466,6 +478,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         int startColNumber;
         int endColNumber;
         String tempTableName;
+        String excelSheetName;
     }
 
     @Override
