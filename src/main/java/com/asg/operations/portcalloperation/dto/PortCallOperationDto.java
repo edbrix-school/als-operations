@@ -70,6 +70,8 @@ public class PortCallOperationDto {
     @Size(max = 1000, message = "PDA FDA Remarks should not exceed 1000 characters")
     private String pdaFdaRemarks;
 
+    private String husbandryCrewReqBy;
+
     @Valid
     private List<PortCallOperationCargoDetailDto> cargoDetails;
 
