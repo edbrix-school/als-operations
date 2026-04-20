@@ -94,7 +94,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     @Override
     @Transactional
     public PdaPortTariffMasterResponse createTariff(PdaPortTariffMasterRequest request) {
-        validateCreateRequest(request, UserContext.getCompanyPoid());
+        validateCreateRequest(request, UserContext.getGroupPoid());
 
         String portsStr = request.getPort();
         String vesselTypesStr = mapper.listToString(request.getVesselTypes());
