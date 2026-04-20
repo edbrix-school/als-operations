@@ -55,6 +55,8 @@ public class PortCallOperationCreateDto {
     @Size(max = 4000, message = "Terms and Conditions should not exceed 4000 characters")
     private String termsConditions;
 
+    private String husbandryCrewReqBy;
+
     @Valid
     private List<PortCallOperationCargoDetailDto> cargoDetails;
 
