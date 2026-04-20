@@ -15,6 +15,7 @@ import com.asg.operations.finaldisbursementaccount.dto.PartyGlResponse;
 import com.asg.operations.finaldisbursementaccount.dto.UpdateFdaHeaderRequest;
 import com.asg.operations.finaldisbursementaccount.util.ValidationUtils;
 import com.asg.operations.pdaentryform.repository.PdaEntryHdrRepository;
+import jakarta.persistence.EntityManager;
 import com.asg.operations.finaldisbursementaccount.entity.PdaFdaDtl;
 import com.asg.operations.finaldisbursementaccount.entity.PdaFdaHdr;
 import com.asg.operations.finaldisbursementaccount.key.PdaFdaDtlId;
@@ -68,6 +69,9 @@ class FdaServiceImplTest {
 
     @Mock
     private PdaEntryHdrRepository pdaEntryHdrRepository;
+
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private FdaServiceImpl fdaService;
@@ -227,15 +231,21 @@ class FdaServiceImplTest {
         PdaFdaHdr entity = createMockFdaHdr();
         entity.setStatus("O");
 
+        PdaFdaHdr freshEntity = createMockFdaHdr();
+        freshEntity.setStatus("O");
+
         when(pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(1L, 1L, 1L))
-                .thenReturn(Optional.of(entity));
+                .thenReturn(Optional.of(entity))
+                .thenReturn(Optional.of(freshEntity));
         when(fdaCustomRepository.verifyFda(anyLong(), anyLong(), anyLong(), anyLong()))
                 .thenReturn("FDA verified successfully");
+        when(pdaFdaHdrRepository.saveAndFlush(any())).thenReturn(freshEntity);
 
         String result = fdaService.verifyFda(1L, 1L, 1L, 1L);
 
         assertEquals("FDA verified successfully", result);
-        assertEquals("Y", entity.getAccountsVerified());
+        assertEquals("Y", freshEntity.getAccountsVerified());
+        verify(pdaFdaHdrRepository).saveAndFlush(freshEntity);
     }
 
     @Test
