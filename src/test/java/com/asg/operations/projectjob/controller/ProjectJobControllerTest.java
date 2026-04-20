@@ -100,7 +100,7 @@ class ProjectJobControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("project Job created successfully"));
+                .andExpect(jsonPath("$.message").value("Project Job created successfully"));
     }
 
     @Test

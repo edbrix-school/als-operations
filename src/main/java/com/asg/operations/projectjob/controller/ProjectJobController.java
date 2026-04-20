@@ -78,7 +78,7 @@ public class ProjectJobController {
     public ResponseEntity<?> createProjectJob(
             @Parameter(description = "Project JOb request", required = true) @Valid @RequestBody ProjectJobRequest request) {
         ProjectJobResponse response = projectJobService.create(request);
-        return ApiResponse.success("project Job created successfully", response);
+        return ApiResponse.success("Project Job created successfully", response);
     }
 
     @Operation(summary = "Update Project Job", description = "Updates an existing Project JOb.", responses = {

@@ -116,6 +116,7 @@ public class HeaderMapper {
         entity.setVesselPoid(dto.getVesselPoid());
         entity.setArrivalDate(dto.getArrivalDate());
         entity.setSailDate(dto.getSailDate());
+        entity.setAccountsVerified(dto.getAccountsVerified() != null ? dto.getAccountsVerified() : "N");
         entity.setPortPoid(dto.getPortPoid());
         entity.setCommodityPoid(dto.getCommodityPoid());
         entity.setOperationType(dto.getOperationType());
@@ -197,6 +198,7 @@ public class HeaderMapper {
         entity.setVesselVerifiedDate(dto.getVesselVerifiedDate());
         entity.setVesselVerifiedBy(dto.getVesselVerifiedBy());
         entity.setUrgentApproval(dto.getUrgentApproval());
+        entity.setAccountsVerified("Y".equalsIgnoreCase(entity.getAccountsVerified()) ? "Y" : dto.getAccountsVerified());
         entity.setPrincipalAprvlDays(dto.getPrincipalAprvlDays());
         entity.setPrincipalApproved(dto.getPrincipalApproved());
         entity.setPrincipalApprovedDate(dto.getPrincipalApprovedDate());
@@ -249,7 +251,10 @@ public class HeaderMapper {
         entity.setVerificationAcceptedBy(dto.getVerificationAcceptedBy());
         entity.setVesselHandledBy(dto.getVesselHandledBy());
         entity.setVesselSailDate(dto.getVesselSailDate());
-        entity.setAccountsVerified(dto.getAccountsVerified());
+        entity.setArrivalDate(dto.getArrivalDate());
+        entity.setSailDate(dto.getSailDate());
+        entity.setVesselHandledBy(dto.getVesselHandledBy());
+        entity.setVesselSailDate(dto.getVesselSailDate());
         entity.setOpsCorrectionRemarks(dto.getOpsCorrectionRemarks());
         entity.setOpsReturnedDate(dto.getOpsReturnedDate());
 
@@ -262,6 +267,7 @@ public class HeaderMapper {
         entity.setPrincipalPoid(dto.getPrincipalPoid());
         entity.setPortPoid(dto.getPortPoid());
         entity.setOperationType(dto.getOperationType());
+        entity.setAccountsVerified("Y".equalsIgnoreCase(entity.getAccountsVerified()) ? "Y" : dto.getAccountsVerified());
         // Quantities persisted on update/edit
         entity.setImportQty(dto.getImportQty());
         entity.setExportQty(dto.getExportQty());
@@ -285,6 +291,10 @@ public class HeaderMapper {
         entity.setFdaSubType(dto.getFdaSubType());
         entity.setSubCategory(dto.getSubCategory());
         entity.setPrintBankPoid(dto.getPrintBankPoid());
+        entity.setArrivalDate(dto.getArrivalDate());
+        entity.setSailDate(dto.getSailDate());
+        entity.setVesselHandledBy(dto.getVesselHandledBy());
+        entity.setVesselSailDate(dto.getVesselSailDate());
 
         if (entity.getDeleted() == null) {
             entity.setDeleted("N");
