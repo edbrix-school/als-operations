@@ -734,6 +734,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
                     .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
             
+            // Validate principal is approved before creating FDA
+            if (entry.getPrincipalApproved() == null || !"Y".equals(entry.getPrincipalApproved())) {
+                throw new ValidationException(
+                        "Principal approval required",
+                        List.of(new ValidationError("principalApproved", "Principal must be approved before creating FDA"))
+                );
+            }
+            
             String createdBy = entry.getCreatedBy() != null ? entry.getCreatedBy() : "";
 
             // Try with schema prefix first
@@ -1304,10 +1312,17 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             }
         }
 
-        // Validate date logic: sailDate must be after or equal to arrivalDate
+        // Validate date logic: sailDate (ETD) must be after or equal to arrivalDate (ETA)
         if (request.getArrivalDate() != null && request.getSailDate() != null) {
             if (request.getSailDate().isBefore(request.getArrivalDate())) {
                 errors.add(new ValidationError("sailDate", "ETD should not be before the ETA"));
+            }
+        }
+
+        // Validate vessel sail date: must be after or equal to sail date (ETD)
+        if (request.getSailDate() != null && request.getVesselSailDate() != null) {
+            if (request.getVesselSailDate().isBefore(request.getSailDate())) {
+                errors.add(new ValidationError("vesselSailDate", "Vessel Sail Date should not be before the ETD"));
             }
         }
 
@@ -1325,7 +1340,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         if ("GENERAL".equals(refType)) {
             if ("Y".equals(principalApproved)) {
                 throw new ValidationException(
-                        "EAlready Pricipal Aprroved",
+                        "Already Pricipal Aprroved",
                         List.of(new ValidationError("principalApproved", "Entry cannot be edited because it is already approved by principal"))
                 );
             }
@@ -2928,6 +2943,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             // Get PDA entry to retrieve vessel dates
             PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
                     .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
+
+            // Validate vessel sail date is provided before document submission
+            if (entry.getVesselSailDate() == null) {
+                throw new ValidationException(
+                        "Vessel sail date is required",
+                        List.of(new ValidationError("vesselSailDate", "Vessel sail date must be provided before submitting document to accounts"))
+                );
+            }
 
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_TO_FDA_DOC_SUBMISSION")
