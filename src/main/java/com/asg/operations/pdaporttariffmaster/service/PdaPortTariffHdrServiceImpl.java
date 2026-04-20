@@ -92,6 +92,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     @Override
+    @Transactional
     public PdaPortTariffMasterResponse createTariff(PdaPortTariffMasterRequest request) {
         validateCreateRequest(request, UserContext.getCompanyPoid());
 
@@ -104,12 +105,14 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
 
         PdaPortTariffHdr tariffHdr = mapper.toEntity(request);
         tariffHdrRepository.saveAndFlush(tariffHdr);
+        entityManager.flush();
         entityManager.refresh(tariffHdr);
 
         PdaPortTariffHdr savedTariff = tariffHdrRepository.findByTransactionPoid(tariffHdr.getTransactionPoid())
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", tariffHdr.getTransactionPoid()));
 
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedTariff.getTransactionPoid().toString());
+        String key = savedTariff.getTransactionPoid().toString();
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, savedTariff.getDocRef()));
 
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {
             saveChargeDetails(savedTariff, request.getChargeDetails());

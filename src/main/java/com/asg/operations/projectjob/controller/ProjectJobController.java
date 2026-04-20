@@ -144,10 +144,10 @@ public class ProjectJobController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/search")
     public ResponseEntity<?> getProjectJobList(@RequestBody(required = false) FilterRequestDto filterRequest,
-                                               @ParameterObject Pageable pageable, @RequestParam(required = false) LocalDate periodFrom,
-                                               @RequestParam(required = false) LocalDate periodTo) {
+                                               @ParameterObject Pageable pageable, @RequestParam(required = false) LocalDate startDate,
+                                               @RequestParam(required = false) LocalDate endDate) {
         Map<String, Object> page = projectJobService.getAllProjectJobsWithFilters(UserContext.getDocumentId(),
-                filterRequest, pageable, periodFrom, periodTo);
+                filterRequest, pageable, startDate, endDate);
         return success("Project Jobs retrieved successfully", page);
     }
 

@@ -114,6 +114,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     }
 
     @Override
+    @Transactional
     public SalesQuoteProjectsResponse createSalesQuoteProject(SalesQuoteProjectsRequest request) {
         log.info("Creating sales quote project");
 
@@ -191,6 +192,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         entity.setDeleted("N");
 
         SalesQuoteProjectsHdr savedEntity = repository.saveAndFlush(entity);
+        entityManager.flush();
         entityManager.refresh(savedEntity);
 
         // Save child details
@@ -204,7 +206,8 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             saveTcDetails(savedEntity, request.getTcDetails());
         }
 
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString());
+        String key = savedEntity.getTransactionPoid().toString();
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, savedEntity.getDocRef()));
         return mapToResponse(savedEntity);
     }
 

@@ -73,5 +73,8 @@ public class PdaEntryChargeDetailRequest {
     @Size(max = 500)
     private String remarks;
 
+    @Size(max = 20)
+    private String actionType; // "Deleted" for marking records to delete
+
 }
 

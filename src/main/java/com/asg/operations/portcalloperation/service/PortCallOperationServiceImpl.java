@@ -27,6 +27,7 @@ import com.asg.operations.portcallreport.enums.ActionType;
 import com.asg.operations.portcallreport.repository.PortCallReportDtlRepository;
 import com.asg.operations.portcallreport.repository.PortCallReportHdrRepository;
 import com.asg.operations.shipprincipal.repository.ShipPrincipalRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -90,6 +91,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     private final GlobalParameterRepository globalParameterRepository;
     private final PortCallReportDtlRepository dtlRepository;
     private final PortCallOperationScreenAttachmentService screenAttachmentService;
+    private final EntityManager entityManager;
 
 
     @Override
@@ -499,12 +501,14 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .grt(dto.getGrt())
                 .nrt(dto.getNrt())
                 .dwt(dto.getDwt())
+                .agencyType(dto.getAgencyType())
                 .portOfCallPoid(dto.getPortOfCallPoid())
                 .specialInstructions(dto.getSpecialInstructions())
                 .termsConditions(dto.getTermsConditions())
                 .build();
 
         hdr = hdrRepository.save(hdr);
+        entityManager.refresh(hdr);
 
         // Save cargo details
         if (dto.getCargoDetails() != null && !dto.getCargoDetails().isEmpty()) {
@@ -565,7 +569,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), hdr.getTransactionPoid().toString());
+        String key = hdr.getTransactionPoid().toString();
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, hdr.getDocRef()));
         return getOperationById(hdr.getTransactionPoid());
     }
 
@@ -627,7 +632,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         hdr.setNrt(dto.getNrt());
         hdr.setDwt(dto.getDwt());
         hdr.setPortOfCallPoid(dto.getPortOfCallPoid());
-
+        hdr.setAgencyType(dto.getAgencyType());
         hdr.setSpecialInstructions(dto.getSpecialInstructions());
         hdr.setTermsConditions(dto.getTermsConditions());
 
@@ -2201,17 +2206,52 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         log.info("Listing ActTimingsActvtyDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
         List<PortCallOperationActTimingsActvtyDtl> entities = actTimingsActvtyDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        Optional<PortCallOperationActTimingDtl> actualTimingOptional = actTimingDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+
+        if (actualTimingOptional.isEmpty()) {
+            throw new ResourceNotFoundException("ActTimingDtl", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId));
+        }
+        PortCallOperationActTimingDtl actualTiming = actualTimingOptional.get();
+
+        Map<String, Object> spResult = getPortReportActivities(transactionPoid.toString(), actualTiming.getPortReportPoid(), UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+
+        List<Map<String, Object>> outData = (List<Map<String, Object>>) spResult.get("OUTDATA");
+
+        Map<Long, String> activityMandatoryMap = new HashMap<>();
+
+        if (outData != null) {
+            for (Map<String, Object> row : outData) {
+                Long activityTypePoid = row.get("PORT_ACTIVITY_TYPE_POID") != null ? Long.valueOf(row.get("PORT_ACTIVITY_TYPE_POID").toString()) : null;
+
+                String mandatory = row.get("ACTIVITY_MANDATORY") != null ? row.get("ACTIVITY_MANDATORY").toString() : null;
+
+                if (activityTypePoid != null && mandatory != null) {
+                    activityMandatoryMap.put(activityTypePoid, mandatory);
+                }
+            }
+        }
 
         return entities.stream()
-                .map(e -> PortCallOperationActTimingsActvtyDetailResponseDto.builder()
-                        .transactionPoid(e.getTransactionPoid())
-                        .detRowId(e.getDetRowId())
-                        .actualsTimingDtlPoid(e.getActualsTimingDtlPoid())
-                        .activityPoid(e.getActivityPoid())
-                        .activityName(e.getActivityName())
-                        .details(e.getDetails())
-                        .estimatedDatetime(e.getEstimatedDatetime())
-                        .build())
+                .map(e -> {
+                    String activityMandatory = null;
+                    if (e.getActivityPoid() != null) {
+                        String value = activityMandatoryMap.get(e.getActivityPoid());
+
+                        if (value != null) {
+                            activityMandatory = value.equalsIgnoreCase("Y") ? "Y" : "N";
+                        }
+                    }
+                    return PortCallOperationActTimingsActvtyDetailResponseDto.builder()
+                            .transactionPoid(e.getTransactionPoid())
+                            .detRowId(e.getDetRowId())
+                            .actualsTimingDtlPoid(e.getActualsTimingDtlPoid())
+                            .activityPoid(e.getActivityPoid())
+                            .activityMandatory(activityMandatory)
+                            .activityName(e.getActivityName())
+                            .details(e.getDetails())
+                            .estimatedDatetime(e.getEstimatedDatetime())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 

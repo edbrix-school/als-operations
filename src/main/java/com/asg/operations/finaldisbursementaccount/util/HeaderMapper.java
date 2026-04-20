@@ -265,6 +265,8 @@ public class HeaderMapper {
         // Quantities persisted on update/edit
         entity.setImportQty(dto.getImportQty());
         entity.setExportQty(dto.getExportQty());
+        entity.setCurrencyCode(dto.getCurrencyCode());
+        entity.setCurrencyRate(dto.getCurrencyRate());
         entity.setTranshipmentQty(dto.getTranshipmentQty());
         entity.setTotalQuantity(dto.getTotalQuantity());
         entity.setUnit(dto.getUnit());
@@ -277,6 +279,9 @@ public class HeaderMapper {
         entity.setNrt(dto.getNrt());
         entity.setNumberOfDays(dto.getNumberOfDays());
         entity.setPortDescription(dto.getPortDescription());
+        entity.setPortCallNumber(dto.getPortCallNumber());
+        entity.setNominatedPartyType(dto.getNominatedPartyType());
+        entity.setNominatedPartyPoid(dto.getNominatedPartyPoid());
         entity.setFdaSubType(dto.getFdaSubType());
         entity.setSubCategory(dto.getSubCategory());
         entity.setPrintBankPoid(dto.getPrintBankPoid());

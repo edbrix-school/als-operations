@@ -1,13 +1,11 @@
 package com.asg.operations.portcalloperation.dto;
 
 import com.asg.operations.portcallreport.enums.ActionType;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter

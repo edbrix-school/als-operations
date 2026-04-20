@@ -1,7 +1,6 @@
 package com.asg.operations.finaldisbursementaccount.dto;
 
 import com.asg.operations.commonlov.dto.LovItem;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -18,7 +17,6 @@ import java.util.List;
 @Setter
 public class FdaHeaderDto {
     private Long transactionPoid;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate transactionDate;
     private Long groupPoid;
     private LovItem groupDet;
@@ -35,9 +33,7 @@ public class FdaHeaderDto {
     private LovItem voyageDet;
     private Long vesselPoid;
     private LovItem vesselDet;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate arrivalDate;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate sailDate;
     private Long portPoid;
     private LovItem portDet;
@@ -62,7 +58,6 @@ public class FdaHeaderDto {
     private LovItem costCentreDet;
     @Size(max = 1, message = "Vessel Verified cannot exceed 1 character")
     private String vesselVerified;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate vesselVerifiedDate;
     @Size(max = 30, message = "Vessel Verified By cannot exceed 30 characters")
     private String vesselVerifiedBy;
@@ -71,7 +66,6 @@ public class FdaHeaderDto {
     private Long principalAprvlDays;
     @Size(max = 1, message = "Principal Approved cannot exceed 1 character")
     private String principalApproved;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate principalApprovedDate;
     @Size(max = 30, message = "Principal Approved By cannot exceed 30 characters")
     private String principalApprovedBy;
@@ -80,7 +74,6 @@ public class FdaHeaderDto {
     private String cargoDetails;
     @Size(max = 30, message = "Status cannot exceed 30 characters")
     private String status;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fdaClosedDate;
     @Size(max = 2000, message = "Remarks cannot exceed 2000 characters")
     private String remarks;
@@ -126,7 +119,6 @@ public class FdaHeaderDto {
     private String profitLossPer;
     @Size(max = 100, message = "FDA Closing By cannot exceed 100 characters")
     private String fdaClosingBy;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate glClosingDate;
     @Size(max = 100, message = "Ref Type cannot exceed 100 characters")
     private String refType;
@@ -149,7 +141,6 @@ public class FdaHeaderDto {
     private LovItem nominatedPartyTypeDet;
     private Long nominatedPartyPoid;
     private LovItem nominatedPartyDet;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate documentSubmittedDate;
     @Size(max = 300, message = "Document Submitted By cannot exceed 300 characters")
     private String documentSubmittedBy;
@@ -159,15 +150,12 @@ public class FdaHeaderDto {
     private String fdaSubType;
     @Size(max = 100, message = "Sub Category cannot exceed 100 characters")
     private String subCategory;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate documentReceivedDate;
     @Size(max = 300, message = "Document Received From cannot exceed 300 characters")
     private String documentReceivedFrom;
     @Size(max = 300, message = "Document Received Status cannot exceed 300 characters")
     private String documentReceivedStatus;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate submissionAcceptedDate;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate verificationAcceptedDate;
     @Size(max = 300, message = "Submission Accepted By cannot exceed 300 characters")
     private String submissionAcceptedBy;
@@ -175,13 +163,11 @@ public class FdaHeaderDto {
     private String verificationAcceptedBy;
     private Long vesselHandledBy;
     private LovItem vesselHandledByDet;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate vesselSailDate;
     @Size(max = 1, message = "Accounts Verified cannot exceed 1 character")
     private String accountsVerified;
     @Size(max = 1000, message = "Ops Correction Remarks cannot exceed 1000 characters")
     private String opsCorrectionRemarks;
-    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate opsReturnedDate;
     private BigDecimal profitTotal;
     private BigDecimal lossTotal;

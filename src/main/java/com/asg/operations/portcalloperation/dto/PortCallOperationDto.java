@@ -43,6 +43,8 @@ public class PortCallOperationDto {
 
     private Long portOfCallPoid;
 
+    private String agencyType;
+
     private Long grt;
 
     private Long nrt;

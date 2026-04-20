@@ -12,6 +12,9 @@ import com.asg.operations.finaldisbursementaccount.dto.FdaHeaderDto;
 import com.asg.operations.finaldisbursementaccount.dto.FdaReOpenDto;
 import com.asg.operations.finaldisbursementaccount.dto.FdaSupplementaryInfoDto;
 import com.asg.operations.finaldisbursementaccount.dto.PartyGlResponse;
+import com.asg.operations.finaldisbursementaccount.dto.UpdateFdaHeaderRequest;
+import com.asg.operations.finaldisbursementaccount.util.ValidationUtils;
+import com.asg.operations.pdaentryform.repository.PdaEntryHdrRepository;
 import com.asg.operations.finaldisbursementaccount.entity.PdaFdaDtl;
 import com.asg.operations.finaldisbursementaccount.entity.PdaFdaHdr;
 import com.asg.operations.finaldisbursementaccount.key.PdaFdaDtlId;
@@ -59,6 +62,12 @@ class FdaServiceImplTest {
 
     @Mock
     private LoggingService loggingService;
+
+    @Mock
+    private ValidationUtils validationUtils;
+
+    @Mock
+    private PdaEntryHdrRepository pdaEntryHdrRepository;
 
     @InjectMocks
     private FdaServiceImpl fdaService;
@@ -286,6 +295,35 @@ class FdaServiceImplTest {
         String result = fdaService.closeFdaWithoutAmount(1L, 1L, 1L, 1L, "No charges");
 
         assertEquals("FDA closed without amount", result);
+    }
+
+    @Test
+    void updateFda_ShouldUpdateAndReturnFda() {
+        PdaFdaHdr entity = createMockFdaHdr();
+        entity.setTransactionDate(LocalDate.now());
+        entity.setStatus("O");
+
+        UpdateFdaHeaderRequest request = new UpdateFdaHeaderRequest();
+        request.setTransactionDate(LocalDate.now());
+        request.setPrincipalPoid(1L);
+        request.setSalesmanPoid(1L);
+        request.setNominatedPartyPoid(1L);
+        request.setGrt(BigDecimal.valueOf(1000));
+
+        when(pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(1L, 1L, 1L))
+                .thenReturn(Optional.of(entity));
+        when(pdaFdaHdrRepository.save(any())).thenReturn(entity);
+        when(pdaFdaDtlRepository.findByIdTransactionPoid(1L)).thenReturn(Arrays.asList());
+        doNothing().when(validationUtils).validateHeaderBeforeUpdate(any(), any());
+        doNothing().when(validationUtils).validateFinancialAndTransactionPeriodForUpdate(any(), any(), any());
+        doNothing().when(loggingService).logChanges(any(), any(), any(), any(), any(), any(), any());
+
+        FdaHeaderDto result = fdaService.updateFdaHeader(1L, request, 1L, 1L, "user1");
+
+        assertNotNull(result);
+        assertEquals(1L, result.getTransactionPoid());
+        verify(pdaFdaHdrRepository).save(any());
+        verify(loggingService).logChanges(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test

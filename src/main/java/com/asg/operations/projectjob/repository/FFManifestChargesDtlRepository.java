@@ -17,7 +17,7 @@ public interface FFManifestChargesDtlRepository extends JpaRepository<FFManifest
 	List<FFManifestChargesDtl> findByTransactionPoid(Long transactionPoid);
 
 	@Query("SELECT COALESCE(MAX(d.detRowId), 0) FROM FFManifestChargesDtl d WHERE d.transactionPoid = :transactionPoid")
-	Long getMaxDetRowId(@Param("transactionPoid")Long transactionPoid);
+	Long getMaxDetRowId(@Param("transactionPoid") Long transactionPoid);
 
 	void deleteByTransactionPoidAndDetRowIdIn(Long transactionPoid, List<Long> toDelete);
 

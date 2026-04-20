@@ -1,13 +1,27 @@
 package com.asg.operations.projectjob.util;
 
-import com.asg.operations.projectjob.dto.*;
-import com.asg.operations.projectjob.entity.*;
-
 import java.math.BigDecimal;
+import java.util.Optional;
+
+import com.asg.common.lib.utility.DateUtil;
+import com.asg.operations.projectjob.dto.FFManifestHdrDto;
+import com.asg.operations.projectjob.dto.FFManifestHdrDtoResponse;
+import com.asg.operations.projectjob.dto.ProjectJobAirPkgDto;
+import com.asg.operations.projectjob.dto.ProjectJobBayanDto;
+import com.asg.operations.projectjob.dto.ProjectJobChargesDto;
+import com.asg.operations.projectjob.dto.ProjectJobContainerDto;
+import com.asg.operations.projectjob.dto.ProjectJobTruckDto;
+import com.asg.operations.projectjob.entity.FFManifestAirPkgDtl;
+import com.asg.operations.projectjob.entity.FFManifestBayanDtl;
+import com.asg.operations.projectjob.entity.FFManifestChargesDtl;
+import com.asg.operations.projectjob.entity.FFManifestContainerDtl;
+import com.asg.operations.projectjob.entity.FFManifestHdr;
+import com.asg.operations.projectjob.entity.FFManifestTruckDtl;
 
 public class ProjectJobMapper {
 
-    private ProjectJobMapper(){}
+    private ProjectJobMapper() {
+    }
 
     public static void mapAirPkgFromDto(ProjectJobAirPkgDto dto, FFManifestAirPkgDtl entity, Long transactionPoid) {
 
@@ -17,15 +31,15 @@ public class ProjectJobMapper {
         entity.setTransactionPoid(transactionPoid);
         entity.setDetRowId(dto.getDetRowId());
 
-        entity.setNoOfPacks(dto.getNoOfPacks());
-        entity.setPackUnit(dto.getPackUnit());
+        entity.setNoOfPacks(Optional.ofNullable(dto.getNoOfPacks()).orElse(0L));
+        entity.setPackUnit(Optional.ofNullable(dto.getPackUnit()).orElse(""));
 
-        entity.setTotalWeight(dto.getTotalWeight());
+        entity.setTotalWeight(Optional.ofNullable(dto.getTotalWeight()).orElse(BigDecimal.ZERO));
         entity.setTotalVolume(dto.getTotalVolume());
 
-        entity.setLength(dto.getLength());
-        entity.setWidth(dto.getWidth());
-        entity.setHeight(dto.getHeight());
+        entity.setLength(Optional.ofNullable(dto.getLength()).orElse(BigDecimal.ZERO));
+        entity.setWidth(Optional.ofNullable(dto.getWidth()).orElse(BigDecimal.ZERO));
+        entity.setHeight(Optional.ofNullable(dto.getHeight()).orElse(0L));
 
         entity.setImcoClassUnno(dto.getImcoClassUnno());
         entity.setProperShippingName(dto.getProperShippingName());
@@ -85,15 +99,15 @@ public class ProjectJobMapper {
         entity.setCurrencyCode(dto.getCurrencyCode());
         entity.setPayMode(dto.getPayMode());
         entity.setRcptNoOld(dto.getRcptNoOld());
-        entity.setChargeCideOld(dto.getChargeCideOld());
-        entity.setRcptDaeOld(dto.getRcptDaeOld() != null ? dto.getRcptDaeOld().atStartOfDay() : null);
+        entity.setChargeCodeOld(dto.getChargeCodeOld());
+        entity.setRcptDaeOld(dto.getRcptDaeOld());
         entity.setCostInvOld(dto.getCostInvOld());
 
         entity.setEquipmentPoid(dto.getEquipmentPoid());
         entity.setTotalBuyingCharge(dto.getTotalBuyingCharge());
         entity.setTotalSellingCharge(dto.getTotalSellingCharge());
 
-        entity.setCostInvDtOld(dto.getCostInvDtOld() != null ? dto.getCostInvDtOld().atStartOfDay() : null);
+        entity.setCostInvDtOld(dto.getCostInvDtOld());
         entity.setRcptIvPoid(dto.getRcptIvPoid());
         entity.setTotalCostBooked(dto.getTotalCostBooked());
 
@@ -210,11 +224,6 @@ public class ProjectJobMapper {
 
         entity.setDocumentStatus(dto.getDocumentStatus());
 
-        entity.setCreatedBy(dto.getCreatedBy());
-        entity.setCreatedDate(dto.getCreatedDate());
-        entity.setLastModifiedBy(dto.getLastModifiedBy());
-        entity.setLastModifiedDate(dto.getLastModifiedDate());
-
         entity.setTruckNumber(dto.getTruckNumber());
     }
 
@@ -287,13 +296,39 @@ public class ProjectJobMapper {
         dto.setQuantity(entity.getQuantity());
         dto.setBuyingPercharge(entity.getBuyingPercharge());
         dto.setBillingPrecharge(entity.getBillingPrecharge());
-
+        dto.setPaidAtPortPoid(entity.getPaidAtPortPoid());
         dto.setCurrencyCode(entity.getCurrencyCode());
         dto.setPayMode(entity.getPayMode());
+        dto.setRcptNoOld(entity.getRcptNoOld());
+        dto.setChargeCodeOld(entity.getChargeCodeOld());
+        dto.setRcptDaeOld(entity.getRcptDaeOld());
+        dto.setCostInvOld(entity.getCostInvOld());
+        dto.setEquipmentPoid(entity.getEquipmentPoid());
         dto.setTotalBuyingCharge(entity.getTotalBuyingCharge());
         dto.setTotalSellingCharge(entity.getTotalSellingCharge());
-
+        dto.setCostInvDtOld(entity.getCostInvDtOld());
+        dto.setRcptIvPoid(entity.getRcptIvPoid());
+        dto.setTotalCostBooked(entity.getTotalCostBooked());
+        dto.setDataRowId(entity.getDataRowId());
+        dto.setCostCurrency(entity.getCostCurrency());
+        dto.setCostCurrencyRate(entity.getCostCurrencyRate());
+        dto.setCostBookRef(entity.getCostBookRef());
+        dto.setPrintGroup(entity.getPrintGroup());
         dto.setRemarks(entity.getRemarks());
+        dto.setShChargeInv(entity.getShChargeInv());
+        dto.setUnitType(entity.getUnitType());
+        dto.setTaxPoid(entity.getTaxPoid());
+        dto.setTaxPercentage(entity.getTaxPercentage());
+        dto.setTaxAmount(entity.getTaxAmount());
+        dto.setTaxInputAmount(entity.getTaxInputAmount());
+        dto.setCnRefDocId(entity.getCnRefDocId());
+        dto.setCnRefDocPoid(entity.getCnRefDocPoid());
+        dto.setCnRefDetRowId(entity.getCnRefDetRowId());
+        dto.setCnIssueInvoice(entity.getCnIssueInvoice());
+        dto.setHouseBlPoid(entity.getHouseBlPoid());
+        dto.setSupplierPoid(entity.getSupplierPoid());
+        dto.setChargeBasis(entity.getChargeBasis());
+        dto.setEnteryLocation(entity.getEnteryLocation());
     }
 
     public static void toContainerDto(FFManifestContainerDtl entity, ProjectJobContainerDto dto) {
@@ -302,20 +337,43 @@ public class ProjectJobMapper {
             return;
 
         dto.setDetRowId(entity.getDetRowId());
-
         dto.setContainerNo(entity.getContainerNo());
+        dto.setEquipmentShipperOwn(entity.getEquipmentShipperOwn());
         dto.setCargoDescription(entity.getCargoDescription());
         dto.setContainerSealNo(entity.getContainerSealNo());
         dto.setContainerIsoCode(entity.getContainerIsoCode());
-
+        dto.setContainerTypePoid(dto.getContainerTypePoid());
         dto.setContainerSize(entity.getContainerSize());
         dto.setQuantity(entity.getQuantity());
-
         dto.setGrsVolume(entity.getGrsVolume());
         dto.setGrsWeight(entity.getGrsWeight());
-
+        dto.setNetVolume(entity.getNetVolume());
+        dto.setNetWeight(entity.getNetWeight());
+        dto.setTareWeight(entity.getTareWeight());
+        dto.setNoOfPacks(entity.getNoOfPacks());
+        dto.setPackUnit(entity.getPackUnit());
+        dto.setComodityPoid(dto.getComodityPoid());
+        dto.setDestinationPortPoid(dto.getDestinationPortPoid());
+        dto.setImo(entity.getImo());
+        dto.setOogB(entity.getOogB());
+        dto.setOogL(entity.getOogL());
+        dto.setOogH(entity.getOogH());
+        dto.setRefferHum(entity.getRefferHum());
+        dto.setRefferTemp(entity.getRefferTemp());
+        dto.setRefferVent(entity.getRefferVent());
+        dto.setSealNo(entity.getSealNo());
+        dto.setUnloadDate(entity.getUnloadDate());
+        dto.setCargoCollectionDate(entity.getCargoCollectionDate());
+        dto.setDeliveryDate(entity.getDeliveryDate());
+        dto.setCfsNote(entity.getCfsNote());
+        dto.setDamageNote(entity.getDamageNote());
+        dto.setTruckDriverDetails(entity.getTruckDriverDetails());
+        dto.setIsImco(entity.getIsImco());
+        dto.setImcoClassType(entity.getImcoClassType());
+        dto.setImcoClassActual(entity.getImcoClassActual());
+        dto.setDetention(entity.getDetention());
+        dto.setDocStatus(entity.getDocStatus());
         dto.setRemarks(entity.getRemarks());
-
     }
 
     public static void toTruckDto(FFManifestTruckDtl entity, ProjectJobTruckDto dto) {
@@ -341,11 +399,6 @@ public class ProjectJobMapper {
 
         dto.setDocumentStatus(entity.getDocumentStatus());
 
-        dto.setCreatedBy(entity.getCreatedBy());
-        dto.setCreatedDate(entity.getCreatedDate());
-        dto.setLastModifiedBy(entity.getLastModifiedBy());
-        dto.setLastModifiedDate(entity.getLastModifiedDate());
-
         dto.setTruckNumber(entity.getTruckNumber());
 
     }
@@ -355,7 +408,7 @@ public class ProjectJobMapper {
         if (dto == null || entity == null)
             return;
 
-        entity.setTransactionDate(dto.getTransactionDate());
+        entity.setTransactionDate(Optional.ofNullable(dto.getTransactionDate()).orElse(DateUtil.getCurrentDateInUserTimeZone()));
         entity.setCompanyPoid(dto.getCompanyPoid());
 
         entity.setFfJobNo(dto.getFfJobNo());
@@ -524,7 +577,7 @@ public class ProjectJobMapper {
         entity.setSpecialDocumentRemarks(dto.getSpecialDocumentRemarks());
 
         entity.setDeliveryDateFrom(dto.getDeliveryDateFrom());
-        entity.setDeliveryḌateTo(dto.getDeliveryDateTo());
+        entity.setDeliveryDateTo(dto.getDeliveryDateTo());
 
         entity.setCustomsClearanceInvoved(dto.getCustomsClearanceInvoved());
         entity.setRoadTransport(dto.getRoadTransport());
@@ -736,7 +789,7 @@ public class ProjectJobMapper {
         dto.setSpecialDocumentRemarks(entity.getSpecialDocumentRemarks());
 
         dto.setDeliveryDateFrom(entity.getDeliveryDateFrom());
-        dto.setDeliveryDateTo(entity.getDeliveryḌateTo());
+        dto.setDeliveryDateTo(entity.getDeliveryDateTo());
 
         dto.setCustomsClearanceInvoved(entity.getCustomsClearanceInvoved());
         dto.setRoadTransport(entity.getRoadTransport());

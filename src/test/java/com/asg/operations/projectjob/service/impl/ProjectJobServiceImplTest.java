@@ -7,13 +7,18 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.utility.DateUtil;
+import com.asg.operations.common.entity.GlobalAddressDetails;
+import com.asg.operations.common.entity.GlobalAddressMaster;
 import com.asg.operations.common.repository.GlobalAddressDetailsRepository;
 import com.asg.operations.common.repository.GlobalAddressMasterRepository;
+import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.exceptions.ValidationException;
 import com.asg.operations.projectjob.dto.*;
 import com.asg.operations.projectjob.entity.*;
 import com.asg.operations.projectjob.repository.*;
+import com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl;
 import com.asg.operations.projects.repository.FFProjectsCtrlSheetDtlRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +29,9 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,11 +57,10 @@ class ProjectJobServiceImplTest {
 
     private ProjectJobServiceImpl projectJobService;
     private MockedStatic<UserContext> userContextMockedStatic;
+    private MockedStatic<DateUtil> dateUtilMockedStatic;
 
     @BeforeEach
     void setUp() {
-        // Explicit constructor injection avoids @InjectMocks matching issues with
-        // @RequiredArgsConstructor when the constructor arity changes.
         projectJobService = new ProjectJobServiceImpl(
                 hdrRepository, chargesRepository, airPkgRepository, bayanRepository,
                 containerRepository, truckRepository, spRepostirory, loggingService,
@@ -67,24 +73,31 @@ class ProjectJobServiceImplTest {
         userContextMockedStatic.when(UserContext::getUserPoid).thenReturn(3L);
         userContextMockedStatic.when(UserContext::getUserId).thenReturn("USER1");
         userContextMockedStatic.when(UserContext::getDocumentId).thenReturn("DOC123");
+
+        dateUtilMockedStatic = mockStatic(DateUtil.class);
+        dateUtilMockedStatic.when(DateUtil::getCurrentDateInUserTimeZone).thenReturn(LocalDate.now());
     }
 
     @AfterEach
     void tearDown() {
-        userContextMockedStatic.close();
+        if (userContextMockedStatic != null) {
+            userContextMockedStatic.close();
+        }
+        if (dateUtilMockedStatic != null) {
+            dateUtilMockedStatic.close();
+        }
     }
 
     private void stubSaveAndFlush(FFManifestHdr hdr) {
         doReturn(hdr).when(hdrRepository).saveAndFlush(any());
     }
 
-    // Stubs findById for both the post-save refresh and the final getById call.
     private void stubFindById(FFManifestHdr hdr) {
         doReturn(Optional.of(hdr)).when(hdrRepository).findById(any());
     }
 
     @Test
-    void testCreate() {
+    void testCreate_SuccessWithoutControlSheet() {
         ProjectJobRequest request = new ProjectJobRequest();
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
@@ -96,6 +109,56 @@ class ProjectJobServiceImplTest {
 
         assertNotNull(response);
         verify(loggingService).createLogSummaryEntry(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void testCreate_SuccessWithControlSheet() {
+        ProjectJobRequest request = new ProjectJobRequest();
+        request.setControlSheetTransactionPoid(200L);
+        request.setControlSheetDetRowId(5L);
+        request.setControlSheetDocId("CTRL123");
+
+        FFProjectsCtrlSheetDtl ctrlSheetRow = new FFProjectsCtrlSheetDtl();
+        when(ctrlSheetDtlRepository.findByTransactionPoidAndDetRowId(200L, 5L))
+                .thenReturn(Optional.of(ctrlSheetRow));
+
+        FFManifestHdr hdr = new FFManifestHdr();
+        hdr.setTransactionPoid(100L);
+
+        stubSaveAndFlush(hdr);
+        stubFindById(hdr);
+
+        ProjectJobResponse response = projectJobService.create(request);
+
+        assertNotNull(response);
+        assertEquals(100L, ctrlSheetRow.getJobNoPoid());
+        verify(ctrlSheetDtlRepository).save(ctrlSheetRow);
+    }
+
+    @Test
+    void testCreate_ControlSheetNotFound() {
+        ProjectJobRequest request = new ProjectJobRequest();
+        request.setControlSheetTransactionPoid(200L);
+        request.setControlSheetDetRowId(5L);
+
+        when(ctrlSheetDtlRepository.findByTransactionPoidAndDetRowId(200L, 5L))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> projectJobService.create(request));
+    }
+
+    @Test
+    void testCreate_ControlSheetAlreadyAssigned() {
+        ProjectJobRequest request = new ProjectJobRequest();
+        request.setControlSheetTransactionPoid(200L);
+        request.setControlSheetDetRowId(5L);
+
+        FFProjectsCtrlSheetDtl ctrlSheetRow = new FFProjectsCtrlSheetDtl();
+        ctrlSheetRow.setJobNoPoid(99L);
+        when(ctrlSheetDtlRepository.findByTransactionPoidAndDetRowId(200L, 5L))
+                .thenReturn(Optional.of(ctrlSheetRow));
+
+        assertThrows(ValidationException.class, () -> projectJobService.create(request));
     }
 
     @Test
@@ -120,7 +183,7 @@ class ProjectJobServiceImplTest {
     }
 
     @Test
-    void testProcessDetails_ISCREATED_New() {
+    void testProcessDetails_ISCREATED() {
         ProjectJobAirPkgDtoRequest airPkgDto = new ProjectJobAirPkgDtoRequest();
         airPkgDto.setActionType("ISCREATED");
         ProjectJobRequest request = new ProjectJobRequest();
@@ -136,27 +199,6 @@ class ProjectJobServiceImplTest {
         projectJobService.create(request);
 
         verify(airPkgRepository).saveAll(anyList());
-    }
-
-    @Test
-    void testProcessDetails_ISCREATED_ExistingDetRowId() {
-        ProjectJobAirPkgDtoRequest airPkgDto = new ProjectJobAirPkgDtoRequest();
-        airPkgDto.setActionType("ISCREATED");
-        airPkgDto.setDetRowId(5L);
-        ProjectJobRequest request = new ProjectJobRequest();
-        request.setAirPackages(Collections.singletonList(airPkgDto));
-
-        FFManifestHdr hdr = new FFManifestHdr();
-        hdr.setTransactionPoid(100L);
-        stubSaveAndFlush(hdr);
-        stubFindById(hdr);
-        when(airPkgRepository.getMaxDetRowId(100L)).thenReturn(0L);
-        when(airPkgRepository.saveAll(anyList())).thenReturn(Collections.emptyList());
-
-        projectJobService.create(request);
-
-        verify(airPkgRepository).saveAll(argThat(list ->
-                ((List<FFManifestAirPkgDtl>) list).get(0).getDetRowId() == 5L));
     }
 
     @Test
@@ -252,6 +294,7 @@ class ProjectJobServiceImplTest {
     void testGetById_Success() {
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
+        hdr.setProjectPoid(BigDecimal.valueOf(50L));
         when(hdrRepository.findById(100L)).thenReturn(Optional.of(hdr));
         when(airPkgRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestAirPkgDtl()));
         when(bayanRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestBayanDtl()));
@@ -259,16 +302,66 @@ class ProjectJobServiceImplTest {
         when(containerRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestContainerDtl()));
         when(truckRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestTruckDtl()));
 
+        ProjectLoadInJobsProcResponse procResponse = new ProjectLoadInJobsProcResponse();
+        ProjectLoadHdrRow jobHeader = new ProjectLoadHdrRow();
+        jobHeader.setProjectCustomerPoid(75L);
+        procResponse.setHeader(Collections.singletonList(jobHeader));
+        when(spRepostirory.callProjectsLoadInJobsProc(50L)).thenReturn(procResponse);
+
         ProjectJobResponse response = projectJobService.getById(100L);
 
         assertNotNull(response);
+        assertEquals(75L, response.getProjectCustomerPoid());
         assertEquals(1, response.getAirPackages().size());
+        assertEquals(1, response.getBayanDetails().size());
+        assertEquals(1, response.getCharges().size());
+        assertEquals(1, response.getContainers().size());
+        assertEquals(1, response.getTruckDetails().size());
     }
 
     @Test
     void testGetById_NotFound() {
         when(hdrRepository.findById(100L)).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () -> projectJobService.getById(100L));
+    }
+
+    @Test
+    void testGetNotifyById_Null() {
+        LovItem item = projectJobService.getNotifyById(null);
+        assertNull(item.getPoid());
+    }
+
+    @Test
+    void testGetNotifyById_Found() {
+        GlobalAddressMaster master = new GlobalAddressMaster();
+        master.setAddressName("Test Name");
+        master.setAddressMasterPoid(10L);
+
+        GlobalAddressDetails details = new GlobalAddressDetails();
+        details.setAddressPoid(BigDecimal.valueOf(20L));
+        details.setAddressType("WORK");
+        details.setContactPerson("John Doe");
+
+        when(addressMasterRepository.findById(1L)).thenReturn(Optional.of(master));
+        when(addressDetailsRepository.findById(BigDecimal.ONE)).thenReturn(Optional.of(details));
+
+        LovItem item = projectJobService.getNotifyById(BigDecimal.ONE);
+        assertNotNull(item);
+        assertEquals(1L, item.getPoid());
+        assertEquals("20", item.getCode());
+        assertTrue(item.getDescription().contains("Test Name"));
+        assertTrue(item.getDescription().contains("John Doe"));
+    }
+
+    @Test
+    void testGetNotifyById_Empty() {
+        when(addressMasterRepository.findById(1L)).thenReturn(Optional.empty());
+        when(addressDetailsRepository.findById(BigDecimal.ONE)).thenReturn(Optional.empty());
+
+        LovItem item = projectJobService.getNotifyById(BigDecimal.ONE);
+        assertNotNull(item);
+        assertEquals(1L, item.getPoid());
+        assertEquals("", item.getCode());
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.asg.common.lib.utility.DateUtil;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
+import jakarta.persistence.EntityManager;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import com.asg.common.lib.service.PrintService;
@@ -64,6 +65,7 @@ public class FdaServiceImpl implements FdaService {
     private final LoggingService loggingService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional(readOnly = true)
@@ -98,9 +100,7 @@ public class FdaServiceImpl implements FdaService {
 
         validationUtils.validateHeaderBeforeSave(dto);
 
-        LocalDate transactionDate = dto.getTransactionDate() != null
-                ? dto.getTransactionDate()
-                : DateUtil.getCurrentDateInUserTimeZone();
+        LocalDate transactionDate = dto.getTransactionDate() != null                ? dto.getTransactionDate()                : DateUtil.getCurrentDateInUserTimeZone();
         // Validate financial year and transaction period before save
         validationUtils.validateFinancialAndTransactionPeriodForCreate(companyPoid, dto.getTransactionDate());
 
@@ -117,12 +117,14 @@ public class FdaServiceImpl implements FdaService {
         // Note: The trigger generates docRef based on FDA_SUB_TYPE and PDA_REF
         // For now, we'll let the trigger handle it, but we can set a fallback if needed
         entity = pdaFdaHdrRepository.save(entity);
+        entityManager.refresh(entity);
 
         if (dto.getCharges() != null && !dto.getCharges().isEmpty()) {
             saveCharges(entity.getTransactionPoid(), dto.getCharges(), userId, groupPoid, companyPoid);
         }
 
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), entity.getTransactionPoid().toString());
+        String key = entity.getTransactionPoid().toString();
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, entity.getDocRef()));
         return getFdaHeader(entity.getTransactionPoid(), groupPoid, companyPoid);
     }
 
@@ -269,8 +271,6 @@ public class FdaServiceImpl implements FdaService {
             }
         }
 
-        List<PdaFdaDtl> toSave = new ArrayList<>();
-
         for (FdaChargeDto dto : chargeDtos) {
             String action = StringUtils.isNotBlank(dto.getActionType()) ? dto.getActionType().toLowerCase() : "";
 
@@ -283,23 +283,22 @@ public class FdaServiceImpl implements FdaService {
                                 throw new CustomException("Cannot delete system-generated charge lines", 403);
                             }
                             pdaFdaDtlRepository.delete(entity);
+                            loggingService.logDelete(entity,UserContext.getDocumentId(),entity.getId().getTransactionPoid().toString());
                         });
                     }
                     break;
                 case "iscreated":
+                    validationUtils.handleCreate(transactionPoid, dto, userId);
+                    break;
                 case "isupdated":
-                    validationUtils.handleCreateOrUpdate(transactionPoid, dto, toSave, userId);
+                    validationUtils.handleUpdate(transactionPoid, dto, userId);
                     break;
                 default:
                     // ignore unknown actions
             }
         }
 
-        if (!toSave.isEmpty()) {
-            pdaFdaDtlRepository.saveAll(toSave);
-        }
-
-        validationUtils.recalculateHeaderTotals(transactionPoid, userId, groupPoid, companyPoid);
+        validationUtils.recalculateHeaderTotals(transactionPoid, groupPoid, companyPoid);
     }
 
     @Override
@@ -314,6 +313,7 @@ public class FdaServiceImpl implements FdaService {
         }
 
         pdaFdaDtlRepository.delete(entity);
+        loggingService.logDelete(entity,UserContext.getDocumentId(),entity.getId().getTransactionPoid().toString());
     }
 
     @Override
@@ -560,9 +560,7 @@ public class FdaServiceImpl implements FdaService {
 
     private void setDetailsForCharge(FdaChargeDto charge) {
         charge.setChargeDet(lovService.getLovItemByPoid(charge.getChargePoid(), "CHARGE_MASTER_FOR_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-        charge.setRateTypeDet(lovService.getLovItemByPoid(charge.getRateTypePoid(), "PDA_RATE_TYPE_MASTER", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         charge.setPrincipalDet(lovService.getLovItemByPoid(charge.getPrincipalPoid(), "PRINCIPAL_MASTER_FOR_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-        charge.setPdaDet(lovService.getLovItemByPoid(charge.getPdaPoid(), "PROCESS_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         charge.setDetailsFromDet(lovService.getLovItemByCode(charge.getDetailsFrom(), "FDA_DETAIL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
     }
 

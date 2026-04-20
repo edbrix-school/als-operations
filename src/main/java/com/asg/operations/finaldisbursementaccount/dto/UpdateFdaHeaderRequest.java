@@ -1,7 +1,8 @@
 package com.asg.operations.finaldisbursementaccount.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,6 +32,11 @@ public class UpdateFdaHeaderRequest {
     @NotNull(message = "Salesman is required")
     private Long salesmanPoid;
 
+    @Size(max = 20, message = "Currency Code cannot exceed 20 characters")
+    private String currencyCode;
+
+    private BigDecimal currencyRate;
+
     private Long portPoid;
 
     @Size(max = 2000, message = "Remarks cannot exceed 2000 characters")
@@ -53,17 +59,29 @@ public class UpdateFdaHeaderRequest {
     @Size(max = 100, message = "Port Description cannot exceed 100 characters")
     private String portDescription;
 
-    @Size(max = 100, message = "FDA Sub Type cannot exceed 1 character")
+    @Size(max = 100, message = "Port Call Number cannot exceed 100 characters")
+    private String portCallNumber;
+
+    @Size(max = 100, message = "Nominated Party Type cannot exceed 100 characters")
+    private String nominatedPartyType;
+
+    @NotNull(message = "Nominated Party is required. Select either Principal or Customer")
+    private Long nominatedPartyPoid;
+
+    @Size(max = 100, message = "FDA Sub Type cannot exceed 100 character")
     private String fdaSubType;
 
     @Size(max = 100, message = "Sub Category cannot exceed 100 characters")
     private String subCategory;
 
     @NotNull(message = "GRT is required")
+    @PositiveOrZero(message = "GRT must be >= 0")
     private BigDecimal grt;
 
     private BigDecimal nrt;
     private BigDecimal dwt;
     private Long printBankPoid;
+
+    @Valid
     private List<FdaChargeDto> charges;
 }
