@@ -381,10 +381,18 @@ public class FdaServiceImpl implements FdaService {
             throw new CustomException("Closed FDAs cannot be verified.", 400);
         }
 
-        hdr.setAccountsVerified("Y");
-        pdaFdaHdrRepository.save(hdr);
 
-        return fdaCustomRepository.verifyFda(groupPoid, companyPoid, userPoid, transactionPoid);
+        String result = fdaCustomRepository.verifyFda(groupPoid, companyPoid, userPoid, transactionPoid);
+
+        if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
+            entityManager.detach(hdr);
+            PdaFdaHdr fresh = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(transactionPoid, groupPoid, companyPoid)
+                    .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
+            fresh.setAccountsVerified("Y");
+            pdaFdaHdrRepository.saveAndFlush(fresh);
+        }
+
+        return result;
     }
 
     @Override
