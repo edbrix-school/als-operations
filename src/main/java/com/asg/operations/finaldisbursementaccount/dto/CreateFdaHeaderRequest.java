@@ -34,6 +34,9 @@ public class CreateFdaHeaderRequest {
 
     private Long portPoid;
 
+    @Size(max = 1, message = "Accounts Verified cannot exceed 1 character")
+    private String accountsVerified;
+
     @Size(max = 100, message = "Commodity Poid cannot exceed 100 characters")
     private String commodityPoid;
 

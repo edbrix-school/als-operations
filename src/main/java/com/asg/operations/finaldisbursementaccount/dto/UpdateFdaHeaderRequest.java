@@ -39,6 +39,9 @@ public class UpdateFdaHeaderRequest {
 
     private Long portPoid;
 
+    @Size(max = 1, message = "Accounts Verified cannot exceed 1 character")
+    private String accountsVerified;
+
     @Size(max = 2000, message = "Remarks cannot exceed 2000 characters")
     private String remarks;
 
@@ -81,6 +84,14 @@ public class UpdateFdaHeaderRequest {
     private BigDecimal nrt;
     private BigDecimal dwt;
     private Long printBankPoid;
+
+    private LocalDate arrivalDate;
+
+    private LocalDate sailDate;
+
+    private Long vesselHandledBy;
+
+    private LocalDate vesselSailDate;
 
     @Valid
     private List<FdaChargeDto> charges;
