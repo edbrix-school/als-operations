@@ -39,11 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -399,15 +395,54 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         String operator = documentSearchService.resolveOperator(filterRequestDto);
         String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
 
-        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto, "TRANSACTION_DATE",
-                periodFrom, periodTo);
+        Set<String> fields = Set.of("JOBNO", "JOBTYPE");
 
-        RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
-                "DOC_REF", TRANSACTION_POID);
+        List<FilterDto> newFilters = filterRequestDto.filters().stream().map(val -> {
+            String searchField = val.searchField();
+            if (fields.contains(searchField)) {
+                return new FilterDto("FF_".concat(searchField), val.searchValue());
+            }
+            return val;
+        }).toList();
 
-        Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
+        FilterRequestDto modifiedFilter = new FilterRequestDto(operator, isDeleted, newFilters);
 
-        return PaginationUtil.wrapPage(page, raw.displayFields());
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(
+                modifiedFilter, "TRANSACTION_DATE", periodFrom, periodTo
+        );
+
+        RawSearchResult raw = documentSearchService.search(
+                documentId, filters, operator, pageable, isDeleted, "DOC_REF", TRANSACTION_POID
+        );
+
+        Map<String, String> fieldMapping = Map.of(
+                "FF_JOBNO", "JOBNO",
+                "FF_JOBTYPE", "JOBTYPE"
+        );
+
+        List<Map<String, Object>> records = raw.records().stream().map(val -> {
+            fieldMapping.forEach((oldKey, newKey) -> {
+                if (val.containsKey(oldKey)) {
+                    val.put(newKey, val.get(oldKey));
+                    val.remove(oldKey);
+                }
+            });
+            return val;
+        }).toList();
+
+        Map<String, String> displayFields = raw.displayFields();
+        if (displayFields != null) {
+            fieldMapping.forEach((oldKey, newKey) -> {
+                if (displayFields.containsKey(oldKey)) {
+                    displayFields.put(newKey, displayFields.get(oldKey));
+                    displayFields.remove(oldKey);
+                }
+            });
+        }
+
+        Page<Map<String, Object>> page = new PageImpl<>(records, pageable, raw.totalRecords());
+
+        return PaginationUtil.wrapPage(page, displayFields);
     }
 
     @Override
