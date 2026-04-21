@@ -733,14 +733,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             // Get PDA entry to check validations and get createdBy
             PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
                     .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
-            
-            // Validate principal is approved before creating FDA
-            if (entry.getPrincipalApproved() == null || !"Y".equals(entry.getPrincipalApproved())) {
-                throw new ValidationException(
-                        "Principal approval required",
-                        List.of(new ValidationError("principalApproved", "Principal must be approved before creating FDA"))
-                );
-            }
+
             
             String createdBy = entry.getCreatedBy() != null ? entry.getCreatedBy() : "";
 
