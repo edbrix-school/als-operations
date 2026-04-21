@@ -1108,6 +1108,15 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments")
+    @Operation(summary = "Delete all husbandry crew attachments", description = "Deletes every attachment stored for this husbandry-crew detail only (docId husbandry-crew + docKeyPoid from transactionPoid and detRowId). Does not affect husbandry-other or other rows. Clears CREW_ATTACHMENTS.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> deleteAllHusbandryCrewAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        screenAttachmentService.deleteAllHusbandryCrewAttachments(transactionPoid, detRowId);
+        return success("All husbandry crew attachments deleted successfully", null);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.DELETE)
     @DeleteMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments/{storedFileName}")
     @Operation(summary = "Delete husbandry crew attachment", description = "Deletes an attachment. Cannot delete the last attachment.", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<?> deleteHusbandryCrewAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
@@ -1163,6 +1172,15 @@ public class PortCallOperationController {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadAllHusbandryOthAttachments(transactionPoid, detRowId);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments")
+    @Operation(summary = "Delete all husbandry other attachments", description = "Deletes every attachment stored for this husbandry-other detail only (docId husbandry-other + docKeyPoid from transactionPoid and detRowId). Does not affect husbandry-crew or other rows. Clears ARRNGMNT_ATTACHMENTS.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> deleteAllHusbandryOthAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        screenAttachmentService.deleteAllHusbandryOthAttachments(transactionPoid, detRowId);
+        return success("All husbandry other attachments deleted successfully", null);
     }
 
     @AllowedAction(UserRolesRightsEnum.DELETE)
