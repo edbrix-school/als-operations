@@ -1449,9 +1449,11 @@ public class PdaEntryController {
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/documents/submit-to-accounts")
-    public ResponseEntity<?> submitDocumentsToAccounts(@PathVariable Long transactionPoid) {
+    public ResponseEntity<?> submitDocumentsToAccounts(
+            @PathVariable Long transactionPoid,
+            @Valid @RequestBody SubmitDocumentsRequest request) {
         Map<String, Object> result = pdaEntryService.submitPdaToFda(
-                transactionPoid, UserContext.getGroupPoid(), 
+                transactionPoid, request.getVesselSailDate(), UserContext.getGroupPoid(), 
                 UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Documents submitted to accounts successfully", result);
     }
