@@ -891,12 +891,20 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         callUpdateFdaFromPda(groupPoid, companyPoid, userPoid, transactionPoid);
     }
 
-    public Map<String, Object> submitPdaToFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public Map<String, Object> submitPdaToFda(Long transactionPoid, LocalDate vesselSailDate, Long groupPoid, Long companyPoid, Long userPoid) {
         // Validate transaction exists
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
 
-        return callSubmitPdaToFda(groupPoid, companyPoid, userPoid, transactionPoid);
+        // Validate vessel sail date is provided
+        if (vesselSailDate == null) {
+            throw new ValidationException(
+                    "Vessel sail date is required",
+                    List.of(new ValidationError("vesselSailDate", "Vessel sail date must be provided before submitting document to accounts"))
+            );
+        }
+
+        return callSubmitPdaToFda(groupPoid, companyPoid, userPoid, transactionPoid, vesselSailDate);
     }
 
     public Map<String, Object> rejectFdaDocs(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String correctionRemarks) {
@@ -2929,21 +2937,13 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    public Map<String, Object> callSubmitPdaToFda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid) {
+    public Map<String, Object> callSubmitPdaToFda(Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid, LocalDate vesselSailDate) {
         try {
             logger.info("[SP-9] PROC_PDA_TO_FDA_DOC_SUBMISSION - transactionPoid: {}", transactionPoid);
 
             // Get PDA entry to retrieve vessel dates
             PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
                     .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
-
-            // Validate vessel sail date is provided before document submission
-            if (entry.getVesselSailDate() == null) {
-                throw new ValidationException(
-                        "Vessel sail date is required",
-                        List.of(new ValidationError("vesselSailDate", "Vessel sail date must be provided before submitting document to accounts"))
-                );
-            }
 
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_TO_FDA_DOC_SUBMISSION")
@@ -2965,7 +2965,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
             inputMap.put("P_PDA_POID", new BigDecimal(transactionPoid));
             inputMap.put("P_VESSEL_ARRIVAL_DATE", entry.getArrivalDate() != null ? java.sql.Date.valueOf(entry.getArrivalDate()) : null);
-            inputMap.put("P_VESSEL_SAIL_DATE", entry.getVesselSailDate() != null ? java.sql.Date.valueOf(entry.getVesselSailDate()) : null);
+            inputMap.put("P_VESSEL_SAIL_DATE", vesselSailDate != null ? java.sql.Date.valueOf(vesselSailDate) : null);
 
             Map<String, Object> result = jdbcCall.execute(inputMap);
 
@@ -2985,7 +2985,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             Map<String, Object> response = new HashMap<>();
             response.put("status", status != null ? status : "Success");
             response.put("vesselArrivalDate", entry.getArrivalDate());
-            response.put("vesselSailDate", entry.getVesselSailDate());
+            response.put("vesselSailDate", vesselSailDate);
             
             if (outData != null && !outData.isEmpty()) {
                 Map<String, Object> cursorData = outData.get(0);
