@@ -2403,8 +2403,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
     @Override
     @Transactional
-    public PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames) {
-        log.info("Updating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}, actualsTimingDtlPoid: {}", transactionPoid, detRowId, actualsTimingDtlPoid);
+    public PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames) {
+        log.info("Updating ActTimingsActvtyDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
         if (!hdrRepository.existsById(transactionPoid)) {
             throw new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid);
@@ -2487,41 +2487,38 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        // Map existing activities by activityPoid for matching
+        // Map existing activities by actualsTimingDtlPoid (PK) for matching
         Map<Long, PortCallOperationActTimingsActvtyDtl> existingActivitiesMap = existingEntities.stream()
-                .collect(Collectors.toMap(PortCallOperationActTimingsActvtyDtl::getActivityPoid, e -> e, (e1, e2) -> e1));
+                .collect(Collectors.toMap(PortCallOperationActTimingsActvtyDtl::getActualsTimingDtlPoid, e -> e));
 
-        // Track which activities from DTO we've processed
-        Set<Long> processedActivityPoids = new HashSet<>();
         List<PortCallOperationActTimingsActvtyDtl> entitiesToUpdate = new ArrayList<>();
         List<PortCallOperationActTimingsActvtyDtl> entitiesToCreate = new ArrayList<>();
-        List<PortCallOperationActTimingsActvtyDtl> entitiesToDelete = new ArrayList<>();
 
-        // Calculate next actualsTimingDtlPoid for new activities (only if we need to create any)
         long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
-        // Process activities from DTO: update existing or mark for creation
         for (PortCallReportActivityDto activity : activities) {
             if (activity.getActivityPoid() == null && StringUtils.isBlank(activity.getActivityName())) {
                 throw new ValidationException("activityName is required when activityPoid is not provided");
             }
-            processedActivityPoids.add(activity.getActivityPoid());
 
-            PortCallOperationActTimingsActvtyDtl existingActivity = existingActivitiesMap.get(activity.getActivityPoid());
+            // If actualsTimingDtlPoid is present in the activity it's an existing row, otherwise create
+            PortCallOperationActTimingsActvtyDtl existingActivity = activity.getActualsTimingDtlPoid() != null
+                    ? existingActivitiesMap.get(activity.getActualsTimingDtlPoid())
+                    : null;
+
             if (existingActivity != null) {
-                // Update existing activity
                 PortCallOperationActTimingsActvtyDtl oldActivity = new PortCallOperationActTimingsActvtyDtl();
                 BeanUtils.copyProperties(existingActivity, oldActivity);
 
+                existingActivity.setActivityPoid(activity.getActivityPoid());
                 existingActivity.setActivityName(activity.getActivityName());
                 existingActivity.setDetails(activity.getOtherDescription());
                 existingActivity.setEstimatedDatetime(activity.getEstimatedDatetime());
 
                 entitiesToUpdate.add(existingActivity);
                 loggingService.createLog(oldActivity, existingActivity, PortCallOperationActTimingsActvtyDtl.class, UserContext.getDocumentId(), transactionPoid.toString(),
-                        String.format("Activity updated: activityPoid=%s", activity.getActivityPoid()));
+                        String.format("Activity updated: actualsTimingDtlPoid=%s", existingActivity.getActualsTimingDtlPoid()));
             } else {
-                // Create new activity
                 entitiesToCreate.add(PortCallOperationActTimingsActvtyDtl.builder()
                         .transactionPoid(transactionPoid)
                         .detRowId(detRowId)
@@ -2534,27 +2531,15 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        // Mark activities for deletion that are no longer in the DTO
-        for (PortCallOperationActTimingsActvtyDtl existingActivity : existingEntities) {
-            if (!processedActivityPoids.contains(existingActivity.getActivityPoid())) {
-                entitiesToDelete.add(existingActivity);
-            }
-        }
-
         if (entitiesToUpdate.isEmpty() && entitiesToCreate.isEmpty()) {
             throw new ValidationException("At least one activity must be provided");
         }
 
-        // Save updates and creates
         if (!entitiesToUpdate.isEmpty()) {
             actTimingsActvtyDtlRepository.saveAll(entitiesToUpdate);
         }
         if (!entitiesToCreate.isEmpty()) {
             actTimingsActvtyDtlRepository.saveAll(entitiesToCreate);
-        }
-        // Delete activities that are no longer in the DTO
-        if (!entitiesToDelete.isEmpty()) {
-            actTimingsActvtyDtlRepository.deleteAll(entitiesToDelete);
         }
 
         // Get the last saved entity for response (prefer updated, then created)

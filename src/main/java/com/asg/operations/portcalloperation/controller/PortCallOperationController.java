@@ -676,7 +676,7 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
-    @PutMapping(value = "/{transactionPoid}/act-timing-details/{detRowId}/activities/{actualsTimingDtlPoid}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{transactionPoid}/act-timing-details/{detRowId}/activities", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Update ActTimingsActvtyDetail",
             description = "Update an existing activity for an actual timing detail",
@@ -684,13 +684,12 @@ public class PortCallOperationController {
     )
     public ResponseEntity<?> updateActTimingsActvtyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
-                                                          @Parameter(description = "Actuals Timing Detail POID") @PathVariable Long actualsTimingDtlPoid,
                                                           @Valid @ModelAttribute PortCallOperationActTimingsActivityDetailDto dto,
                                                           @RequestParam(value = "files", required = false) MultipartFile[] files,
                                                           @RequestParam(value = "remarks", required = false) String[] remarks,
                                                           @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
-        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, actualsTimingDtlPoid, dto, nonEmptyFiles, remarks, checklistNames);
+        PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.updateActTimingsActvtyDetail(transactionPoid, detRowId, dto, nonEmptyFiles, remarks, checklistNames);
         return success("Timings updated successfully", result);
     }
 

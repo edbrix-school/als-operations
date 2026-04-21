@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PortCallReportActivityDto {
+    private Long actualsTimingDtlPoid;
+
     private Long activityPoid;
 
     // Nullable when activityPoid is not provided; required when activityPoid is null.
