@@ -1107,6 +1107,15 @@ public class PortCallOperationController {
         return screenAttachmentService.downloadAllHusbandryCrewAttachments(transactionPoid, detRowId);
     }
 
+    @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments/{storedFileName}")
+    @Operation(summary = "Delete husbandry crew attachment", description = "Deletes an attachment. Cannot delete the last attachment.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> deleteHusbandryCrewAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        screenAttachmentService.deleteHusbandryCrewAttachment(transactionPoid, detRowId, storedFileName);
+        return success("Attachment deleted successfully", null);
+    }
+
     // ----- Husbandry other (OPS_PC_HUSBANDRY_OTH_DTL.ARRNGMNT_ATTACHMENTS) -----
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping(value = "/{transactionPoid}/husbandry-other/{detRowId}/attachments/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -1154,6 +1163,15 @@ public class PortCallOperationController {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadAllHusbandryOthAttachments(transactionPoid, detRowId);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.DELETE)
+    @DeleteMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments/{storedFileName}")
+    @Operation(summary = "Delete husbandry other attachment", description = "Deletes an attachment. Cannot delete the last attachment.", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> deleteHusbandryOthAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+        if (requireAttachmentService() != null) return requireAttachmentService();
+        screenAttachmentService.deleteHusbandryOthAttachment(transactionPoid, detRowId, storedFileName);
+        return success("Attachment deleted successfully", null);
     }
 
     // ----- Docs copy (OPS_PC_DOCS_COPY_DTL.DOCUMENT_ATTACHMENTS) -----

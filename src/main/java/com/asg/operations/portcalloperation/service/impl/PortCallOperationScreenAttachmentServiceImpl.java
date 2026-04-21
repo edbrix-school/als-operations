@@ -381,6 +381,45 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
         return attachmentClient.downloadAttachment(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_CREW, docKey(transactionPoid, detRowId), storedFileName);
     }
 
+    @Override
+    @Transactional
+    public void deleteHusbandryCrewAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
+        ensureConfigured();
+        PortCallOperationHusbandryCrewDtl entity = resolveHusbandryCrew(transactionPoid, detRowId);
+        long key = docKey(transactionPoid, detRowId);
+
+        Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_CREW, key, 0, 1000);
+        String originalFileName = null;
+
+        List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
+        for (Map<String, Object> attachment : attachments) {
+            Object storedName = attachment.get("storedFileName");
+            if (storedFileName.equals(storedName)) {
+                Object origName = attachment.get("originalFileName");
+                if (origName != null) {
+                    originalFileName = origName.toString();
+                }
+                break;
+            }
+        }
+
+        if (originalFileName == null) {
+            throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
+        }
+
+        attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_CREW, key, storedFileName);
+
+        String currentAttachments = entity.getCrewAttachments();
+        if (StringUtils.isNotBlank(currentAttachments)) {
+            final String finalOriginalFileName = originalFileName;
+            List<String> fileNames = new ArrayList<>(Arrays.asList(currentAttachments.split(SEP)));
+            fileNames.removeIf(name -> name.trim().equals(finalOriginalFileName));
+            String updatedAttachments = String.join(SEP, fileNames);
+            entity.setCrewAttachments(updatedAttachments);
+            husbandryCrewDtlRepository.save(entity);
+        }
+    }
+
     // ----- Husbandry other -----
     @Override
     @Transactional
@@ -411,6 +450,45 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
         ensureConfigured();
         resolveHusbandryOth(transactionPoid, detRowId);
         return attachmentClient.downloadAttachment(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_OTH, docKey(transactionPoid, detRowId), storedFileName);
+    }
+
+    @Override
+    @Transactional
+    public void deleteHusbandryOthAttachment(Long transactionPoid, Long detRowId, String storedFileName) {
+        ensureConfigured();
+        PortCallOperationHusbandryOthDtl entity = resolveHusbandryOth(transactionPoid, detRowId);
+        long key = docKey(transactionPoid, detRowId);
+
+        Map<String, Object> attachmentsList = attachmentClient.listAttachments(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_OTH, key, 0, 1000);
+        String originalFileName = null;
+
+        List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
+        for (Map<String, Object> attachment : attachments) {
+            Object storedName = attachment.get("storedFileName");
+            if (storedFileName.equals(storedName)) {
+                Object origName = attachment.get("originalFileName");
+                if (origName != null) {
+                    originalFileName = origName.toString();
+                }
+                break;
+            }
+        }
+
+        if (originalFileName == null) {
+            throw new ResourceNotFoundException("Attachment", "storedFileName", storedFileName);
+        }
+
+        attachmentClient.deleteAttachment(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_OTH, key, storedFileName);
+
+        String currentAttachments = entity.getArrngmntAttachments();
+        if (StringUtils.isNotBlank(currentAttachments)) {
+            final String finalOriginalFileName = originalFileName;
+            List<String> fileNames = new ArrayList<>(Arrays.asList(currentAttachments.split(SEP)));
+            fileNames.removeIf(name -> name.trim().equals(finalOriginalFileName));
+            String updatedAttachments = String.join(SEP, fileNames);
+            entity.setArrngmntAttachments(updatedAttachments);
+            husbandryOthDtlRepository.save(entity);
+        }
     }
 
     // ----- Docs copy -----

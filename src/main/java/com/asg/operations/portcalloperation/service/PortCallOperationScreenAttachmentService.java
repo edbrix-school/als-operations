@@ -66,6 +66,8 @@ public interface PortCallOperationScreenAttachmentService {
 
     ResponseEntity<org.springframework.core.io.Resource> downloadAllHusbandryCrewAttachments(Long transactionPoid, Long detRowId);
 
+    void deleteHusbandryCrewAttachment(Long transactionPoid, Long detRowId, String storedFileName);
+
 
     // ----- Husbandry other (OPS_PC_HUSBANDRY_OTH_DTL.ARRNGMNT_ATTACHMENTS) -----
     PcInfoAttachmentUploadResponseDto uploadHusbandryOthAttachments(Long transactionPoid, Long detRowId, MultipartFile[] files, String[] remarks, String[] checklistNames);
@@ -77,6 +79,8 @@ public interface PortCallOperationScreenAttachmentService {
     ResponseEntity<org.springframework.core.io.Resource> downloadHusbandryOthAttachment(Long transactionPoid, Long detRowId, String storedFileName);
 
     ResponseEntity<org.springframework.core.io.Resource> downloadAllHusbandryOthAttachments(Long transactionPoid, Long detRowId);
+
+    void deleteHusbandryOthAttachment(Long transactionPoid, Long detRowId, String storedFileName);
 
 
     // ----- Docs copy (OPS_PC_DOCS_COPY_DTL.DOCUMENT_ATTACHMENTS) -----
