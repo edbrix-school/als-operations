@@ -420,6 +420,22 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
         }
     }
 
+    /**
+     * Removes every attachment in common-services for this row only:
+     * {@code docId = DOC_ID_HUSBANDRY_CREW}, {@code docKeyPoid = docKey(transactionPoid, detRowId)}.
+     * Does not touch husbandry-other or any other row.
+     */
+    @Override
+    @Transactional
+    public void deleteAllHusbandryCrewAttachments(Long transactionPoid, Long detRowId) {
+        ensureConfigured();
+        PortCallOperationHusbandryCrewDtl entity = resolveHusbandryCrew(transactionPoid, detRowId);
+        long key = docKey(transactionPoid, detRowId);
+        deleteAllListedAttachmentsForDocKey(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_CREW, key);
+        entity.setCrewAttachments("");
+        husbandryCrewDtlRepository.save(entity);
+    }
+
     // ----- Husbandry other -----
     @Override
     @Transactional
@@ -489,6 +505,22 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
             entity.setArrngmntAttachments(updatedAttachments);
             husbandryOthDtlRepository.save(entity);
         }
+    }
+
+    /**
+     * Removes every attachment in common-services for this row only:
+     * {@code docId = DOC_ID_HUSBANDRY_OTH}, {@code docKeyPoid = docKey(transactionPoid, detRowId)}.
+     * Does not touch husbandry-crew or any other row.
+     */
+    @Override
+    @Transactional
+    public void deleteAllHusbandryOthAttachments(Long transactionPoid, Long detRowId) {
+        ensureConfigured();
+        PortCallOperationHusbandryOthDtl entity = resolveHusbandryOth(transactionPoid, detRowId);
+        long key = docKey(transactionPoid, detRowId);
+        deleteAllListedAttachmentsForDocKey(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_OTH, key);
+        entity.setArrngmntAttachments("");
+        husbandryOthDtlRepository.save(entity);
     }
 
     // ----- Docs copy -----
@@ -676,6 +708,34 @@ public class PortCallOperationScreenAttachmentServiceImpl implements PortCallOpe
     @Override
     public ResponseEntity<org.springframework.core.io.Resource> downloadAllHusbandryOthAttachments(Long transactionPoid, Long detRowId) {
         return downloadAllForDetail(CommonAttachmentServiceClient.DOC_ID_HUSBANDRY_OTH, transactionPoid, detRowId, "husbandry-other-" + transactionPoid + "-" + detRowId + ".zip");
+    }
+
+    /**
+     * Deletes every attachment for this {@code docId} + {@code docKeyPoid} only (same scope as upload/list).
+     * Re-lists from page 0 after each batch until nothing remains, so more than one list page is covered.
+     */
+    private void deleteAllListedAttachmentsForDocKey(String docId, long key) {
+        final int pageSize = 1000;
+        while (true) {
+            Map<String, Object> attachmentsList = attachmentClient.listAttachments(docId, key, 0, pageSize);
+            List<Map<String, Object>> attachments = extractAttachmentsFromResponse(attachmentsList);
+            if (attachments.isEmpty()) {
+                break;
+            }
+            int deleted = 0;
+            for (Map<String, Object> attachment : attachments) {
+                if (attachment == null || attachment.get("storedFileName") == null) continue;
+                String storedFileName = attachment.get("storedFileName").toString();
+                if (StringUtils.isBlank(storedFileName)) continue;
+                attachmentClient.deleteAttachment(docId, key, storedFileName);
+                deleted++;
+            }
+            if (deleted == 0) {
+                log.warn("deleteAllListedAttachmentsForDocKey: docId={}, key={} list returned {} row(s) but none were deleted; stopping",
+                        docId, key, attachments.size());
+                break;
+            }
+        }
     }
 
     private ResponseEntity<org.springframework.core.io.Resource> downloadAllForDetail(String docId, Long transactionPoid, Long detRowId, String zipFileName) {
