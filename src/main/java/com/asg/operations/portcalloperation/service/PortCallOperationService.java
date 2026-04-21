@@ -68,7 +68,7 @@ public interface PortCallOperationService {
 
     PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
-    PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
+    PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
     // DocsCopyDtl CRUD operations
     PortCallOperationDocsCopyDetailResponseDto getDocsCopyDetail(Long transactionPoid, Long detRowId);
