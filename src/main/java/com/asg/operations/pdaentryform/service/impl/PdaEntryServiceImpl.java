@@ -734,6 +734,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
                     .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
 
+            // Validate charge details exist before creating FDA (matching legacy behavior)
+            List<PdaEntryDtl> chargeDetails = entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid);
+            if (chargeDetails.isEmpty()) {
+                throw new ValidationException(
+                        "WARNING : No Details in this Transaction...",
+                        List.of(new ValidationError("general", "WARNING : No Details in this Transaction..."))
+                );
+            }
             
             String createdBy = entry.getCreatedBy() != null ? entry.getCreatedBy() : "";
 
@@ -2992,6 +3000,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 response.put("documentSubmittedDate", cursorData.get("DOCUMENT_SUBMITTED_DATE"));
                 response.put("documentSubmittedBy", cursorData.get("DOCUMENT_SUBMITTED_BY"));
                 response.put("documentSubmittedStatus", cursorData.get("DOCUMENT_SUBMITTED_STATUS"));
+                response.put("verifiedBy", entry.getCreatedBy());
             }
             
             return response;
