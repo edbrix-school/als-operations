@@ -61,5 +61,5 @@ public class PortCallOperationActProgDtl extends BaseEntity {
     private LocalDateTime etc;
 
     @Column(name = "EST_BL_DATE")
-    private LocalDate estBlDate;
+    private LocalDateTime estBlDate;
 }
