@@ -3441,8 +3441,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         logger.info("Entry details - Status: '{}', RefType: '{}', PrincipalApproved: '{}'", 
                 entry.getStatus(), entry.getRefType(), entry.getPrincipalApproved());
 
-        canEdit(entry);
-
         String docId = "110-160_3";
         ExcelConfig config = getExcelConfig(docId);
 
