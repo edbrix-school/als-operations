@@ -48,7 +48,7 @@ public class PortCallOperationActProgDetailDto {
     @NotNull(message = "ETC is required")
     private LocalDateTime etc;
 
-    private LocalDate estBlDate;
+    private LocalDateTime estBlDate;
 
     private ActionType actionType;
 }

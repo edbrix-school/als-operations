@@ -8,12 +8,15 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PortCallOperationEstPrearrivalDtlRepository extends JpaRepository<PortCallOperationEstPrearrivalDtl, PortCallOperationEstPrearrivalDtlId> {
     void deleteByTransactionPoid(Long transactionPoid);
 
     List<PortCallOperationEstPrearrivalDtl> findByTransactionPoid(Long transactionPoid);
+
+    Optional<PortCallOperationEstPrearrivalDtl> findByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
 
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationEstPrearrivalDtl d where d.transactionPoid = :transactionPoid")
     Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);

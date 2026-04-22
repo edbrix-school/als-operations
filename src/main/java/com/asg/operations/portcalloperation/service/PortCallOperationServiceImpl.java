@@ -1768,8 +1768,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     }
 
     @Override
-    public Map<String, Object> listEstPrearrivalActDetails(Long transactionPoid) {
-        log.info("Listing EstPrearrivalActDetails for transactionPoid: {}", transactionPoid);
+    public List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId) {
+        log.info("Listing EstPrearrivalActDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+
+        List<PortCallOperationEstPrearrivalActDtl> entities = estPrearrivalActDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        Optional<PortCallOperationEstPrearrivalDtl> prearrivalDtlOptional = estPrearrivalDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+
+        if (prearrivalDtlOptional.isEmpty()) {
+            throw new ResourceNotFoundException("EstPrearrivalDtl", "Transaction Poid and Det Row Id", String.format("%s, %s", transactionPoid, detRowId));
+        }
+
         Optional<String> portReportPoidOpt = globalParameterRepository.findParameterValueByName("PC_PRE_ARRIVAL_DTL_ACTIVITY_RPT_POID");
         if (portReportPoidOpt.isEmpty()) {
             throw new CustomException("PC_PRE_ARRIVAL_DTL_ACTIVITY_RPT_POID must be configured in global parameters", 400);
@@ -1780,7 +1788,43 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         } catch (Exception e) {
             throw new CustomException("Not a valid Port Call Report Poid: " + portReportPoidOpt.get(), 400);
         }
-        return getPortReportActivities(String.valueOf(transactionPoid), portReportPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+
+        Map<String, Object> spResult = getPortReportActivities(transactionPoid.toString(), portReportPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+
+        List<Map<String, Object>> outData = (List<Map<String, Object>>) spResult.get("OUTDATA");
+
+        Map<Long, String> activityMandatoryMap = new HashMap<>();
+        if (outData != null) {
+            for (Map<String, Object> row : outData) {
+                Long activityTypePoid = row.get("PORT_ACTIVITY_TYPE_POID") != null ? Long.valueOf(row.get("PORT_ACTIVITY_TYPE_POID").toString()) : null;
+                String mandatory = row.get("ACTIVITY_MANDATORY") != null ? row.get("ACTIVITY_MANDATORY").toString() : null;
+                if (activityTypePoid != null && mandatory != null) {
+                    activityMandatoryMap.put(activityTypePoid, mandatory);
+                }
+            }
+        }
+
+        return entities.stream()
+                .map(e -> {
+                    String activityMandatory = null;
+                    if (e.getActivityPoid() != null) {
+                        String value = activityMandatoryMap.get(e.getActivityPoid());
+                        if (value != null) {
+                            activityMandatory = value.equalsIgnoreCase("Y") ? "Y" : "N";
+                        }
+                    }
+                    return PortCallOperationEstPrearrivalActDetailResponseDto.builder()
+                            .transactionPoid(e.getTransactionPoid())
+                            .detRowId(e.getDetRowId())
+                            .preActivityDtlPoid(e.getPreActivityDtlPoid())
+                            .activityPoid(e.getActivityPoid())
+                            .activityMandatory(activityMandatory)
+                            .activityName(e.getActivityName())
+                            .otherDescription(e.getOtherDescription())
+                            .estimatedDatetime(e.getEstimatedDatetime())
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -1967,8 +2011,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
     @Override
     @Transactional
-    public PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames) {
-        log.info("Updating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}, preActivityDtlPoid: {}", transactionPoid, detRowId, preActivityDtlPoid);
+    public PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames) {
+        log.info("Updating EstPrearrivalActDetail for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
         // Parent row is PortCallOperationEstPrearrivalDtl (edit opens from its table); ActDtl children may not exist yet.
         if (!estPrearrivalDtlRepository.existsById(new PortCallOperationEstPrearrivalDtlId(transactionPoid, detRowId))) {
@@ -2089,12 +2133,12 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        // Map existing activities by activityPoid for matching
+        // Map existing activities by preActivityDtlPoid (PK) for matching
         Map<Long, PortCallOperationEstPrearrivalActDtl> existingActivitiesMap = existingEntities.stream()
-                .collect(Collectors.toMap(PortCallOperationEstPrearrivalActDtl::getActivityPoid, e -> e, (e1, e2) -> e1));
+                .collect(Collectors.toMap(PortCallOperationEstPrearrivalActDtl::getPreActivityDtlPoid, e -> e));
 
-        // Track which activities from DTO we've processed
-        Set<Long> processedActivityPoids = new HashSet<>();
+        // Track which preActivityDtlPoids from DTO we've processed
+        Set<Long> processedPreActivityDtlPoids = new HashSet<>();
         List<PortCallOperationEstPrearrivalActDtl> entitiesToUpdate = new ArrayList<>();
         List<PortCallOperationEstPrearrivalActDtl> entitiesToCreate = new ArrayList<>();
         List<PortCallOperationEstPrearrivalActDtl> entitiesToDelete = new ArrayList<>();
@@ -2107,23 +2151,27 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             if (activity.getActivityPoid() == null && StringUtils.isBlank(activity.getActivityName())) {
                 throw new ValidationException("activityName is required when activityPoid is not provided");
             }
-            processedActivityPoids.add(activity.getActivityPoid());
 
-            PortCallOperationEstPrearrivalActDtl existingActivity = existingActivitiesMap.get(activity.getActivityPoid());
+            // If preActivityDtlPoid is present it's an existing row, otherwise create
+            PortCallOperationEstPrearrivalActDtl existingActivity = activity.getPreActivityDtlPoid() != null
+                    ? existingActivitiesMap.get(activity.getPreActivityDtlPoid())
+                    : null;
+
             if (existingActivity != null) {
-                // Update existing activity
+                processedPreActivityDtlPoids.add(existingActivity.getPreActivityDtlPoid());
+
                 PortCallOperationEstPrearrivalActDtl oldActivity = new PortCallOperationEstPrearrivalActDtl();
                 BeanUtils.copyProperties(existingActivity, oldActivity);
 
+                existingActivity.setActivityPoid(activity.getActivityPoid());
                 existingActivity.setActivityName(activity.getActivityName());
                 existingActivity.setOtherDescription(activity.getOtherDescription());
                 existingActivity.setEstimatedDatetime(activity.getEstimatedDatetime());
 
                 entitiesToUpdate.add(existingActivity);
                 loggingService.createLog(oldActivity, existingActivity, PortCallOperationEstPrearrivalActDtl.class, UserContext.getDocumentId(), transactionPoid.toString(),
-                        String.format("Activity updated: activityPoid=%s", activity.getActivityPoid()));
+                        String.format("Activity updated: preActivityDtlPoid=%s", existingActivity.getPreActivityDtlPoid()));
             } else {
-                // Create new activity
                 entitiesToCreate.add(PortCallOperationEstPrearrivalActDtl.builder()
                         .transactionPoid(transactionPoid)
                         .detRowId(detRowId)
@@ -2138,7 +2186,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         // Mark activities for deletion that are no longer in the DTO
         for (PortCallOperationEstPrearrivalActDtl existingActivity : existingEntities) {
-            if (!processedActivityPoids.contains(existingActivity.getActivityPoid())) {
+            if (!processedPreActivityDtlPoids.contains(existingActivity.getPreActivityDtlPoid())) {
                 entitiesToDelete.add(existingActivity);
             }
         }
