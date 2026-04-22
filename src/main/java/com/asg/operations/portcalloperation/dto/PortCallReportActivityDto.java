@@ -17,6 +17,8 @@ public class PortCallReportActivityDto {
 
     private Long activityPoid;
 
+    private Long preActivityDtlPoid;
+
     // Nullable when activityPoid is not provided; required when activityPoid is null.
     @Size(max = 300, message = "activityName should not exceed 300 characters")
     private String activityName;

@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -594,14 +595,15 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
-    @GetMapping("/{transactionPoid}/est-prearrival-details/activities")
+    @GetMapping("/{transactionPoid}/est-prearrival-details/{detRowId}/activities")
     @Operation(
             summary = "List EstPrearrivalActDetails",
             description = "Retrieve list of activities for a specific prearrival detail",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<?> listEstPrearrivalActDetailsActivities(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid) {
-        Map<String, Object> result = portCallOperationService.listEstPrearrivalActDetails(transactionPoid);
+    public ResponseEntity<?> listEstPrearrivalActDetailsActivities(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
+                                                                    @Parameter(description = "Det Row ID") @PathVariable Long detRowId) {
+        List<PortCallOperationEstPrearrivalActDetailResponseDto> result = portCallOperationService.listEstPrearrivalActDetails(transactionPoid, detRowId);
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("Pre-arrival estimates retrieved successfully", result);
     }
@@ -625,7 +627,7 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
-    @PutMapping(value = "/{transactionPoid}/est-prearrival-details/{detRowId}/activities/{preActivityDtlPoid}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{transactionPoid}/est-prearrival-details/{detRowId}/activities", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Update EstPrearrivalActDetail",
             description = "Update an existing activity for a prearrival detail",
@@ -633,13 +635,12 @@ public class PortCallOperationController {
     )
     public ResponseEntity<?> updateEstPrearrivalActDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                           @Parameter(description = "Detail Row ID") @PathVariable Long detRowId,
-                                                          @Parameter(description = "Pre Activity Detail POID") @PathVariable Long preActivityDtlPoid,
                                                           @Valid @ModelAttribute PortCallOperationEstPrearrivalActDetailDto dto,
                                                           @RequestParam(value = "files", required = false) MultipartFile[] files,
                                                           @RequestParam(value = "remarks", required = false) String[] remarks,
                                                           @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
-        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, preActivityDtlPoid, dto, nonEmptyFiles, remarks, checklistNames);
+        PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.updateEstPrearrivalActDetail(transactionPoid, detRowId, dto, nonEmptyFiles, remarks, checklistNames);
         return success("Pre-arrival estimates updated successfully", result);
     }
 
@@ -805,7 +806,7 @@ public class PortCallOperationController {
             description = "Download a PC Info attachment file by its stored filename. Use the storedFileName from the list attachments response.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    public ResponseEntity<org.springframework.core.io.Resource> downloadPcInfoAttachment(
+    public ResponseEntity<Resource> downloadPcInfoAttachment(
             @Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
             @Parameter(description = "Stored filename (fileNameMapped) from attachment list response") @PathVariable String storedFileName) {
         if (!pcInfoAttachmentService.isAttachmentServiceAvailable()) {
@@ -918,7 +919,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/berthing/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download berthing attachment", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadBerthingAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+    public ResponseEntity<Resource> downloadBerthingAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadBerthingAttachment(transactionPoid, detRowId, storedFileName);
@@ -927,7 +928,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/berthing/{detRowId}/attachments/download-all")
     @Operation(summary = "Download all berthing attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadAllBerthingAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+    public ResponseEntity<Resource> downloadAllBerthingAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadAllBerthingAttachments(transactionPoid, detRowId);
@@ -976,7 +977,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download pre-arrival attachment", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadPreArrivalAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+    public ResponseEntity<Resource> downloadPreArrivalAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadPreArrivalAttachment(transactionPoid, detRowId, storedFileName);
@@ -985,7 +986,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/pre-arrival/{detRowId}/attachments/download-all")
     @Operation(summary = "Download all pre-arrival attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadAllPreArrivalAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+    public ResponseEntity<Resource> downloadAllPreArrivalAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadAllPreArrivalAttachments(transactionPoid, detRowId);
@@ -1033,7 +1034,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/disbursement-other-details/attachments/{storedFileName}/download")
     @Operation(summary = "Download other details attachment", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadPdaFdaAttachment(@PathVariable Long transactionPoid, @PathVariable String storedFileName) {
+    public ResponseEntity<Resource> downloadPdaFdaAttachment(@PathVariable Long transactionPoid, @PathVariable String storedFileName) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadPdaFdaAttachment(transactionPoid, storedFileName);
@@ -1042,7 +1043,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/disbursement-other-details/attachments/download-all")
     @Operation(summary = "Download all other details (PDA/FDA) attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadAllPdaFdaAttachments(@PathVariable Long transactionPoid) {
+    public ResponseEntity<Resource> downloadAllPdaFdaAttachments(@PathVariable Long transactionPoid) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadAllPdaFdaAttachments(transactionPoid);
@@ -1091,7 +1092,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download husbandry crew attachment", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadHusbandryCrewAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+    public ResponseEntity<Resource> downloadHusbandryCrewAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadHusbandryCrewAttachment(transactionPoid, detRowId, storedFileName);
@@ -1100,7 +1101,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/husbandry-crew/{detRowId}/attachments/download-all")
     @Operation(summary = "Download all husbandry crew attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadAllHusbandryCrewAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+    public ResponseEntity<Resource> downloadAllHusbandryCrewAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadAllHusbandryCrewAttachments(transactionPoid, detRowId);
@@ -1158,7 +1159,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download husbandry other attachment", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadHusbandryOthAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+    public ResponseEntity<Resource> downloadHusbandryOthAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadHusbandryOthAttachment(transactionPoid, detRowId, storedFileName);
@@ -1167,7 +1168,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/husbandry-other/{detRowId}/attachments/download-all")
     @Operation(summary = "Download all husbandry other attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadAllHusbandryOthAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+    public ResponseEntity<Resource> downloadAllHusbandryOthAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadAllHusbandryOthAttachments(transactionPoid, detRowId);
@@ -1225,7 +1226,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download docs copy attachment", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadDocsCopyAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+    public ResponseEntity<Resource> downloadDocsCopyAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadDocsCopyAttachment(transactionPoid, detRowId, storedFileName);
@@ -1234,7 +1235,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/docs-copy/{detRowId}/attachments/download-all")
     @Operation(summary = "Download all docs copy attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadAllDocsCopyAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+    public ResponseEntity<Resource> downloadAllDocsCopyAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadAllDocsCopyAttachments(transactionPoid, detRowId);
@@ -1283,7 +1284,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/actual-timing/{detRowId}/attachments/{storedFileName}/download")
     @Operation(summary = "Download actual timing attachment", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadTimingAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
+    public ResponseEntity<Resource> downloadTimingAttachment(@PathVariable Long transactionPoid, @PathVariable Long detRowId, @PathVariable String storedFileName) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadTimingAttachment(transactionPoid, detRowId, storedFileName);
@@ -1292,7 +1293,7 @@ public class PortCallOperationController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/actual-timing/{detRowId}/attachments/download-all")
     @Operation(summary = "Download all actual timing attachments as a ZIP", security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<org.springframework.core.io.Resource> downloadAllTimingAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
+    public ResponseEntity<Resource> downloadAllTimingAttachments(@PathVariable Long transactionPoid, @PathVariable Long detRowId) {
         if (!screenAttachmentService.isAttachmentServiceAvailable())
             throw new IllegalStateException("Attachment service is not configured.");
         return screenAttachmentService.downloadAllTimingAttachments(transactionPoid, detRowId);
