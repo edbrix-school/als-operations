@@ -191,7 +191,7 @@ public class FdaController {
         String result = fdaService.reopenFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid, fdaReOpenDto);
 
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
-            return ApiResponse.success("FDA re-opened successfully");
+            return ApiResponse.success(result);
         }
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("WARNING")) {
             return ApiResponse.error(result, 400);
@@ -211,7 +211,7 @@ public class FdaController {
         String result = fdaService.submitFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid);
 
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
-            return ApiResponse.success("FDA submitted for approval successfully");
+            return ApiResponse.success(result);
         }
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("WARNING")) {
             return ApiResponse.error(result, 400);
@@ -231,7 +231,7 @@ public class FdaController {
         String result = fdaService.verifyFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid);
 
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
-            return ApiResponse.success("FDA verified successfully");
+            return ApiResponse.success(result);
         }
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("WARNING")) {
             return ApiResponse.error(result, 400);
@@ -253,7 +253,7 @@ public class FdaController {
         String result = fdaService.returnFda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid, request.getCorrectionRemarks());
 
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
-            return ApiResponse.success("FDA documents returned successfully");
+            return ApiResponse.success(result);
         }
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("WARNING")) {
             return ApiResponse.error(result, 400);
@@ -281,7 +281,7 @@ public class FdaController {
                 docRef = matcher.group(1);
             }
 
-            return ApiResponse.success("Supplementary FDA created successfully - Doc Ref: " + docRef);
+            return ApiResponse.success(result);
         }
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("WARNING")) {
             return ApiResponse.error(result, 400);
@@ -314,7 +314,7 @@ public class FdaController {
     ) {
         String result = fdaService.closeFdaWithoutAmount(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), closedRemark);
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCESS")) {
-            return ApiResponse.success("Closed FDA without amount successfully");
+            return ApiResponse.success(result);
         }
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("WARNING")) {
             return ApiResponse.error(result, 400);
@@ -348,7 +348,7 @@ public class FdaController {
     public ResponseEntity<?> createFromPda(@Parameter(description = "PDA transaction identifier", required = true) @PathVariable Long pdaTransactionPoid) {
         String result = fdaService.createFdaFromPda(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), pdaTransactionPoid);
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
-            return ApiResponse.success("FDA created from PDA successfully");
+            return ApiResponse.success(result);
         }
         if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("WARNING")) {
             return ApiResponse.error(result, 400);
