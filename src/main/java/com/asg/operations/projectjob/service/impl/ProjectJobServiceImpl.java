@@ -421,23 +421,17 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         );
 
         List<Map<String, Object>> records = raw.records().stream().map(val -> {
-            fieldMapping.forEach((oldKey, newKey) -> {
-                if (val.containsKey(oldKey)) {
-                    val.put(newKey, val.get(oldKey));
-                    val.remove(oldKey);
-                }
-            });
-            return val;
+            Map<String, Object> orderedVal = new LinkedHashMap<>();
+            val.forEach((key, value) -> orderedVal.put(fieldMapping.getOrDefault(key, key), value));
+            return orderedVal;
         }).toList();
 
         Map<String, String> displayFields = raw.displayFields();
         if (displayFields != null) {
-            fieldMapping.forEach((oldKey, newKey) -> {
-                if (displayFields.containsKey(oldKey)) {
-                    displayFields.put(newKey, displayFields.get(oldKey));
-                    displayFields.remove(oldKey);
-                }
-            });
+            Map<String, String> orderedDisplayFields = new LinkedHashMap<>();
+            displayFields.forEach((key, value) -> 
+                    orderedDisplayFields.put(fieldMapping.getOrDefault(key, key), value));
+            displayFields = orderedDisplayFields;
         }
 
         Page<Map<String, Object>> page = new PageImpl<>(records, pageable, raw.totalRecords());
