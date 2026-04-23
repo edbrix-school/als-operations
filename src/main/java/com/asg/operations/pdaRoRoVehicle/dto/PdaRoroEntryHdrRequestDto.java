@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -18,4 +19,6 @@ public class PdaRoroEntryHdrRequestDto {
     private Long vesselVoyagePoid;
 
     private String remarks;
+
+    private List<PdaRoRoVehicleDtlRequestDto> vehicleDetails;
 }
