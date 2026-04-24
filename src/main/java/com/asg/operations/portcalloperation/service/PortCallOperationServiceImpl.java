@@ -1768,6 +1768,22 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     }
 
     @Override
+    public Map<String, Object> listDefaultEstPrearrivalActDetails(Long transactionPoid) {
+        log.info("Listing EstPrearrivalActDetails for transactionPoid: {}", transactionPoid);
+        Optional<String> portReportPoidOpt = globalParameterRepository.findParameterValueByName("PC_PRE_ARRIVAL_DTL_ACTIVITY_RPT_POID");
+        if (portReportPoidOpt.isEmpty()) {
+            throw new CustomException("PC_PRE_ARRIVAL_DTL_ACTIVITY_RPT_POID must be configured in global parameters", 400);
+        }
+        long portReportPoid;
+        try {
+            portReportPoid = Long.parseLong(portReportPoidOpt.get());
+        } catch (Exception e) {
+            throw new CustomException("Not a valid Port Call Report Poid: " + portReportPoidOpt.get(), 400);
+        }
+        return getPortReportActivities(String.valueOf(transactionPoid), portReportPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+    }
+
+    @Override
     public List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId) {
         log.info("Listing EstPrearrivalActDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
@@ -2794,7 +2810,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
     @Override
     public List<PortCallOperationEstPrearrivalDetailResponseDto> getPrearrivalActivityDtlById(Long transactionPoid) {
-       hdrRepository.findById(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
+        hdrRepository.findById(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
         return mapEstPrearrivalDetailsToResponse(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid));
     }
 

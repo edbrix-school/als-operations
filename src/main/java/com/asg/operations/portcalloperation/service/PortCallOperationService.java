@@ -22,13 +22,13 @@ public interface PortCallOperationService {
      * Updates a port call operation.
      *
      * @param husbandryCrewDetRowIdByDetailIndexOut optional; when non-null, length must equal {@code dto.getHusbandryCrewDetails().size()}.
-     *                                                 After update, each position i holds the DB {@code detRowId} for {@code husbandryCrewDetails.get(i)}
-     *                                                 (including rows created in this request).
-     * @param husbandryOthDetRowIdByDetailIndexOut   same for {@code husbandryOthDetails}
+     *                                              After update, each position i holds the DB {@code detRowId} for {@code husbandryCrewDetails.get(i)}
+     *                                              (including rows created in this request).
+     * @param husbandryOthDetRowIdByDetailIndexOut  same for {@code husbandryOthDetails}
      */
     PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid,
-                                                   Long[] husbandryCrewDetRowIdByDetailIndexOut,
-                                                   Long[] husbandryOthDetRowIdByDetailIndexOut);
+                                                 Long[] husbandryCrewDetRowIdByDetailIndexOut,
+                                                 Long[] husbandryOthDetRowIdByDetailIndexOut);
 
     void deleteOperation(Long id, DeleteReasonDto deleteReasonDto);
 
@@ -59,6 +59,8 @@ public interface PortCallOperationService {
     List<PortCallOperationEstBertDetailResponseDto> getBerthingDtlById(Long transactionPoid);
 
     // EstPrearrivalActDtl CRUD operations
+    Map<String, Object> listDefaultEstPrearrivalActDetails(Long transactionPoid);
+
     List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId);
 
     PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, PortCallOperationEstPrearrivalActDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
