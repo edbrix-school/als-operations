@@ -90,7 +90,7 @@ public class ProjectJobController {
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{transactionPoid}")
     public ResponseEntity<?> updateProjectJob(
-            @Parameter(description = "Transaction POID", required = true) @PathVariable Long transactionPoid,
+            @Parameter(description = "Transaction POID", required = true) @PathVariable("transactionPoid") Long transactionPoid,
             @Parameter(description = "Project Job request", required = true) @Valid @RequestBody ProjectJobRequest request) {
         ProjectJobResponse response = projectJobService.update(transactionPoid, request);
         return ApiResponse.success("Project Job updated successfully", response);

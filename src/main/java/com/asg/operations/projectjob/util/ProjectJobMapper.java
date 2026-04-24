@@ -17,6 +17,7 @@ import com.asg.operations.projectjob.entity.FFManifestChargesDtl;
 import com.asg.operations.projectjob.entity.FFManifestContainerDtl;
 import com.asg.operations.projectjob.entity.FFManifestHdr;
 import com.asg.operations.projectjob.entity.FFManifestTruckDtl;
+import org.apache.poi.util.StringUtil;
 
 public class ProjectJobMapper {
 
@@ -32,7 +33,7 @@ public class ProjectJobMapper {
         entity.setDetRowId(dto.getDetRowId());
 
         entity.setNoOfPacks(Optional.ofNullable(dto.getNoOfPacks()).orElse(0L));
-        entity.setPackUnit(Optional.ofNullable(dto.getPackUnit()).orElse(""));
+        entity.setPackUnit(Optional.ofNullable(dto.getPackUnit()).orElse(" "));
 
         entity.setTotalWeight(Optional.ofNullable(dto.getTotalWeight()).orElse(BigDecimal.ZERO));
         entity.setTotalVolume(dto.getTotalVolume());
@@ -235,7 +236,7 @@ public class ProjectJobMapper {
         dto.setDetRowId(entity.getDetRowId());
 
         dto.setNoOfPacks(entity.getNoOfPacks());
-        dto.setPackUnit(entity.getPackUnit());
+        dto.setPackUnit(StringUtil.isBlank(entity.getPackUnit())?null:entity.getPackUnit());
         dto.setTotalWeight(entity.getTotalWeight());
         dto.setTotalVolume(entity.getTotalVolume());
 
