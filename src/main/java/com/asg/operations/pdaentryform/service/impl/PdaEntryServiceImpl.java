@@ -416,10 +416,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 "PDA Entry not found with id: " + transactionPoid
         ));
 
+        // Ensure all pending changes are flushed and clear the persistence context
+        // to get the most up-to-date data from the database
         entityManager.flush();
+        entityManager.clear();
 
         // Get all charge details
         List<PdaEntryDtl> details = entryDtlRepository.findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(transactionPoid);
+        
+        logger.info("[AUDIT-LOG] Retrieved {} charge details for transactionPoid: {}", details.size(), transactionPoid);
 
         return details.stream()
                 .map(detail -> toChargeDetailResponse(detail, groupPoid, companyPoid))
@@ -447,9 +452,13 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     detailRequest.getDetRowId(), detailRequest.getChargePoid(), detailRequest.getActionType());
                 
                 // Handle deletion via actionType
-                if ("Deleted".equalsIgnoreCase(detailRequest.getActionType()) && detailRequest.getDetRowId() != null) {
-                    logger.info("[AUDIT-LOG] Deleting charge detail with detRowId: {} via actionType", detailRequest.getDetRowId());
+                if (("Deleted".equalsIgnoreCase(detailRequest.getActionType()) || "isDeleted".equalsIgnoreCase(detailRequest.getActionType())) && detailRequest.getDetRowId() != null) {
+                    logger.info("[AUDIT-LOG] Deleting charge detail with detRowId: {} via actionType: {}", detailRequest.getDetRowId(), detailRequest.getActionType());
                     deleteChargeDetailRecord(transactionPoid, detailRequest.getDetRowId());
+                } else if (("Deleted".equalsIgnoreCase(detailRequest.getActionType()) || "isDeleted".equalsIgnoreCase(detailRequest.getActionType())) && detailRequest.getDetRowId() == null) {
+                    logger.warn("[AUDIT-LOG] Cannot delete charge detail - actionType is '{}' but detRowId is null. Skipping deletion.", detailRequest.getActionType());
+                    // Skip this record - cannot delete without detRowId
+                    continue;
                 } else if (detailRequest.getDetRowId() == null) {
                     // Create new
                     logger.info("[AUDIT-LOG] Creating new charge detail");
@@ -462,12 +471,19 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             }
         }
 
+        // Flush after processing all charge details to ensure deletions are committed
+        entityManager.flush();
+
         // Process deletes
         if (request.getDeleteDetRowIds() != null && !request.getDeleteDetRowIds().isEmpty()) {
             for (Long detRowId : request.getDeleteDetRowIds()) {
                 deleteChargeDetailRecord(transactionPoid, detRowId);
             }
         }
+
+        // Flush changes to ensure deletions are committed
+        entityManager.flush();
+        entityManager.clear();
 
         // Recalculate header total amount
         recalculateHeaderTotalAmount(transactionPoid, userId);
@@ -1829,13 +1845,27 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     private void deleteChargeDetailRecord(Long transactionPoid, Long detRowId) {
+        logger.info("[AUDIT-LOG] Attempting to delete charge detail - transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+        
         PdaEntryDtlId detailId = new PdaEntryDtlId(transactionPoid, detRowId);
+        
+        // Check if the record exists before attempting to delete
+        if (!entryDtlRepository.existsById(detailId)) {
+            logger.warn("[AUDIT-LOG] Charge detail not found for deletion - transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
+            return; // Record doesn't exist, nothing to delete
+        }
+        
         PdaEntryDtl detail = entryDtlRepository.findById(detailId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Charge detail not found with id: " + detRowId
                 ));
+        
+        logger.info("[AUDIT-LOG] Found charge detail for deletion - chargePoid: {}, amount: {}", detail.getChargePoid(), detail.getAmount());
+        
         loggingService.logDelete(detail, UserContext.getDocumentId(), transactionPoid.toString());
         entryDtlRepository.delete(detail);
+        
+        logger.info("[AUDIT-LOG] Successfully deleted charge detail - transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
     }
 
     private void validateChargeDetailRequest(PdaEntryChargeDetailRequest request) {
@@ -3309,6 +3339,23 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - transactionPoid: {}", transactionPoid);
 
         try {
+            // Get PDA entry to update received fields
+            PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid)
+                    .orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found with id: " + transactionPoid));
+
+            // Auto-populate Received Date and Received From fields
+            LocalDate currentDate = LocalDate.now();
+            String currentUser = UserContext.getUserId();
+            
+            entry.setDocumentReceivedDate(currentDate);
+            entry.setDocumentReceivedFrom(currentUser);
+            
+            // Save the updated entry
+            entryHdrRepository.save(entry);
+            
+            logger.info("Auto-populated Received Date: {} and Received From: {} for transactionPoid: {}", 
+                    currentDate, currentUser, transactionPoid);
+
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                     .withProcedureName("PROC_PDA_VERIFY_THE_FDA_DOCS")
                     .withoutProcedureColumnMetaDataAccess()
@@ -3343,6 +3390,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", status != null ? status : "Success");
+            response.put("documentReceivedDate", currentDate);
+            response.put("documentReceivedFrom", currentUser);
             
             if (outData != null && !outData.isEmpty()) {
                 Map<String, Object> cursorData = outData.get(0);
