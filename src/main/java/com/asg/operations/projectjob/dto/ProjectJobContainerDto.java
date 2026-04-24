@@ -28,7 +28,7 @@ public class ProjectJobContainerDto {
     @Size(max = 25, message = "Container ISO code must not exceed 25 characters")
     private String containerIsoCode;
 
-    private Long containerTypePoid;
+    private BigDecimal containerTypePoid;
 
     @Size(max = 20, message = "Container size must not exceed 20 characters")
     private String containerSize;
@@ -44,8 +44,8 @@ public class ProjectJobContainerDto {
     @Size(max = 20, message = "Pack unit must not exceed 20 characters")
     private String packUnit;
 
-    private Long comodityPoid;
-    private Long destinationPortPoid;
+    private BigDecimal comodityPoid;
+    private BigDecimal destinationPortPoid;
 
     @Size(max = 20, message = "IMO must not exceed 20 characters")
     private String imo;

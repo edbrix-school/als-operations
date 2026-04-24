@@ -180,7 +180,7 @@ class ProjectJobMapperTest {
         dto.setCargoDescription("DESC");
         dto.setContainerSealNo("SEAL");
         dto.setContainerIsoCode("ISO");
-        dto.setContainerTypePoid(10L); // Correct name in DTO
+        dto.setContainerTypePoid(BigDecimal.valueOf(10L)); // Correct name in DTO
         dto.setContainerSize("20ft");
         dto.setQuantity(BigDecimal.valueOf(5.0));
         dto.setGrsVolume(BigDecimal.valueOf(50.0));
@@ -190,8 +190,8 @@ class ProjectJobMapperTest {
         dto.setTareWeight(BigDecimal.valueOf(10.0));
         dto.setNoOfPacks(BigDecimal.valueOf(5.0));
         dto.setPackUnit("PCS");
-        dto.setComodityPoid(20L);
-        dto.setDestinationPortPoid(30L);
+        dto.setComodityPoid(BigDecimal.valueOf(20L));
+        dto.setDestinationPortPoid(BigDecimal.valueOf(30L));
         dto.setImo("IMO");
         dto.setOogL("10"); 
         dto.setOogB(BigDecimal.valueOf(5.0));
@@ -218,7 +218,7 @@ class ProjectJobMapperTest {
 
         assertEquals(100L, entity.getTransactionPoid());
         assertEquals(1L, entity.getDetRowId());
-        assertEquals(BigDecimal.valueOf(10L), entity.getConatinerTypePoid());
+        assertEquals(BigDecimal.valueOf(10L), entity.getContainerTypePoid());
         assertEquals(BigDecimal.valueOf(5.0), entity.getQuantity());
         assertEquals("10", entity.getOogL());
         assertEquals(BigDecimal.valueOf(5.0), entity.getOogB());
@@ -781,7 +781,7 @@ class ProjectJobMapperTest {
         ProjectJobContainerDto dto = new ProjectJobContainerDto();
         FFManifestContainerDtl entity = new FFManifestContainerDtl();
         ProjectJobMapper.mapContainerFromDto(dto, entity, 100L);
-        assertNull(entity.getConatinerTypePoid());
+        assertNull(entity.getContainerTypePoid());
         assertNull(entity.getComodityPoid());
         assertNull(entity.getDestinationPortPoid());
     }

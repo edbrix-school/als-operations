@@ -152,10 +152,7 @@ public class ProjectJobMapper {
         entity.setCargoDescription(dto.getCargoDescription());
         entity.setContainerSealNo(dto.getContainerSealNo());
         entity.setContainerIsoCode(dto.getContainerIsoCode());
-
-        entity.setConatinerTypePoid(
-                dto.getContainerTypePoid() != null ? BigDecimal.valueOf(dto.getContainerTypePoid()) : null);
-
+        entity.setContainerTypePoid(dto.getContainerTypePoid() != null ? dto.getContainerTypePoid(): null);
         entity.setContainerSize(dto.getContainerSize());
         entity.setQuantity(dto.getQuantity());
 
@@ -168,10 +165,10 @@ public class ProjectJobMapper {
         entity.setNoOfPacks(dto.getNoOfPacks());
         entity.setPackUnit(dto.getPackUnit());
 
-        entity.setComodityPoid(dto.getComodityPoid() != null ? BigDecimal.valueOf(dto.getComodityPoid()) : null);
+        entity.setComodityPoid(dto.getComodityPoid() != null ?dto.getComodityPoid() : null);
 
         entity.setDestinationPortPoid(
-                dto.getDestinationPortPoid() != null ? BigDecimal.valueOf(dto.getDestinationPortPoid()) : null);
+                dto.getDestinationPortPoid() != null ? dto.getDestinationPortPoid() : null);
 
         entity.setImo(dto.getImo());
         entity.setOogL(dto.getOogL());
@@ -343,7 +340,7 @@ public class ProjectJobMapper {
         dto.setCargoDescription(entity.getCargoDescription());
         dto.setContainerSealNo(entity.getContainerSealNo());
         dto.setContainerIsoCode(entity.getContainerIsoCode());
-        dto.setContainerTypePoid(dto.getContainerTypePoid());
+        dto.setContainerTypePoid(entity.getContainerTypePoid());
         dto.setContainerSize(entity.getContainerSize());
         dto.setQuantity(entity.getQuantity());
         dto.setGrsVolume(entity.getGrsVolume());
@@ -353,8 +350,8 @@ public class ProjectJobMapper {
         dto.setTareWeight(entity.getTareWeight());
         dto.setNoOfPacks(entity.getNoOfPacks());
         dto.setPackUnit(entity.getPackUnit());
-        dto.setComodityPoid(dto.getComodityPoid());
-        dto.setDestinationPortPoid(dto.getDestinationPortPoid());
+        dto.setComodityPoid(entity.getComodityPoid());
+        dto.setDestinationPortPoid(entity.getDestinationPortPoid());
         dto.setImo(entity.getImo());
         dto.setOogB(entity.getOogB());
         dto.setOogL(entity.getOogL());

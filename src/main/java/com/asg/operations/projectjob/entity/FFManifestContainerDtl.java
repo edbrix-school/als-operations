@@ -51,7 +51,7 @@ public class FFManifestContainerDtl extends BaseEntity implements BaseDetailEnti
     private String containerIsoCode;
 
     @Column(name = "CONTAINER_TYPE_POID")
-    private BigDecimal conatinerTypePoid;
+    private BigDecimal containerTypePoid;
 
     @Column(name = "CONTAINER_SIZE")
     @Size(max = 20)
