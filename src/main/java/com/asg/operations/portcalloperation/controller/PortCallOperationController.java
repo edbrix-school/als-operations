@@ -555,7 +555,6 @@ public class PortCallOperationController {
     public ResponseEntity<?> getEstBertDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                               @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         PortCallOperationEstBertDetailResponseDto result = portCallOperationService.getEstBertDetail(transactionPoid, detRowId);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("Berthing Prospects Details retrieved successfully", result);
     }
 
@@ -603,7 +602,6 @@ public class PortCallOperationController {
     )
     public ResponseEntity<?> listEstPrearrivalActDetailsActivities(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid) {
         Map<String, Object> result = portCallOperationService.listDefaultEstPrearrivalActDetails(transactionPoid);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("Pre-arrival estimates retrieved successfully", result);
     }
 
@@ -617,7 +615,6 @@ public class PortCallOperationController {
     public ResponseEntity<?> listEstPrearrivalActDetailsActivities(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                                     @Parameter(description = "Det Row ID") @PathVariable Long detRowId) {
         List<PortCallOperationEstPrearrivalActDetailResponseDto> result = portCallOperationService.listEstPrearrivalActDetails(transactionPoid, detRowId);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("Pre-arrival estimates retrieved successfully", result);
     }
 
@@ -635,7 +632,6 @@ public class PortCallOperationController {
                                                           @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationEstPrearrivalActDetailResponseDto result = portCallOperationService.createEstPrearrivalActDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("Pre-arrival estimates created successfully", result);
     }
 
@@ -667,7 +663,6 @@ public class PortCallOperationController {
     public ResponseEntity<?> listActTimingsActvtyDetails(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                          @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         List<PortCallOperationActTimingsActvtyDetailResponseDto> result = portCallOperationService.listActTimingsActvtyDetails(transactionPoid, detRowId);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("Timings retrieved successfully", result);
     }
 
@@ -685,7 +680,6 @@ public class PortCallOperationController {
                                                           @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationActTimingsActvtyDetailResponseDto result = portCallOperationService.createActTimingsActvtyDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("Timings created successfully", result);
     }
 
@@ -717,7 +711,6 @@ public class PortCallOperationController {
     public ResponseEntity<?> getDocsCopyDetail(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
                                                @Parameter(description = "Detail Row ID") @PathVariable Long detRowId) {
         PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.getDocsCopyDetail(transactionPoid, detRowId);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("Docs Copy Detail retrieved successfully", result);
     }
 
@@ -735,7 +728,6 @@ public class PortCallOperationController {
                                                   @RequestParam(value = "checklistName", required = false) String[] checklistNames) {
         MultipartFile[] nonEmptyFiles = nonEmptyMultipartFiles(files);
         PortCallOperationDocsCopyDetailResponseDto result = portCallOperationService.createDocsCopyDetail(transactionPoid, dto, nonEmptyFiles, remarks, checklistNames);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), transactionPoid.toString());
         return success("Docs Copy Detail created successfully", result);
     }
 
