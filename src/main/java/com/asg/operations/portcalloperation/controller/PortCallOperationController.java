@@ -1308,6 +1308,39 @@ public class PortCallOperationController {
         return success("Attachment deleted successfully", null);
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/berthing-details")
+    @Operation(summary = "Get Berthing Details", description = "Retrieve all berthing details for a port call operation", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> getBerthingDtlById(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid) {
+        List<?> result = portCallOperationService.getBerthingDtlById(transactionPoid);
+        if (result == null) {
+            return notFound("Berthing details not found");
+        }
+        return success("Berthing details retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/prearrival-activity-details")
+    @Operation(summary = "Get Pre-arrival Activity Details", description = "Retrieve all pre-arrival activity details for a port call operation", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> getPrearrivalActivityDtlById(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid) {
+        List<?> result = portCallOperationService.getPrearrivalActivityDtlById(transactionPoid);
+        if (result == null) {
+            return notFound("Pre-arrival activity details not found");
+        }
+        return success("Pre-arrival activity details retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/actual-timings-details")
+    @Operation(summary = "Get Actual Timings Details", description = "Retrieve all actual timing details for a port call operation", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<?> getActualTimingsDtlById(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid) {
+        List<?> result = portCallOperationService.getActualTimingsDtlById(transactionPoid);
+        if (result == null) {
+            return notFound("Actual timings details not found");
+        }
+        return success("Actual timings details retrieved successfully", result);
+    }
+
     @AllowedAction(UserRolesRightsEnum.PRINT)
     @Operation(summary = "Generate Excel for Husbandry Crew Details")
     @GetMapping("/excel/husbandryCrewDetails/{transactionPoid}")

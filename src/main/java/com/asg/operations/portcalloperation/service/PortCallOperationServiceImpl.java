@@ -2539,8 +2539,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         Map<Long, PortCallOperationActTimingsActvtyDtl> existingActivitiesMap = existingEntities.stream()
                 .collect(Collectors.toMap(PortCallOperationActTimingsActvtyDtl::getActualsTimingDtlPoid, e -> e));
 
+        Set<Long> processedActualsTimingDtlPoids = new HashSet<>();
         List<PortCallOperationActTimingsActvtyDtl> entitiesToUpdate = new ArrayList<>();
         List<PortCallOperationActTimingsActvtyDtl> entitiesToCreate = new ArrayList<>();
+        List<PortCallOperationActTimingsActvtyDtl> entitiesToDelete = new ArrayList<>();
 
         long nextActualsTimingDtlPoid = actTimingsActvtyDtlRepository.findMaxActualsTimingDtlPoidByTransactionPoidAndDetRowId(transactionPoid, detRowId) + 1;
 
@@ -2555,6 +2557,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     : null;
 
             if (existingActivity != null) {
+                processedActualsTimingDtlPoids.add(existingActivity.getActualsTimingDtlPoid());
+
                 PortCallOperationActTimingsActvtyDtl oldActivity = new PortCallOperationActTimingsActvtyDtl();
                 BeanUtils.copyProperties(existingActivity, oldActivity);
 
@@ -2579,6 +2583,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
+        // Mark activities for deletion that are no longer in the DTO
+        for (PortCallOperationActTimingsActvtyDtl existingActivity : existingEntities) {
+            if (!processedActualsTimingDtlPoids.contains(existingActivity.getActualsTimingDtlPoid())) {
+                entitiesToDelete.add(existingActivity);
+            }
+        }
+
         if (entitiesToUpdate.isEmpty() && entitiesToCreate.isEmpty()) {
             throw new ValidationException("At least one activity must be provided");
         }
@@ -2588,6 +2599,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
         if (!entitiesToCreate.isEmpty()) {
             actTimingsActvtyDtlRepository.saveAll(entitiesToCreate);
+        }
+        if (!entitiesToDelete.isEmpty()) {
+            actTimingsActvtyDtlRepository.deleteAll(entitiesToDelete);
         }
 
         // Get the last saved entity for response (prefer updated, then created)
@@ -2771,4 +2785,24 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
         return builder.build();
     }
+
+    @Override
+    public List<PortCallOperationEstBertDetailResponseDto> getBerthingDtlById(Long transactionPoid) {
+        hdrRepository.findById(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
+        return mapEstBertDetailsToResponse(estBertDtlRepository.findByTransactionPoid(transactionPoid));
+    }
+
+    @Override
+    public List<PortCallOperationEstPrearrivalDetailResponseDto> getPrearrivalActivityDtlById(Long transactionPoid) {
+       hdrRepository.findById(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
+        return mapEstPrearrivalDetailsToResponse(estPrearrivalDtlRepository.findByTransactionPoid(transactionPoid));
+    }
+
+    @Override
+    public List<PortCallOperationActTimingDetailResponseDto> getActualTimingsDtlById(Long transactionPoid) {
+        hdrRepository.findById(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("Port call operation", "Transaction Poid", transactionPoid));
+        return mapActTimingDetailsToResponse(actTimingDtlRepository.findByTransactionPoid(transactionPoid));
+    }
+
+
 }

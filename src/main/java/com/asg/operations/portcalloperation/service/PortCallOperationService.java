@@ -56,6 +56,8 @@ public interface PortCallOperationService {
 
     PortCallOperationEstBertDetailResponseDto updateEstBertDetail(Long transactionPoid, Long detRowId, PortCallOperationEstBertDetailRequestDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
+    List<PortCallOperationEstBertDetailResponseDto> getBerthingDtlById(Long transactionPoid);
+
     // EstPrearrivalActDtl CRUD operations
     List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId);
 
@@ -63,12 +65,16 @@ public interface PortCallOperationService {
 
     PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
+    List<PortCallOperationEstPrearrivalDetailResponseDto> getPrearrivalActivityDtlById(Long transactionPoid);
+
     // ActTimingsActvtyDtl CRUD operations
     List<PortCallOperationActTimingsActvtyDetailResponseDto> listActTimingsActvtyDetails(Long transactionPoid, Long detRowId);
 
     PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
     PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
+
+    List<PortCallOperationActTimingDetailResponseDto> getActualTimingsDtlById(Long transactionPoid);
 
     // DocsCopyDtl CRUD operations
     PortCallOperationDocsCopyDetailResponseDto getDocsCopyDetail(Long transactionPoid, Long detRowId);
