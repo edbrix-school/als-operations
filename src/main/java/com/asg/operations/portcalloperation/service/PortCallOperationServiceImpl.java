@@ -1717,8 +1717,12 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             emailPoidToUse = dto.getEmailPoid();
             PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
                     .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
+            PortCallOperationDocsMsgsDtl1 oldMsgDtlEntity = new PortCallOperationDocsMsgsDtl1();
+            BeanUtils.copyProperties(msgsDtl1, oldMsgDtlEntity);
             msgsDtl1.setEmailRemarks(dto.getRemarks());
-            docsMsgsDtl1Repository.save(msgsDtl1);
+            PortCallOperationDocsMsgsDtl1 savedMsgDtl = docsMsgsDtl1Repository.save(msgsDtl1);
+            String msgLogDtl = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", savedMsgDtl.getTransactionPoid(), savedMsgDtl.getDetRowId());
+            loggingService.createLog(oldMsgDtlEntity, msgsDtl1, PortCallOperationDocsMsgsDtl1.class, UserContext.getDocumentId(), transactionPoid.toString(), msgLogDtl);
         }
 
         if (dto.getSendEmail()) {
@@ -1787,7 +1791,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId) {
         log.info("Listing EstPrearrivalActDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
-        List<PortCallOperationEstPrearrivalActDtl> entities = estPrearrivalActDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        List<PortCallOperationEstPrearrivalActDtl> entities = estPrearrivalActDtlRepository.findByTransactionPoidAndDetRowIdOrderByPreActivityDtlPoidAsc(transactionPoid, detRowId);
         Optional<PortCallOperationEstPrearrivalDtl> prearrivalDtlOptional = estPrearrivalDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
 
         if (prearrivalDtlOptional.isEmpty()) {
@@ -2040,7 +2044,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         // Existing activity rows for this prearrival detail (may be empty when first saving activities from the popup)
-        List<PortCallOperationEstPrearrivalActDtl> existingEntities = estPrearrivalActDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        List<PortCallOperationEstPrearrivalActDtl> existingEntities = estPrearrivalActDtlRepository.findByTransactionPoidAndDetRowIdOrderByPreActivityDtlPoidAsc(transactionPoid, detRowId);
 
         PortCallOperationEstPrearrivalActDtl oldEntity = new PortCallOperationEstPrearrivalActDtl();
         if (!existingEntities.isEmpty()) {
@@ -2269,7 +2273,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     public List<PortCallOperationActTimingsActvtyDetailResponseDto> listActTimingsActvtyDetails(Long transactionPoid, Long detRowId) {
         log.info("Listing ActTimingsActvtyDetails for transactionPoid: {}, detRowId: {}", transactionPoid, detRowId);
 
-        List<PortCallOperationActTimingsActvtyDtl> entities = actTimingsActvtyDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        List<PortCallOperationActTimingsActvtyDtl> entities = actTimingsActvtyDtlRepository.findByTransactionPoidAndDetRowIdOrderByActualsTimingDtlPoidAsc(transactionPoid, detRowId);
         Optional<PortCallOperationActTimingDtl> actualTimingOptional = actTimingDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
 
         if (actualTimingOptional.isEmpty()) {
@@ -2483,7 +2487,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         // Existing activity rows for this act-timing detail (may be empty when first saving activities from the popup)
-        List<PortCallOperationActTimingsActvtyDtl> existingEntities = actTimingsActvtyDtlRepository.findByTransactionPoidAndDetRowId(transactionPoid, detRowId);
+        List<PortCallOperationActTimingsActvtyDtl> existingEntities = actTimingsActvtyDtlRepository.findByTransactionPoidAndDetRowIdOrderByActualsTimingDtlPoidAsc(transactionPoid, detRowId);
 
         if (dto.getEmailPoid() != null && !docsMsgsDtl1Repository.existsByEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
