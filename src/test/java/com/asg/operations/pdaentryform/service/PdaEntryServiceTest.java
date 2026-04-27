@@ -250,13 +250,24 @@ class PdaEntryServiceTest {
         entry.setTransactionPoid(transactionPoid);
         entry.setStatus("PROPOSAL");
         entry.setRefType("GENERAL");
+        entry.setTotalAmount(new BigDecimal("1000.00"));
 
         when(entryHdrRepository.findByTransactionPoid(transactionPoid))
                 .thenReturn(Optional.of(entry));
+        when(entryHdrRepository.save(any(PdaEntryHdr.class)))
+                .thenReturn(entry);
 
-        pdaEntryService.clearChargeDetails(transactionPoid, groupPoid, companyPoid, userId);
+        // Mock the stored procedure call to return a success message
+        PdaEntryServiceImpl spyService = spy(pdaEntryService);
+        doReturn("SUCCESS : Cleared All Charge Details...")
+                .when(spyService).callClearChargeDetails(groupPoid, userId, companyPoid, transactionPoid);
 
-        assertNotNull(entry);
+        String result = spyService.clearChargeDetails(transactionPoid, groupPoid, companyPoid, userId);
+
+        assertNotNull(result);
+        assertEquals("SUCCESS : Cleared All Charge Details...", result);
+        verify(entryHdrRepository).save(entry);
+        assertEquals(BigDecimal.ZERO, entry.getTotalAmount());
     }
 
     @Test

@@ -59,7 +59,7 @@ public interface PdaEntryService {
     /**
      * Clear all charge details
      */
-    void clearChargeDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    String clearChargeDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
      * Recalculate all charge details
