@@ -576,9 +576,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
     @Override
     @Transactional
-    public PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid,
-                                                        Long[] husbandryCrewDetRowIdByDetailIndexOut,
-                                                        Long[] husbandryOthDetRowIdByDetailIndexOut) {
+    public PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid, Long[] husbandryCrewDetRowIdByDetailIndexOut, Long[] husbandryOthDetRowIdByDetailIndexOut) {
         log.info("Updating port call operation id: {}", id);
 
         PortCallOperationHdr hdr = hdrRepository.findById(id)
@@ -729,12 +727,10 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     PortCallOperationMailDtl saved = mailDtlRepository.save(newDetail);
                     String logDetail = String.format("Row Created on [Port Call Operation Mail Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), id.toString(), logDetail);
-                }
-//                else if (action == ActionType.isDeleted) {
-//                    mailDtlRepository.deleteById(new PortCallOperationMailDtlId(id, mailDto.getDetRowId()));
-//                    loggingService.logDelete(mailDto, UserContext.getDocumentId(), id.toString());
-//                }
-                else if (action == ActionType.isUpdated) {
+                } else if (action == ActionType.isDeleted) {
+                    mailDtlRepository.deleteById(new PortCallOperationMailDtlId(id, mailDto.getDetRowId()));
+                    loggingService.logDelete(mailDto, UserContext.getDocumentId(), id.toString());
+                } else if (action == ActionType.isUpdated) {
                     mailDtlRepository.findById(new PortCallOperationMailDtlId(id, mailDto.getDetRowId()))
                             .ifPresent(existing -> {
                                 PortCallOperationMailDtl oldDetail = new PortCallOperationMailDtl();
@@ -958,6 +954,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .build());
                     String logDetail = String.format("Row Created on [Port Call Operation Act Cond Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+                } else if (action == ActionType.isDeleted) {
+                    actCondDtlRepository.deleteById(new PortCallOperationActCondDtlId(transactionPoid, detailDto.getDetRowId()));
+                    loggingService.logDelete(detailDto, UserContext.getDocumentId(), transactionPoid.toString());
                 } else if (action == ActionType.isUpdated) {
                     actCondDtlRepository.findById(new PortCallOperationActCondDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
@@ -1003,6 +1002,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .build());
                     String logDetail = String.format("Row Created on [Port Call Operation Act Rmks Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+                } else if (action == ActionType.isDeleted) {
+                    actRmksDtlRepository.deleteById(new PortCallOperationActRmksDtlId(transactionPoid, detailDto.getDetRowId()));
+                    loggingService.logDelete(detailDto, UserContext.getDocumentId(), transactionPoid.toString());
                 } else if (action == ActionType.isUpdated) {
                     actRmksDtlRepository.findById(new PortCallOperationActRmksDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
@@ -1108,6 +1110,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .build());
                     String logDetail = String.format("Row Created on [Port Call Operation Act Cargo Fig Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+                } else if (action == ActionType.isDeleted) {
+                    actCargoFigDtlRepository.deleteById(new PortCallOperationActCargoFigDtlId(transactionPoid, detailDto.getDetRowId()));
+                    loggingService.logDelete(detailDto, UserContext.getDocumentId(), transactionPoid.toString());
                 } else if (action == ActionType.isUpdated) {
                     actCargoFigDtlRepository.findById(new PortCallOperationActCargoFigDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
@@ -1150,6 +1155,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .build());
                     String logDetail = String.format("Row Created on [Port Call Operation Act Bunker Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+                } else if (action == ActionType.isDeleted) {
+                    actBunkerDtlRepository.deleteById(new PortCallOperationActBunkerDtlId(transactionPoid, detailDto.getDetRowId()));
+                    loggingService.logDelete(detailDto, UserContext.getDocumentId(), transactionPoid.toString());
                 } else if (action == ActionType.isUpdated) {
                     actBunkerDtlRepository.findById(new PortCallOperationActBunkerDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
@@ -1196,6 +1204,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     }
                     String logDetail = String.format("Row Created on [Port Call Operation Husbandry Crew Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+                } else if (action == ActionType.isDeleted) {
+                    Long detRowId = detailDto.getDetRowId();
+                    if (detRowId != null && screenAttachmentService.isAttachmentServiceAvailable()) {
+                        screenAttachmentService.deleteAllHusbandryCrewAttachments(transactionPoid, detRowId);
+                    }
+                    husbandryCrewDtlRepository.deleteById(new PortCallOperationHusbandryCrewDtlId(transactionPoid, detRowId));
+                    loggingService.logDelete(detailDto, UserContext.getDocumentId(), transactionPoid.toString());
                 } else if (action == ActionType.isUpdated) {
                     if (husbandryCrewDetRowIdByDetailIndexOut != null) {
                         husbandryCrewDetRowIdByDetailIndexOut[i] = detailDto.getDetRowId();
@@ -1258,6 +1273,13 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     }
                     String logDetail = String.format("Row Created on [Port Call Operation Husbandry Other Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+                } else if (action == ActionType.isDeleted) {
+                    Long detRowId = detailDto.getDetRowId();
+                    if (detRowId != null && screenAttachmentService.isAttachmentServiceAvailable()) {
+                        screenAttachmentService.deleteAllHusbandryOthAttachments(transactionPoid, detRowId);
+                    }
+                    husbandryOthDtlRepository.deleteById(new PortCallOperationHusbandryOthDtlId(transactionPoid, detRowId));
+                    loggingService.logDelete(detailDto, UserContext.getDocumentId(), transactionPoid.toString());
                 } else if (action == ActionType.isUpdated) {
                     if (husbandryOthDetRowIdByDetailIndexOut != null) {
                         husbandryOthDetRowIdByDetailIndexOut[i] = detailDto.getDetRowId();
@@ -1302,6 +1324,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .build());
                     String logDetail = String.format("Row Created on [Port Call Operation Docs Copy Details] with detRowId: %s", saved.getDetRowId());
                     loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(), logDetail);
+                } else if (action == ActionType.isDeleted) {
+                    docsCopyDtlRepository.deleteById(new PortCallOperationDocsCopyDtlId(transactionPoid, detailDto.getDetRowId()));
+                    loggingService.logDelete(detailDto, UserContext.getDocumentId(), transactionPoid.toString());
                 } else if (action == ActionType.isUpdated) {
                     docsCopyDtlRepository.findById(new PortCallOperationDocsCopyDtlId(transactionPoid, detailDto.getDetRowId()))
                             .ifPresent(existing -> {
@@ -1318,7 +1343,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
     }
-
 
     @Override
     @Transactional
