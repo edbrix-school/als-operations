@@ -613,7 +613,7 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> listEstPrearrivalActDetailsActivities(@Parameter(description = "Transaction POID") @PathVariable Long transactionPoid,
-                                                                    @Parameter(description = "Det Row ID") @PathVariable Long detRowId) {
+                                                                   @Parameter(description = "Det Row ID") @PathVariable Long detRowId) {
         List<PortCallOperationEstPrearrivalActDetailResponseDto> result = portCallOperationService.listEstPrearrivalActDetails(transactionPoid, detRowId);
         return success("Pre-arrival estimates retrieved successfully", result);
     }

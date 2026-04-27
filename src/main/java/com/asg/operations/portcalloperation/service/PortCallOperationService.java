@@ -26,9 +26,7 @@ public interface PortCallOperationService {
      *                                              (including rows created in this request).
      * @param husbandryOthDetRowIdByDetailIndexOut  same for {@code husbandryOthDetails}
      */
-    PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid,
-                                                 Long[] husbandryCrewDetRowIdByDetailIndexOut,
-                                                 Long[] husbandryOthDetRowIdByDetailIndexOut);
+    PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid, Long[] husbandryCrewDetRowIdByDetailIndexOut, Long[] husbandryOthDetRowIdByDetailIndexOut);
 
     void deleteOperation(Long id, DeleteReasonDto deleteReasonDto);
 
