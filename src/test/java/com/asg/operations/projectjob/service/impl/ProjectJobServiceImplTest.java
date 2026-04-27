@@ -294,7 +294,7 @@ class ProjectJobServiceImplTest {
     void testGetById_Success() {
         FFManifestHdr hdr = new FFManifestHdr();
         hdr.setTransactionPoid(100L);
-        hdr.setProjectPoid(BigDecimal.valueOf(50L));
+        hdr.setProjectPoid(50L);
         when(hdrRepository.findById(100L)).thenReturn(Optional.of(hdr));
         when(airPkgRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestAirPkgDtl()));
         when(bayanRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestBayanDtl()));
