@@ -1,7 +1,10 @@
 package com.asg.operations.projectjob.util;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.asg.common.lib.utility.DateUtil;
 import com.asg.operations.projectjob.dto.FFManifestHdrDto;
@@ -471,7 +474,12 @@ public class ProjectJobMapper {
         entity.setNotifyAddressPoid2(dto.getNotifyAddressPoid2());
 
         entity.setCanRequireToSent(dto.getCanRequireToSent());
-        entity.setComodityPoid(dto.getComodityPoid());
+        entity.setComodityPoid(Optional.ofNullable(dto.getCommodityPoids())
+                .filter(list -> !list.isEmpty())
+                .map(list -> list.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(",")))
+                .orElse(null));
         entity.setCargoDescription(dto.getCargoDescription());
         entity.setMarkNumbers(dto.getMarkNumbers());
 
@@ -549,7 +557,7 @@ public class ProjectJobMapper {
         entity.setPrincipalManual(dto.getPrincipalManual());
         entity.setMotherVslFinalDelv(dto.getMotherVslFinalDelv());
 
-        entity.setProjectRef(dto.getProjectRef());
+        entity.setProjectRef(dto.getOtherReference());
         entity.setRecievedFrom(dto.getRecievedFrom());
         entity.setDeliveryTo(dto.getDeliveryTo());
         entity.setProjectPoid(dto.getProjectPoid());
@@ -682,7 +690,13 @@ public class ProjectJobMapper {
         dto.setNotifyAddressPoid2(entity.getNotifyAddressPoid2());
 
         dto.setCanRequireToSent(entity.getCanRequireToSent());
-        dto.setComodityPoid(entity.getComodityPoid());
+        dto.setCommodityPoids(Optional.ofNullable(entity.getComodityPoid())
+                .filter(s -> !s.trim().isEmpty())
+                .map(s -> Arrays.stream(s.split(","))
+                        .map(String::trim)
+                        .map(Long::valueOf)
+                        .toList())
+                .orElse(List.of()));
         dto.setCargoDescription(entity.getCargoDescription());
         dto.setMarkNumbers(entity.getMarkNumbers());
 
@@ -761,7 +775,7 @@ public class ProjectJobMapper {
         dto.setPrincipalManual(entity.getPrincipalManual());
         dto.setMotherVslFinalDelv(entity.getMotherVslFinalDelv());
 
-        dto.setProjectRef(entity.getProjectRef());
+        dto.setOtherReference(entity.getProjectRef());
         dto.setRecievedFrom(entity.getRecievedFrom());
         dto.setDeliveryTo(entity.getDeliveryTo());
         dto.setProjectPoid(entity.getProjectPoid());

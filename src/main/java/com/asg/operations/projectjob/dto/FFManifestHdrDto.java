@@ -7,6 +7,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -24,9 +25,9 @@ public class FFManifestHdrDto {
     @Size(max = 20, message = "FF Job type must not exceed 20 characters")
     private String ffJobType;
 
-    private BigDecimal linePoid;
-    private BigDecimal quoatationPoid;
-    private BigDecimal principalPoid;
+    private Long linePoid;
+    private Long quoatationPoid;
+    private Long principalPoid;
 
     @Size(max = 50, message = "Master BL number must not exceed 50 characters")
     private String masterBlNo;
@@ -49,8 +50,8 @@ public class FFManifestHdrDto {
     @Size(max = 20, message = "Consignment type must not exceed 20 characters")
     private String workExtensionJobNo;
 
-    private BigDecimal salesmanPoid;
-    private BigDecimal agentPoid;
+    private Long salesmanPoid;
+    private Long agentPoid;
 
     @Size(max = 20, message = "Agent Account Number must not exceed 20 characters")
     private String agentAcctNo;
@@ -69,7 +70,7 @@ public class FFManifestHdrDto {
 
     private LocalDateTime jobClosedDate;
 
-    private BigDecimal voyagePoid;
+    private Long voyagePoid;
 
     @Size(max = 20, message = "FF Job number must not exceed 20 characters")
     private String motherVslVoyageNo;
@@ -79,9 +80,9 @@ public class FFManifestHdrDto {
     private LocalDateTime motherVslSailDate;
     private LocalDateTime motherVslEta;
 
-    private BigDecimal motherVslLoadPortPoid;
-    private BigDecimal motherVslUnloadPortPoid;
-    private BigDecimal motherVslTranshipPortPoid;
+    private Long motherVslLoadPortPoid;
+    private Long motherVslUnloadPortPoid;
+    private Long motherVslTranshipPortPoid;
 
     @Size(max = 20, message = "Feeder Voyage Number must not exceed 20 characters")
     private String feederVoyageNo;
@@ -92,8 +93,8 @@ public class FFManifestHdrDto {
     private LocalDateTime feederVslEta;
     private LocalDateTime feederVslArrivalDate;
 
-    private BigDecimal feederLoadportPoid;
-    private BigDecimal feederUnloadportPoid;
+    private Long feederLoadportPoid;
+    private Long feederUnloadportPoid;
 
     @Size(max = 20, message = "Flight Number must not exceed 20 characters")
     private String flightNo;
@@ -105,19 +106,19 @@ public class FFManifestHdrDto {
     @Size(max = 20, message = "Aw Port Of UnLoad must not exceed 20 characters")
     private String awportOfUnload;
 
-    private BigDecimal shipperPoid;
-    private BigDecimal shipperAddressPoid;
-    private BigDecimal consigneePoid;
-    private BigDecimal consigneeAddressPoid;
+    private Long shipperPoid;
+    private Long shipperAddressPoid;
+    private Long consigneePoid;
+    private Long consigneeAddressPoid;
 
-    private BigDecimal notifyPoid1;
-    private BigDecimal notifyAddressPoid1;
-    private BigDecimal notifyPoid2;
-    private BigDecimal notifyAddressPoid2;
+    private Long notifyPoid1;
+    private Long notifyAddressPoid1;
+    private Long notifyPoid2;
+    private Long notifyAddressPoid2;
 
     @Size(max = 1, message = "Can require To Sent must be exactly 1 character")
     private String canRequireToSent;
-    private BigDecimal comodityPoid;
+    private List<Long> commodityPoids;
 
     @Size(max = 500, message = "Cargo Description must not exceed 500 characters")
     private String cargoDescription;
@@ -129,18 +130,18 @@ public class FFManifestHdrDto {
     private String lpoNo;
     private LocalDateTime lpoDate;
 
-    private BigDecimal totalVolume;
-    private BigDecimal totalNetVolume;
-    private BigDecimal totalWeight;
-    private BigDecimal totalNetWeight;
-    private BigDecimal weightUnit;
+    private Long totalVolume;
+    private Long totalNetVolume;
+    private Long totalWeight;
+    private Long totalNetWeight;
+    private Long weightUnit;
 
     @Size(max = 20, message = "Unit Pack must not exceed 20 characters")
     private String unitPack;
-    private BigDecimal totalNoOfPacks;
-    private BigDecimal chargableWeight;
-    private BigDecimal noOfPackBooked;
-    private BigDecimal noOfPackArrived;
+    private Long totalNoOfPacks;
+    private Long chargableWeight;
+    private Long noOfPackBooked;
+    private Long noOfPackArrived;
 
     @Size(max = 500, message = "Handling Info must not exceed 500 characters")
     private String handlingInfo;
@@ -154,11 +155,11 @@ public class FFManifestHdrDto {
     @Size(max = 30, message = "Billing To must not exceed 30 characters")
     private String billingTo;
 
-    private BigDecimal masterBlWeight;
+    private Long masterBlWeight;
 
     @Size(max = 20, message = "Master Bl Currency must not exceed 20 characters")
     private String masterBlCurrency;
-    private BigDecimal totalCharges;
+    private Long totalCharges;
 
     private String createdBy;
     private LocalDateTime createdDate;
@@ -177,8 +178,8 @@ public class FFManifestHdrDto {
     @Size(max = 100, message = "Agent Details must not exceed 100 characters")
     private String agentDetails;
 
-    private BigDecimal rateChanges;
-    private BigDecimal agentCharges;
+    private Long rateChanges;
+    private Long agentCharges;
 
     @Size(max = 20, message = "Flight No 2 must not exceed 20 characters")
     private String flightNo2;
@@ -207,7 +208,7 @@ public class FFManifestHdrDto {
 
     @Size(max = 30, message = "Released type must not exceed 30 characters")
     private String releasedType;
-    private BigDecimal relasedSeqNo;
+    private Long relasedSeqNo;
 
     @Size(max = 20, message = "Released Grant By must not exceed 20 characters")
     private String releasedGrantBy;
@@ -244,7 +245,7 @@ public class FFManifestHdrDto {
 
     @Size(max = 30, message = "Ofoq Mnf Reference must not exceed 30 characters")
     private String ofoqMnfRef;
-    private BigDecimal principalAddrPoid;
+    private Long principalAddrPoid;
 
     @Size(max = 1, message = "Show Notify Can must be exactly 1 character")
     private String showNotifyCan;
@@ -259,7 +260,7 @@ public class FFManifestHdrDto {
 
     @Size(max = 10, message = "FF Sh Job must not exceed 10 characters")
     private String ffShJob;
-    private BigDecimal billToCustomerPoid;
+    private Long billToCustomerPoid;
 
     @Size(max = 100, message = "Principal Manual must not exceed 100 characters")
     private String principalManual;
@@ -267,15 +268,15 @@ public class FFManifestHdrDto {
     @Size(max = 100, message = "Mother Vsl Final Delv must not exceed 100 characters")
     private String motherVslFinalDelv;
 
-    @Size(max = 50, message = "Project Reference must not exceed 50 characters")
-    private String projectRef;
+    @Size(max = 50, message = "Other Reference must not exceed 50 characters")
+    private String otherReference;
 
     @Size(max = 50, message = "Received From must not exceed 50 characters")
     private String recievedFrom;
 
     @Size(max = 50, message = "Delivery To must not exceed 50 characters")
     private String deliveryTo;
-    private BigDecimal projectPoid;
+    private Long projectPoid;
     private Long projectCustomerPoid;
     private LocalDateTime blIssueDate;
 
@@ -308,7 +309,7 @@ public class FFManifestHdrDto {
     @Size(max = 50, message = "Fcr Suplier Shipper Reference must not exceed 50 characters")
     private String fcrSuplierShipperRef;
 
-    private BigDecimal coLoaderAgent;
+    private Long coLoaderAgent;
 
     @Size(max = 100, message = "Inco Term must not exceed 100 characters")
     private String incoTerm;
@@ -366,7 +367,7 @@ public class FFManifestHdrDto {
 
     @Size(max = 1, message = "Is Main Job must be exactly 1 character")
     private String isMainJob;
-    private BigDecimal mainTransactionPoid;
+    private Long mainTransactionPoid;
 
     @Size(max = 1, message = "Hold Do must be exactly 1 character")
     private String holdDo;

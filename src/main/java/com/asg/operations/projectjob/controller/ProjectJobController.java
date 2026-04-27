@@ -62,7 +62,7 @@ public class ProjectJobController {
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}")
     public ResponseEntity<?> getProjectJobById(
-            @Parameter(description = "Transaction POID", required = true) @PathVariable Long transactionPoid) {
+            @Parameter(description = "Transaction POID", required = true) @PathVariable(name = "transactionPoid") Long transactionPoid) {
         ProjectJobResponse response = projectJobService.getById(transactionPoid);
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(),
                 transactionPoid.toString());
