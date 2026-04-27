@@ -546,7 +546,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Override
-    public void clearChargeDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public String clearChargeDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
 
         // Validate transaction exists and is editable
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
@@ -570,13 +570,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             );
         }
 
-        // Call stored procedure to clear charge details
-        callClearChargeDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+        // Call stored procedure to clear charge details and get the status message
+        String status = callClearChargeDetails(groupPoid, userPoid, companyPoid, transactionPoid);
 
         // Update header total amount to 0
         entry.setTotalAmount(BigDecimal.ZERO);
         // Audit is handled by BaseEntity
         entryHdrRepository.save(entry);
+        
+        return status;
     }
 
     @Override
@@ -2077,18 +2079,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         return response;
     }
 
-    private void callClearChargeDetails(Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid) {
-        try {
-            logger.info("[SP-17] PROC_PDA_ENTRY_DTL_CLEAR - transactionPoid: {}", transactionPoid);
-            String sql = "{ call PROC_PDA_ENTRY_DTL_CLEAR(?, ?, ?, ?) }";
-            jdbcTemplate.update(sql, groupPoid, userPoid, companyPoid, transactionPoid);
-            logger.info("[SP-17] PROC_PDA_ENTRY_DTL_CLEAR - Completed");
-        } catch (Exception e) {
-            logger.error("[SP-17] PROC_PDA_ENTRY_DTL_CLEAR - Error: {}, falling back to direct delete", e.getMessage());
-            entryDtlRepository.deleteByTransactionPoid(transactionPoid);
-        }
-    }
-
     private String callReCalculateCharges(
             Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid,
             BigDecimal vesselPoid, BigDecimal vesselTypePoid, BigDecimal grt, BigDecimal nrt, BigDecimal dwt,
@@ -3380,8 +3370,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Completed. Status: {}", status);
 
-            // Check for warnings or errors
-            if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+            // Check for errors (but allow warnings to proceed)
+            if (status != null && status.startsWith("ERROR")) {
                 throw new ValidationException(
                         "FDA document verification failed",
                         List.of(new ValidationError("general", status))
@@ -3392,6 +3382,11 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             response.put("status", status != null ? status : "Success");
             response.put("documentReceivedDate", currentDate);
             response.put("documentReceivedFrom", currentUser);
+            
+            // Include warning in response if present
+            if (status != null && status.startsWith("WARNING")) {
+                response.put("warning", status);
+            }
             
             if (outData != null && !outData.isEmpty()) {
                 Map<String, Object> cursorData = outData.get(0);
@@ -3432,7 +3427,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 .build();
     }
 
-    public String callClearPdaEntryDetails(Long groupPoid, Long userPoid, Long companyPoid, Long pdaPoid) {
+    public String callClearChargeDetails(Long groupPoid, Long userPoid, Long companyPoid, Long pdaPoid) {
         try {
             logger.info("[SP-8] PROC_PDA_ENTRY_DTL_CLEAR - pdaPoid: {}", pdaPoid);
 
@@ -3447,22 +3442,35 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                             new SqlOutParameter("P_STATUS", Types.VARCHAR)
                     );
 
-            Map<String, Object> inputMap = new HashMap<>();
-            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
-            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
-            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
-            inputMap.put("P_PDA_POID", new BigDecimal(pdaPoid));
+            Map<String, Object> params = new HashMap<>();
+            params.put("P_LOGIN_GROUP_POID", groupPoid);
+            params.put("P_LOGIN_USER_POID", userPoid);
+            params.put("P_LOGIN_COMPANY_POID", companyPoid);
+            params.put("P_PDA_POID", pdaPoid);
 
-            Map<String, Object> result = jdbcCall.execute(inputMap);
-
+            Map<String, Object> result = jdbcCall.execute(params);
             String status = (String) result.get("P_STATUS");
 
             logger.info("[SP-8] PROC_PDA_ENTRY_DTL_CLEAR - Completed. Status: {}", status);
+
+            // Check for warnings or errors from stored procedure
+            if (status != null && (status.startsWith("WARNING") || status.startsWith("ERROR"))) {
+                throw new ValidationException(
+                        status,
+                        List.of(new ValidationError("general", status))
+                );
+            }
+
             return status != null ? status : "Success";
 
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("[SP-8] PROC_PDA_ENTRY_DTL_CLEAR - Error: {}", e.getMessage(), e);
-            return "Error: " + e.getMessage();
+            throw new ValidationException(
+                    "Failed to clear charge details",
+                    List.of(new ValidationError("general", "Error: " + e.getMessage()))
+            );
         }
     }
 
