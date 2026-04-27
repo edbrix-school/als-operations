@@ -271,7 +271,6 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         ProjectJobMapper.toHdrDto(hdr, response);
 
         Optional.ofNullable(response.getProjectPoid())
-                .map(BigDecimal::longValue)
                 .map(spRepostirory::callProjectsLoadInJobsProc)
                 .map(ProjectLoadInJobsProcResponse::getHeader)
                 .filter(list -> list != null && !list.isEmpty())
@@ -395,48 +394,15 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         String operator = documentSearchService.resolveOperator(filterRequestDto);
         String isDeleted = documentSearchService.resolveIsDeleted(filterRequestDto);
 
-        Set<String> fields = Set.of("JOBNO", "JOBTYPE");
+        List<FilterDto> filters = documentSearchService.resolveDateFilters(filterRequestDto, "TRANSACTION_DATE",
+                periodFrom, periodTo);
 
-        List<FilterDto> newFilters = filterRequestDto.filters().stream().map(val -> {
-            String searchField = val.searchField();
-            if (fields.contains(searchField)) {
-                return new FilterDto("FF_".concat(searchField), val.searchValue());
-            }
-            return val;
-        }).toList();
+        RawSearchResult raw = documentSearchService.search(documentId, filters, operator, pageable, isDeleted,
+                "DOC_REF", TRANSACTION_POID);
 
-        FilterRequestDto modifiedFilter = new FilterRequestDto(operator, isDeleted, newFilters);
+        Page<Map<String, Object>> page = new PageImpl<>(raw.records(), pageable, raw.totalRecords());
 
-        List<FilterDto> filters = documentSearchService.resolveDateFilters(
-                modifiedFilter, "TRANSACTION_DATE", periodFrom, periodTo
-        );
-
-        RawSearchResult raw = documentSearchService.search(
-                documentId, filters, operator, pageable, isDeleted, "DOC_REF", TRANSACTION_POID
-        );
-
-        Map<String, String> fieldMapping = Map.of(
-                "FF_JOBNO", "JOBNO",
-                "FF_JOBTYPE", "JOBTYPE"
-        );
-
-        List<Map<String, Object>> records = raw.records().stream().map(val -> {
-            Map<String, Object> orderedVal = new LinkedHashMap<>();
-            val.forEach((key, value) -> orderedVal.put(fieldMapping.getOrDefault(key, key), value));
-            return orderedVal;
-        }).toList();
-
-        Map<String, String> displayFields = raw.displayFields();
-        if (displayFields != null) {
-            Map<String, String> orderedDisplayFields = new LinkedHashMap<>();
-            displayFields.forEach((key, value) -> 
-                    orderedDisplayFields.put(fieldMapping.getOrDefault(key, key), value));
-            displayFields = orderedDisplayFields;
-        }
-
-        Page<Map<String, Object>> page = new PageImpl<>(records, pageable, raw.totalRecords());
-
-        return PaginationUtil.wrapPage(page, displayFields);
+        return PaginationUtil.wrapPage(page, raw.displayFields());
     }
 
     @Override

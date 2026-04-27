@@ -47,13 +47,13 @@ public class FFManifestHdr extends BaseEntity {
     private String ffJobType;
 
     @Column(name = "LINE_POID")
-    private BigDecimal linePoid;
+    private Long linePoid;
 
     @Column(name = "QUOTATION_POID")
-    private BigDecimal quoatationPoid;
+    private Long quoatationPoid;
 
     @Column(name = "PRINCIPAL_POID")
-    private BigDecimal principalPoid;
+    private Long principalPoid;
 
     @Column(name = "MASTER_BL_NO")
     @Size(max = 50)
@@ -84,10 +84,10 @@ public class FFManifestHdr extends BaseEntity {
     private String consignmentType;
 
     @Column(name = "SALESMAN_POID")
-    private BigDecimal salesmanPoid;
+    private Long salesmanPoid;
 
     @Column(name = "AGENT_POID")
-    private BigDecimal agentPoid;
+    private Long agentPoid;
 
     @Column(name = "AGENT_ACCT_NO")
     @Size(max = 20)
@@ -113,7 +113,7 @@ public class FFManifestHdr extends BaseEntity {
     private LocalDateTime jobClosedDate;
 
     @Column(name = "VOYAGE_POID")
-    private BigDecimal voyagePoid;
+    private Long voyagePoid;
 
     @Column(name = "MOTHER_VSL_VOYAGENO")
     @Size(max = 20)
@@ -130,13 +130,13 @@ public class FFManifestHdr extends BaseEntity {
     private LocalDateTime motherVslEta;
 
     @Column(name = "MOTHER_VSL_LOADPORT_POID")
-    private BigDecimal motherVslLoadPortPoid;
+    private Long motherVslLoadPortPoid;
 
     @Column(name = "MOTHER_VSL_UNLOADPORT_POID")
-    private BigDecimal motherVslUnloadPortPoid;
+    private Long motherVslUnloadPortPoid;
 
     @Column(name = "MOTHER_VSL_TRANSHIP_PORT_POID")
-    private BigDecimal motherVslTranshipPortPoid;
+    private Long motherVslTranshipPortPoid;
 
     @Column(name = "FEEDER_VOYAGE_NO")
     @Size(max = 20)
@@ -156,10 +156,10 @@ public class FFManifestHdr extends BaseEntity {
     private LocalDateTime feederVslArrivalDate;
 
     @Column(name = "FEEDER_LOADPORT_POID")
-    private BigDecimal feederLoadportPoid;
+    private Long feederLoadportPoid;
 
     @Column(name = "FEEDER_UNLOADPORT_POID")
-    private BigDecimal feederUnloadportPoid;
+    private Long feederUnloadportPoid;
 
     @Column(name = "FLIGHT_NO")
     @Size(max = 20)
@@ -177,35 +177,36 @@ public class FFManifestHdr extends BaseEntity {
     private String awportOfUnload;
 
     @Column(name = "SHIPPER_POID")
-    private BigDecimal shipperPoid;
+    private Long shipperPoid;
 
     @Column(name = "SHIPPER_ADDRESS_POID")
-    private BigDecimal shipperAddressPoid;
+    private Long shipperAddressPoid;
 
     @Column(name = "CONSIGNEE_POID")
-    private BigDecimal consigneePoid;
+    private Long consigneePoid;
 
     @Column(name = "CONSIGNEE_ADDRESS_POID")
-    private BigDecimal consigneeAddressPoid;
+    private Long consigneeAddressPoid;
 
     @Column(name = "NOTIFY_POID_1")
-    private BigDecimal notifyPoid1;
+    private Long notifyPoid1;
 
     @Column(name = "NOTIFY_ADDRESS_POID_1")
-    private BigDecimal notifyAddressPoid1;
+    private Long notifyAddressPoid1;
 
     @Column(name = "NOTIFY_POID_2")
-    private BigDecimal notifyPoid2;
+    private Long notifyPoid2;
 
     @Column(name = "NOTIFY_ADDRESS_POID_2")
-    private BigDecimal notifyAddressPoid2;
+    private Long notifyAddressPoid2;
 
     @Column(name = "CAN_REQUIRE_TO_SENT")
     @Size(max = 1)
     private String canRequireToSent;
 
     @Column(name = "COMODITY_POID")
-    private BigDecimal comodityPoid;
+    @Size(max = 500)
+    private String comodityPoid;
 
     @Column(name = "CARGO_DESCRIPTION")
     @Size(max = 500)
@@ -223,35 +224,35 @@ public class FFManifestHdr extends BaseEntity {
     private LocalDateTime lpoDate;
 
     @Column(name = "TOTAL_VOLUME")
-    private BigDecimal totalVolume;
+    private Long totalVolume;
 
     @Column(name = "TOTAL_NET_VOLUME")
-    private BigDecimal totalNetVolume;
+    private Long totalNetVolume;
 
     @Column(name = "TOTAL_WEIGHT")
-    private BigDecimal totalWeight;
+    private Long totalWeight;
 
     @Column(name = "TOTAL_NET_WEIGHT")
-    private BigDecimal totalNetWeight;
+    private Long totalNetWeight;
 
     @Column(name = "WEIGHT_UNIT")
-    private BigDecimal weightUnit;
+    private Long weightUnit;
 
     @Column(name = "UNIT_PACK")
     @Size(max = 20)
     private String unitPack;
 
     @Column(name = "TOTAL_NO_OF_PACKS")
-    private BigDecimal totalNoOfPacks;
+    private Long totalNoOfPacks;
 
     @Column(name = "CHARGABLE_WEIGHT")
-    private BigDecimal chargableWeight;
+    private Long chargableWeight;
 
     @Column(name = "NO_OF_PACK_BOOKED")
-    private BigDecimal noOfPackBooked;
+    private Long noOfPackBooked;
 
     @Column(name = "NO_OF_PACK_ARRIVED")
-    private BigDecimal noOfPackArrived;
+    private Long noOfPackArrived;
 
     @Column(name = "HANDLING_INFO")
     @Size(max = 500)
@@ -270,14 +271,14 @@ public class FFManifestHdr extends BaseEntity {
     private String billingTo;
 
     @Column(name = "MASTER_BL_WEIGHT")
-    private BigDecimal masterBlWeight;
+    private Long masterBlWeight;
 
     @Column(name = "MASTER_BL_CURRENCY")
     @Size(max = 20)
     private String masterBlCurrency;
 
     @Column(name = "TOTAL_CHARGES")
-    private BigDecimal totalCharges;
+    private Long totalCharges;
 
     @Column(name = "AIR_ARRIVAL_PORT")
     @Size(max = 100)
@@ -296,10 +297,10 @@ public class FFManifestHdr extends BaseEntity {
     private String agentDetails;
 
     @Column(name = "RATE_CHARGES")
-    private BigDecimal rateChanges;
+    private Long rateChanges;
 
     @Column(name = "AGENT_CHARGES")
-    private BigDecimal agentCharges;
+    private Long agentCharges;
 
     @Column(name = "FLIGHT_NO2")
     @Size(max = 20)
@@ -341,7 +342,7 @@ public class FFManifestHdr extends BaseEntity {
     private String releasedType;
 
     @Column(name = "RELASED_SEQNO")
-    private BigDecimal relasedSeqNo;
+    private Long relasedSeqNo;
 
     @Column(name = "RELEASED_GRANT_BY")
     @Size(max = 20)
@@ -392,7 +393,7 @@ public class FFManifestHdr extends BaseEntity {
     private String ofoqMnfRef;
 
     @Column(name = "PRINCIPAL_ADDR_POID")
-    private BigDecimal principalAddrPoid;
+    private Long principalAddrPoid;
 
     @Column(name = "SHOW_NOTIFY_CAN")
     @Size(max = 1)
@@ -414,7 +415,7 @@ public class FFManifestHdr extends BaseEntity {
     private String ffShJob;
 
     @Column(name = "BILL_TO_CUSTOMER_POID")
-    private BigDecimal billToCustomerPoid;
+    private Long billToCustomerPoid;
 
     @Column(name = "PRINCIPAL_MANUAL")
     @Size(max = 100)
@@ -437,7 +438,7 @@ public class FFManifestHdr extends BaseEntity {
     private String deliveryTo;
 
     @Column(name = "PROJECT_POID")
-    private BigDecimal projectPoid;
+    private Long projectPoid;
 
     @Column(name = "BL_ISSUE_DATE")
     private LocalDateTime blIssueDate;
@@ -482,7 +483,7 @@ public class FFManifestHdr extends BaseEntity {
     private String fcrSuplierShipperRef;
 
     @Column(name = "CO_LOADER_AGENT")
-    private BigDecimal coLoaderAgent;
+    private Long coLoaderAgent;
 
     @Column(name = "INCO_TERM")
     @Size(max = 100)
@@ -569,7 +570,7 @@ public class FFManifestHdr extends BaseEntity {
     private String isMainJob;
 
     @Column(name = "MAIN_TRANSACTION_POID")
-    private BigDecimal mainTransactionPoid;
+    private Long mainTransactionPoid;
 
     @Column(name = "HOLD_DO")
     @Size(max = 1)
