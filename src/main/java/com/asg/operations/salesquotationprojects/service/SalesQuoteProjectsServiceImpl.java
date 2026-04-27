@@ -6,6 +6,7 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.service.PrintService;
 import com.asg.common.lib.utility.DateUtil;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.exceptions.ResourceNotFoundException;
@@ -35,6 +36,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperReport;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
@@ -48,6 +51,7 @@ import oracle.jdbc.OracleTypes;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.Types;
 import java.time.LocalDate;
@@ -82,6 +86,8 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
     private final GlobalTaxMasterRepository globalTaxMasterRepository;
     private final LoggingService loggingService;
     private final EntityManager entityManager;
+    private final PrintService printService;
+    private final DataSource dataSource;
 
     private static final String LEGACY_DOC_FIELD_NAME_CUSTOMER_POID = "CustomerPoid";
 
@@ -831,6 +837,23 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
             globalTermsCustomChangesRepository.save(entity);
             String logDetail = String.format("Row Created on [Sales Quotation Projects Terms and Condition Details] with detRowId: %s", entity.getId().getDetRowId());
             loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedEntity.getTransactionPoid().toString(), logDetail);
+        }
+    }
+
+    @Override
+    public byte[] print(Long transactionPoid) throws JRException {
+        Map<String, Object> params = printService.buildBaseParams(transactionPoid, UserContext.getDocumentId());
+
+        params.put("SUB_TERMS", printService.load("Templates/TermsConditionsSubReport.jrxml"));
+        params.put("SUB_CHARGE_DETAIL", printService.load("Templates/Sales_Quotation_Projects_Charges_Subreport.jrxml"));
+
+        JasperReport mainReport = printService.load("PROJECT/Sales_Quotation_Projects.jrxml");
+        try {
+            return printService.fillReportToPdf(mainReport, params, dataSource);
+        } catch (JRException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new JRException(e);
         }
     }
 }

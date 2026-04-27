@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Sales_Quotation_Projects_Charges_Subreport2" language="groovy" pageWidth="555" pageHeight="802" columnWidth="535" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="51f26c1c-332c-43f0-beb9-5722768520c7">
+	<property name="ireport.zoom" value="1.3310000000000004"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<style name="Title" fontName="Times New Roman" fontSize="50" isBold="true" pdfFontName="Times-Bold"/>
+	<style name="SubTitle" forecolor="#736343" fontName="Arial" fontSize="18"/>
+	<style name="Column header" forecolor="#666666" fontName="Arial" fontSize="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+	<style name="Detail" fontName="Arial" fontSize="12"/>
+	<style name="Row" mode="Transparent">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
+			<style backcolor="#E6DAC3"/>
+		</conditionalStyle>
+	</style>
+	<parameter name="LOGIN_GROUP_POID" class="java.lang.String">
+		<defaultValueExpression><![CDATA[1]]></defaultValueExpression>
+	</parameter>
+	<parameter name="LOGIN_COMP_POID" class="java.lang.String">
+		<defaultValueExpression><![CDATA[1]]></defaultValueExpression>
+	</parameter>
+	<parameter name="LOGIN_USER_POID" class="java.lang.String"/>
+	<parameter name="DOC_ID" class="java.lang.String">
+		<defaultValueExpression><![CDATA["000-000"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="DOC_KEY_POID" class="java.lang.String"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["\\\\shippingbahrain.com\\data\\ERP_REPORTS\\Reports\\"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT rownum||'.'|| NVL(PRINTABLE_CHARGE_DESC, CM.CHARGE_NAME)  CHARGE,
+nvl(BUY_CURRENCY_CODE,'  ') CURRENCY_CODE, BUY_CURRENCY_RATE BUY_CURRENCY_RATE,
+SELL_UNIT_RATE_FC SELLING_CHARGE, QUANTITY, SELL_TOTAL_FC SELLING_CHARGE_LOCAL,
+SUM.STOCK_UNIT_CODE EQUIPMENT_TYPE,
+c.remarks
+FROM SALES_QUOTE_PROJECTS_CHARGE_DTL C
+LEFT JOIN SHIP_CHARGE_MASTER CM ON C.CHARGE_POID=CM.CHARGE_POID
+LEFT JOIN STOCK_UNIT_MASTER SUM ON C.UNIT_POID=SUM.STOCK_UNIT_POID
+WHERE C.TRANSACTION_POID = $P{DOC_KEY_POID}]]>
+	</queryString>
+	<field name="CHARGE" class="java.lang.String"/>
+	<field name="CURRENCY_CODE" class="java.lang.String"/>
+	<field name="BUY_CURRENCY_RATE" class="java.math.BigDecimal"/>
+	<field name="SELLING_CHARGE" class="java.math.BigDecimal"/>
+	<field name="QUANTITY" class="java.math.BigDecimal"/>
+	<field name="SELLING_CHARGE_LOCAL" class="java.math.BigDecimal"/>
+	<field name="EQUIPMENT_TYPE" class="java.lang.String"/>
+	<field name="REMARKS" class="java.lang.String"/>
+	<variable name="QUANTITY_1" class="java.math.BigDecimal" resetType="Column" calculation="Sum">
+		<variableExpression><![CDATA[$F{QUANTITY}]]></variableExpression>
+	</variable>
+	<variable name="SELLING_CHARGE_1" class="java.math.BigDecimal" resetType="Column" calculation="Sum">
+		<variableExpression><![CDATA[$F{SELLING_CHARGE}]]></variableExpression>
+	</variable>
+	<variable name="SELLING_CHARGE_LOCAL_1" class="java.math.BigDecimal" resetType="Column" calculation="Sum">
+		<variableExpression><![CDATA[$F{SELLING_CHARGE_LOCAL}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="19">
+			<staticText>
+				<reportElement positionType="Float" x="0" y="0" width="100" height="18" uuid="32cc0a61-ff5d-4b95-96e7-c379a1792706"/>
+				<textElement>
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Charges:]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="19" splitType="Stretch">
+			<line>
+				<reportElement positionType="FixRelativeToBottom" x="0" y="18" width="555" height="1" uuid="9ec55f57-eda0-48ce-a06e-ffab81edbcc6"/>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement x="0" y="1" width="142" height="18" uuid="dcb638fc-ed6a-4f41-b6e6-562022496837"/>
+				<text><![CDATA[Charge]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="455" y="1" width="100" height="18" uuid="1d3903ac-19b8-4c26-bb44-87a644614d78"/>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[Per Charge]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="0" width="104" height="18" uuid="6ea5898c-b8ee-46fb-be1e-59a8b46fc5b7"/>
+				<text><![CDATA[Remarks]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="18" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="212" height="18" uuid="abd8a197-cdde-4232-80b2-d53412b92199"/>
+				<textFieldExpression><![CDATA[$F{CHARGE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##,##0.000" isBlankWhenNull="true">
+				<reportElement x="422" y="0" width="100" height="18" uuid="3696bb27-985a-4eda-8f6a-ca5d878b15b0"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{SELLING_CHARGE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="525" y="0" width="30" height="18" uuid="8464ddea-f2ac-47e1-8a35-3a3546ea0121"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{CURRENCY_CODE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="240" y="0" width="163" height="18" uuid="960df0fd-de03-4954-be3e-96f4c062f63d"/>
+				<textFieldExpression><![CDATA[$F{REMARKS}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="20">
+			<line>
+				<reportElement x="0" y="0" width="555" height="1" uuid="0b51af57-46c2-4844-81cf-0d041394cf0d"/>
+				<graphicElement>
+					<pen lineWidth="0.5"/>
+				</graphicElement>
+			</line>
+		</band>
+	</columnFooter>
+</jasperReport>

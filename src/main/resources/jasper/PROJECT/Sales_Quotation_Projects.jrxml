@@ -1,0 +1,552 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Sales_Quotation_Projects" language="groovy" pageWidth="595" pageHeight="842" columnWidth="535" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="51f26c1c-332c-43f0-beb9-5722768520c7">
+	<property name="ireport.zoom" value="2.196150000000001"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="254"/>
+	<style name="Title" fontName="Times New Roman" fontSize="50" isBold="true" pdfFontName="Times-Bold"/>
+	<style name="SubTitle" forecolor="#736343" fontName="Arial" fontSize="18"/>
+	<style name="Column header" forecolor="#666666" fontName="Arial" fontSize="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+	<style name="Detail" fontName="Arial" fontSize="12"/>
+	<style name="Row" mode="Transparent">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$V{REPORT_COUNT}%2 == 0]]></conditionExpression>
+			<style backcolor="#E6DAC3"/>
+		</conditionalStyle>
+	</style>
+	<parameter name="LOGIN_GROUP_POID" class="java.lang.String">
+		<defaultValueExpression><![CDATA[1]]></defaultValueExpression>
+	</parameter>
+	<parameter name="LOGIN_COMP_POID" class="java.lang.String">
+		<defaultValueExpression><![CDATA[1]]></defaultValueExpression>
+	</parameter>
+	<parameter name="LOGIN_USER_POID" class="java.lang.String"/>
+	<parameter name="DOC_ID" class="java.lang.String">
+		<defaultValueExpression><![CDATA["000-000"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SUB_HEADER" class="net.sf.jasperreports.engine.JasperReport"/>
+	<parameter name="SUB_FOOTER" class="net.sf.jasperreports.engine.JasperReport"/>
+	<parameter name="SUB_TERMS" class="net.sf.jasperreports.engine.JasperReport"/>
+	<parameter name="SUB_CHARGE_DETAIL" class="net.sf.jasperreports.engine.JasperReport"/>
+	<parameter name="DOC_KEY_POID" class="java.lang.String"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["//ASGERPFS01.SHIPPINGBAHRAIN.COM//ERP_Reports//Reports//"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT TRANSACTION_DATE, DOC_REF, QUOTE_REFERENCE,
+	nvl(C.CUSTOMER_NAME,GA.ADDRESS_NAME) AS CUSTOMER,
+	NVL(GA1.PO_BOX, GA2.PO_BOX) as PO_BOX, NVL(GA1.BLDG, GA2.BLDG) AS BUILDING,
+	GA1.STATE, nvl(C.CUSTOMER_EMAIL, GA1.EMAIL1) AS EMAIL, NVL(GA1.OFF_TEL1,GA2.OFF_TEL1) AS OFFICE_TEL,
+	nvl(C.CUSTOMER_CONTACT, GA1.MOBILE) AS MOBILE,
+	CASE WHEN C.SHIPMENT_MODE LIKE '%AIR%' THEN AL.AIRLINE_NAME ELSE SL.LINE_NAME END AS LINE_NAME,
+    SPM.PRINCIPAL_NAME,
+	SM.SALESMAN_NAME || ' (Email:' || SM.EMAIL || ')' AS SALESMAN, DECODE(SM.MOBILE, NULL, NVL(SIGNATURE_TEXT, ' '), 'Mobile:' || SM.MOBILE || ' ' || NVL(SIGNATURE_TEXT, ' ')) AS SALESMAN_MOBILE,
+	SM.EMAIL  AS SALESMAN_EMAIL,
+    VALIDITY_TO_DATE,
+    REPLACE(C.TRANSPORTATION_MODE, '_', ' ') FREIGHT_MODE,
+    'Gross :' || NVL(WEIGHT, 0)|| ' ' || 'Freight Tons :' || NVL(FREIGHT_TONS, 0)|| ' ' || UNITS   CHARGEABLE_WEIGHT,
+    SC.COMODITY_NAME COMODITY_NAME,
+    SHIPPING_TERMS TERMS_OF_FREIGHT,
+    SHIPMENT_MODE, TRANSPORTATION_MODE,   NULL DISCHARGE_AIRPORT_POID, NULL LOADING_PORT,
+    NULL DISCHARGE_PORT, NULL PLACE_OF_RECEIPT, NULL PLACE_OF_DELIVERY, CBM || ' ' || UNITS VOLUME,
+    TERMS_POID TERMS_CONDITION_POID, PROJECT_DETAILS CARGO_DETAILS, SHIPPING_TERMS, C.REMARKS, C.BILLING_CURRENCY_CODE
+  FROM SALES_QUOTE_PROJECTS_HDR C
+  LEFT JOIN SALES_SALESMAN_MASTER SM ON C.SALESMAN_POID = SM.SALESMAN_POID
+  LEFT JOIN SHIP_LINE_MASTER SL ON C.LINE_POID = SL.LINE_POID
+  LEFT JOIN FF_AIR_LINE_MASTER AL ON C.LINE_POID = AL.AIRLINE_POID
+  LEFT JOIN GLOBAL_ADDRESS_MASTER GA ON C.CUSTOMER_POID = GA.ADDRESS_MASTER_POID
+  LEFT JOIN VIEW_SALES_ADDRESS GA1 ON GA.ADDRESS_MASTER_POID = GA1.ADDRESS_MASTER_POID
+  LEFT JOIN VIEW_MAIN_ADDRESS GA2 ON GA.ADDRESS_MASTER_POID = GA2.ADDRESS_MASTER_POID
+  LEFT JOIN SHIP_COMODITY_MASTER SC ON C.COMMODITY = SC.COMODITY_CODE
+  LEFT JOIN SHIP_PRINCIPAL_MASTER SPM ON C.PRINCIPAL_POID=SPM.PRINCIPAL_POID
+WHERE TRANSACTION_POID =  $P{DOC_KEY_POID}]]>
+	</queryString>
+	<field name="TRANSACTION_DATE" class="java.sql.Timestamp"/>
+	<field name="DOC_REF" class="java.lang.String"/>
+	<field name="QUOTE_REFERENCE" class="java.lang.String"/>
+	<field name="CUSTOMER" class="java.lang.String"/>
+	<field name="PO_BOX" class="java.lang.String"/>
+	<field name="BUILDING" class="java.lang.String"/>
+	<field name="STATE" class="java.lang.String"/>
+	<field name="EMAIL" class="java.lang.String"/>
+	<field name="OFFICE_TEL" class="java.lang.String"/>
+	<field name="MOBILE" class="java.lang.String"/>
+	<field name="LINE_NAME" class="java.lang.String"/>
+	<field name="PRINCIPAL_NAME" class="java.lang.String"/>
+	<field name="SALESMAN" class="java.lang.String"/>
+	<field name="SALESMAN_MOBILE" class="java.lang.String"/>
+	<field name="SALESMAN_EMAIL" class="java.lang.String"/>
+	<field name="VALIDITY_TO_DATE" class="java.sql.Timestamp"/>
+	<field name="FREIGHT_MODE" class="java.lang.String"/>
+	<field name="CHARGEABLE_WEIGHT" class="java.lang.String"/>
+	<field name="COMODITY_NAME" class="java.lang.String"/>
+	<field name="TERMS_OF_FREIGHT" class="java.lang.String"/>
+	<field name="SHIPMENT_MODE" class="java.lang.String"/>
+	<field name="TRANSPORTATION_MODE" class="java.lang.String"/>
+	<field name="DISCHARGE_AIRPORT_POID" class="java.lang.String"/>
+	<field name="LOADING_PORT" class="java.lang.String"/>
+	<field name="DISCHARGE_PORT" class="java.lang.String"/>
+	<field name="PLACE_OF_RECEIPT" class="java.lang.String"/>
+	<field name="PLACE_OF_DELIVERY" class="java.lang.String"/>
+	<field name="VOLUME" class="java.lang.String"/>
+	<field name="TERMS_CONDITION_POID" class="java.math.BigDecimal"/>
+	<field name="CARGO_DETAILS" class="java.lang.String"/>
+	<field name="SHIPPING_TERMS" class="java.lang.String"/>
+	<field name="REMARKS" class="java.lang.String"/>
+	<field name="BILLING_CURRENCY_CODE" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="321" splitType="Stretch">
+			<rectangle radius="10">
+				<reportElement x="0" y="193" width="554" height="127" uuid="50663445-aa18-4e30-a66a-00dfb243ade5"/>
+			</rectangle>
+			<textField isBlankWhenNull="true">
+				<reportElement x="107" y="241" width="181" height="18" uuid="9d62dba3-9d60-42bb-ac2f-d21737cf5ac1"/>
+				<textFieldExpression><![CDATA[$F{TRANSPORTATION_MODE}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="107" y="218" width="181" height="18" uuid="3270a70b-f98e-433b-8f6d-f795f45d2729"/>
+				<textFieldExpression><![CDATA[$F{SHIPMENT_MODE}]]></textFieldExpression>
+			</textField>
+			<rectangle radius="10">
+				<reportElement x="335" y="106" width="219" height="80" uuid="31053e4b-93ac-4572-8627-c829b5770080"/>
+			</rectangle>
+			<subreport>
+				<reportElement x="0" y="0" width="555" height="75" uuid="11dd97b8-4c92-45fe-85bb-3b9358474446"/>
+				<subreportParameter name="LOGIN_DIV_POID">
+					<subreportParameterExpression><![CDATA[3]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="LOGIN_COMP_POID">
+					<subreportParameterExpression><![CDATA[$P{LOGIN_COMP_POID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUB_HEADER}]]></subreportExpression>
+			</subreport>
+			<staticText>
+				<reportElement x="8" y="151" width="36" height="15" uuid="5a1f6be8-17be-470e-bea0-87d32829e5ac"/>
+				<textElement verticalAlignment="Middle"/>
+				<text><![CDATA[Email :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="349" y="139" width="64" height="20" uuid="ce467a00-8ec1-4515-86de-69a6b6359c73"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Date ]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="204" y="170" width="100" height="15" uuid="d90f1b13-5143-4201-805a-76a1c3a968c0"/>
+				<textFieldExpression><![CDATA[$F{MOBILE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="349" y="115" width="64" height="20" uuid="8bf0c9ff-5fd7-46b3-b7da-459e5b27aebf"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Ref No]]></text>
+			</staticText>
+			<textField pattern="dd-MMM-yy" isBlankWhenNull="true">
+				<reportElement x="423" y="137" width="113" height="18" uuid="997fd459-c3ca-4e5d-a948-bc129a2cab3f"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{TRANSACTION_DATE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd-MMM-yy" isBlankWhenNull="true">
+				<reportElement x="423" y="161" width="112" height="18" uuid="d6549b96-ac3c-4ec7-897c-7650b0654acb"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{VALIDITY_TO_DATE}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="50" y="151" width="100" height="15" uuid="63e3f414-c42e-4fff-ac6c-d81d83a064bc"/>
+				<textFieldExpression><![CDATA[$F{EMAIL}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="7" y="170" width="78" height="16" uuid="8c200f2c-b535-433a-a475-1a1425250931"/>
+				<textElement verticalAlignment="Middle"/>
+				<text><![CDATA[Contact Number:]]></text>
+			</staticText>
+			<textField pattern="dd-MMM-yy" isBlankWhenNull="true">
+				<reportElement x="423" y="115" width="113" height="18" uuid="e124ed8d-1868-46ac-ae30-4b4e6f8faeb9"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{DOC_REF}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="SubTitle" mode="Opaque" x="190" y="75" width="207" height="20" forecolor="#000000" backcolor="#FFFFFF" uuid="48c834a4-d371-4e4b-a748-bf85c44f7591"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="SansSerif" size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Projects Quotation]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="SubTitle" mode="Opaque" x="1" y="90" width="100" height="15" forecolor="#000000" backcolor="#FFFFFF" uuid="fbb9a756-475c-40b0-a6ca-23883c89fcd9"/>
+				<textElement>
+					<font fontName="SansSerif" size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Customer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="132" width="36" height="15" uuid="1313cc90-94b5-4bd9-989b-c94da7e6f86b"/>
+				<textElement verticalAlignment="Middle"/>
+				<text><![CDATA[Po Box:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="48" y="132" width="31" height="15" uuid="69d1efcb-b4ed-4f07-8077-e46b9e364991"/>
+				<textFieldExpression><![CDATA[$F{PO_BOX}]]></textFieldExpression>
+			</textField>
+			<rectangle radius="10">
+				<reportElement x="0" y="106" width="332" height="80" uuid="0d7a0ee3-5a49-4f20-bd18-6cc46d78af62"/>
+			</rectangle>
+			<staticText>
+				<reportElement x="190" y="168" width="11" height="15" uuid="f41f2076-e664-4cc6-9010-d6daef5bc5bd"/>
+				<text><![CDATA[/]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="349" y="160" width="64" height="20" uuid="0f3a77d5-ce61-44be-90fb-539573c11dc6"/>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Valid Until]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="86" y="168" width="100" height="15" uuid="a1d8a048-03da-4035-825d-8c3ed195340a"/>
+				<textFieldExpression><![CDATA[$F{OFFICE_TEL}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="8" y="112" width="296" height="15" uuid="a86a56a5-b9a3-4479-ae00-6ff7cf5d31fe"/>
+				<textFieldExpression><![CDATA[$F{CUSTOMER}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="111" y="132" width="203" height="15" uuid="41757724-98f9-4c12-a98f-2df5f358ccf2"/>
+				<textFieldExpression><![CDATA[$F{BUILDING}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="8" y="150" width="36" height="15" uuid="eba857cd-2c47-42bb-bb3d-fd542d14453e"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[Email :]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="50" y="150" width="254" height="15" uuid="97936f28-1c09-4fe1-9164-4a2714f247bf"/>
+				<textFieldExpression><![CDATA[$F{EMAIL}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="8" y="131" width="40" height="15" uuid="14aaf423-4d3c-49e8-bc62-fad088024550"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[PO Box:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="58" y="131" width="52" height="15" uuid="f1cc08fc-7d7b-4fa9-9622-ab8a9a8d9d7c"/>
+				<textFieldExpression><![CDATA[$F{PO_BOX}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="204" y="168" width="100" height="15" uuid="096ec746-583a-4996-bedd-f95388bcd248"/>
+				<textFieldExpression><![CDATA[$F{MOBILE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="7" y="168" width="78" height="16" uuid="1c96bd5f-686f-43d3-9cbd-e6e69bd55ac1"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[Contact Number:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="107" y="197" width="152" height="18" uuid="d602dc29-614e-40e0-a7ae-0e1668637092"/>
+				<textFieldExpression><![CDATA[$F{LINE_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement stretchType="RelativeToBandHeight" x="381" y="218" width="172" height="18" uuid="ace80798-9ed6-44b3-b79c-19484285711d"/>
+				<textFieldExpression><![CDATA[$F{CHARGEABLE_WEIGHT}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="381" y="197" width="172" height="18" uuid="6b61e42b-e5f2-4849-a567-de2da93536e3"/>
+				<textFieldExpression><![CDATA[$F{COMODITY_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="107" y="262" width="152" height="18" uuid="5c4523c3-946b-4f47-8292-a3c71b76fbb5"/>
+				<textFieldExpression><![CDATA[$F{PRINCIPAL_NAME}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="107" y="282" width="152" height="18" uuid="a11c4b46-e1c9-4689-b808-6c14b1081fa8"/>
+				<textFieldExpression><![CDATA[$F{QUOTE_REFERENCE}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="381" y="241" width="172" height="18" uuid="5856da0b-6191-43c4-8721-c2dbc717ad92"/>
+				<textFieldExpression><![CDATA[$F{VOLUME}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="8" y="197" width="94" height="18" uuid="bee42302-2667-470c-bac5-7c228fda2612"/>
+				<text><![CDATA[Line]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="218" width="94" height="18" uuid="558f8185-341e-47ca-ab68-5e448ca49f8c"/>
+				<text><![CDATA[Shipment Mode	]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="241" width="94" height="18" uuid="827072a2-7a2e-4ac2-8a80-6b876917d385"/>
+				<text><![CDATA[Transportation Mode]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="262" width="94" height="18" uuid="da04110e-cf0a-4321-85db-6d75ca21ffb7"/>
+				<text><![CDATA[Principal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="282" width="94" height="18" uuid="9f6d98eb-4039-4de5-ab78-3733eb06c76e"/>
+				<text><![CDATA[Quote Ref]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="295" y="197" width="80" height="18" uuid="bc7e93bf-d981-432f-b718-6d2340ff4cf5"/>
+				<text><![CDATA[Commodity]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="295" y="218" width="80" height="18" uuid="02ca6584-ec2f-4e9c-9997-c68e59bbbab1"/>
+				<text><![CDATA[Weight]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="295" y="241" width="80" height="18" uuid="a163f9a2-dff0-4faa-92a7-e4f567a7ba68"/>
+				<text><![CDATA[Volume]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="375" y="197" width="2" height="18" uuid="7feffc23-623c-48b5-8259-54be7a93583f"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="375" y="241" width="1" height="16" uuid="18630f60-0b16-4da2-ad8e-9c8552c28129"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="375" y="218" width="2" height="18" uuid="007c236d-e5b2-4be1-82ef-115377edf93a"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="375" y="282" width="2" height="18" uuid="5dc65624-cfb5-46dd-9e6f-a4f689f27518"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="101" y="264" width="2" height="18" uuid="6035c0dd-71d3-490f-9a87-35fab35b0616"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="101" y="219" width="2" height="18" uuid="3f1d3d51-76ee-464f-a56c-a3e346eee16e"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="101" y="197" width="2" height="18" uuid="3b1d7e65-2bc2-4fad-b6ce-d0b2370421e5"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="101" y="241" width="2" height="18" uuid="b2ac1384-446a-4f10-8da6-e3d73bfb1f72"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="101" y="283" width="2" height="18" uuid="38523875-33b8-4fa6-a472-07d32b375869"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="415" y="163" width="2" height="18" uuid="f26f499a-6715-4d5f-aa22-3894e82bcd88"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="415" y="139" width="2" height="18" uuid="007297e8-0366-4f51-b6d9-a8ee096dbef0"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="415" y="116" width="2" height="18" uuid="6dec8d3a-4290-430c-a334-886ceb1fcfda"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="381" y="262" width="172" height="18" uuid="6cca8b79-d445-4222-803e-75b2b699ed4d"/>
+				<textFieldExpression><![CDATA[$F{SHIPPING_TERMS}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="262" width="80" height="18" uuid="46b70ac5-1de2-4433-8bfc-9562a78149a5"/>
+				<text><![CDATA[Shipping  Terms]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="375" y="262" width="2" height="18" uuid="d96ee4aa-efa0-4a85-90b6-af2937ea8f2e"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="381" y="282" width="172" height="18" uuid="1ecae4b4-219a-440d-b5e6-475143269a0f"/>
+				<textFieldExpression><![CDATA[$F{BILLING_CURRENCY_CODE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="282" width="80" height="18" uuid="b315606b-ecc1-4ee2-ae26-56ef5e2995c0"/>
+				<text><![CDATA[Billing Currency]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="8" y="301" width="94" height="18" uuid="c386583d-af72-4e4a-bad5-84b2caabb397"/>
+				<text><![CDATA[Cargo Details]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="101" y="302" width="2" height="18" uuid="643afba8-6dfa-4233-863b-7967899c36c3"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="107" y="301" width="446" height="18" uuid="9153bb78-b695-48e9-a05c-21057246a199"/>
+				<textFieldExpression><![CDATA[$F{CARGO_DETAILS}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="23" splitType="Stretch">
+			<subreport>
+				<reportElement positionType="Float" x="0" y="5" width="555" height="17" uuid="14ed1b3d-bcc6-49e4-9ba6-c645619b40e3"/>
+				<subreportParameter name="LOGIN_GROUP_POID"/>
+				<subreportParameter name="LOGIN_COMP_POID"/>
+				<subreportParameter name="LOGIN_USER_POID"/>
+				<subreportParameter name="DOC_ID"/>
+				<subreportParameter name="DOC_KEY_POID">
+					<subreportParameterExpression><![CDATA[$P{DOC_KEY_POID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="SUBREPORT_DIR"/>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUB_CHARGE_DETAIL}]]></subreportExpression>
+			</subreport>
+		</band>
+		<band height="32">
+			<staticText>
+				<reportElement x="2" y="0" width="100" height="13" isRemoveLineWhenBlank="true" uuid="06609f49-f4b0-4920-9112-dab1198cc09b">
+					<printWhenExpression><![CDATA[$F{REMARKS} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Remarks:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="2" y="14" width="551" height="18" isRemoveLineWhenBlank="true" uuid="c694493b-93b0-4f9e-8559-f8e6aba3330a"/>
+				<textFieldExpression><![CDATA[$F{REMARKS}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="28">
+			<subreport>
+				<reportElement x="2" y="0" width="553" height="26" uuid="67cc4592-dd02-47de-822a-19d73faa10cc"/>
+				<subreportParameter name="DOC_KEY_POID">
+					<subreportParameterExpression><![CDATA[$P{DOC_KEY_POID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DOC_ID">
+					<subreportParameterExpression><![CDATA[$P{DOC_ID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TERMS_POID">
+					<subreportParameterExpression><![CDATA[$F{TERMS_CONDITION_POID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="LOGIN_COMPANY_POID">
+					<subreportParameterExpression><![CDATA[$P{LOGIN_COMP_POID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUB_TERMS}]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="36" splitType="Stretch">
+			<subreport>
+				<reportElement x="1" y="0" width="297" height="36" uuid="b37d2bea-49a3-4ed8-8503-217cb389223c"/>
+				<subreportParameter name="LOGIN_COMP_POID">
+					<subreportParameterExpression><![CDATA[$P{LOGIN_COMP_POID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DOC_ID">
+					<subreportParameterExpression><![CDATA[$P{DOC_ID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUB_FOOTER}]]></subreportExpression>
+			</subreport>
+			<staticText>
+				<reportElement style="Column header" x="521" y="1" width="7" height="20" forecolor="#736343" uuid="44d8d386-10ec-4974-b8fc-c43da39cabe4"/>
+				<textElement verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[of]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement style="Column header" stretchType="RelativeToBandHeight" x="494" y="1" width="26" height="20" forecolor="#736343" uuid="a78ab00d-1b59-403b-9ba2-7903ce0b2e7c"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="6" isItalic="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Column header" x="477" y="1" width="15" height="20" forecolor="#736343" uuid="46776c61-708e-4c0c-bce4-8b00389c799e"/>
+				<textElement verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[Page]]></text>
+			</staticText>
+			<textField evaluationTime="Report">
+				<reportElement style="Column header" x="530" y="1" width="24" height="20" forecolor="#736343" uuid="d01f782f-ba16-4a4c-bebb-dce70d4d550d"/>
+				<textElement verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<lastPageFooter>
+		<band height="142">
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="38" width="366" height="18" uuid="710fe74a-fb47-4cb1-ad2e-07004c12acc6"/>
+				<textElement>
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SALESMAN_MOBILE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="1" y="0" width="100" height="18" uuid="2ea8dd7a-4a9b-406f-b1e5-1de4497b576d"/>
+				<textElement>
+					<font isBold="true" pdfFontName="Helvetica-Bold"/>
+				</textElement>
+				<text><![CDATA[Signature:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="19" width="363" height="18" uuid="5b04795d-695b-4ddb-93d1-da26e1c3d537"/>
+				<textFieldExpression><![CDATA[$F{SALESMAN}]]></textFieldExpression>
+			</textField>
+			<subreport>
+				<reportElement x="2" y="103" width="297" height="36" uuid="374c8b68-1517-4e46-988f-70f5aa72cffd"/>
+				<subreportParameter name="LOGIN_COMP_POID">
+					<subreportParameterExpression><![CDATA[$P{LOGIN_COMP_POID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DOC_ID">
+					<subreportParameterExpression><![CDATA[$P{DOC_ID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUB_FOOTER}]]></subreportExpression>
+			</subreport>
+			<textField evaluationTime="Report">
+				<reportElement style="Column header" x="511" y="105" width="24" height="20" forecolor="#736343" uuid="61fb119e-9a0d-410a-9a9a-67a8f667221f"/>
+				<textElement verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Column header" x="462" y="105" width="15" height="20" forecolor="#736343" uuid="165e74d2-51d2-45d1-8628-449c7320435e"/>
+				<textElement verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[Page]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Column header" x="504" y="105" width="7" height="20" forecolor="#736343" uuid="4deca8d4-1158-4097-9d5c-4bb3e43ccb79"/>
+				<textElement verticalAlignment="Middle">
+					<font size="6"/>
+				</textElement>
+				<text><![CDATA[of]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true">
+				<reportElement style="Column header" stretchType="RelativeToBandHeight" x="477" y="105" width="26" height="20" forecolor="#736343" uuid="2df81659-75bc-421d-b78b-012d2ed3fdf1"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font size="6" isItalic="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="1" y="56" width="552" height="47" uuid="84424cd9-c6b9-41fb-8c40-3292f852b840"/>
+				<textElement>
+					<font fontName="SansSerif" size="8" isItalic="true" pdfFontName="Helvetica-Oblique"/>
+				</textElement>
+				<text><![CDATA[Special Note:
+All prices mentioned in this document are exclusive of any taxes, including (but not limited to) VAT or other indirect taxes that may be imposed by any public or governmental authority in respect of this document. Each Party will bear their respective tax liability, if any, applicable in their country of reporting
+]]></text>
+			</staticText>
+		</band>
+	</lastPageFooter>
+</jasperReport>

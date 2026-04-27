@@ -34,6 +34,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import static com.asg.common.lib.dto.response.ApiResponse.error;
 import static com.asg.common.lib.dto.response.ApiResponse.success;
 
 @Slf4j
@@ -136,5 +137,19 @@ public class SalesQuoteProjectsController {
         headers.setContentDisposition(ContentDisposition.builder("attachment").filename(data.getFileName()).build());
 
         return ResponseEntity.ok().headers(headers).body(data.getContent());
+    }
+
+    @AllowedAction(UserRolesRightsEnum.PRINT)
+    @GetMapping("/print/{transactionPoid}")
+    public ResponseEntity<?> print(@PathVariable Long transactionPoid) {
+        try {
+            byte[] pdf = salesQuoteProjectsService.print(transactionPoid);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sales-quotation-project-" + transactionPoid + ".pdf")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdf);
+        } catch (Exception e) {
+            return error("Failed to generate PDF: " + e.getMessage(), 500);
+        }
     }
 }
