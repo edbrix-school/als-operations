@@ -1375,8 +1375,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         if ("GENERAL".equals(refType)) {
             if ("Y".equals(principalApproved)) {
                 throw new ValidationException(
-                        "Already Pricipal Aprroved",
-                        List.of(new ValidationError("principalApproved", "Entry cannot be edited because it is already approved by principal"))
+                        "Principal Approval is completed for this document...",
+                        List.of(new ValidationError("principalApproved", "Principal Approval is completed for this document..."))
                 );
             }
             if ("CONFIRMED".equalsIgnoreCase(status)) {
