@@ -899,18 +899,18 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             result.put("message", actualResult);
             
             if (createdBy != null && !createdBy.isEmpty()) {
-                result.put("ApprovedBy", createdBy);
+                result.put("approvedBy", createdBy);
             }
             
-            // Extract FDA reference using regex pattern
-            // Pattern matches: "FDA Ref: CSA926" or "FDA REF - CSA926" etc.
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("FDA\\s+(?:Ref|REF)\\s*[:-]?\\s*([A-Z0-9,\\s]+)");
+            // Extract FDA reference using improved regex pattern
+            // Pattern matches: "FDA Ref: ASG9958, ASG9958_A" or "FDA REF - ASG9958, ASG9958_A" etc.
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("FDA\\s+(?:Ref|REF)\\s*[:-]?\\s*([A-Z0-9_,\\s]+?)(?:\\)|\\.\\.\\.|$)");
             java.util.regex.Matcher matcher = pattern.matcher(actualResult);
             
             if (matcher.find()) {
                 String fdaRef = matcher.group(1).trim();
-                // Clean up any trailing characters like ')' or '...'
-                fdaRef = fdaRef.replaceAll("[)\\.].*$", "").trim();
+                // Clean up any trailing punctuation but preserve underscores and commas
+                fdaRef = fdaRef.replaceAll("[.]+$", "").trim();
                 result.put("fdaRef", fdaRef);
                 logger.info("[SP-10] Extracted FDA Reference: {}", fdaRef);
             } else {
