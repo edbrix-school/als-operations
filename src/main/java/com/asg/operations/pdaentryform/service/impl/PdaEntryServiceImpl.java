@@ -126,7 +126,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Auto-populate voyage details if voyagePoid is provided
         if (request.getVoyagePoid() != null) {
-            Map<String, Object> voyageDetails = getVoyageDetails(request.getVoyagePoid(), groupPoid, companyPoid, userPoid);
+            Map<String, Object> voyageDetails = getVoyageDetails((request.getVoyagePoid()), groupPoid, companyPoid, userPoid);
             if (!voyageDetails.isEmpty()) {
                 // Auto-populate voyage number if not provided in request
                 if (request.getVoyageNo() == null || request.getVoyageNo().trim().isEmpty()) {
@@ -134,8 +134,20 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 }
                 // Auto-populate vessel details
                 if (voyageDetails.get("vesselPoid") != null) {
-                    entry.setVesselPoid((BigDecimal) voyageDetails.get("vesselPoid"));
-                    entry.setVesselTypePoid((BigDecimal) voyageDetails.get("vesselTypePoid"));
+                    Object vesselPoidObj = voyageDetails.get("vesselPoid");
+                    if (vesselPoidObj instanceof BigDecimal) {
+                        entry.setVesselPoid(((BigDecimal) vesselPoidObj).longValue());
+                    } else if (vesselPoidObj instanceof Number) {
+                        entry.setVesselPoid(((Number) vesselPoidObj).longValue());
+                    }
+                    
+                    Object vesselTypePoidObj = voyageDetails.get("vesselTypePoid");
+                    if (vesselTypePoidObj instanceof BigDecimal) {
+                        entry.setVesselTypePoid(((BigDecimal) vesselTypePoidObj).longValue());
+                    } else if (vesselTypePoidObj instanceof Number) {
+                        entry.setVesselTypePoid(((Number) vesselTypePoidObj).longValue());
+                    }
+                    
                     if (request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) {
                         entry.setImoNumber((String) voyageDetails.get("imoNumber"));
                     }
@@ -145,10 +157,20 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 }
                 // Auto-populate other voyage details
                 if (voyageDetails.get("linePoid") != null) {
-                    entry.setLinePoid((BigDecimal) voyageDetails.get("linePoid"));
+                    Object linePoidObj = voyageDetails.get("linePoid");
+                    if (linePoidObj instanceof BigDecimal) {
+                        entry.setLinePoid(((BigDecimal) linePoidObj).longValue());
+                    } else if (linePoidObj instanceof Number) {
+                        entry.setLinePoid(((Number) linePoidObj).longValue());
+                    }
                 }
                 if (voyageDetails.get("portPoid") != null) {
-                    entry.setPortPoid((BigDecimal) voyageDetails.get("portPoid"));
+                    Object portPoidObj = voyageDetails.get("portPoid");
+                    if (portPoidObj instanceof BigDecimal) {
+                        entry.setPortPoid(((BigDecimal) portPoidObj).longValue());
+                    } else if (portPoidObj instanceof Number) {
+                        entry.setPortPoid(((Number) portPoidObj).longValue());
+                    }
                 }
                 if (voyageDetails.get("arrivalDate") != null) {
                     Object arrivalDateObj = voyageDetails.get("arrivalDate");
@@ -167,10 +189,20 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     }
                 }
                 if (voyageDetails.get("totalQuantity") != null) {
-                    entry.setTotalQuantity((BigDecimal) voyageDetails.get("totalQuantity"));
+                    Object totalQuantityObj = voyageDetails.get("totalQuantity");
+                    if (totalQuantityObj instanceof BigDecimal) {
+                        entry.setTotalQuantity(((BigDecimal) totalQuantityObj).longValue());
+                    } else if (totalQuantityObj instanceof Number) {
+                        entry.setTotalQuantity(((Number) totalQuantityObj).longValue());
+                    }
                 }
                 if (voyageDetails.get("numberOfDays") != null) {
-                    entry.setNumberOfDays((BigDecimal) voyageDetails.get("numberOfDays"));
+                    Object numberOfDaysObj = voyageDetails.get("numberOfDays");
+                    if (numberOfDaysObj instanceof BigDecimal) {
+                        entry.setNumberOfDays(((BigDecimal) numberOfDaysObj).longValue());
+                    } else if (numberOfDaysObj instanceof Number) {
+                        entry.setNumberOfDays(((Number) numberOfDaysObj).longValue());
+                    }
                 }
             }
         }
@@ -179,7 +211,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Only auto-populate if values are not already provided in the request
         if (request.getVesselPoid() != null && 
                 (entry.getGrt() == null || entry.getNrt() == null || entry.getDwt() == null || entry.getVesselTypePoid() == null)) {
-            VesselDetailsResponse vesselDetails = getVesselDetails(request.getVesselPoid(), groupPoid, companyPoid, userPoid);
+            VesselDetailsResponse vesselDetails = getVesselDetails((request.getVesselPoid()), groupPoid, companyPoid, userPoid);
             if (vesselDetails != null) {
                 logger.info("Auto-populating vessel details - GRT: {}, NRT: {}, DWT: {}", 
                         vesselDetails.getGrt(), vesselDetails.getNrt(), vesselDetails.getDwt());
@@ -212,7 +244,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Auto-populate currency if principalPoid is provided
         if (request.getPrincipalPoid() != null) {
-            setDefaultCurrency(groupPoid, companyPoid, userPoid, entry.getTransactionPoid(), request.getPrincipalPoid(), entry);
+            setDefaultCurrency(groupPoid, companyPoid, userPoid, entry.getTransactionPoid(), BigDecimal.valueOf(request.getPrincipalPoid()), entry);
         }
 
         // Save entity
@@ -293,8 +325,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 }
                 // Auto-populate vessel details
                 if (voyageDetails.get("vesselPoid") != null) {
-                    entry.setVesselPoid((BigDecimal) voyageDetails.get("vesselPoid"));
-                    entry.setVesselTypePoid((BigDecimal) voyageDetails.get("vesselTypePoid"));
+                    entry.setVesselPoid((Long) voyageDetails.get("vesselPoid"));
+                    entry.setVesselTypePoid((Long) voyageDetails.get("vesselTypePoid"));
                     if (request.getImoNumber() == null || request.getImoNumber().trim().isEmpty()) {
                         entry.setImoNumber((String) voyageDetails.get("imoNumber"));
                     }
@@ -304,10 +336,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 }
                 // Auto-populate other voyage details
                 if (voyageDetails.get("linePoid") != null) {
-                    entry.setLinePoid((BigDecimal) voyageDetails.get("linePoid"));
+                    entry.setLinePoid((Long) voyageDetails.get("linePoid"));
                 }
                 if (voyageDetails.get("portPoid") != null) {
-                    entry.setPortPoid((BigDecimal) voyageDetails.get("portPoid"));
+                    entry.setPortPoid((Long) voyageDetails.get("portPoid"));
                 }
                 if (voyageDetails.get("arrivalDate") != null) {
                     Object arrivalDateObj = voyageDetails.get("arrivalDate");
@@ -326,10 +358,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     }
                 }
                 if (voyageDetails.get("totalQuantity") != null) {
-                    entry.setTotalQuantity((BigDecimal) voyageDetails.get("totalQuantity"));
+                    entry.setTotalQuantity((Long) voyageDetails.get("totalQuantity"));
                 }
                 if (voyageDetails.get("numberOfDays") != null) {
-                    entry.setNumberOfDays((BigDecimal) voyageDetails.get("numberOfDays"));
+                    entry.setNumberOfDays((Long) voyageDetails.get("numberOfDays"));
                 }
             }
         }
@@ -354,7 +386,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Auto-populate currency if principalPoid changed
         if (request.getPrincipalPoid() != null &&
                 !Objects.equals(entry.getPrincipalPoid(), request.getPrincipalPoid())) {
-            setDefaultCurrency(groupPoid, companyPoid, userPoid, transactionPoid, request.getPrincipalPoid(), entry);
+            setDefaultCurrency(groupPoid, companyPoid, userPoid, transactionPoid, BigDecimal.valueOf(request.getPrincipalPoid()), entry);
         }
 
         // Save entity
@@ -1187,7 +1219,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Override
-    public VesselDetailsResponse getVesselDetails(BigDecimal vesselPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public VesselDetailsResponse getVesselDetails(Long vesselPoid, Long groupPoid, Long companyPoid, Long userPoid) {
         if (vesselPoid == null) {
             throw new ValidationException(
                     "Vessel POID is required",
@@ -1209,7 +1241,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                     )
                     .returningResultSet("OUTDATA", (rs, rowNum) -> {
                         VesselDetailsResponse response = new VesselDetailsResponse();
-                        response.setVesselTypePoid(rs.getBigDecimal("VESSEL_TYPE_POID"));
+                        response.setVesselTypePoid(rs.getBigDecimal("VESSEL_TYPE_POID").longValue());
                         response.setImoNumber(rs.getString("IMO_NUMBER"));
                         response.setGrt(rs.getBigDecimal("GRT"));
                         response.setNrt(rs.getBigDecimal("NRT"));
@@ -1244,7 +1276,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Override
-    public Map<String, Object> getVoyageDetails(BigDecimal voyagePoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public Map<String, Object> getVoyageDetails(Long voyagePoid, Long groupPoid, Long companyPoid, Long userPoid) {
         if (voyagePoid == null) {
             throw new ValidationException(
                     "Voyage POID is required",
@@ -1613,6 +1645,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         if (StringUtils.isNotBlank(response.getNominatedPartyType()) && "PRINCIPAL".equalsIgnoreCase(response.getNominatedPartyType())) {
             response.setNominatedPartyDet(lovService.getLovItemByPoid(Long.valueOf(String.valueOf(response.getNominatedPartyPoid())), "PDA_NOMINATED_PARTY_PRINCIPAL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         }
+        
+        // Set validation message if principal approval is completed
+        String refType = entity.getRefType() != null ? entity.getRefType().trim() : null;
+        String principalApproved = entity.getPrincipalApproved() != null ? entity.getPrincipalApproved().trim() : null;
+        
+        if ("GENERAL".equals(refType) && "Y".equals(principalApproved)) {
+            response.setValidationMessage("Principal Approval is completed for this document...");
+        }
+        
         return response;
     }
 
@@ -1647,8 +1688,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private String callBeforeSaveValidation(
             Long groupPoid, Long companyPoid, Long userPoid, Long pdaPoid,
-            BigDecimal principalPoid, BigDecimal linePoid, BigDecimal vesselPoid,
-            String voyageNo, BigDecimal voyagePoid,
+            Long principalPoid, Long linePoid, Long vesselPoid,
+            String voyageNo, Long voyagePoid,
             LocalDate arrivalDate, LocalDate sailDate
     ) {
         try {
@@ -1690,8 +1731,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private void callAfterSaveValidation(
             Long groupPoid, Long companyPoid, Long userPoid, Long pdaPoid,
-            BigDecimal principalPoid, BigDecimal linePoid, BigDecimal vesselPoid,
-            String voyageNo, BigDecimal voyagePoid
+            Long principalPoid, Long linePoid, Long vesselPoid,
+            String voyageNo, Long voyagePoid
     ) {
         try {
             logger.info("[SP-1] PROC_PDA_AFTER_SAVE_VALIDATE - transactionPoid: {}", pdaPoid);
@@ -1804,7 +1845,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         validateChargeDetailRequest(request);
 
         // Store old values for comparison
-        BigDecimal oldChargePoid = detail.getChargePoid();
+        Long oldChargePoid = detail.getChargePoid();
         BigDecimal oldQty = detail.getQty();
         BigDecimal oldDays = detail.getDays();
         BigDecimal oldPdaRate = detail.getPdaRate();
@@ -1901,7 +1942,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private void mapChargeDetailRequestToEntity(PdaEntryChargeDetailRequest request, PdaEntryDtl entity) {
         entity.setChargePoid(request.getChargePoid());
-        if (request.getRateTypePoid() != null && request.getRateTypePoid().signum() > 0) {
+        if (request.getRateTypePoid() != null) {
             entity.setRateTypePoid(request.getRateTypePoid());
         }
         entity.setPrincipalPoid(request.getPrincipalPoid());
@@ -1953,7 +1994,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         detail.setAmount(totalAmount);
     }
 
-    public TaxInfo getChargeTaxInfo(Long companyPoid, Date transactionDate, String partyType, BigDecimal partyPoid, BigDecimal chargePoid) {
+    public TaxInfo getChargeTaxInfo(Long companyPoid, Date transactionDate, String partyType, Long partyPoid, Long chargePoid) {
         try {
             logger.info("[SP-7] PROC_GET_CHARGE_TAX_PER_V3 - chargePoid: {}, partyPoid: {}", chargePoid, partyPoid);
 
@@ -1968,7 +2009,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                             new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
                     )
                     .returningResultSet("OUTDATA", (rs, rowNum) -> new TaxInfo(
-                            rs.getBigDecimal("TAX_POID"),
+                            rs.getBigDecimal("TAX_POID").longValue(),
                             rs.getBigDecimal("PERCENTAGE")
                     ));
 
@@ -2089,9 +2130,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private String callReCalculateCharges(
             Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid,
-            BigDecimal vesselPoid, BigDecimal vesselTypePoid, BigDecimal grt, BigDecimal nrt, BigDecimal dwt,
-            BigDecimal portPoid, LocalDate arrivalDate, LocalDate sailDate,
-            String harbourCallType, BigDecimal totalQuantity, BigDecimal numberOfDays, BigDecimal principalPoid
+            Long vesselPoid, Long vesselTypePoid, BigDecimal grt, BigDecimal nrt, BigDecimal dwt,
+            Long portPoid, LocalDate arrivalDate, LocalDate sailDate,
+            String harbourCallType, Long totalQuantity, Long numberOfDays, Long principalPoid
     ) {
         try {
             logger.info("[SP-3] PROC_PDA_RE_CALCULATE - transactionPoid: {}, vesselPoid: {}",
@@ -2154,9 +2195,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     private String callLoadDefaultCharges(
             Long groupPoid, Long userPoid, Long companyPoid, Long transactionPoid,
-            BigDecimal vesselPoid, BigDecimal vesselTypePoid, BigDecimal grt, BigDecimal nrt, BigDecimal dwt,
-            BigDecimal portPoid, LocalDate arrivalDate, LocalDate sailDate,
-            String harbourCallType, BigDecimal totalQuantity, BigDecimal numberOfDays, BigDecimal principalPoid
+            Long vesselPoid, Long vesselTypePoid, BigDecimal grt, BigDecimal nrt, BigDecimal dwt,
+            Long portPoid, LocalDate arrivalDate, LocalDate sailDate,
+            String harbourCallType, Long totalQuantity, Long numberOfDays, Long principalPoid
     ) {
         try {
             logger.info("[SP-2] PROC_PDA_LOAD_DEF_CHARGE - transactionPoid: {}, vesselPoid: {}", transactionPoid, vesselPoid);
@@ -3264,15 +3305,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
     // Inner class for tax information
     public static class TaxInfo {
-        private BigDecimal taxPoid;
+        private Long taxPoid;
         private BigDecimal taxPercentage;
 
-        public TaxInfo(BigDecimal taxPoid, BigDecimal taxPercentage) {
+        public TaxInfo(Long taxPoid, BigDecimal taxPercentage) {
             this.taxPoid = taxPoid;
             this.taxPercentage = taxPercentage;
         }
 
-        public BigDecimal getTaxPoid() {
+        public Long getTaxPoid() {
             return taxPoid;
         }
 

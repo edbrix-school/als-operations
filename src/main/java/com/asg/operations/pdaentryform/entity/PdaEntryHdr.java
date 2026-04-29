@@ -45,7 +45,7 @@ public class PdaEntryHdr extends BaseEntity {
 
     @Column(name = "PRINCIPAL_POID")
     @NotNull
-    private BigDecimal principalPoid;
+    private Long principalPoid;
 
     @Column(name = "PRINCIPAL_NAME", length = 500)
     @Size(max = 500)
@@ -56,17 +56,17 @@ public class PdaEntryHdr extends BaseEntity {
     private String principalContact;
 
     @Column(name = "VOYAGE_POID")
-    private BigDecimal voyagePoid;
+    private Long voyagePoid;
 
     @Column(name = "VOYAGE_NO", length = 30)
     @Size(max = 30)
     private String voyageNo;
 
     @Column(name = "VESSEL_POID")
-    private BigDecimal vesselPoid;
+    private Long vesselPoid;
 
     @Column(name = "VESSEL_TYPE_POID")
-    private BigDecimal vesselTypePoid;
+    private Long vesselTypePoid;
 
     @Column(name = "GRT")
     private BigDecimal grt;
@@ -97,14 +97,14 @@ public class PdaEntryHdr extends BaseEntity {
     private LocalDate vesselSailDate;
 
     @Column(name = "PORT_POID")
-    private BigDecimal portPoid;
+    private Long portPoid;
 
     @Column(name = "PORT_DESCRIPTION", length = 100)
     @Size(max = 100)
     private String portDescription;
 
     @Column(name = "LINE_POID")
-    private BigDecimal linePoid;
+    private Long linePoid;
 
     @Column(name = "COMODITY_POID", length = 50)
     @Size(max = 50)
@@ -119,23 +119,23 @@ public class PdaEntryHdr extends BaseEntity {
     private String harbourCallType;
 
     @Column(name = "IMPORT_QTY")
-    private BigDecimal importQty;
+    private Long importQty;
 
     @Column(name = "EXPORT_QTY")
-    private BigDecimal exportQty;
+    private Long exportQty;
 
     @Column(name = "TRANSHIPMENT_QTY")
-    private BigDecimal transhipmentQty;
+    private Long transhipmentQty;
 
     @Column(name = "TOTAL_QUANTITY")
-    private BigDecimal totalQuantity;
+    private Long totalQuantity;
 
     @Column(name = "UNIT", length = 20)
     @Size(max = 20)
     private String unit;
 
     @Column(name = "NUMBER_OF_DAYS")
-    private BigDecimal numberOfDays;
+    private Long numberOfDays;
 
     @Column(name = "CURRENCY_CODE", length = 20)
     @Size(max = 20)
@@ -148,16 +148,16 @@ public class PdaEntryHdr extends BaseEntity {
     private BigDecimal totalAmount;
 
     @Column(name = "COST_CENTRE_POID")
-    private BigDecimal costCentrePoid;
+    private Long costCentrePoid;
 
     @Column(name = "SALESMAN_POID")
-    private BigDecimal salesmanPoid;
+    private Long salesmanPoid;
 
     @Column(name = "TERMS_POID")
-    private BigDecimal termsPoid;
+    private Long termsPoid;
 
     @Column(name = "ADDRESS_POID")
-    private BigDecimal addressPoid;
+    private Long addressPoid;
 
     @Column(name = "REF_TYPE", nullable = false, length = 100)
     @NotNull
@@ -192,7 +192,7 @@ public class PdaEntryHdr extends BaseEntity {
     private String vesselVerifiedBy;
 
     @Column(name = "VESSEL_HANDLED_BY")
-    private BigDecimal vesselHandledBy;
+    private Long vesselHandledBy;
 
     @Column(name = "URGENT_APPROVAL", length = 1)
     @Size(max = 1)
@@ -216,14 +216,14 @@ public class PdaEntryHdr extends BaseEntity {
     private BigDecimal reminderMinutes;
 
     @Column(name = "PRINT_PRINCIPAL")
-    private BigDecimal printPrincipal;
+    private Long printPrincipal;
 
     @Column(name = "FDA_REF", length = 100)
     @Size(max = 100)
     private String fdaRef;
 
     @Column(name = "FDA_POID")
-    private BigDecimal fdaPoid;
+    private Long fdaPoid;
 
     @Column(name = "MULTIPLE_FDA", length = 1)
     @Size(max = 1)
@@ -234,10 +234,10 @@ public class PdaEntryHdr extends BaseEntity {
     private String nominatedPartyType;
 
     @Column(name = "NOMINATED_PARTY_POID")
-    private BigDecimal nominatedPartyPoid;
+    private Long nominatedPartyPoid;
 
     @Column(name = "BANK_POID")
-    private BigDecimal bankPoid;
+    private Long bankPoid;
 
     @Column(name = "BUSINESS_REF_BY", length = 300)
     @Size(max = 300)

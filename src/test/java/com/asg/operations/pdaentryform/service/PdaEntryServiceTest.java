@@ -83,7 +83,7 @@ class PdaEntryServiceTest {
         BulkSaveChargeDetailsRequest request = new BulkSaveChargeDetailsRequest();
         PdaEntryChargeDetailRequest chargeDetail = new PdaEntryChargeDetailRequest();
         chargeDetail.setDetRowId(null);
-        chargeDetail.setChargePoid(new BigDecimal(100));
+        chargeDetail.setChargePoid(100L);
         chargeDetail.setQty(new BigDecimal(5));
         chargeDetail.setDays(new BigDecimal(10));
         chargeDetail.setPdaRate(new BigDecimal(100));
@@ -163,7 +163,7 @@ class PdaEntryServiceTest {
         PdaEntryDtl detail = new PdaEntryDtl();
         detail.setTransactionPoid(transactionPoid);
         detail.setDetRowId(1L);
-        detail.setChargePoid(new BigDecimal(100));
+        detail.setChargePoid(100L);
         detail.setQty(new BigDecimal(5));
         detail.setFdaCreationType("AUTO");
         detail.setEntryHdr(entry);
@@ -199,7 +199,7 @@ class PdaEntryServiceTest {
         PdaEntryDtl detail = new PdaEntryDtl();
         detail.setTransactionPoid(transactionPoid);
         detail.setDetRowId(1L);
-        detail.setChargePoid(new BigDecimal(100));
+        detail.setChargePoid(100L);
         detail.setQty(new BigDecimal(5));
         detail.setFdaCreationType(null);
         detail.setEntryHdr(entry);

@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class FdaDocumentViewResponse {
-    private BigDecimal fdaPoid;
+    private Long fdaPoid;
     private String fdaRef;
     private String fdaUrl;
     private String status;

@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @Builder
 public class VesselDetailsResponse {
 
-    private BigDecimal vesselTypePoid;
+    private Long vesselTypePoid;
     private String imoNumber;
     private BigDecimal grt;
     private BigDecimal nrt;

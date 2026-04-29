@@ -1219,7 +1219,7 @@ public class PdaEntryController {
     @GetMapping("/vessel-details")
     public ResponseEntity<?> getVesselDetails(
             @Parameter(description = "Vessel POID", required = true)
-            @RequestParam BigDecimal vesselPoid,
+            @RequestParam Long vesselPoid,
             @Parameter(description = "Transaction POID (optional, for existing records)")
             @RequestParam(required = false) Long transactionPoid
     ) {
@@ -1255,7 +1255,7 @@ public class PdaEntryController {
     @GetMapping("/voyage-details")
     public ResponseEntity<?> getVoyageDetails(
             @Parameter(description = "Voyage POID", required = true)
-            @RequestParam BigDecimal voyagePoid,
+            @RequestParam Long voyagePoid,
             @Parameter(description = "Transaction POID (optional, for existing records)")
             @RequestParam(required = false) Long transactionPoid
     ) {
@@ -1291,9 +1291,9 @@ public class PdaEntryController {
     @GetMapping("/charge-tax-info")
     public ResponseEntity<?> getChargeTaxInfo(
             @Parameter(description = "Charge POID", required = true)
-            @RequestParam BigDecimal chargePoid,
+            @RequestParam Long chargePoid,
             @Parameter(description = "Party POID (Principal POID)", required = true)
-            @RequestParam BigDecimal partyPoid,
+            @RequestParam Long partyPoid,
             @Parameter(description = "Party Type (default: PRINCIPAL)")
             @RequestParam(defaultValue = "PRINCIPAL") String partyType,
             @Parameter(description = "Transaction Date (default: current date)")

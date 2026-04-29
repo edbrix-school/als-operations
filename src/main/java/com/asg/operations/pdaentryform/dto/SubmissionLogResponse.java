@@ -16,5 +16,5 @@ public class SubmissionLogResponse {
     private String docRef;
     private String fdaRef;
     private Long transactionPoid;
-    private BigDecimal fdaPoid;
+    private Long fdaPoid;
 }
