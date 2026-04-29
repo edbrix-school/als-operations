@@ -2,6 +2,7 @@ package com.asg.operations.pdaentryform.controller;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.pdaentryform.dto.*;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,7 +35,7 @@ class PdaEntryControllerTest {
     private PdaEntryService pdaEntryService;
 
     @Mock
-    private com.asg.common.lib.service.LoggingService loggingService;
+    private LoggingService loggingService;
 
     @InjectMocks
     private PdaEntryController pdaEntryController;
@@ -91,7 +92,7 @@ class PdaEntryControllerTest {
     @Test
     void testCreatePdaEntry_Success() throws Exception {
         PdaEntryRequest request = new PdaEntryRequest();
-        request.setPrincipalPoid(new BigDecimal(100));
+        request.setPrincipalPoid(100L);
         request.setRefType("GENERAL");
 
         PdaEntryResponse response = new PdaEntryResponse();
@@ -116,7 +117,7 @@ class PdaEntryControllerTest {
     @Test
     void testUpdatePdaEntry_Success() throws Exception {
         PdaEntryRequest request = new PdaEntryRequest();
-        request.setPrincipalPoid(new BigDecimal(100));
+        request.setPrincipalPoid(100L);
         request.setRefType("GENERAL");
 
         PdaEntryResponse response = new PdaEntryResponse();
@@ -157,7 +158,7 @@ class PdaEntryControllerTest {
     void testGetChargeDetails_Success() throws Exception {
         PdaEntryChargeDetailResponse response = new PdaEntryChargeDetailResponse();
         response.setDetRowId(1L);
-        response.setChargePoid(new BigDecimal(100));
+        response.setChargePoid(100L);
 
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
@@ -178,7 +179,7 @@ class PdaEntryControllerTest {
     void testBulkSaveChargeDetails_Success() throws Exception {
         BulkSaveChargeDetailsRequest request = new BulkSaveChargeDetailsRequest();
         PdaEntryChargeDetailRequest chargeDetail = new PdaEntryChargeDetailRequest();
-        chargeDetail.setChargePoid(new BigDecimal(100));
+        chargeDetail.setChargePoid(100L);
         chargeDetail.setQty(new BigDecimal(5));
         chargeDetail.setDays(new BigDecimal(10));
         chargeDetail.setPdaRate(new BigDecimal(100));
@@ -187,7 +188,7 @@ class PdaEntryControllerTest {
 
         PdaEntryChargeDetailResponse response = new PdaEntryChargeDetailResponse();
         response.setDetRowId(1L);
-        response.setChargePoid(new BigDecimal(100));
+        response.setChargePoid(100L);
 
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
@@ -249,7 +250,7 @@ class PdaEntryControllerTest {
     void testRecalculateChargeDetails_Success() throws Exception {
         PdaEntryChargeDetailResponse response = new PdaEntryChargeDetailResponse();
         response.setDetRowId(1L);
-        response.setChargePoid(new BigDecimal(100));
+        response.setChargePoid(100L);
 
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
@@ -269,7 +270,7 @@ class PdaEntryControllerTest {
     void testLoadDefaultCharges_Success() throws Exception {
         PdaEntryChargeDetailResponse response = new PdaEntryChargeDetailResponse();
         response.setDetRowId(1L);
-        response.setChargePoid(new BigDecimal(100));
+        response.setChargePoid(100L);
 
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
@@ -515,7 +516,7 @@ class PdaEntryControllerTest {
     @Test
     void testValidateBeforeSave_Success() throws Exception {
         PdaEntryRequest request = new PdaEntryRequest();
-        request.setPrincipalPoid(new BigDecimal(100));
+        request.setPrincipalPoid(100L);
         request.setRefType("GENERAL");
 
         ValidationResponse response = new ValidationResponse();
@@ -558,14 +559,14 @@ class PdaEntryControllerTest {
 
     @Test
     void testGetVesselDetails_Success() throws Exception {
-        BigDecimal vesselPoid = new BigDecimal(500);
         VesselDetailsResponse response = new VesselDetailsResponse();
-        response.setVesselTypePoid(new BigDecimal(1));
+        response.setVesselTypePoid(1L);
         response.setImoNumber("IMO123456");
 
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
 
+            Long vesselPoid = 0L;
             when(pdaEntryService.getVesselDetails(vesselPoid, groupPoid, companyPoid, userPoid))
                     .thenReturn(response);
 

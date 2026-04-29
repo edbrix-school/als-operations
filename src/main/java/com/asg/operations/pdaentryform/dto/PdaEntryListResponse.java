@@ -31,25 +31,25 @@ public class PdaEntryListResponse {
     private LocalDate transactionDate;
 
     @JsonProperty("PRINCIPAL_POID")
-    private BigDecimal principalPoid;
+    private Long principalPoid;
 
     @JsonProperty("PRINCIPAL_NAME")
     private String principalName;
 
     @JsonProperty("VOYAGE_POID")
-    private BigDecimal voyagePoid;
+    private Long voyagePoid;
 
     @JsonProperty("VOYAGE_NO")
     private String voyageNo;
 
     @JsonProperty("VESSEL_POID")
-    private BigDecimal vesselPoid;
+    private Long vesselPoid;
 
     @JsonProperty("VESSEL_NAME")
     private String vesselName;
 
     @JsonProperty("PORT_POID")
-    private BigDecimal portPoid;
+    private Long portPoid;
 
     @JsonProperty("PORT_DESCRIPTION")
     private String portDescription;
