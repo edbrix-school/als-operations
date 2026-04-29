@@ -940,12 +940,16 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setBlAwbNo(manifest != null ? manifest.getMasterBlNo() : null);
         dto.setFreightType(cs.getFreightType());
         dto.setLine(cs.getLine() != null ? String.valueOf(cs.getLine()) : null);
+        dto.setLineLov(getLov(cs.getLine(), "LINE_MASTER"));
         dto.setEta(cs.getEtaAta());
         dto.setEtd(cs.getEtd());
         dto.setPol(cs.getPol());
+        dto.setPolLov(getLov(parseLong(cs.getPol()), "PORT_MASTER"));
         dto.setPod(cs.getPod());
         dto.setOrigin(cs.getOrigin() != null ? String.valueOf(cs.getOrigin()) : null);
+        dto.setOriginLov(getLov(cs.getOrigin(), "FF_AIRPORTS"));
         dto.setDestination(cs.getDestination() != null ? String.valueOf(cs.getDestination()) : null);
+        dto.setDestinationLov(getLov(cs.getDestination(), "FF_AIRPORTS"));
         dto.setDescription(cs.getDescription());
         dto.setCbm(cs.getCbm());
         dto.setPackages(cs.getNoOfPackages());

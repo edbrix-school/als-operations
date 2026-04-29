@@ -47,6 +47,7 @@ public class FFProjectsResponse {
     private LovGetListDto billingCurrencyLov;
     private String projectStatus;
     private LovGetListDto projectStatusLov;
+    private Double agreedRate;
     private Double totalBuyingRateBhd;
     private Double totalVatBhd;
     private Double grandTotalSellRateBhd;

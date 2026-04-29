@@ -82,6 +82,9 @@ public class FFProjectsHdr {
     @Column(name = "PROJECT_STATUS", length = 50)
     private String projectStatus;
 
+    @Column(name = "AGREED_RATE")
+    private Double agreedRate;
+
     @Column(name = "DELETED", length = 1)
     private String deleted = "N";
 
