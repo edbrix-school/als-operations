@@ -36,5 +36,8 @@ public class PortCallOperationMailDetailDto {
     @Size(max = 1000, message = "Email Ids should not exceed 1000 characters")
     private String emailIds;
 
+    @Size(max = 1000, message = "Email Ids CC should not exceed 1000 characters")
+    private String emailIdsCC;
+
     private ActionType actionType;
 }

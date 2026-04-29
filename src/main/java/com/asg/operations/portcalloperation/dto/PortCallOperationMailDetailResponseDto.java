@@ -19,4 +19,5 @@ public class PortCallOperationMailDetailResponseDto {
     private String company;
     private String addressee;
     private String emailIds;
+    private String emailIdsCC;
 }

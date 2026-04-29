@@ -43,4 +43,7 @@ public class PortCallOperationMailDtl extends BaseEntity {
 
     @Column(name = "EMAIL_IDS", length = 1000)
     private String emailIds;
+
+    @Column(name = "EMAIL_IDS_CC", length = 1000)
+    private String emailIdsCC;
 }
