@@ -228,14 +228,18 @@ class PdaEntryControllerTest {
 
     @Test
     void testClearChargeDetails_Success() throws Exception {
+        String expectedMessage = "SUCCESS : Cleared All Charge Details...";
+        
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
 
-            doNothing().when(pdaEntryService).clearChargeDetails(transactionPoid, groupPoid, companyPoid, userPoid);
+            when(pdaEntryService.clearChargeDetails(transactionPoid, groupPoid, companyPoid, userPoid))
+                    .thenReturn(expectedMessage);
 
             mockMvc.perform(post("/v1/pda-entries/{transactionPoid}/charge-details/clear", transactionPoid)
                     .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value(expectedMessage));
 
             verify(pdaEntryService, times(1)).clearChargeDetails(transactionPoid, groupPoid, companyPoid, userPoid);
         }

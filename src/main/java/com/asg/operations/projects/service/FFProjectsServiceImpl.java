@@ -251,8 +251,8 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     @Override
     @Transactional(readOnly = true)
     public List<UpcomingJobDTO> getUpcomingJobsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
-        LocalDate from = fromDate != null ? fromDate : LocalDate.now();
-        LocalDate to = toDate != null ? toDate : from.plusDays(30);
+        LocalDate from = fromDate != null ? fromDate : LocalDate.of(2000, 1, 1);
+        LocalDate to = toDate != null ? toDate : LocalDate.of(2099, 12, 31);
         List<FFProjectsCtrlSheetDtl> controlSheets = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
         List<Long> linkedJobIds = controlSheets.stream()
                 .map(FFProjectsCtrlSheetDtl::getJobNoPoid)

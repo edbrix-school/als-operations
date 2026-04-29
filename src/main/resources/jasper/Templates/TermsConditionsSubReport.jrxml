@@ -19,7 +19,7 @@
             <staticText>
                 <reportElement x="0" y="0" width="267" height="20" uuid="c6a614f1-f8d3-4c78-8bd8-1539d00a2229"/>
                 <textElement>
-                    <font size="12" isBold="true"/>
+                    <font size="12" isBold="true"  pdfFontName="Helvetica-Bold"/>
                 </textElement>
                 <text><![CDATA[Terms & Conditions]]></text>
             </staticText>

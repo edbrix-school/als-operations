@@ -1,7 +1,10 @@
 package com.asg.operations.projectjob.util;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.asg.common.lib.utility.DateUtil;
 import com.asg.operations.projectjob.dto.FFManifestHdrDto;
@@ -17,6 +20,7 @@ import com.asg.operations.projectjob.entity.FFManifestChargesDtl;
 import com.asg.operations.projectjob.entity.FFManifestContainerDtl;
 import com.asg.operations.projectjob.entity.FFManifestHdr;
 import com.asg.operations.projectjob.entity.FFManifestTruckDtl;
+import org.apache.poi.util.StringUtil;
 
 public class ProjectJobMapper {
 
@@ -32,7 +36,7 @@ public class ProjectJobMapper {
         entity.setDetRowId(dto.getDetRowId());
 
         entity.setNoOfPacks(Optional.ofNullable(dto.getNoOfPacks()).orElse(0L));
-        entity.setPackUnit(Optional.ofNullable(dto.getPackUnit()).orElse(""));
+        entity.setPackUnit(Optional.ofNullable(dto.getPackUnit()).orElse(" "));
 
         entity.setTotalWeight(Optional.ofNullable(dto.getTotalWeight()).orElse(BigDecimal.ZERO));
         entity.setTotalVolume(dto.getTotalVolume());
@@ -151,10 +155,7 @@ public class ProjectJobMapper {
         entity.setCargoDescription(dto.getCargoDescription());
         entity.setContainerSealNo(dto.getContainerSealNo());
         entity.setContainerIsoCode(dto.getContainerIsoCode());
-
-        entity.setConatinerTypePoid(
-                dto.getContainerTypePoid() != null ? BigDecimal.valueOf(dto.getContainerTypePoid()) : null);
-
+        entity.setContainerTypePoid(dto.getContainerTypePoid() != null ? dto.getContainerTypePoid(): null);
         entity.setContainerSize(dto.getContainerSize());
         entity.setQuantity(dto.getQuantity());
 
@@ -167,10 +168,10 @@ public class ProjectJobMapper {
         entity.setNoOfPacks(dto.getNoOfPacks());
         entity.setPackUnit(dto.getPackUnit());
 
-        entity.setComodityPoid(dto.getComodityPoid() != null ? BigDecimal.valueOf(dto.getComodityPoid()) : null);
+        entity.setComodityPoid(dto.getComodityPoid() != null ?dto.getComodityPoid() : null);
 
         entity.setDestinationPortPoid(
-                dto.getDestinationPortPoid() != null ? BigDecimal.valueOf(dto.getDestinationPortPoid()) : null);
+                dto.getDestinationPortPoid() != null ? dto.getDestinationPortPoid() : null);
 
         entity.setImo(dto.getImo());
         entity.setOogL(dto.getOogL());
@@ -235,7 +236,7 @@ public class ProjectJobMapper {
         dto.setDetRowId(entity.getDetRowId());
 
         dto.setNoOfPacks(entity.getNoOfPacks());
-        dto.setPackUnit(entity.getPackUnit());
+        dto.setPackUnit(StringUtil.isBlank(entity.getPackUnit())?null:entity.getPackUnit());
         dto.setTotalWeight(entity.getTotalWeight());
         dto.setTotalVolume(entity.getTotalVolume());
 
@@ -342,7 +343,7 @@ public class ProjectJobMapper {
         dto.setCargoDescription(entity.getCargoDescription());
         dto.setContainerSealNo(entity.getContainerSealNo());
         dto.setContainerIsoCode(entity.getContainerIsoCode());
-        dto.setContainerTypePoid(dto.getContainerTypePoid());
+        dto.setContainerTypePoid(entity.getContainerTypePoid());
         dto.setContainerSize(entity.getContainerSize());
         dto.setQuantity(entity.getQuantity());
         dto.setGrsVolume(entity.getGrsVolume());
@@ -352,8 +353,8 @@ public class ProjectJobMapper {
         dto.setTareWeight(entity.getTareWeight());
         dto.setNoOfPacks(entity.getNoOfPacks());
         dto.setPackUnit(entity.getPackUnit());
-        dto.setComodityPoid(dto.getComodityPoid());
-        dto.setDestinationPortPoid(dto.getDestinationPortPoid());
+        dto.setComodityPoid(entity.getComodityPoid());
+        dto.setDestinationPortPoid(entity.getDestinationPortPoid());
         dto.setImo(entity.getImo());
         dto.setOogB(entity.getOogB());
         dto.setOogL(entity.getOogL());
@@ -473,7 +474,12 @@ public class ProjectJobMapper {
         entity.setNotifyAddressPoid2(dto.getNotifyAddressPoid2());
 
         entity.setCanRequireToSent(dto.getCanRequireToSent());
-        entity.setComodityPoid(dto.getComodityPoid());
+        entity.setComodityPoid(Optional.ofNullable(dto.getCommodityPoids())
+                .filter(list -> !list.isEmpty())
+                .map(list -> list.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(",")))
+                .orElse(null));
         entity.setCargoDescription(dto.getCargoDescription());
         entity.setMarkNumbers(dto.getMarkNumbers());
 
@@ -551,7 +557,7 @@ public class ProjectJobMapper {
         entity.setPrincipalManual(dto.getPrincipalManual());
         entity.setMotherVslFinalDelv(dto.getMotherVslFinalDelv());
 
-        entity.setProjectRef(dto.getProjectRef());
+        entity.setProjectRef(dto.getOtherReference());
         entity.setRecievedFrom(dto.getRecievedFrom());
         entity.setDeliveryTo(dto.getDeliveryTo());
         entity.setProjectPoid(dto.getProjectPoid());
@@ -684,7 +690,13 @@ public class ProjectJobMapper {
         dto.setNotifyAddressPoid2(entity.getNotifyAddressPoid2());
 
         dto.setCanRequireToSent(entity.getCanRequireToSent());
-        dto.setComodityPoid(entity.getComodityPoid());
+        dto.setCommodityPoids(Optional.ofNullable(entity.getComodityPoid())
+                .filter(s -> !s.trim().isEmpty())
+                .map(s -> Arrays.stream(s.split(","))
+                        .map(String::trim)
+                        .map(Long::valueOf)
+                        .toList())
+                .orElse(List.of()));
         dto.setCargoDescription(entity.getCargoDescription());
         dto.setMarkNumbers(entity.getMarkNumbers());
 
@@ -763,7 +775,7 @@ public class ProjectJobMapper {
         dto.setPrincipalManual(entity.getPrincipalManual());
         dto.setMotherVslFinalDelv(entity.getMotherVslFinalDelv());
 
-        dto.setProjectRef(entity.getProjectRef());
+        dto.setOtherReference(entity.getProjectRef());
         dto.setRecievedFrom(entity.getRecievedFrom());
         dto.setDeliveryTo(entity.getDeliveryTo());
         dto.setProjectPoid(entity.getProjectPoid());

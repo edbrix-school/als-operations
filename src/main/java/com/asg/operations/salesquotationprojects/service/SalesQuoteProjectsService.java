@@ -5,6 +5,7 @@ import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.salesquotationprojects.dto.AddressDetailsDto;
 import com.asg.operations.salesquotationprojects.dto.SalesQuoteProjectsRequest;
 import com.asg.operations.salesquotationprojects.dto.SalesQuoteProjectsResponse;
+import net.sf.jasperreports.engine.JRException;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
@@ -23,6 +24,8 @@ public interface SalesQuoteProjectsService {
     SalesQuoteProjectsResponse updateSalesQuoteProject(Long transactionPoid, SalesQuoteProjectsRequest request);
 
     void deleteSalesQuoteProject(Long transactionPoid, DeleteReasonDto deleteReasonDto);
+
+    byte[] print(Long transactionPoid) throws JRException;
 
     // Stored Procedure Methods
     Map<String, Object> getCustomerAddress(Long customerPoid);

@@ -468,8 +468,8 @@ public class PdaEntryController {
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
-        pdaEntryService.clearChargeDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ApiResponse.success("Charge details cleared successfully", null);
+        String message = pdaEntryService.clearChargeDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return ApiResponse.success(message, null);
     }
 
     @Operation(
@@ -1358,18 +1358,9 @@ public class PdaEntryController {
                 transactionPoid.toString()
         );
         
-        // Parse the result to extract FDA reference
+        // Parse the result to extract FDA reference and clean message
         Map<String, String> parsedResult = pdaEntryService.parseFdaCreationResult(result);
-        
-        // Determine the appropriate message based on the result
-        String message;
-        if (result != null && result.toUpperCase().startsWith("WARNING")) {
-            message = result; // Use the warning message as-is
-        } else if (result != null && result.toUpperCase().startsWith("ERROR")) {
-            message = result; // Use the error message as-is
-        } else {
-            message = "FDA creation completed"; // Success message
-        }
+        String message = parsedResult.get("message") != null ? parsedResult.get("message") : "FDA created successfully";
         
         return ApiResponse.success(message, parsedResult);
     }
@@ -1432,7 +1423,14 @@ public class PdaEntryController {
         Map<String, Object> result = pdaEntryService.acceptFdaDocuments(
                 transactionPoid, UserContext.getGroupPoid(), 
                 UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ApiResponse.success("FDA documents accepted successfully", result);
+        
+        // Use the message from stored procedure instead of hardcoded message
+        String message = (String) result.get("status");
+        if (message == null || message.trim().isEmpty() || "Success".equals(message)) {
+            message = "FDA documents accepted successfully";
+        }
+        
+        return ApiResponse.success(message, result);
     }
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
@@ -1449,9 +1447,11 @@ public class PdaEntryController {
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/documents/submit-to-accounts")
-    public ResponseEntity<?> submitDocumentsToAccounts(@PathVariable Long transactionPoid) {
+    public ResponseEntity<?> submitDocumentsToAccounts(
+            @PathVariable Long transactionPoid,
+            @Valid @RequestBody SubmitDocumentsRequest request) {
         Map<String, Object> result = pdaEntryService.submitPdaToFda(
-                transactionPoid, UserContext.getGroupPoid(), 
+                transactionPoid, request.getVesselSailDate(), UserContext.getGroupPoid(), 
                 UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Documents submitted to accounts successfully", result);
     }

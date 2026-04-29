@@ -13,7 +13,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PortCallReportActivityDto {
+    private Long actualsTimingDtlPoid;
+
     private Long activityPoid;
+
+    private Long preActivityDtlPoid;
 
     // Nullable when activityPoid is not provided; required when activityPoid is null.
     @Size(max = 300, message = "activityName should not exceed 300 characters")

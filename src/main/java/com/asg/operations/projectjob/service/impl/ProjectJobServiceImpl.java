@@ -39,11 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -275,7 +271,6 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         ProjectJobMapper.toHdrDto(hdr, response);
 
         Optional.ofNullable(response.getProjectPoid())
-                .map(BigDecimal::longValue)
                 .map(spRepostirory::callProjectsLoadInJobsProc)
                 .map(ProjectLoadInJobsProcResponse::getHeader)
                 .filter(list -> list != null && !list.isEmpty())

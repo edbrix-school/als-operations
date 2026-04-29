@@ -19,6 +19,8 @@ public interface PdaEntryDtlRepository extends JpaRepository<PdaEntryDtl, PdaEnt
 
     /**
      * Find all charge details for a transaction, ordered by sequence number and row ID
+     * Note: This method returns all records including those marked for deletion via actionType
+     * since PdaEntryDtl doesn't have a soft delete field - records are physically deleted
      */
     List<PdaEntryDtl> findByTransactionPoidOrderBySeqnoAscDetRowIdAsc(Long transactionPoid);
 
@@ -39,4 +41,9 @@ public interface PdaEntryDtlRepository extends JpaRepository<PdaEntryDtl, PdaEnt
      * Count charge details for a transaction
      */
     long countByTransactionPoid(Long transactionPoid);
+
+    /**
+     * Check if a specific charge detail exists
+     */
+    boolean existsByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
 }

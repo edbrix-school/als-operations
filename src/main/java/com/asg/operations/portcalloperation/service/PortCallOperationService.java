@@ -22,13 +22,11 @@ public interface PortCallOperationService {
      * Updates a port call operation.
      *
      * @param husbandryCrewDetRowIdByDetailIndexOut optional; when non-null, length must equal {@code dto.getHusbandryCrewDetails().size()}.
-     *                                                 After update, each position i holds the DB {@code detRowId} for {@code husbandryCrewDetails.get(i)}
-     *                                                 (including rows created in this request).
-     * @param husbandryOthDetRowIdByDetailIndexOut   same for {@code husbandryOthDetails}
+     *                                              After update, each position i holds the DB {@code detRowId} for {@code husbandryCrewDetails.get(i)}
+     *                                              (including rows created in this request).
+     * @param husbandryOthDetRowIdByDetailIndexOut  same for {@code husbandryOthDetails}
      */
-    PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid,
-                                                   Long[] husbandryCrewDetRowIdByDetailIndexOut,
-                                                   Long[] husbandryOthDetRowIdByDetailIndexOut);
+    PortCallOperationResponseDto updateOperation(Long id, PortCallOperationDto dto, Long userPoid, Long groupPoid, Long[] husbandryCrewDetRowIdByDetailIndexOut, Long[] husbandryOthDetRowIdByDetailIndexOut);
 
     void deleteOperation(Long id, DeleteReasonDto deleteReasonDto);
 
@@ -56,19 +54,27 @@ public interface PortCallOperationService {
 
     PortCallOperationEstBertDetailResponseDto updateEstBertDetail(Long transactionPoid, Long detRowId, PortCallOperationEstBertDetailRequestDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
+    List<PortCallOperationEstBertDetailResponseDto> getBerthingDtlById(Long transactionPoid);
+
     // EstPrearrivalActDtl CRUD operations
-    Map<String, Object> listEstPrearrivalActDetails(Long transactionPoid);
+    Map<String, Object> listDefaultEstPrearrivalActDetails(Long transactionPoid);
+
+    List<PortCallOperationEstPrearrivalActDetailResponseDto> listEstPrearrivalActDetails(Long transactionPoid, Long detRowId);
 
     PortCallOperationEstPrearrivalActDetailResponseDto createEstPrearrivalActDetail(Long transactionPoid, PortCallOperationEstPrearrivalActDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
-    PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, Long preActivityDtlPoid, PortCallOperationEstPrearrivalActDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
+    PortCallOperationEstPrearrivalActDetailResponseDto updateEstPrearrivalActDetail(Long transactionPoid, Long detRowId, PortCallOperationEstPrearrivalActDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
+
+    List<PortCallOperationEstPrearrivalDetailResponseDto> getPrearrivalActivityDtlById(Long transactionPoid);
 
     // ActTimingsActvtyDtl CRUD operations
     List<PortCallOperationActTimingsActvtyDetailResponseDto> listActTimingsActvtyDetails(Long transactionPoid, Long detRowId);
 
     PortCallOperationActTimingsActvtyDetailResponseDto createActTimingsActvtyDetail(Long transactionPoid, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
 
-    PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, Long actualsTimingDtlPoid, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
+    PortCallOperationActTimingsActvtyDetailResponseDto updateActTimingsActvtyDetail(Long transactionPoid, Long detRowId, PortCallOperationActTimingsActivityDetailDto dto, MultipartFile[] files, String[] remarks, String[] checklistNames);
+
+    List<PortCallOperationActTimingDetailResponseDto> getActualTimingsDtlById(Long transactionPoid);
 
     // DocsCopyDtl CRUD operations
     PortCallOperationDocsCopyDetailResponseDto getDocsCopyDetail(Long transactionPoid, Long detRowId);

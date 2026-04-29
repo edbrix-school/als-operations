@@ -28,5 +28,5 @@ public class PortCallOperationActProgDetailResponseDto {
     private BigDecimal ratePerHr;
     private LocalDateTime etc;
     private LocalDateTime emailSendOn;
-    private LocalDate estBlDate;
+    private LocalDateTime estBlDate;
 }

@@ -381,10 +381,18 @@ public class FdaServiceImpl implements FdaService {
             throw new CustomException("Closed FDAs cannot be verified.", 400);
         }
 
-        hdr.setAccountsVerified("Y");
-        pdaFdaHdrRepository.save(hdr);
 
-        return fdaCustomRepository.verifyFda(groupPoid, companyPoid, userPoid, transactionPoid);
+        String result = fdaCustomRepository.verifyFda(groupPoid, companyPoid, userPoid, transactionPoid);
+
+        if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
+            entityManager.detach(hdr);
+            PdaFdaHdr fresh = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(transactionPoid, groupPoid, companyPoid)
+                    .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
+            fresh.setAccountsVerified("Y");
+            pdaFdaHdrRepository.saveAndFlush(fresh);
+        }
+
+        return result;
     }
 
     @Override
@@ -398,13 +406,19 @@ public class FdaServiceImpl implements FdaService {
         PdaFdaHdr hdr = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(transactionPoid, groupPoid, companyPoid)
                 .orElseThrow(() -> new ResourceNotFoundException("FDA", "Transaction Poid", transactionPoid));
 
-        hdr.setOpsCorrectionRemarks(correctionRemarks);
-        hdr.setOpsReturnedDate(LocalDate.now());
-        hdr.setAccountsVerified("N");
+        String result = fdaCustomRepository.returnFda(groupPoid, companyPoid, userPoid, transactionPoid, correctionRemarks);
 
-        pdaFdaHdrRepository.save(hdr);
+        if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
+            entityManager.detach(hdr);
+            PdaFdaHdr fresh = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(transactionPoid, groupPoid, companyPoid)
+                    .orElseThrow(() -> new ResourceNotFoundException("FDA", "Transaction Poid", transactionPoid));
+            fresh.setOpsCorrectionRemarks(correctionRemarks);
+            fresh.setOpsReturnedDate(LocalDate.now());
+            fresh.setAccountsVerified("N");
+            pdaFdaHdrRepository.saveAndFlush(fresh);
+        }
 
-        return fdaCustomRepository.returnFda(groupPoid, companyPoid, userPoid, transactionPoid, correctionRemarks);
+        return result;
     }
 
     @Override

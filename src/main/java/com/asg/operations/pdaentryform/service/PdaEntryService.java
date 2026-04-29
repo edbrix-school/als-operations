@@ -59,7 +59,7 @@ public interface PdaEntryService {
     /**
      * Clear all charge details
      */
-    void clearChargeDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    String clearChargeDetails(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
      * Recalculate all charge details
@@ -194,7 +194,7 @@ public interface PdaEntryService {
     /**
      * Submit PDA to FDA
      */
-    Map<String, Object> submitPdaToFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    Map<String, Object> submitPdaToFda(Long transactionPoid, LocalDate vesselSailDate, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
      * Upload acknowledgment details from Excel file

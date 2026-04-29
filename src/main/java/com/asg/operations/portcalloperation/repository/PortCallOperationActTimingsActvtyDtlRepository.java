@@ -19,7 +19,7 @@ public interface PortCallOperationActTimingsActvtyDtlRepository extends JpaRepos
 
     List<PortCallOperationActTimingsActvtyDtl> findByTransactionPoidOrderByLastModifiedDateDesc(Long transactionPoid);
 
-    List<PortCallOperationActTimingsActvtyDtl> findByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
+    List<PortCallOperationActTimingsActvtyDtl> findByTransactionPoidAndDetRowIdOrderByActualsTimingDtlPoidAsc(Long transactionPoid, Long detRowId);
 
     @Query("select coalesce(max(d.detRowId), 0) from PortCallOperationActTimingsActvtyDtl d where d.transactionPoid = :transactionPoid")
     Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
