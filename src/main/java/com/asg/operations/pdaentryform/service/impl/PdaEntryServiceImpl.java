@@ -594,6 +594,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Validate required header fields
         validateRecalculateFields(entry);
 
+        // Clear existing charges before recalculating to prevent duplication
+        logger.info("Clearing existing charges before recalculation for transactionPoid: {}", transactionPoid);
+        callClearChargeDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+
         // Call stored procedure to recalculate
         callReCalculateCharges(
                 groupPoid, userPoid, companyPoid, transactionPoid,
@@ -626,6 +630,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         // Validate required header fields
         validateRecalculateFields(entry);
+
+        // Clear existing charges before loading defaults to prevent duplication
+        logger.info("Clearing existing charges before loading defaults for transactionPoid: {}", transactionPoid);
+        callClearChargeDetails(groupPoid, userPoid, companyPoid, transactionPoid);
 
         // Call stored procedure to load default charges
         callLoadDefaultCharges(
@@ -3021,6 +3029,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 response.put("documentSubmittedBy", cursorData.get("DOCUMENT_SUBMITTED_BY"));
                 response.put("documentSubmittedStatus", cursorData.get("DOCUMENT_SUBMITTED_STATUS"));
                 response.put("verifiedBy", entry.getCreatedBy());
+                response.put("verifieddate",entry.getCreatedDate());
             }
             
             return response;
@@ -3370,10 +3379,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
             logger.info("[SP-VERIFY] PROC_PDA_VERIFY_THE_FDA_DOCS - Completed. Status: {}", status);
 
-            // Check for errors (but allow warnings to proceed)
-            if (status != null && status.startsWith("ERROR")) {
+            // Check for errors and warnings
+            if (status != null && (status.startsWith("ERROR") || status.startsWith("WARNING"))) {
                 throw new ValidationException(
-                        "FDA document verification failed",
+                        status,
                         List.of(new ValidationError("general", status))
                 );
             }
@@ -3382,11 +3391,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             response.put("status", status != null ? status : "Success");
             response.put("documentReceivedDate", currentDate);
             response.put("documentReceivedFrom", currentUser);
-            
-            // Include warning in response if present
-            if (status != null && status.startsWith("WARNING")) {
-                response.put("warning", status);
-            }
             
             if (outData != null && !outData.isEmpty()) {
                 Map<String, Object> cursorData = outData.get(0);
