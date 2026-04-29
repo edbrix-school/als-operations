@@ -217,6 +217,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .company(dtl.getCompany())
                 .addressee(dtl.getAddressee())
                 .emailIds(dtl.getEmailIds())
+                .emailIdsCC(dtl.getEmailIdsCC())
                 .build()).collect(Collectors.toList());
     }
 
@@ -557,6 +558,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .company(mailDto.getCompany())
                             .addressee(mailDto.getAddressee())
                             .emailIds(mailDto.getEmailIds())
+                            .emailIdsCC(mailDto.getEmailIdsCC())
                             .build());
                 }
             }
@@ -723,6 +725,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .company(mailDto.getCompany())
                             .addressee(mailDto.getAddressee())
                             .emailIds(mailDto.getEmailIds())
+                            .emailIdsCC(mailDto.getEmailIdsCC())
                             .build();
                     PortCallOperationMailDtl saved = mailDtlRepository.save(newDetail);
                     String logDetail = String.format("Row Created on [Port Call Operation Mail Details] with detRowId: %s", saved.getDetRowId());
@@ -741,6 +744,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setCompany(mailDto.getCompany());
                                 existing.setAddressee(mailDto.getAddressee());
                                 existing.setEmailIds(mailDto.getEmailIds());
+                                existing.setEmailIdsCC(mailDto.getEmailIdsCC());
                                 existing = mailDtlRepository.save(existing);
 
                                 String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
