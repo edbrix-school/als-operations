@@ -69,7 +69,7 @@ public interface PdaEntryService {
     /**
      * Load default charges
      */
-    List<PdaEntryChargeDetailResponse> loadDefaultCharges(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+    LoadDefaultChargesResponse loadDefaultCharges(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
     /**
      * Get vehicle details for a PDA entry
@@ -227,4 +227,3 @@ public interface PdaEntryService {
     byte[] printPda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, BigDecimal otherPrincipalPoid) throws Exception;
 
 }
-

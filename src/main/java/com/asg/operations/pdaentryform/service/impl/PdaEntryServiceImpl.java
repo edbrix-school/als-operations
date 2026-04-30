@@ -651,7 +651,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     @Override
-    public List<PdaEntryChargeDetailResponse> loadDefaultCharges(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public LoadDefaultChargesResponse loadDefaultCharges(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
 
         // Validate transaction exists and is editable
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException(
@@ -663,12 +663,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Validate required header fields
         validateRecalculateFields(entry);
 
-        // Clear existing charges before loading defaults to prevent duplication
-        logger.info("Clearing existing charges before loading defaults for transactionPoid: {}", transactionPoid);
-        callClearChargeDetails(groupPoid, userPoid, companyPoid, transactionPoid);
-
         // Call stored procedure to load default charges
-        callLoadDefaultCharges(
+        String statusMessage = callLoadDefaultCharges(
                 groupPoid, userPoid, companyPoid, transactionPoid,
                 entry.getVesselPoid(), entry.getVesselTypePoid(),
                 entry.getGrt(), entry.getNrt(), entry.getDwt(),
@@ -684,7 +680,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entityManager.flush();
 
         // Return loaded charge details
-        return getChargeDetails(transactionPoid, groupPoid, companyPoid);
+        return new LoadDefaultChargesResponse(
+                statusMessage,
+                getChargeDetails(transactionPoid, groupPoid, companyPoid)
+        );
     }
 
     // Vehicle Details Methods - Batch 6
@@ -2184,7 +2183,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             String status = (String) result.get("P_STATUS");
 
             logger.info("[SP-3] PROC_PDA_RE_CALCULATE - Completed. Status: {}", status);
-            return status != null ? status : "Success";
+            return status;
 
         } catch (Exception e) {
             logger.error("[SP-3] PROC_PDA_RE_CALCULATE - Error: {}", e.getMessage(), e);
@@ -3868,4 +3867,3 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         return result;
     }
 }
-
