@@ -1362,7 +1362,16 @@ public class PdaEntryController {
         Map<String, String> parsedResult = pdaEntryService.parseFdaCreationResult(result);
         String message = parsedResult.get("message") != null ? parsedResult.get("message") : "FDA created successfully";
         
-        return ApiResponse.success(message, parsedResult);
+        // Get updated PDA entry to include any fields modified by the stored procedure
+        // (like principal approval fields that are auto-populated)
+        PdaEntryResponse updatedEntry = pdaEntryService.getPdaEntryById(
+                transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
+        
+        // Add the updated entry data to the response
+        Map<String, Object> responseData = new HashMap<>(parsedResult);
+        responseData.put("updatedEntry", updatedEntry);
+        
+        return ApiResponse.success(message, responseData);
     }
 
     @Operation(
