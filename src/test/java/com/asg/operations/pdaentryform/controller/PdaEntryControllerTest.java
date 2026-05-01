@@ -268,19 +268,25 @@ class PdaEntryControllerTest {
 
     @Test
     void testLoadDefaultCharges_Success() throws Exception {
-        PdaEntryChargeDetailResponse response = new PdaEntryChargeDetailResponse();
-        response.setDetRowId(1L);
-        response.setChargePoid(100L);
+        PdaEntryChargeDetailResponse chargeDetail = new PdaEntryChargeDetailResponse();
+        chargeDetail.setDetRowId(1L);
+        chargeDetail.setChargePoid(100L);
+        LoadDefaultChargesResponse response = new LoadDefaultChargesResponse(
+                "Default charges loaded successfully",
+                List.of(chargeDetail)
+        );
 
         try (MockedStatic<UserContext> mockedUserContext = mockStatic(UserContext.class)) {
             mockUserContext(mockedUserContext);
 
             when(pdaEntryService.loadDefaultCharges(transactionPoid, groupPoid, companyPoid, userPoid))
-                    .thenReturn(List.of(response));
+                    .thenReturn(response);
 
             mockMvc.perform(post("/v1/pda-entries/{transactionPoid}/load-default-charges", transactionPoid)
                     .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Default charges loaded successfully"))
+                    .andExpect(jsonPath("$.result.data[0].chargePoid").value(100));
 
             verify(pdaEntryService, times(1)).loadDefaultCharges(transactionPoid, groupPoid, companyPoid, userPoid);
         }

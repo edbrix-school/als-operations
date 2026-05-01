@@ -562,8 +562,10 @@ public class PdaEntryController {
             @Parameter(description = "Transaction POID", required = true)
             @PathVariable Long transactionPoid
     ) {
-        List<PdaEntryChargeDetailResponse> response = pdaEntryService.loadDefaultCharges(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
-        return ApiResponse.success("Default charges loaded successfully", response);
+        LoadDefaultChargesResponse response = pdaEntryService.loadDefaultCharges(
+                transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()
+        );
+        return ApiResponse.success(response.getMessage(), response.getChargeDetails());
     }
 
     // ==================== Vehicle Details Operations ====================
@@ -1532,4 +1534,3 @@ public class PdaEntryController {
         return Sort.by(direction, field);
     }
 }
-
