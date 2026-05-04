@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.asg.common.lib.dto.LovGetListDto;
+import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.utility.DateUtil;
 import com.asg.operations.projectjob.dto.FFManifestHdrDto;
 import com.asg.operations.projectjob.dto.FFManifestHdrDtoResponse;
@@ -20,12 +22,13 @@ import com.asg.operations.projectjob.entity.FFManifestChargesDtl;
 import com.asg.operations.projectjob.entity.FFManifestContainerDtl;
 import com.asg.operations.projectjob.entity.FFManifestHdr;
 import com.asg.operations.projectjob.entity.FFManifestTruckDtl;
+import lombok.RequiredArgsConstructor;
 import org.apache.poi.util.StringUtil;
+import org.springframework.stereotype.Component;
 
 public class ProjectJobMapper {
 
-    private ProjectJobMapper() {
-    }
+    private ProjectJobMapper() {}
 
     public static void mapAirPkgFromDto(ProjectJobAirPkgDto dto, FFManifestAirPkgDtl entity, Long transactionPoid) {
 
@@ -285,7 +288,7 @@ public class ProjectJobMapper {
 
     }
 
-    public static void toChargesDto(FFManifestChargesDtl entity, ProjectJobChargesDto dto) {
+    public static void toChargesDto(FFManifestChargesDtl entity, ProjectJobChargesDto dto, LovDataService lovDataService) {
 
         if (entity == null)
             return;
@@ -293,6 +296,7 @@ public class ProjectJobMapper {
         dto.setDetRowId(entity.getDetRowId());
 
         dto.setChargePoid(entity.getChargePoid());
+        dto.setChargesLov(getLov(longConvertion(entity.getChargePoid()), "CHARGE_MASTER_FF",lovDataService));
         dto.setCurrencyExchange(entity.getCurrencyExchange());
         dto.setQuantity(entity.getQuantity());
         dto.setBuyingPercharge(entity.getBuyingPercharge());
@@ -332,7 +336,7 @@ public class ProjectJobMapper {
         dto.setEnteryLocation(entity.getEnteryLocation());
     }
 
-    public static void toContainerDto(FFManifestContainerDtl entity, ProjectJobContainerDto dto) {
+    public static void toContainerDto(FFManifestContainerDtl entity, ProjectJobContainerDto dto, LovDataService lovDataService) {
 
         if (entity == null)
             return;
@@ -344,6 +348,7 @@ public class ProjectJobMapper {
         dto.setContainerSealNo(entity.getContainerSealNo());
         dto.setContainerIsoCode(entity.getContainerIsoCode());
         dto.setContainerTypePoid(entity.getContainerTypePoid());
+        dto.setContainerTypeLov(getLov(longConvertion(entity.getContainerTypePoid()),"",lovDataService));
         dto.setContainerSize(entity.getContainerSize());
         dto.setQuantity(entity.getQuantity());
         dto.setGrsVolume(entity.getGrsVolume());
@@ -618,7 +623,7 @@ public class ProjectJobMapper {
         entity.setTruckTransportTo(dto.getTruckTransportTo());
     }
 
-    public static void toHdrDto(FFManifestHdr entity, FFManifestHdrDtoResponse dto) {
+    public static void toHdrDto(FFManifestHdr entity, FFManifestHdrDtoResponse dto, LovDataService lovDataService) {
 
         if (entity == null)
             return;
@@ -632,8 +637,10 @@ public class ProjectJobMapper {
         dto.setFfJobType(entity.getFfJobType());
 
         dto.setLinePoid(entity.getLinePoid());
+        dto.setLineLov(getLov(entity.getLinePoid(),"LINE_MASTER", lovDataService));
         dto.setQuoatationPoid(entity.getQuoatationPoid());
         dto.setPrincipalPoid(entity.getPrincipalPoid());
+        dto.setPrincipalLov(getLov(entity.getPrincipalPoid(),"PRINCIPAL_MASTER",lovDataService));
 
         dto.setMasterBlNo(entity.getMasterBlNo());
         dto.setHouseBlNo(entity.getHouseBlNo());
@@ -645,6 +652,7 @@ public class ProjectJobMapper {
         dto.setConsignmentType(entity.getConsignmentType());
 
         dto.setSalesmanPoid(entity.getSalesmanPoid());
+        dto.setSalesmanLov(getLov(entity.getSalesmanPoid(),"SALESMAN",lovDataService));
         dto.setAgentPoid(entity.getAgentPoid());
         dto.setAgentAcctNo(entity.getAgentAcctNo());
         dto.setAgentIataNo(entity.getAgentIataNo());
@@ -671,7 +679,9 @@ public class ProjectJobMapper {
         dto.setFeederVslArrivalDate(entity.getFeederVslArrivalDate());
 
         dto.setFeederLoadportPoid(entity.getFeederLoadportPoid());
+        dto.setFeederLoadPortLov(getLov(entity.getFeederLoadportPoid(),"PORT_MASTER",lovDataService));
         dto.setFeederUnloadportPoid(entity.getFeederUnloadportPoid());
+        dto.setFeederUnloadPortLov(getLov(entity.getFeederUnloadportPoid(),"PORT_MASTER",lovDataService));
 
         dto.setFlightNo(entity.getFlightNo());
         dto.setFlightDate(entity.getFlightDate());
@@ -685,18 +695,24 @@ public class ProjectJobMapper {
         dto.setConsigneeAddressPoid(entity.getConsigneeAddressPoid());
 
         dto.setNotifyPoid1(entity.getNotifyPoid1());
+        dto.setNotifyLov1(getLov(entity.getNotifyPoid1(),"ADDRESS_MASTER_PROJECTS_HX1",lovDataService));
         dto.setNotifyAddressPoid1(entity.getNotifyAddressPoid1());
         dto.setNotifyPoid2(entity.getNotifyPoid2());
+        dto.setNotifyLov2(getLov(entity.getNotifyPoid2(),"ADDRESS_MASTER_PROJECTS_HX1",lovDataService));
         dto.setNotifyAddressPoid2(entity.getNotifyAddressPoid2());
 
         dto.setCanRequireToSent(entity.getCanRequireToSent());
-        dto.setCommodityPoids(Optional.ofNullable(entity.getComodityPoid())
+        List<Long> commodityPoids=Optional.ofNullable(entity.getComodityPoid())
                 .filter(s -> !s.trim().isEmpty())
                 .map(s -> Arrays.stream(s.split(","))
                         .map(String::trim)
                         .map(Long::valueOf)
                         .toList())
-                .orElse(List.of()));
+                .orElse(List.of());
+        dto.setCommodityPoids(commodityPoids);
+        dto.setCommodityLovs(commodityPoids.stream().
+                map(s->getLov(s,"COMODITY", lovDataService)).toList()
+                );
         dto.setCargoDescription(entity.getCargoDescription());
         dto.setMarkNumbers(entity.getMarkNumbers());
 
@@ -719,6 +735,11 @@ public class ProjectJobMapper {
         dto.setOtherDetails(entity.getOtherDetails());
         dto.setCustomsDeclarationNo(entity.getCustomsDeclarationNo());
         dto.setBillingTo(entity.getBillingTo());
+        try {
+            dto.setBillingToLov(entity.getBillingTo() != null ? getLov(Long.valueOf(entity.getBillingTo()), "FF_BILLING_TO", lovDataService) : null);
+        } catch (NumberFormatException e) {
+            dto.setBillingToLov(null);
+        }
 
         dto.setMasterBlWeight(entity.getMasterBlWeight());
         dto.setMasterBlCurrency(entity.getMasterBlCurrency());
@@ -771,6 +792,7 @@ public class ProjectJobMapper {
 
         dto.setFfShJob(entity.getFfShJob());
         dto.setBillToCustomerPoid(entity.getBillToCustomerPoid());
+        dto.setBillToCustomerLov(getLov(entity.getBillToCustomerPoid(),"CUSTOMER_SUPPLIER_MASTER",lovDataService));
 
         dto.setPrincipalManual(entity.getPrincipalManual());
         dto.setMotherVslFinalDelv(entity.getMotherVslFinalDelv());
@@ -779,6 +801,9 @@ public class ProjectJobMapper {
         dto.setRecievedFrom(entity.getRecievedFrom());
         dto.setDeliveryTo(entity.getDeliveryTo());
         dto.setProjectPoid(entity.getProjectPoid());
+        dto.setProjectLov(
+                getLov(entity.getProjectPoid(),"PROJECTS",lovDataService)
+        );
 
         dto.setBlIssueDate(entity.getBlIssueDate());
         dto.setAirTransPort(entity.getAirTransPort());
@@ -838,6 +863,18 @@ public class ProjectJobMapper {
         dto.setCreatedDate(entity.getCreatedDate());
         dto.setLastModifiedBy(entity.getLastModifiedBy());
         dto.setLastModifiedDate(entity.getLastModifiedDate());
+    }
+
+    private static LovGetListDto getLov(Long poid, String lovName, LovDataService lovDataService) {
+        if (poid == null) return null;
+        return lovDataService.getDetailsByPoidAndLovNameFast(poid, lovName);
+    }
+
+    private static Long longConvertion(BigDecimal previousValue){
+        if(previousValue!=null){
+            return previousValue.longValue();
+        }
+        return null;
     }
 
 }

@@ -1,5 +1,6 @@
 package com.asg.operations.projectjob.dto;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,8 +27,10 @@ public class FFManifestHdrDto {
     private String ffJobType;
 
     private Long linePoid;
+    private LovGetListDto lineLov;
     private Long quoatationPoid;
     private Long principalPoid;
+    private LovGetListDto principalLov;
 
     @Size(max = 50, message = "Master BL number must not exceed 50 characters")
     private String masterBlNo;
@@ -51,6 +54,7 @@ public class FFManifestHdrDto {
     private String workExtensionJobNo;
 
     private Long salesmanPoid;
+    private LovGetListDto salesmanLov;
     private Long agentPoid;
 
     @Size(max = 20, message = "Agent Account Number must not exceed 20 characters")
@@ -94,7 +98,9 @@ public class FFManifestHdrDto {
     private LocalDateTime feederVslArrivalDate;
 
     private Long feederLoadportPoid;
+    private LovGetListDto FeederLoadPortLov;
     private Long feederUnloadportPoid;
+    private LovGetListDto FeederUnloadPortLov;
 
     @Size(max = 20, message = "Flight Number must not exceed 20 characters")
     private String flightNo;
@@ -112,13 +118,16 @@ public class FFManifestHdrDto {
     private Long consigneeAddressPoid;
 
     private Long notifyPoid1;
+    private LovGetListDto notifyLov1;
     private Long notifyAddressPoid1;
     private Long notifyPoid2;
+    private LovGetListDto notifyLov2;
     private Long notifyAddressPoid2;
 
     @Size(max = 1, message = "Can require To Sent must be exactly 1 character")
     private String canRequireToSent;
     private List<Long> commodityPoids;
+    private List<LovGetListDto> CommodityLovs;
 
     @Size(max = 500, message = "Cargo Description must not exceed 500 characters")
     private String cargoDescription;
@@ -154,6 +163,7 @@ public class FFManifestHdrDto {
 
     @Size(max = 30, message = "Billing To must not exceed 30 characters")
     private String billingTo;
+    private LovGetListDto billingToLov;
 
     private Long masterBlWeight;
 
@@ -262,6 +272,8 @@ public class FFManifestHdrDto {
     private String ffShJob;
     private Long billToCustomerPoid;
 
+    private LovGetListDto billToCustomerLov;
+
     @Size(max = 100, message = "Principal Manual must not exceed 100 characters")
     private String principalManual;
 
@@ -277,6 +289,7 @@ public class FFManifestHdrDto {
     @Size(max = 50, message = "Delivery To must not exceed 50 characters")
     private String deliveryTo;
     private Long projectPoid;
+    private LovGetListDto projectLov;
     private Long projectCustomerPoid;
     private LocalDateTime blIssueDate;
 

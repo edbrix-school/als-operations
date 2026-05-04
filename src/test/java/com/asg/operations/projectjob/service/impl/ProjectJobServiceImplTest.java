@@ -7,6 +7,7 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.utility.DateUtil;
 import com.asg.operations.common.entity.GlobalAddressDetails;
 import com.asg.operations.common.entity.GlobalAddressMaster;
@@ -54,6 +55,7 @@ class ProjectJobServiceImplTest {
     @Mock private FFProjectsCtrlSheetDtlRepository ctrlSheetDtlRepository;
     @Mock private GlobalAddressMasterRepository addressMasterRepository;
     @Mock private GlobalAddressDetailsRepository addressDetailsRepository;
+    @Mock private LovDataService lovDataService;
 
     private ProjectJobServiceImpl projectJobService;
     private MockedStatic<UserContext> userContextMockedStatic;
@@ -65,7 +67,7 @@ class ProjectJobServiceImplTest {
                 hdrRepository, chargesRepository, airPkgRepository, bayanRepository,
                 containerRepository, truckRepository, spRepostirory, loggingService,
                 documentDeleteService, documentSearchService, ctrlSheetDtlRepository,
-                addressMasterRepository, addressDetailsRepository);
+                addressMasterRepository, addressDetailsRepository, lovDataService);
 
         userContextMockedStatic = mockStatic(UserContext.class);
         userContextMockedStatic.when(UserContext::getGroupPoid).thenReturn(1L);
