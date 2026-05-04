@@ -117,6 +117,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     private final FFManifestTruckDtlRepository truckRepository;
     private final FFManifestChargesDtlRepository manifestChargesRepository;
     private final FFManifestBayanDtlRepository bayanRepository;
+    private final com.asg.operations.finaldisbursementaccount.repository.ShipVesselMasterRepository shipVesselMasterRepository;
     private final LoggingService loggingService;
     private final ProjectMapper mapper;
     private final DocumentSearchService documentSearchService;
@@ -1092,7 +1093,25 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 row.setPol(matched.getPoid().toString());
             }
         }
-        // POD, SAIL_DATE, LINE have no Excel columns — remain null
+
+        // LINE → SHIP_VESSEL_MASTER (from VESSEL column — look up linePoid by vessel name)
+        String vesselRaw = row.getVesselRaw();
+        if (vesselRaw == null || vesselRaw.isBlank()) {
+            errors.add(new ValidationError(row.getRowNum(), "VESSEL",
+                    "Vessel is required for SEA freight to determine the Line"));
+        } else {
+            com.asg.operations.finaldisbursementaccount.entity.ShipVesselMaster vessel =
+                    shipVesselMasterRepository.findFirstByVesselNameIgnoreCase(vesselRaw.trim()).orElse(null);
+            if (vessel == null) {
+                errors.add(new ValidationError(row.getRowNum(), "VESSEL",
+                        String.format("Vessel '%s' not found in the system.", vesselRaw.trim())));
+            } else if (vessel.getLinePoid() == null) {
+                errors.add(new ValidationError(row.getRowNum(), "VESSEL",
+                        String.format("Vessel '%s' has no Line associated. Please update the vessel record first.", vesselRaw.trim())));
+            } else {
+                row.setLine(vessel.getLinePoid());
+            }
+        }
 
         // Required numeric fields
         if (row.getWeight() == null) {
