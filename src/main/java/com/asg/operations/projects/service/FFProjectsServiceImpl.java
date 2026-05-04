@@ -58,9 +58,15 @@ import java.util.function.Function;
 public class FFProjectsServiceImpl implements FFProjectsService {
 
     private static final DateTimeFormatter EXCEL_DATE_FORMAT =
-            DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.ENGLISH);
+            new java.time.format.DateTimeFormatterBuilder()
+                    .parseCaseInsensitive()
+                    .appendPattern("dd-MMM-yyyy")
+                    .toFormatter(Locale.ENGLISH);
     private static final DateTimeFormatter EXCEL_DATE_FORMAT_SHORT =
-            DateTimeFormatter.ofPattern("d-MMM-yyyy", Locale.ENGLISH);
+            new java.time.format.DateTimeFormatterBuilder()
+                    .parseCaseInsensitive()
+                    .appendPattern("d-MMM-yyyy")
+                    .toFormatter(Locale.ENGLISH);
 
     // Column index → expected header text (normalised: uppercase, newlines → space)
     private static final Map<Integer, String> REQUIRED_COLUMN_HEADERS;
