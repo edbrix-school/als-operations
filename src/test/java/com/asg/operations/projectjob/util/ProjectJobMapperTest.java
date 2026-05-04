@@ -1,8 +1,12 @@
 package com.asg.operations.projectjob.util;
 
+import com.asg.common.lib.service.LovDataService;
 import com.asg.operations.projectjob.dto.*;
 import com.asg.operations.projectjob.entity.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,7 +15,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class ProjectJobMapperTest {
+
+    @Mock
+    private LovDataService lovDataService;
+
 
     @Test
     void testMapAirPkgFromDto() {
@@ -347,7 +357,7 @@ class ProjectJobMapperTest {
         entity.setRemarks("REM");
 
         ProjectJobChargesDto dto = new ProjectJobChargesDto();
-        ProjectJobMapper.toChargesDto(entity, dto);
+        ProjectJobMapper.toChargesDto(entity, dto, lovDataService);
 
         assertEquals(1L, dto.getDetRowId());
         assertEquals(BigDecimal.valueOf(10L), dto.getChargePoid());
@@ -355,7 +365,7 @@ class ProjectJobMapperTest {
 
     @Test
     void testToChargesDto_NullEntity() {
-        ProjectJobMapper.toChargesDto(null, new ProjectJobChargesDto());
+        ProjectJobMapper.toChargesDto(null, new ProjectJobChargesDto(), lovDataService);
     }
 
     @Test
@@ -373,7 +383,7 @@ class ProjectJobMapperTest {
         entity.setRemarks("REM");
 
         ProjectJobContainerDto dto = new ProjectJobContainerDto();
-        ProjectJobMapper.toContainerDto(entity, dto);
+        ProjectJobMapper.toContainerDto(entity, dto, lovDataService);
 
         assertEquals(1L, dto.getDetRowId());
         assertEquals("CONT123", dto.getContainerNo());
@@ -381,7 +391,7 @@ class ProjectJobMapperTest {
 
     @Test
     void testToContainerDto_NullEntity() {
-        ProjectJobMapper.toContainerDto(null, new ProjectJobContainerDto());
+        ProjectJobMapper.toContainerDto(null, new ProjectJobContainerDto(), lovDataService);
     }
 
     @Test
@@ -756,7 +766,7 @@ class ProjectJobMapperTest {
         entity.setTruckTransportTo("TTT");
 
         FFManifestHdrDtoResponse dto = new FFManifestHdrDtoResponse();
-        ProjectJobMapper.toHdrDto(entity, dto);
+        ProjectJobMapper.toHdrDto(entity, dto, lovDataService);
 
         assertEquals(100L, dto.getTransactionPoid());
         assertEquals("JOB1", dto.getFfJobNo());
@@ -764,7 +774,7 @@ class ProjectJobMapperTest {
 
     @Test
     void testToHdrDto_NullEntity() {
-        ProjectJobMapper.toHdrDto(null, new FFManifestHdrDtoResponse());
+        ProjectJobMapper.toHdrDto(null, new FFManifestHdrDtoResponse(), lovDataService);
     }
 
     @Test

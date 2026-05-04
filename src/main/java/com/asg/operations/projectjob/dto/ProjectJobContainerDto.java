@@ -1,5 +1,6 @@
 package com.asg.operations.projectjob.dto;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +30,7 @@ public class ProjectJobContainerDto {
     private String containerIsoCode;
 
     private BigDecimal containerTypePoid;
+    private LovGetListDto containerTypeLov;
 
     @Size(max = 20, message = "Container size must not exceed 20 characters")
     private String containerSize;

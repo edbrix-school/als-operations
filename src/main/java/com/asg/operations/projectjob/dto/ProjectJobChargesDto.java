@@ -1,5 +1,6 @@
 package com.asg.operations.projectjob.dto;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +15,7 @@ public class ProjectJobChargesDto {
     private Long detRowId;
 
     private BigDecimal chargePoid;
+    private LovGetListDto chargesLov;
     private BigDecimal currencyExchange;
     private BigDecimal quantity;
     private BigDecimal buyingPercharge;
