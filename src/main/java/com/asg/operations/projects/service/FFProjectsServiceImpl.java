@@ -26,20 +26,28 @@ import com.asg.operations.projects.repository.FreightJobProjectionRepository;
 import com.asg.operations.projects.util.ProjectMapper;
 import com.asg.operations.projectjob.entity.*;
 import com.asg.operations.projectjob.repository.*;
+import com.asg.operations.crew.dto.ValidationError;
+import com.asg.operations.exceptions.ValidationException;
 import jakarta.persistence.EntityManager;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.function.Function;
@@ -48,6 +56,55 @@ import java.util.function.Function;
 @Service
 @RequiredArgsConstructor
 public class FFProjectsServiceImpl implements FFProjectsService {
+
+    private static final DateTimeFormatter EXCEL_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.ENGLISH);
+    private static final DateTimeFormatter EXCEL_DATE_FORMAT_SHORT =
+            DateTimeFormatter.ofPattern("d-MMM-yyyy", Locale.ENGLISH);
+
+    // Column index → expected header text (normalised: uppercase, newlines → space)
+    private static final Map<Integer, String> REQUIRED_COLUMN_HEADERS;
+    static {
+        REQUIRED_COLUMN_HEADERS = new LinkedHashMap<>();
+        REQUIRED_COLUMN_HEADERS.put(1,  "MODE");
+        REQUIRED_COLUMN_HEADERS.put(8,  "BAHRAIN ETA/ATA");
+        REQUIRED_COLUMN_HEADERS.put(9,  "VESSEL");
+        REQUIRED_COLUMN_HEADERS.put(10, "POL");
+        REQUIRED_COLUMN_HEADERS.put(12, "DESCRIPTION");
+        REQUIRED_COLUMN_HEADERS.put(15, "NO OF PKGS");
+        REQUIRED_COLUMN_HEADERS.put(16, "WEIGHT");
+        REQUIRED_COLUMN_HEADERS.put(17, "VOLUME");
+        REQUIRED_COLUMN_HEADERS.put(23, "DELIVERY DATE");
+    }
+
+    @Data
+    private static class CtrlSheetExcelRow {
+        private int rowNum;
+        private String freightType;
+        // common
+        private LocalDate etaAta;
+        private LocalDate arrivalDate;
+        private Double weight;
+        private Double cbm;
+        private String description;
+        private String duplicateKey;
+        // AIR
+        private Long origin;        // from POL col via FF_AIRPORTS
+        private Long destination;   // no Excel column → null
+        private Long carrierPoid;   // from VESSEL col via AIRLINE
+        private Double noOfPackages;
+        private LocalDate etd;      // no Excel column → null
+        // SEA
+        private String pol;         // from POL col via PORT_MASTER (stored as POID string)
+        private String pod;         // no Excel column → null
+        private LocalDate sailDate; // no Excel column → null
+        private Long line;          // no Excel column → null
+        // ROAD
+        private String truckNumber; // no Excel column → null
+        // raw values for LOV resolution (transient, not saved)
+        private String polRaw;      // raw text from POL col (col 10)
+        private String vesselRaw;   // raw text from VESSEL col (col 9)
+    }
 
     private final FFProjectsHdrRepository projectsHdrRepository;
     private final FFProjectsChargesDtlRepository projectsChargesDtlRepository;
@@ -249,10 +306,72 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     }
 
     @Override
+    @Transactional
+    public FFProjectsCtrlSheetDetailResponse updateControlSheet(Long transactionPoid, Long detRowId, FFProjectsCtrlSheetDetailRequest request) {
+        projectsHdrRepository.findByTransactionPoidAndDeleted(transactionPoid, "N")
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + transactionPoid));
+
+        FFProjectsCtrlSheetDtl existing = projectsCtrlSheetDtlRepository
+                .findByTransactionPoidAndDetRowId(transactionPoid, detRowId)
+                .orElseThrow(() -> new ResourceNotFoundException("Control sheet row not found with Det Row ID: " + detRowId));
+
+        FFProjectsCtrlSheetDtl oldCtrl = FFProjectsCtrlSheetDtl.builder()
+                .transactionPoid(existing.getTransactionPoid())
+                .detRowId(existing.getDetRowId())
+                .freightType(existing.getFreightType())
+                .jobNoPoid(existing.getJobNoPoid())
+                .origin(existing.getOrigin())
+                .destination(existing.getDestination())
+                .etd(existing.getEtd())
+                .etaAta(existing.getEtaAta())
+                .arrivalDate(existing.getArrivalDate())
+                .noOfPackages(existing.getNoOfPackages())
+                .weight(existing.getWeight())
+                .cbm(existing.getCbm())
+                .carrierPoid(existing.getCarrierPoid())
+                .line(existing.getLine())
+                .truckNumber(existing.getTruckNumber())
+                .description(existing.getDescription())
+                .sailDate(existing.getSailDate())
+                .pol(existing.getPol())
+                .pod(existing.getPod())
+                .createdBy(existing.getCreatedBy())
+                .createdDate(existing.getCreatedDate())
+                .lastModifiedBy(existing.getLastModifiedBy())
+                .lastModifiedDate(existing.getLastModifiedDate())
+                .build();
+
+        existing.setFreightType(request.getFreightType());
+        existing.setJobNoPoid(request.getJobNoPoid());
+        existing.setOrigin(request.getOriginPoid());
+        existing.setDestination(request.getDestinationPoid());
+        existing.setEtd(request.getEtd());
+        existing.setEtaAta(request.getEtaAta());
+        existing.setArrivalDate(request.getArrivalDate());
+        existing.setNoOfPackages(request.getNoOfPackages());
+        existing.setWeight(request.getWeight());
+        existing.setCbm(request.getCbm());
+        existing.setCarrierPoid(request.getCarrierPoid());
+        existing.setLine(request.getLinePoid());
+        existing.setTruckNumber(request.getTruckNumber());
+        existing.setDescription(request.getDescription());
+        existing.setSailDate(request.getSailDate());
+        existing.setPol(request.getSfPOL());
+        existing.setPod(request.getSfPOD());
+        existing.setLastModifiedBy(UserContext.getUserName());
+        existing.setLastModifiedDate(LocalDateTime.now());
+
+        projectsCtrlSheetDtlRepository.save(existing);
+
+        String logDetail = String.format("KeyId = TRANSACTION_POID: %s DET_ROW_ID: %s", transactionPoid, detRowId);
+        loggingService.createLogBatch(List.of(new com.asg.common.lib.dto.request.LogRequestDto<>(oldCtrl, existing, FFProjectsCtrlSheetDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail)));
+
+        return mapper.mapCtrlSheetDetailToResponse(existing);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<UpcomingJobDTO> getUpcomingJobsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
-        LocalDate from = fromDate != null ? fromDate : LocalDate.of(2000, 1, 1);
-        LocalDate to = toDate != null ? toDate : LocalDate.of(2099, 12, 31);
         List<FFProjectsCtrlSheetDtl> controlSheets = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
         List<Long> linkedJobIds = controlSheets.stream()
                 .map(FFProjectsCtrlSheetDtl::getJobNoPoid)
@@ -263,8 +382,8 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .collect(Collectors.toMap(FFManifestHdr::getTransactionPoid, Function.identity()));
 
         List<UpcomingJobDTO> result = controlSheets.stream()
-                .filter(cs -> cs.getEtaAta() != null)
-                .filter(cs -> !cs.getEtaAta().isBefore(from) && !cs.getEtaAta().isAfter(to))
+                .filter(cs -> fromDate == null || cs.getEtaAta() == null || !cs.getEtaAta().isBefore(fromDate))
+                .filter(cs -> toDate == null || cs.getEtaAta() == null || !cs.getEtaAta().isAfter(toDate))
                 .map(cs -> mapToUpcomingJobDTO(cs, manifestById.get(cs.getJobNoPoid())))
                 .collect(Collectors.toList());
         applySorting(result, sortBy, sortDir);
@@ -715,6 +834,373 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .collect(Collectors.toList());
         applySorting(result, sortBy, sortDir);
         return result;
+    }
+
+    @Override
+    @Transactional
+    public List<FFProjectsCtrlSheetDetailResponse> uploadControlSheetExcel(Long transactionPoid, MultipartFile file) {
+        projectsHdrRepository.findByTransactionPoidAndDeleted(transactionPoid, "N")
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + transactionPoid));
+
+        // Fast-fail: if any existing row is linked to a job, reject before doing any further work
+        List<FFProjectsCtrlSheetDtl> existing = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
+        boolean anyLinkedToJob = existing.stream().anyMatch(cs -> cs.getJobNoPoid() != null);
+        if (anyLinkedToJob) {
+            throw new ValidationException("Cannot upload control sheet: one or more existing entries are linked to jobs. Please unlink them before uploading.",
+                    List.of(new ValidationError(null, "CONTROL_SHEET", "One or more existing control sheet entries are linked to jobs. Please unlink them before uploading.")));
+        }
+
+        List<CtrlSheetExcelRow> parsedRows;
+        try {
+            parsedRows = parseControlSheetExcel(file);
+        } catch (IOException e) {
+            throw new ValidationException("Failed to read Excel file: " + e.getMessage(),
+                    List.of(new ValidationError(null, "FILE", "Failed to read Excel file: " + e.getMessage())));
+        }
+
+        if (parsedRows.isEmpty()) {
+            throw new ValidationException("Excel file contains no data rows.",
+                    List.of(new ValidationError(null, "FILE", "Excel file contains no data rows.")));
+        }
+
+        Map<String, LovGetListDto> portDescMap    = loadLovDescMap("PORT_MASTER");
+        Map<String, LovGetListDto> airportDescMap = loadLovDescMap("FF_AIRPORTS");
+        Map<String, LovGetListDto> airlineDescMap = loadLovDescMap("AIRLINE");
+        List<ValidationError> errors = validateExcelRows(parsedRows, portDescMap, airportDescMap, airlineDescMap);
+        if (!errors.isEmpty()) {
+            throw new ValidationException("Excel pre-validation failed", errors);
+        }
+
+        if (!existing.isEmpty()) {
+            projectsCtrlSheetDtlRepository.deleteByTransactionPoid(transactionPoid);
+        }
+
+        String currentUser = UserContext.getUserName();
+        LocalDateTime now = LocalDateTime.now();
+        List<FFProjectsCtrlSheetDtl> toSave = new ArrayList<>();
+        long detRowId = 0;
+        for (CtrlSheetExcelRow row : parsedRows) {
+            String ft = row.getFreightType();
+            FFProjectsCtrlSheetDtl.FFProjectsCtrlSheetDtlBuilder builder = FFProjectsCtrlSheetDtl.builder()
+                    .transactionPoid(transactionPoid)
+                    .detRowId(++detRowId)
+                    .freightType(ft)
+                    .createdBy(currentUser)
+                    .createdDate(now)
+                    .lastModifiedBy(currentUser)
+                    .lastModifiedDate(now);
+
+            if ("AIR FREIGHT".equals(ft)) {
+                builder.origin(row.getOrigin())
+                        .destination(row.getDestination())
+                        .etd(row.getEtd())
+                        .etaAta(row.getEtaAta())
+                        .arrivalDate(row.getArrivalDate())
+                        .noOfPackages(row.getNoOfPackages())
+                        .weight(row.getWeight())
+                        .cbm(row.getCbm())
+                        .carrierPoid(row.getCarrierPoid())
+                        .description(row.getDescription());
+            } else if ("SEA FREIGHT".equals(ft)) {
+                builder.pol(row.getPol())
+                        .pod(row.getPod())
+                        .arrivalDate(row.getArrivalDate())
+                        .etaAta(row.getEtaAta())
+                        .etd(row.getEtd())
+                        .sailDate(row.getSailDate())
+                        .weight(row.getWeight())
+                        .cbm(row.getCbm())
+                        .line(row.getLine())
+                        .description(row.getDescription());
+            } else {
+                builder.description(row.getDescription())
+                        .etaAta(row.getEtaAta())
+                        .etd(row.getEtd())
+                        .arrivalDate(row.getArrivalDate())
+                        .weight(row.getWeight())
+                        .cbm(row.getCbm())
+                        .truckNumber(row.getTruckNumber());
+            }
+
+            toSave.add(builder.build());
+        }
+        projectsCtrlSheetDtlRepository.saveAll(toSave);
+
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), transactionPoid.toString(),
+                String.format("Control sheet uploaded from Excel '%s': %d rows saved", file.getOriginalFilename(), toSave.size()));
+
+        return getControlSheetsByProject(transactionPoid, null);
+    }
+
+    private List<CtrlSheetExcelRow> parseControlSheetExcel(MultipartFile file) throws IOException {
+        List<CtrlSheetExcelRow> rows = new ArrayList<>();
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            List<ValidationError> columnErrors = validateColumnHeaders(sheet);
+            if (!columnErrors.isEmpty()) {
+                throw new ValidationException("Excel template column structure is invalid", columnErrors);
+            }
+
+            for (int rowIdx = 3; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
+                Row row = sheet.getRow(rowIdx);
+                if (isRowEmpty(row)) continue;
+
+                CtrlSheetExcelRow parsed = new CtrlSheetExcelRow();
+                parsed.setRowNum(rowIdx + 1);
+
+                StringBuilder keyBuilder = new StringBuilder();
+                for (int col = 1; col <= 25; col++) {
+                    keyBuilder.append(getCellStringValue(row, col)).append("|");
+                }
+                parsed.setDuplicateKey(keyBuilder.toString());
+
+                parsed.setFreightType(getCellStringValue(row, 1));
+                parsed.setEtaAta(parseDateCell(row, 8));
+                parsed.setVesselRaw(getCellStringValue(row, 9));
+                parsed.setPolRaw(getCellStringValue(row, 10));
+                parsed.setDescription(getCellStringValue(row, 12));
+                parsed.setNoOfPackages(getNumericCellValue(row, 15));
+                parsed.setWeight(getNumericCellValue(row, 16));
+                parsed.setCbm(getNumericCellValue(row, 17));
+                parsed.setArrivalDate(parseDateCell(row, 23));
+
+                rows.add(parsed);
+            }
+        }
+        return rows;
+    }
+
+    private List<ValidationError> validateColumnHeaders(Sheet sheet) {
+        List<ValidationError> errors = new ArrayList<>();
+        Row headerRow = sheet.getRow(1);
+        if (headerRow == null) {
+            errors.add(new ValidationError(null, "HEADER",
+                    "Column header row (row 2) is missing from the Excel file"));
+            return errors;
+        }
+        REQUIRED_COLUMN_HEADERS.forEach((colIndex, expectedHeader) -> {
+            String actual = getCellStringValue(headerRow, colIndex)
+                    .replace("\n", " ").trim().toUpperCase();
+            if (!expectedHeader.equalsIgnoreCase(actual)) {
+                errors.add(new ValidationError(2, "COLUMN_" + (colIndex + 1),
+                        String.format("Column %d header mismatch: expected '%s' but found '%s'",
+                                colIndex + 1, expectedHeader, actual.isEmpty() ? "(empty)" : actual)));
+            }
+        });
+        return errors;
+    }
+
+    private List<ValidationError> validateExcelRows(List<CtrlSheetExcelRow> rows,
+                                                     Map<String, LovGetListDto> portDescMap,
+                                                     Map<String, LovGetListDto> airportDescMap,
+                                                     Map<String, LovGetListDto> airlineDescMap) {
+        List<ValidationError> errors = new ArrayList<>();
+
+        // Duplicate check (exclude SN column) — return immediately if any duplicates found
+        Map<String, Integer> seenKeys = new LinkedHashMap<>();
+        for (CtrlSheetExcelRow row : rows) {
+            String key = row.getDuplicateKey();
+            if (seenKeys.containsKey(key)) {
+                errors.add(new ValidationError(row.getRowNum(), "row",
+                        String.format("Row %d is a duplicate of row %d (all columns except SN are identical)",
+                                row.getRowNum(), seenKeys.get(key))));
+            } else {
+                seenKeys.put(key, row.getRowNum());
+            }
+        }
+        if (!errors.isEmpty()) {
+            return errors;
+        }
+
+        for (CtrlSheetExcelRow row : rows) {
+            String modeRaw = row.getFreightType();
+            if (modeRaw == null || modeRaw.isBlank()) {
+                errors.add(new ValidationError(row.getRowNum(), "MODE", "MODE is required"));
+                continue;
+            }
+            String modeCode = modeRaw.trim().toUpperCase();
+            row.setFreightType(switch (modeCode) {
+                case "AIR" -> "AIR FREIGHT";
+                case "SEA" -> "SEA FREIGHT";
+                default    -> modeCode;
+            });
+
+            // Freight-type-specific validation
+            switch (modeCode) {
+                case "AIR"  -> validateAirRow(row, airportDescMap, airlineDescMap, errors);
+                case "SEA"  -> validateSeaRow(row, portDescMap, errors);
+                case "ROAD" -> validateRoadRow(row, errors);
+                default     -> validateRoadRow(row, errors);
+            }
+        }
+
+        return errors;
+    }
+
+    private void validateAirRow(CtrlSheetExcelRow row,
+                                 Map<String, LovGetListDto> airportDescMap,
+                                 Map<String, LovGetListDto> airlineDescMap,
+                                 List<ValidationError> errors) {
+        // Origin → FF_AIRPORTS (from POL column, optional — validate if present)
+        String originRaw = row.getPolRaw();
+        if (originRaw != null && !originRaw.isBlank()) {
+            LovGetListDto matched = airportDescMap.get(originRaw.trim().toLowerCase());
+            if (matched == null) {
+                errors.add(new ValidationError(row.getRowNum(), "ORIGIN",
+                        String.format("Invalid origin airport '%s'. Value must match a valid FF_AIRPORTS entry.", originRaw.trim())));
+            } else {
+                row.setOrigin(matched.getPoid());
+            }
+        }
+
+        // Air carrier → AIRLINE (from VESSEL column, optional — validate if present)
+        String carrierRaw = row.getVesselRaw();
+        if (carrierRaw != null && !carrierRaw.isBlank()) {
+            LovGetListDto matched = airlineDescMap.get(carrierRaw.trim().toLowerCase());
+            if (matched == null) {
+                errors.add(new ValidationError(row.getRowNum(), "AIR_CARRIER",
+                        String.format("Invalid air carrier '%s'. Value must match a valid AIRLINE entry.", carrierRaw.trim())));
+            } else {
+                row.setCarrierPoid(matched.getPoid());
+            }
+        }
+
+        // Required numeric fields
+        if (row.getNoOfPackages() == null) {
+            errors.add(new ValidationError(row.getRowNum(), "NO_OF_PKGS", "Number of packages is required for AIR freight"));
+        }
+        if (row.getWeight() == null) {
+            errors.add(new ValidationError(row.getRowNum(), "WEIGHT", "Weight is required for AIR freight"));
+        }
+        if (row.getCbm() == null) {
+            errors.add(new ValidationError(row.getRowNum(), "VOLUME", "Volume (CBM) is required for AIR freight"));
+        }
+    }
+
+    private void validateSeaRow(CtrlSheetExcelRow row,
+                                 Map<String, LovGetListDto> portDescMap,
+                                 List<ValidationError> errors) {
+        // POL → PORT_MASTER (from POL column, optional — validate if present)
+        String polRaw = row.getPolRaw();
+        if (polRaw != null && !polRaw.isBlank()) {
+            LovGetListDto matched = portDescMap.get(polRaw.trim().toLowerCase());
+            if (matched == null) {
+                errors.add(new ValidationError(row.getRowNum(), "POL",
+                        String.format("Invalid POL value '%s'. Value must match a valid PORT_MASTER entry.", polRaw.trim())));
+            } else {
+                row.setPol(matched.getPoid().toString());
+            }
+        }
+        // POD, SAIL_DATE, LINE have no Excel columns — remain null
+
+        // Required numeric fields
+        if (row.getWeight() == null) {
+            errors.add(new ValidationError(row.getRowNum(), "WEIGHT", "Weight is required for SEA freight"));
+        }
+        if (row.getCbm() == null) {
+            errors.add(new ValidationError(row.getRowNum(), "VOLUME", "Volume (CBM) is required for SEA freight"));
+        }
+    }
+
+    private void validateRoadRow(CtrlSheetExcelRow row, List<ValidationError> errors) {
+        // TRUCK_NUMBER has no Excel column — remains null
+
+        // Required numeric fields
+        if (row.getWeight() == null) {
+            errors.add(new ValidationError(row.getRowNum(), "WEIGHT", "Weight is required for ROAD freight"));
+        }
+        if (row.getCbm() == null) {
+            errors.add(new ValidationError(row.getRowNum(), "VOLUME", "Volume (CBM) is required for ROAD freight"));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, LovGetListDto> loadLovDescMap(String lovName) {
+        Map<String, Object> result = lovDataService.getLovList(
+                "", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(),
+                lovName, 0, 0, "", "");
+        List<LovGetListDto> items = result != null
+                ? (List<LovGetListDto>) result.getOrDefault("data", Collections.emptyList())
+                : Collections.emptyList();
+        return items.stream()
+                .filter(item -> item.getDescription() != null && item.getCode() != null)
+                .collect(Collectors.toMap(
+                        item -> item.getDescription().trim().toLowerCase(),
+                        Function.identity(),
+                        (existing, replacement) -> existing
+                ));
+    }
+
+    private String getCellStringValue(Row row, int colIndex) {
+        if (row == null) return "";
+        Cell cell = row.getCell(colIndex, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+        if (cell == null) return "";
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue().trim();
+            case NUMERIC -> {
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    yield cell.getLocalDateTimeCellValue().toLocalDate().toString();
+                }
+                double val = cell.getNumericCellValue();
+                yield val == Math.floor(val) ? String.valueOf((long) val) : String.valueOf(val);
+            }
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            default -> "";
+        };
+    }
+
+    private Double getNumericCellValue(Row row, int colIndex) {
+        if (row == null) return null;
+        Cell cell = row.getCell(colIndex, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+        if (cell == null) return null;
+        return switch (cell.getCellType()) {
+            case NUMERIC -> cell.getNumericCellValue();
+            case STRING -> {
+                String val = cell.getStringCellValue().trim();
+                if (val.isEmpty()) yield null;
+                try {
+                    yield Double.parseDouble(val);
+                } catch (NumberFormatException e) {
+                    yield null;
+                }
+            }
+            default -> null;
+        };
+    }
+
+    private LocalDate parseDateCell(Row row, int colIndex) {
+        if (row == null) return null;
+        Cell cell = row.getCell(colIndex, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+        if (cell == null) return null;
+        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+            return cell.getLocalDateTimeCellValue().toLocalDate();
+        }
+        if (cell.getCellType() == CellType.STRING) {
+            String val = cell.getStringCellValue().trim();
+            if (val.isEmpty()) return null;
+            try {
+                return LocalDate.parse(val, EXCEL_DATE_FORMAT);
+            } catch (DateTimeParseException ignored) {
+                try {
+                    return LocalDate.parse(val, EXCEL_DATE_FORMAT_SHORT);
+                } catch (DateTimeParseException ignored2) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isRowEmpty(Row row) {
+        if (row == null) return true;
+        for (int i = 0; i <= 25; i++) {
+            Cell cell = row.getCell(i, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+            if (cell != null && cell.getCellType() != CellType.BLANK) {
+                if (!getCellStringValue(row, i).isBlank()) return false;
+            }
+        }
+        return true;
     }
 
     @Override
