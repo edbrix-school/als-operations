@@ -4,6 +4,7 @@ import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.operations.projects.dto.*;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -31,6 +32,8 @@ public interface FFProjectsService {
     List<FFProjectsCtrlSheetDetailResponse> getControlSheetsByProject(Long transactionPoid, String freightType);
 
     FFProjectsCtrlSheetDetailResponse createControlSheet(Long transactionPoid, FFProjectsCtrlSheetDetailRequest request);
+
+    FFProjectsCtrlSheetDetailResponse updateControlSheet(Long transactionPoid, Long detRowId, FFProjectsCtrlSheetDetailRequest request);
 
     /**
      * Get comprehensive freight summary with all freight types
@@ -91,6 +94,11 @@ public interface FFProjectsService {
      * Get all bayan details for a project
      */
     List<BayanDTO> getProjectBayanDetails(Long projectId, String sortBy, String sortDir);
+
+    /**
+     * Upload and replace control sheet entries from an Excel file
+     */
+    List<FFProjectsCtrlSheetDetailResponse> uploadControlSheetExcel(Long transactionPoid, MultipartFile file);
 
     /**
      * Export control sheet to Excel
