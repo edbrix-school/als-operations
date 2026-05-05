@@ -1107,7 +1107,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                     "Vessel is required for SEA freight to determine the Line"));
         } else {
             com.asg.operations.finaldisbursementaccount.entity.ShipVesselMaster vessel =
-                    shipVesselMasterRepository.findFirstByVesselNameIgnoreCase(vesselRaw.trim()).orElse(null);
+                    shipVesselMasterRepository.findFirstByVesselNameTrimmedIgnoreCase(vesselRaw.trim()).orElse(null);
             if (vessel == null) {
                 errors.add(new ValidationError(row.getRowNum(), "VESSEL",
                         String.format("Vessel '%s' not found in the system.", vesselRaw.trim())));
