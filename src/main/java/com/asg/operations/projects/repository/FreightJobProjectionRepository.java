@@ -36,10 +36,10 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.MASTER_BL_NO as mawbNo
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
-        AND (j.SHIPMENT_MODE = 'AIR' OR j.SHIPMENT_MODE = 'AIR FREIGHT')
+        AND (INSTR(','||j.SHIPMENT_MODE||',', ',AIR,') > 0 OR INSTR(','||j.SHIPMENT_MODE||',', ',AIR FREIGHT,') > 0)
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
-        AND (:fromDate IS NULL OR CAST(j.FLIGHT_DATE AS DATE) >= :fromDate)
-        AND (:toDate IS NULL OR CAST(j.FLIGHT_DATE AS DATE) <= :toDate)
+        AND (:fromDate IS NULL OR TRUNC(j.FLIGHT_DATE) >= :fromDate)
+        AND (:toDate IS NULL OR TRUNC(j.FLIGHT_DATE) <= :toDate)
         ORDER BY j.TRANSACTION_POID
         """, nativeQuery = true)
     List<AirFreightJobProjection> findAirFreightJobsFiltered(
@@ -69,10 +69,10 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.DOCUMENT_STATUS as documentStatus
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
-        AND (j.SHIPMENT_MODE = 'SEA' OR j.SHIPMENT_MODE = 'SEA FREIGHT')
+        AND (INSTR(','||j.SHIPMENT_MODE||',', ',SEA,') > 0 OR INSTR(','||j.SHIPMENT_MODE||',', ',SEA FREIGHT,') > 0)
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
-        AND (:fromDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) >= :fromDate)
-        AND (:toDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) <= :toDate)
+        AND (:fromDate IS NULL OR TRUNC(j.MOTHER_VSL_ETA) >= :fromDate)
+        AND (:toDate IS NULL OR TRUNC(j.MOTHER_VSL_ETA) <= :toDate)
         ORDER BY j.TRANSACTION_POID
         """, nativeQuery = true)
     List<SeaFreightJobProjection> findSeaFreightJobsFiltered(
@@ -96,10 +96,10 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.DOCUMENT_STATUS as documentStatus
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
-        AND (j.SHIPMENT_MODE = 'ROAD' OR j.SHIPMENT_MODE = 'ROAD FREIGHT')
+        AND (INSTR(','||j.SHIPMENT_MODE||',', ',ROAD,') > 0 OR INSTR(','||j.SHIPMENT_MODE||',', ',ROAD FREIGHT,') > 0)
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
-        AND (:fromDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) >= :fromDate)
-        AND (:toDate IS NULL OR CAST(j.MOTHER_VSL_ETA AS DATE) <= :toDate)
+        AND (:fromDate IS NULL OR TRUNC(j.MOTHER_VSL_ETA) >= :fromDate)
+        AND (:toDate IS NULL OR TRUNC(j.MOTHER_VSL_ETA) <= :toDate)
         ORDER BY j.TRANSACTION_POID
         """, nativeQuery = true)
     List<RoadFreightJobProjection> findRoadFreightJobsFiltered(
