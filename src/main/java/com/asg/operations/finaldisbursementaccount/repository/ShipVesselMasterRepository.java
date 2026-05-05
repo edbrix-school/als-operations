@@ -15,6 +15,6 @@ public interface ShipVesselMasterRepository extends JpaRepository<ShipVesselMast
 
     Optional<ShipVesselMaster> findFirstByVesselNameIgnoreCase(String vesselName);
 
-    @Query("SELECT v FROM ShipVesselMaster v WHERE TRIM(LOWER(v.vesselName)) = LOWER(:vesselName)")
+    @Query(value = "SELECT * FROM SHIP_VESSEL_MASTER WHERE TRIM(LOWER(VESSEL_NAME)) = LOWER(TRIM(:vesselName)) AND ROWNUM = 1", nativeQuery = true)
     Optional<ShipVesselMaster> findFirstByVesselNameTrimmedIgnoreCase(@Param("vesselName") String vesselName);
 }
