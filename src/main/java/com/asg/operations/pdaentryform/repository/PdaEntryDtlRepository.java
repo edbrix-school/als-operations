@@ -46,4 +46,10 @@ public interface PdaEntryDtlRepository extends JpaRepository<PdaEntryDtl, PdaEnt
      * Check if a specific charge detail exists
      */
     boolean existsByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
+
+    /**
+     * Find the maximum detRowId for a transaction
+     */
+    @Query("SELECT MAX(d.detRowId) FROM PdaEntryDtl d WHERE d.transactionPoid = :transactionPoid")
+    Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
 }

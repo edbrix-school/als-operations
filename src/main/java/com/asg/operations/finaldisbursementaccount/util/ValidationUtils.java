@@ -23,7 +23,6 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 
 @Slf4j
 @Component
@@ -174,30 +173,30 @@ public class ValidationUtils {
         }
     }
 
-    public void recalculateHeaderTotals(Long transactionPoid, Long groupPoid, Long companyPoid) {
-        PdaFdaHdr hdr = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(transactionPoid, groupPoid, companyPoid)
-                .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
-
-        List<PdaFdaDtl> details = pdaFdaDtlRepository.findByIdTransactionPoid(transactionPoid);
-
-        BigDecimal totalFda = BigDecimal.ZERO;
-        BigDecimal totalCost = BigDecimal.ZERO;
-
-        for (PdaFdaDtl d : details) {
-            totalFda = totalFda.add(CalculationUtils.zero(d.getFdaAmount() != null ? d.getFdaAmount() : d.getAmount()));
-            totalCost = totalCost.add(CalculationUtils.zero(d.getCostAmount()));
-        }
-
-        hdr.setTotalAmount(totalFda);
-        hdr.setProfitLossAmount(totalFda.subtract(totalCost));
-
-        pdaFdaHdrRepository.save(hdr);
-    }
+//    public void recalculateHeaderTotals(Long transactionPoid, Long groupPoid, Long companyPoid) {
+//        PdaFdaHdr hdr = pdaFdaHdrRepository.findByTransactionPoidAndGroupPoidAndCompanyPoid(transactionPoid, groupPoid, companyPoid)
+//                .orElseThrow(() -> new ResourceNotFoundException("FDA Header", "transactionPoid", transactionPoid));
+//
+//        List<PdaFdaDtl> details = pdaFdaDtlRepository.findByIdTransactionPoid(transactionPoid);
+//
+//        BigDecimal totalFda = BigDecimal.ZERO;
+//        BigDecimal totalCost = BigDecimal.ZERO;
+//
+//        for (PdaFdaDtl d : details) {
+//            totalFda = totalFda.add(CalculationUtils.zero(d.getFdaAmount() != null ? d.getFdaAmount() : d.getAmount()));
+//            totalCost = totalCost.add(CalculationUtils.zero(d.getCostAmount()));
+//        }
+//
+//        hdr.setTotalAmount(totalFda);
+//        hdr.setProfitLossAmount(totalFda.subtract(totalCost));
+//
+//        pdaFdaHdrRepository.save(hdr);
+//    }
 
     public void handleCreate(Long transactionPoid, FdaChargeDto dto, String userId) {
         if (dto.getChargePoid() == null) throw new CustomException("Charge is required", 400);
-        if (dto.getQty() == null) throw new CustomException("Quantity is required", 400);
-        if (dto.getPdaRate() == null) throw new CustomException("Rate is required", 400);
+//        if (dto.getQty() == null) throw new CustomException("Quantity is required", 400);
+//        if (dto.getPdaRate() == null) throw new CustomException("Rate is required", 400);
 
         if (dto.getDetRowId() == null) {
             dto.setDetRowId(generateNextDetRowId(transactionPoid));
@@ -205,7 +204,7 @@ public class ValidationUtils {
 
         PdaFdaDtlId id = new PdaFdaDtlId(transactionPoid, dto.getDetRowId());
         PdaFdaDtl entity = ChargesMapper.createNewCharge(id, dto, userId);
-        CalculationUtils.recalculateAmounts(entity);
+//        CalculationUtils.recalculateAmounts(entity);
         PdaFdaDtl saved = pdaFdaDtlRepository.save(entity);
         String logDetail = String.format("Row Created on [FDA Charge Details] with detRowId: %s", saved.getId().getDetRowId());
         loggingService.createLogSummaryEntry(UserContext.getDocumentId(), saved.getId().getTransactionPoid().toString(), logDetail);
@@ -226,7 +225,7 @@ public class ValidationUtils {
         BeanUtils.copyProperties(existing, oldEntity);
 
         ChargesMapper.updateChargeEntityFromDto(dto, existing, userId);
-        CalculationUtils.recalculateAmounts(existing);
+//        CalculationUtils.recalculateAmounts(existing);
 
         existing = pdaFdaDtlRepository.save(existing);
 

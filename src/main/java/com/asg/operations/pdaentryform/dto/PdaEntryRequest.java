@@ -18,7 +18,7 @@ public class PdaEntryRequest {
 
     private LocalDate transactionDate;
 
-    private BigDecimal principalPoid;
+    private Long principalPoid;
 
     @Size(max = 500)
     private String principalName;
@@ -26,14 +26,14 @@ public class PdaEntryRequest {
     @Size(max = 50)
     private String principalContact;
 
-    private BigDecimal voyagePoid;
+    private Long voyagePoid;
 
     @Size(max = 30)
     private String voyageNo;
 
-    private BigDecimal vesselPoid;
+    private Long vesselPoid;
 
-    private BigDecimal vesselTypePoid;
+    private Long vesselTypePoid;
 
     private BigDecimal grt;
 
@@ -59,12 +59,12 @@ public class PdaEntryRequest {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate vesselSailDate;
 
-    private BigDecimal portPoid;
+    private Long portPoid;
 
     @Size(max = 100)
     private String portDescription;
 
-    private BigDecimal linePoid;
+    private Long linePoid;
 
     @Size(max = 50)
     private String comodityPoid;
@@ -75,18 +75,18 @@ public class PdaEntryRequest {
     @Size(max = 20)
     private String harbourCallType;
 
-    private BigDecimal importQty;
+    private Long importQty;
 
-    private BigDecimal exportQty;
+    private Long exportQty;
 
-    private BigDecimal transhipmentQty;
+    private Long transhipmentQty;
 
-    private BigDecimal totalQuantity;
+    private Long totalQuantity;
 
     @Size(max = 20)
     private String unit;
 
-    private BigDecimal numberOfDays;
+    private Long numberOfDays;
 
     @Size(max = 20)
     private String currencyCode;
@@ -95,13 +95,13 @@ public class PdaEntryRequest {
 
     private BigDecimal totalAmount;
 
-    private BigDecimal costCentrePoid;
+    private Long costCentrePoid;
 
-    private BigDecimal salesmanPoid;
+    private Long salesmanPoid;
 
-    private BigDecimal termsPoid;
+    private Long termsPoid;
 
-    private BigDecimal addressPoid;
+    private Long addressPoid;
 
     @NotNull(message = "Ref type is mandatory")
     @Size(max = 100)
@@ -128,7 +128,7 @@ public class PdaEntryRequest {
     @Size(max = 30)
     private String vesselVerifiedBy;
 
-    private BigDecimal vesselHandledBy;
+    private Long vesselHandledBy;
 
     @Size(max = 1)
     private String urgentApproval;
@@ -146,12 +146,12 @@ public class PdaEntryRequest {
 
     private BigDecimal reminderMinutes;
 
-    private BigDecimal printPrincipal;
+    private Long printPrincipal;
 
     @Size(max = 100)
     private String fdaRef;
 
-    private BigDecimal fdaPoid;
+    private Long fdaPoid;
 
     @Size(max = 1)
     private String multipleFda;
@@ -159,9 +159,9 @@ public class PdaEntryRequest {
     @Size(max = 100)
     private String nominatedPartyType;
 
-    private BigDecimal nominatedPartyPoid;
+    private Long nominatedPartyPoid;
 
-    private BigDecimal bankPoid;
+    private Long bankPoid;
 
     @Size(max = 300)
     private String businessRefBy;

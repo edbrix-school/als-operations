@@ -48,6 +48,8 @@ public class FFProjectsRequest {
 
     private String billingCurrencyCode;
 
+    private Double agreedRate;
+
     private String projectStatus = "OPEN";
 
     @Valid

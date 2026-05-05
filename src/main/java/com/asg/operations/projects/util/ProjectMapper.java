@@ -45,6 +45,7 @@ public class ProjectMapper {
         existingProjectsHdr.setCargoDetails(request.getCargoDetails());
         existingProjectsHdr.setBillingCurrencyCode(request.getBillingCurrencyCode());
         existingProjectsHdr.setProjectStatus(request.getProjectStatus());
+        existingProjectsHdr.setAgreedRate(request.getAgreedRate());
         existingProjectsHdr.setLastModifiedBy(UserContext.getUserName());
         existingProjectsHdr.setLastModifiedDate(LocalDateTime.now());
     }
@@ -126,6 +127,7 @@ public class ProjectMapper {
                 .cargoDetails(request.getCargoDetails())
                 .billingCurrencyCode(request.getBillingCurrencyCode())
                 .projectStatus(request.getProjectStatus() != null ? request.getProjectStatus() : "Open")
+                .agreedRate(request.getAgreedRate())
                 .deleted("N")
                 .createdBy(UserContext.getUserName())
                 .createdDate(LocalDateTime.now())
@@ -179,6 +181,7 @@ public class ProjectMapper {
                 .billingCurrencyLov(getLovByCode(hdr.getBillingCurrencyCode(), "CURRENCY"))
                 .projectStatus(hdr.getProjectStatus())
                 .projectStatusLov(getLovByCode(hdr.getProjectStatus(), "PROJECTS_STATUS"))
+                .agreedRate(hdr.getAgreedRate())
                 .createdBy(hdr.getCreatedBy())
                 .createdDate(hdr.getCreatedDate())
                 .lastModifiedBy(hdr.getLastModifiedBy())

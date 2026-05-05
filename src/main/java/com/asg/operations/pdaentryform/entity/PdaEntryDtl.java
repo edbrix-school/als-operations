@@ -31,13 +31,13 @@ public class PdaEntryDtl extends BaseEntity {
 
     @Column(name = "CHARGE_POID", nullable = false)
     @NotNull
-    private BigDecimal chargePoid;
+    private Long chargePoid;
 
     @Column(name = "RATE_TYPE_POID")
-    private BigDecimal rateTypePoid;
+    private Long rateTypePoid;
 
     @Column(name = "PRINCIPAL_POID")
-    private BigDecimal principalPoid;
+    private Long principalPoid;
 
     @Column(name = "CURRENCY_CODE", length = 20)
     @Size(max = 20)
@@ -59,7 +59,7 @@ public class PdaEntryDtl extends BaseEntity {
     private BigDecimal pdaRate;
 
     @Column(name = "TAX_POID")
-    private BigDecimal taxPoid;
+    private Long taxPoid;
 
     @Column(name = "TAX_PERCENTAGE")
     private BigDecimal taxPercentage;
@@ -78,7 +78,7 @@ public class PdaEntryDtl extends BaseEntity {
     private String fdaDocRef;
 
     @Column(name = "FDA_POID")
-    private BigDecimal fdaPoid;
+    private Long fdaPoid;
 
     @Column(name = "FDA_CREATION_TYPE", length = 100)
     @Size(max = 100)

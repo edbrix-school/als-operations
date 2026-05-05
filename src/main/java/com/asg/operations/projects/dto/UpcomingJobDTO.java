@@ -1,5 +1,6 @@
 package com.asg.operations.projects.dto;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,12 +17,16 @@ public class UpcomingJobDTO {
     private String blAwbNo;
     private String freightType;
     private String line;
+    private LovGetListDto lineLov;
     private LocalDate eta;
     private LocalDate etd;
     private String pol;
+    private LovGetListDto polLov;
     private String pod;
     private String origin;
+    private LovGetListDto originLov;
     private String destination;
+    private LovGetListDto destinationLov;
     private String description;
     private Double cbm;
     private Double packages;

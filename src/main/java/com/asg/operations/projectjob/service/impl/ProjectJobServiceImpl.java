@@ -10,6 +10,7 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.DocumentDeleteService;
 import com.asg.common.lib.service.DocumentSearchService;
 import com.asg.common.lib.service.LoggingService;
+import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.common.entity.GlobalAddressDetails;
 import com.asg.operations.common.entity.GlobalAddressMaster;
@@ -62,6 +63,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     private final FFProjectsCtrlSheetDtlRepository ctrlSheetDtlRepository;
     private final GlobalAddressMasterRepository addressMasterRepository;
     private final GlobalAddressDetailsRepository addressDetailsRepository;
+    private final LovDataService lovDataService;
 
     private static final String TRANSACTION_POID = "TRANSACTION_POID";
 
@@ -268,7 +270,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
 
         ProjectJobResponse response = new ProjectJobResponse();
 
-        ProjectJobMapper.toHdrDto(hdr, response);
+        ProjectJobMapper.toHdrDto(hdr, response, lovDataService);
 
         Optional.ofNullable(response.getProjectPoid())
                 .map(spRepostirory::callProjectsLoadInJobsProc)
@@ -303,7 +305,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         List<ProjectJobChargesDto> chargesDto = new ArrayList<>();
         charges.forEach(entity -> {
             ProjectJobChargesDto dto = new ProjectJobChargesDto();
-            ProjectJobMapper.toChargesDto(entity, dto);
+            ProjectJobMapper.toChargesDto(entity, dto,lovDataService);
             chargesDto.add(dto);
 
         });
@@ -311,7 +313,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         List<ProjectJobContainerDto> conationersDto = new ArrayList<>();
         containers.forEach(entity -> {
             ProjectJobContainerDto dto = new ProjectJobContainerDto();
-            ProjectJobMapper.toContainerDto(entity, dto);
+            ProjectJobMapper.toContainerDto(entity, dto, lovDataService);
             conationersDto.add(dto);
 
         });

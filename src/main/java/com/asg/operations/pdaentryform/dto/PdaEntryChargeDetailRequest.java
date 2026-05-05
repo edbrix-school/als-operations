@@ -21,11 +21,11 @@ public class PdaEntryChargeDetailRequest {
     private Long detRowId; // null for new, existing value for update
 
     @NotNull(message = "Charge POID is mandatory")
-    private BigDecimal chargePoid;
+    private Long chargePoid;
 
-    private BigDecimal rateTypePoid;
+    private Long rateTypePoid;
 
-    private BigDecimal principalPoid;
+    private Long principalPoid;
 
     @Size(max = 20)
     private String currencyCode;
@@ -41,7 +41,7 @@ public class PdaEntryChargeDetailRequest {
     @NotNull(message = "PDA Rate is mandatory")
     private BigDecimal pdaRate;
 
-    private BigDecimal taxPoid;
+    private Long taxPoid;
 
     private BigDecimal taxPercentage;
 
@@ -54,7 +54,7 @@ public class PdaEntryChargeDetailRequest {
     @Size(max = 100)
     private String fdaDocRef;
 
-    private BigDecimal fdaPoid;
+    private Long fdaPoid;
 
     @Size(max = 100)
     private String fdaCreationType;

@@ -32,16 +32,16 @@ public class PdaEntryResponse {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate transactionDate;
 
-    private BigDecimal principalPoid;
+    private Long principalPoid;
     private LovItem principalDet;
     private String principalName;
     private String principalContact;
-    private BigDecimal voyagePoid;
+    private Long voyagePoid;
     private LovItem voyageDet;
     private String voyageNo;
-    private BigDecimal vesselPoid;
+    private Long vesselPoid;
     private LovItem vesselDet;
-    private BigDecimal vesselTypePoid;
+    private Long vesselTypePoid;
     private LovItem vesselTypeDet;
     private BigDecimal grt;
     private BigDecimal nrt;
@@ -63,32 +63,32 @@ public class PdaEntryResponse {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate vesselSailDate;
 
-    private BigDecimal portPoid;
+    private Long portPoid;
     private LovItem portDet;
     private String portDescription;
-    private BigDecimal linePoid;
+    private Long linePoid;
     private LovItem lineDet;
     private String comodityPoid;
     private LovItem comodityDet;
     private String operationType;
     private LovItem operationTypeDet;
     private String harbourCallType;
-    private BigDecimal importQty;
-    private BigDecimal exportQty;
-    private BigDecimal transhipmentQty;
-    private BigDecimal totalQuantity;
+    private Long importQty;
+    private Long exportQty;
+    private Long transhipmentQty;
+    private Long totalQuantity;
     private String unit;
     private LovItem unitDet;
-    private BigDecimal numberOfDays;
+    private Long numberOfDays;
     private String currencyCode;
     private LovItem currencyDet;
     private BigDecimal currencyRate;
     private BigDecimal totalAmount;
-    private BigDecimal costCentrePoid;
-    private BigDecimal salesmanPoid;
+    private Long costCentrePoid;
+    private Long salesmanPoid;
     private LovItem salesmanDet;
-    private BigDecimal termsPoid;
-    private BigDecimal addressPoid;
+    private Long termsPoid;
+    private Long addressPoid;
     private String refType;
     private LovItem refTypeDet;
     private String subCategory;
@@ -102,7 +102,7 @@ public class PdaEntryResponse {
     private LocalDate vesselVerifiedDate;
 
     private String vesselVerifiedBy;
-    private BigDecimal vesselHandledBy;
+    private Long vesselHandledBy;
     private LovItem vesselHandledByDet;
     private String urgentApproval;
     private String principalApproved;
@@ -113,16 +113,16 @@ public class PdaEntryResponse {
     private String principalApprovedBy;
     private BigDecimal principalAprvlDays;
     private BigDecimal reminderMinutes;
-    private BigDecimal printPrincipal;
+    private Long printPrincipal;
     private LovItem printPrincipalDet;
     private String fdaRef;
-    private BigDecimal fdaPoid;
+    private Long fdaPoid;
     private String multipleFda;
     private String nominatedPartyType;
     private LovItem nominatedPartyTypeDet;
-    private BigDecimal nominatedPartyPoid;
+    private Long nominatedPartyPoid;
     private LovItem nominatedPartyDet;
-    private BigDecimal bankPoid;
+    private Long bankPoid;
     private LovItem bankDet;
     private String businessRefBy;
     private String pmiDocument;
@@ -171,5 +171,8 @@ public class PdaEntryResponse {
     private List<PdaEntryVehicleDetailResponse> vehicleDetails;
     private List<PdaEntryTdrDetailResponse> tdrDetails;
     private List<PdaEntryAcknowledgmentDetailResponse> acknowledgmentDetails;
+    
+    // Validation message for edit restrictions
+    private String validationMessage;
 }
 

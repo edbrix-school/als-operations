@@ -27,7 +27,6 @@ import com.asg.operations.finaldisbursementaccount.key.PdaFdaDtlId;
 import com.asg.operations.finaldisbursementaccount.repository.FdaCustomRepository;
 import com.asg.operations.finaldisbursementaccount.repository.PdaFdaDtlRepository;
 import com.asg.operations.finaldisbursementaccount.repository.PdaFdaHdrRepository;
-import com.asg.operations.finaldisbursementaccount.util.CalculationUtils;
 import com.asg.operations.finaldisbursementaccount.util.ChargesMapper;
 import com.asg.operations.finaldisbursementaccount.util.HeaderMapper;
 import com.asg.operations.finaldisbursementaccount.util.ValidationUtils;
@@ -87,7 +86,7 @@ public class FdaServiceImpl implements FdaService {
             setDetailsForCharge(charge);
         }
 
-        CalculationUtils.computeProfitLossRuntime(charges, fdaHeaderDto);
+//        CalculationUtils.computeProfitLossRuntime(charges, fdaHeaderDto);
 
         fdaHeaderDto.setCharges(charges);
 
@@ -240,7 +239,7 @@ public class FdaServiceImpl implements FdaService {
             setDetailsForCharge(chargeDto);
         }
 
-        CalculationUtils.computeProfitLossRuntime(charges, null);
+//        CalculationUtils.computeProfitLossRuntime(charges, null);
 
         return new PageResponse<>(
                 charges,
@@ -298,7 +297,7 @@ public class FdaServiceImpl implements FdaService {
             }
         }
 
-        validationUtils.recalculateHeaderTotals(transactionPoid, groupPoid, companyPoid);
+//        validationUtils.recalculateHeaderTotals(transactionPoid, groupPoid, companyPoid);
     }
 
     @Override
@@ -575,7 +574,7 @@ public class FdaServiceImpl implements FdaService {
     private void setDetailsForCharge(FdaChargeDto charge) {
         charge.setChargeDet(lovService.getLovItemByPoid(charge.getChargePoid(), "CHARGE_MASTER_FOR_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         charge.setPrincipalDet(lovService.getLovItemByPoid(charge.getPrincipalPoid(), "PRINCIPAL_MASTER_FOR_PDA", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
-        charge.setDetailsFromDet(lovService.getLovItemByCode(charge.getDetailsFrom(), "FDA_DETAIL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
+//        charge.setDetailsFromDet(lovService.getLovItemByCode(charge.getDetailsFrom(), "FDA_DETAIL", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
     }
 
     @Override

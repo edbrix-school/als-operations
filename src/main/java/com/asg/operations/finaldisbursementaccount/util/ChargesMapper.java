@@ -7,26 +7,26 @@ import com.asg.operations.finaldisbursementaccount.key.PdaFdaDtlId;
 public class ChargesMapper {
 
     public static void updateChargeEntityFromDto(FdaChargeDto dto, PdaFdaDtl entity, String userId) {
-        entity.setChargePoid(dto.getChargePoid());
+//        entity.setChargePoid(dto.getChargePoid());
 
-        entity.setDetailsFrom(dto.getDetailsFrom());
-        entity.setQty(dto.getQty());
-        entity.setDays(dto.getDays());
-        entity.setPdaRate(dto.getPdaRate());
+//        entity.setDetailsFrom(dto.getDetailsFrom());
+//        entity.setQty(dto.getQty());
+//        entity.setDays(dto.getDays());
+//        entity.setPdaRate(dto.getPdaRate());
 
-        entity.setAmount(dto.getAmount());
-        entity.setRemarks(dto.getRemarks());
-        entity.setRemarkQtyDays(dto.getRemarkQtyDays());
-        entity.setCostAmount(dto.getCostAmount());
-        entity.setFdaAmount(dto.getFdaAmount());
-        entity.setSeqNo(dto.getSeqNo());
+//        entity.setAmount(dto.getAmount());
+//        entity.setRemarks(dto.getRemarks());
+//        entity.setRemarkQtyDays(dto.getRemarkQtyDays());
+//        entity.setCostAmount(dto.getCostAmount());
+//        entity.setFdaAmount(dto.getFdaAmount());
+//        entity.setSeqNo(dto.getSeqNo());
         entity.setPrincipalPoid(dto.getPrincipalPoid());
         entity.setFdaRemarks(dto.getPrintRemarks());
-        entity.setDnAmount(dto.getDnAmount());
-        entity.setCnAmount(dto.getCnAmount());
-        entity.setDnTaxAmount(dto.getDnTaxAmount());
-        entity.setDnTotalAmount(dto.getDnTotalAmount());
-        entity.setCnTaxAmount(dto.getCnTaxAmount());
+//        entity.setDnAmount(dto.getDnAmount());
+//        entity.setCnAmount(dto.getCnAmount());
+//        entity.setDnTaxAmount(dto.getDnTaxAmount());
+//        entity.setDnTotalAmount(dto.getDnTotalAmount());
+//        entity.setCnTaxAmount(dto.getCnTaxAmount());
         entity.setPrintSeqNo(dto.getPrintSeqNo());
     }
 
@@ -46,6 +46,8 @@ public class ChargesMapper {
         dto.setQty(entity.getQty());
         dto.setDays(entity.getDays());
         dto.setPdaRate(entity.getPdaRate());
+        dto.setCurrencyCode(entity.getCurrencyCode());
+        dto.setCurrencyRate(entity.getCurrencyRate());
         dto.setAmount(entity.getAmount());
         dto.setRemarks(entity.getRemarks());
         dto.setRemarkQtyDays(entity.getRemarkQtyDays());

@@ -24,8 +24,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -136,6 +138,17 @@ public class FFProjectsController {
         return ApiResponse.success("Control sheet created successfully", response);
     }
 
+    @Operation(summary = "Update Control Sheet", description = "Update an existing control sheet row for a project")
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PutMapping("/{transactionPoid}/control-sheets/{detRowId}")
+    public ResponseEntity<?> updateControlSheet(
+            @PathVariable @NotNull Long transactionPoid,
+            @PathVariable @NotNull Long detRowId,
+            @Valid @RequestBody FFProjectsCtrlSheetDetailRequest request) {
+        FFProjectsCtrlSheetDetailResponse response = projectsService.updateControlSheet(transactionPoid, detRowId, request);
+        return ApiResponse.success("Control sheet updated successfully", response);
+    }
+
     @Operation(summary = "Batch Control Sheet Operations", description = "Create, update, or delete multiple control sheet entries based on actionType")
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/control-sheets/batch")
@@ -154,5 +167,20 @@ public class FFProjectsController {
             @RequestParam(required = false) String freightType) {
         List<FFProjectsCtrlSheetDetailResponse> response = projectsService.getControlSheetsByProject(transactionPoid, freightType);
         return ApiResponse.success("Control sheets retrieved successfully", response);
+    }
+
+    @Operation(
+            summary = "Upload Control Sheet from Excel",
+            description = "Upload an Excel file to replace all control sheet entries for a project. " +
+                    "Pre-validates for duplicate rows and LOV field values. " +
+                    "Fails if any existing control sheet row is linked to a job."
+    )
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping(value = "/{transactionPoid}/control-sheets/upload-excel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadControlSheetExcel(
+            @PathVariable @NotNull Long transactionPoid,
+            @RequestParam("file") MultipartFile file) {
+        List<FFProjectsCtrlSheetDetailResponse> response = projectsService.uploadControlSheetExcel(transactionPoid, file);
+        return ApiResponse.success("Control sheet uploaded successfully", response);
     }
 }

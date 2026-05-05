@@ -21,21 +21,21 @@ public class PdaEntryChargeDetailResponse {
 
     private Long transactionPoid;
     private Long detRowId;
-    private BigDecimal chargePoid;
-    private BigDecimal rateTypePoid;
-    private BigDecimal principalPoid;
+    private Long chargePoid;
+    private Long rateTypePoid;
+    private Long principalPoid;
     private String currencyCode;
     private BigDecimal currencyRate;
     private BigDecimal qty;
     private BigDecimal days;
     private BigDecimal pdaRate;
-    private BigDecimal taxPoid;
+    private Long taxPoid;
     private BigDecimal taxPercentage;
     private BigDecimal taxAmount;
     private BigDecimal amount;
     private BigDecimal fdaAmount;
     private String fdaDocRef;
-    private BigDecimal fdaPoid;
+    private Long fdaPoid;
     private String fdaCreationType;
     private LovItem fdaCreationTypeDet;
     private String dataSource;

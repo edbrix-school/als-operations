@@ -48,6 +48,10 @@ public class FdaChargeDto {
 
     private LocalDateTime lastModifiedDate;
 
+    private BigDecimal currencyRate;
+
+    private String currencyCode;
+
     @Size(max = 100, message = "Remark Qty Days cannot exceed 100 characters")
     private String remarkQtyDays;
 
@@ -78,9 +82,9 @@ public class FdaChargeDto {
 
     private Long printSeqNo;
 
-    private BigDecimal profitLoss;
-
-    private BigDecimal profitLossPer;
+//    private BigDecimal profitLoss;
+//
+//    private BigDecimal profitLossPer;
 
     private String actionType;
 }
