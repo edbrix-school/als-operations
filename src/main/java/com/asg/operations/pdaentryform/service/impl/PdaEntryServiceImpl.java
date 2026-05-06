@@ -300,35 +300,35 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Note: Removed canEdit call here to allow stored procedure to handle all validations first
 
         // Call edit validation stored procedure for all ref types
-        String editValidationStatus = callEditValidation(
-                groupPoid, companyPoid, userPoid, transactionPoid
-        );
-        if (editValidationStatus != null && editValidationStatus.startsWith("ERROR")) {
-            throw new ValidationException(
-                    "Edit validation failed",
-                    List.of(new ValidationError("general", editValidationStatus))
-            );
-        }
+//        String editValidationStatus = callEditValidation(
+//                groupPoid, companyPoid, userPoid, transactionPoid
+//        );
+//        if (editValidationStatus != null && editValidationStatus.startsWith("ERROR")) {
+//            throw new ValidationException(
+//                    "Edit validation failed",
+//                    List.of(new ValidationError("general", editValidationStatus))
+//            );
+//        }
         
         // Handle specific warnings that should block the operation
-        if (editValidationStatus != null && editValidationStatus.startsWith("WARNING")) {
-            // Multiple FDA warning should block the operation
-            if (editValidationStatus.contains("Multiple FDA has been created. Can not edit")) {
-                throw new ValidationException(
-                        editValidationStatus,
-                        List.of(new ValidationError("general", editValidationStatus))
-                );
-            }
-            // FDA cost booking warning should also block the operation
-            if (editValidationStatus.contains("FDA Against cost booking is started")) {
-                throw new ValidationException(
-                        editValidationStatus,
-                        List.of(new ValidationError("general", editValidationStatus))
-                );
-            }
-            // Other warnings are just logged
-            logger.warn("Edit validation warning during PDA update: {}", editValidationStatus);
-        }
+//        if (editValidationStatus != null && editValidationStatus.startsWith("WARNING")) {
+//            // Multiple FDA warning should block the operation
+//            if (editValidationStatus.contains("Multiple FDA has been created. Can not edit")) {
+//                throw new ValidationException(
+//                        editValidationStatus,
+//                        List.of(new ValidationError("general", editValidationStatus))
+//                );
+//            }
+//            // FDA cost booking warning should also block the operation
+//            if (editValidationStatus.contains("FDA Against cost booking is started")) {
+//                throw new ValidationException(
+//                        editValidationStatus,
+//                        List.of(new ValidationError("general", editValidationStatus))
+//                );
+//            }
+//            // Other warnings are just logged
+//            logger.warn("Edit validation warning during PDA update: {}", editValidationStatus);
+//        }
 
         // Call basic edit permissions check after stored procedure validation
         canEditBasic(entry);
@@ -620,14 +620,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Check if clearing is allowed
         if ("GENERAL".equals(entry.getRefType()) && !"PROPOSAL".equals(entry.getStatus())) {
             throw new ValidationException(
-                    "Charges cannot be cleared",
+                    "Charges can only be cleared when status is PROPOSAL for GENERAL ref type",
                     List.of(new ValidationError("status", "Charges can only be cleared when status is PROPOSAL for GENERAL ref type"))
             );
         }
 
         if ("CONFIRMED".equals(entry.getStatus()) || "CLOSED".equals(entry.getStatus())) {
             throw new ValidationException(
-                    "Charges cannot be cleared",
+                    "Charges can only be cleared when status is PROPOSAL for GENERAL ref type",
                     List.of(new ValidationError("status", "Charges cannot be cleared when status is CONFIRMED or CLOSED"))
             );
         }
@@ -1859,38 +1859,38 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
 
-    private String callEditValidation(
-            Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid
-    ) {
-        try {
-            logger.info("[SP-19] PROC_PDA_EDIT_VALIDATION - transactionPoid: {}", transactionPoid);
-            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                    .withProcedureName("PROC_PDA_EDIT_VALIDATION")
-                    .withoutProcedureColumnMetaDataAccess()
-                    .declareParameters(
-                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
-                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
-                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
-                            new SqlParameter("P_PDA_POID", Types.VARCHAR),
-                            new SqlOutParameter("P_RESULT", Types.VARCHAR)
-                    );
-
-            Map<String, Object> inputMap = new HashMap<>();
-            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
-            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
-            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
-            inputMap.put("P_PDA_POID", transactionPoid != null ? transactionPoid.toString() : null);
-
-            Map<String, Object> result = jdbcCall.execute(inputMap);
-            String spResult = (String) result.get("P_RESULT");
-
-            logger.info("[SP-19] PROC_PDA_EDIT_VALIDATION - Result: {}", spResult);
-            return spResult;
-        } catch (Exception e) {
-            logger.error("[SP-19] PROC_PDA_EDIT_VALIDATION - Error: {}", e.getMessage(), e);
-            return null;
-        }
-    }
+//    private String callEditValidation(
+//            Long groupPoid, Long companyPoid, Long userPoid, Long transactionPoid
+//    ) {
+//        try {
+//            logger.info("[SP-19] PROC_PDA_EDIT_VALIDATION - transactionPoid: {}", transactionPoid);
+//            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+//                    .withProcedureName("PROC_PDA_EDIT_VALIDATION")
+//                    .withoutProcedureColumnMetaDataAccess()
+//                    .declareParameters(
+//                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+//                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+//                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+//                            new SqlParameter("P_PDA_POID", Types.VARCHAR),
+//                            new SqlOutParameter("P_RESULT", Types.VARCHAR)
+//                    );
+//
+//            Map<String, Object> inputMap = new HashMap<>();
+//            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+//            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+//            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+//            inputMap.put("P_PDA_POID", transactionPoid != null ? transactionPoid.toString() : null);
+//
+//            Map<String, Object> result = jdbcCall.execute(inputMap);
+//            String spResult = (String) result.get("P_RESULT");
+//
+//            logger.info("[SP-19] PROC_PDA_EDIT_VALIDATION - Result: {}", spResult);
+//            return spResult;
+//        } catch (Exception e) {
+//            logger.error("[SP-19] PROC_PDA_EDIT_VALIDATION - Error: {}", e.getMessage(), e);
+//            return null;
+//        }
+//    }
 
     // Charge Details Helper Methods
 
@@ -3974,4 +3974,68 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         
         return result;
     }
+
+    @Override
+    public PdaEditValidationResponse validatePdaEdit(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        try {
+            logger.info("[SP-19] Validating PDA edit for transactionPoid: {}", transactionPoid);
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_PDA_EDIT_VALIDATION")
+                    .withoutProcedureColumnMetaDataAccess()
+                    .declareParameters(
+                            new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_LOGIN_USER_POID", Types.NUMERIC),
+                            new SqlParameter("P_PDA_POID", Types.VARCHAR),
+                            new SqlOutParameter("P_RESULT", Types.VARCHAR)
+                    );
+
+            Map<String, Object> inputMap = new HashMap<>();
+            inputMap.put("P_LOGIN_GROUP_POID", groupPoid);
+            inputMap.put("P_LOGIN_COMPANY_POID", companyPoid);
+            inputMap.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inputMap.put("P_PDA_POID", transactionPoid != null ? transactionPoid.toString() : null);
+
+            Map<String, Object> result = jdbcCall.execute(inputMap);
+            String spResult = (String) result.get("P_RESULT");
+
+            logger.info("[SP-19] PROC_PDA_EDIT_VALIDATION - Result: {}", spResult);
+
+            PdaEditValidationResponse response = new PdaEditValidationResponse();
+
+            if (spResult == null || spResult.trim().isEmpty()) {
+                response.setStatus("SUCCESS");
+                response.setCanEdit(true);
+                response.setMessage("PDA can be edited");
+            } else if (spResult.startsWith("ERROR")) {
+                response.setStatus("ERROR");
+                response.setCanEdit(false);
+                response.setMessage(spResult);
+            } else if (spResult.startsWith("WARNING")) {
+                response.setStatus("WARNING");
+                response.setCanEdit(false);
+                response.setMessage(spResult);
+            } else {
+                response.setStatus("SUCCESS");
+                response.setCanEdit(true);
+                response.setMessage(spResult);
+            }
+
+            logger.info("[SP-19] PDA edit validation completed - Status: {}, CanEdit: {}", response.getStatus(), response.getCanEdit());
+            return response;
+
+        } catch (Exception e) {
+            logger.error("[SP-19] Error validating PDA edit for transactionPoid: {}", transactionPoid, e);
+
+            PdaEditValidationResponse errorResponse = new PdaEditValidationResponse();
+            errorResponse.setStatus("ERROR");
+            errorResponse.setCanEdit(false);
+            errorResponse.setMessage("Error validating PDA edit: " + e.getMessage());
+
+            return errorResponse;
+        }
+    }
 }
+
+
