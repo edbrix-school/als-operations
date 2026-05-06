@@ -63,7 +63,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     private final FFProjectsCtrlSheetDtlRepository ctrlSheetDtlRepository;
     private final GlobalAddressMasterRepository addressMasterRepository;
     private final GlobalAddressDetailsRepository addressDetailsRepository;
-    private final LovDataService lovDataService;
+    private final ProjectJobMapper projectJobMapper;
 
     private static final String TRANSACTION_POID = "TRANSACTION_POID";
 
@@ -90,7 +90,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         }
 
         FFManifestHdr hdr = new FFManifestHdr();
-        ProjectJobMapper.mapHdrFromDto(request, hdr);
+        projectJobMapper.mapHdrFromDto(request, hdr);
         Long groupPoid = UserContext.getGroupPoid();
         Long companyPoid = UserContext.getCompanyPoid();
 
@@ -124,6 +124,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     }
 
     @Override
+    @Transactional
     public ProjectJobResponse update(Long transactionPoid, ProjectJobRequest request) {
 
         FFManifestHdr hdr = hdrRepository.findById(transactionPoid)
@@ -132,7 +133,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         FFManifestHdr oldHdr = new FFManifestHdr();
         BeanUtils.copyProperties(hdr, oldHdr);
 
-        ProjectJobMapper.mapHdrFromDto(request, hdr);
+        projectJobMapper.mapHdrFromDto(request, hdr);
 
         hdrRepository.save(hdr);
 
@@ -240,25 +241,25 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         String docKeyPoid = transactionPoid.toString();
 
         processDetails(transactionPoid, airpkgDetails, airPkgRepository::getMaxDetRowId, FFManifestAirPkgDtl::new,
-                ProjectJobMapper::mapAirPkgFromDto, airPkgRepository::findByTransactionPoidAndDetRowId, airPkgRepository::saveAll,
+                projectJobMapper::mapAirPkgFromDto, airPkgRepository::findByTransactionPoidAndDetRowId, airPkgRepository::saveAll,
                 airPkgRepository::deleteByTransactionPoidAndDetRowIdIn, "AIR PKG", docId, docKeyPoid);
 
         processDetails(transactionPoid, bayanDetails, bayanRepository::getMaxDetRowId, FFManifestBayanDtl::new,
-                ProjectJobMapper::mapBayanFromDto, bayanRepository::findByTransactionPoidAndDetRowId, bayanRepository::saveAll,
+                projectJobMapper::mapBayanFromDto, bayanRepository::findByTransactionPoidAndDetRowId, bayanRepository::saveAll,
                 bayanRepository::deleteByTransactionPoidAndDetRowIdIn, "BAYAN", docId, docKeyPoid);
 
         processDetails(transactionPoid, chargeDetails, chargesRepository::getMaxDetRowId, FFManifestChargesDtl::new,
-                ProjectJobMapper::mapChargesFromDto, chargesRepository::findByTransactionPoidAndDetRowId,
+                projectJobMapper::mapChargesFromDto, chargesRepository::findByTransactionPoidAndDetRowId,
                 chargesRepository::saveAll, chargesRepository::deleteByTransactionPoidAndDetRowIdIn, "CHARGES", docId,
                 docKeyPoid);
 
         processDetails(transactionPoid, containerDetails, containerRepository::getMaxDetRowId,
-                FFManifestContainerDtl::new, ProjectJobMapper::mapContainerFromDto,
+                FFManifestContainerDtl::new, projectJobMapper::mapContainerFromDto,
                 containerRepository::findByTransactionPoidAndDetRowId, containerRepository::saveAll,
                 containerRepository::deleteByTransactionPoidAndDetRowIdIn, "CONTAINER", docId, docKeyPoid);
 
         processDetails(transactionPoid, truckDetails, truckRepository::getMaxDetRowId, FFManifestTruckDtl::new,
-                ProjectJobMapper::mapTruckFromDto, truckRepository::findByTransactionPoidAndDetRowId, truckRepository::saveAll,
+                projectJobMapper::mapTruckFromDto, truckRepository::findByTransactionPoidAndDetRowId, truckRepository::saveAll,
                 truckRepository::deleteByTransactionPoidAndDetRowIdIn, "CONTAINER", docId, docKeyPoid);
     }
 
@@ -270,7 +271,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
 
         ProjectJobResponse response = new ProjectJobResponse();
 
-        ProjectJobMapper.toHdrDto(hdr, response, lovDataService);
+        projectJobMapper.toHdrDto(hdr, response);
 
         Optional.ofNullable(response.getProjectPoid())
                 .map(spRepostirory::callProjectsLoadInJobsProc)
@@ -289,7 +290,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         List<ProjectJobAirPkgDto> airPkgDto = new ArrayList<>();
         airPkg.forEach(entity -> {
             ProjectJobAirPkgDto dto = new ProjectJobAirPkgDto();
-            ProjectJobMapper.toAirPkgDto(entity, dto);
+            projectJobMapper.toAirPkgDto(entity, dto);
             airPkgDto.add(dto);
 
         });
@@ -297,7 +298,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         List<ProjectJobBayanDto> bayanDto = new ArrayList<>();
         bayan.forEach(entity -> {
             ProjectJobBayanDto dto = new ProjectJobBayanDto();
-            ProjectJobMapper.toBayanDto(entity, dto);
+            projectJobMapper.toBayanDto(entity, dto);
             bayanDto.add(dto);
 
         });
@@ -305,7 +306,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         List<ProjectJobChargesDto> chargesDto = new ArrayList<>();
         charges.forEach(entity -> {
             ProjectJobChargesDto dto = new ProjectJobChargesDto();
-            ProjectJobMapper.toChargesDto(entity, dto,lovDataService);
+            projectJobMapper.toChargesDto(entity, dto);
             chargesDto.add(dto);
 
         });
@@ -313,7 +314,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         List<ProjectJobContainerDto> conationersDto = new ArrayList<>();
         containers.forEach(entity -> {
             ProjectJobContainerDto dto = new ProjectJobContainerDto();
-            ProjectJobMapper.toContainerDto(entity, dto, lovDataService);
+            projectJobMapper.toContainerDto(entity, dto);
             conationersDto.add(dto);
 
         });
@@ -321,7 +322,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         List<ProjectJobTruckDto> trucksDto = new ArrayList<>();
         trucks.forEach(entity -> {
             ProjectJobTruckDto dto = new ProjectJobTruckDto();
-            ProjectJobMapper.toTruckDto(entity, dto);
+            projectJobMapper.toTruckDto(entity, dto);
             trucksDto.add(dto);
 
         });

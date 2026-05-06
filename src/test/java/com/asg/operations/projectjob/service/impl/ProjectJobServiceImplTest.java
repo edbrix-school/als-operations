@@ -55,7 +55,7 @@ class ProjectJobServiceImplTest {
     @Mock private FFProjectsCtrlSheetDtlRepository ctrlSheetDtlRepository;
     @Mock private GlobalAddressMasterRepository addressMasterRepository;
     @Mock private GlobalAddressDetailsRepository addressDetailsRepository;
-    @Mock private LovDataService lovDataService;
+    @Mock private com.asg.operations.projectjob.util.ProjectJobMapper projectJobMapper;
 
     private ProjectJobServiceImpl projectJobService;
     private MockedStatic<UserContext> userContextMockedStatic;
@@ -67,7 +67,7 @@ class ProjectJobServiceImplTest {
                 hdrRepository, chargesRepository, airPkgRepository, bayanRepository,
                 containerRepository, truckRepository, spRepostirory, loggingService,
                 documentDeleteService, documentSearchService, ctrlSheetDtlRepository,
-                addressMasterRepository, addressDetailsRepository, lovDataService);
+                addressMasterRepository, addressDetailsRepository, projectJobMapper);
 
         userContextMockedStatic = mockStatic(UserContext.class);
         userContextMockedStatic.when(UserContext::getGroupPoid).thenReturn(1L);
@@ -303,6 +303,12 @@ class ProjectJobServiceImplTest {
         when(chargesRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestChargesDtl()));
         when(containerRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestContainerDtl()));
         when(truckRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestTruckDtl()));
+
+        doAnswer(invocation -> {
+            ProjectJobResponse resp = invocation.getArgument(1);
+            resp.setProjectPoid(50L);
+            return null;
+        }).when(projectJobMapper).toHdrDto(any(FFManifestHdr.class), any(ProjectJobResponse.class));
 
         ProjectLoadInJobsProcResponse procResponse = new ProjectLoadInJobsProcResponse();
         ProjectLoadHdrRow jobHeader = new ProjectLoadHdrRow();
