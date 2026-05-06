@@ -22,6 +22,13 @@ class ProjectJobMapperTest {
     @Mock
     private LovDataService lovDataService;
 
+    private ProjectJobMapper projectJobMapper;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        projectJobMapper = new ProjectJobMapper(lovDataService);
+    }
+
 
     @Test
     void testMapAirPkgFromDto() {
@@ -50,7 +57,7 @@ class ProjectJobMapperTest {
         dto.setChargeableWeight(BigDecimal.valueOf(110.0));
 
         FFManifestAirPkgDtl entity = new FFManifestAirPkgDtl();
-        ProjectJobMapper.mapAirPkgFromDto(dto, entity, 100L);
+        projectJobMapper.mapAirPkgFromDto(dto, entity, 100L);
 
         assertEquals(100L, entity.getTransactionPoid());
         assertEquals(1L, entity.getDetRowId());
@@ -80,7 +87,7 @@ class ProjectJobMapperTest {
     @Test
     void testMapAirPkgFromDto_NullDto() {
         FFManifestAirPkgDtl entity = new FFManifestAirPkgDtl();
-        assertDoesNotThrow(() -> ProjectJobMapper.mapAirPkgFromDto(null, entity, 100L));
+        assertDoesNotThrow(() -> projectJobMapper.mapAirPkgFromDto(null, entity, 100L));
         assertNull(entity.getTransactionPoid());
     }
 
@@ -98,7 +105,7 @@ class ProjectJobMapperTest {
         dto.setPaymentDate(LocalDateTime.now());
 
         FFManifestBayanDtl entity = new FFManifestBayanDtl();
-        ProjectJobMapper.mapBayanFromDto(dto, entity, 100L);
+        projectJobMapper.mapBayanFromDto(dto, entity, 100L);
 
         assertEquals(100L, entity.getTransactionPoid());
         assertEquals(1L, entity.getDetRowId());
@@ -115,8 +122,8 @@ class ProjectJobMapperTest {
     @Test
     void testMapBayanFromDto_NullChecks() {
         assertDoesNotThrow(() -> {
-            ProjectJobMapper.mapBayanFromDto(null, new FFManifestBayanDtl(), 100L);
-            ProjectJobMapper.mapBayanFromDto(new ProjectJobBayanDto(), null, 100L);
+            projectJobMapper.mapBayanFromDto(null, new FFManifestBayanDtl(), 100L);
+            projectJobMapper.mapBayanFromDto(new ProjectJobBayanDto(), null, 100L);
         });
     }
 
@@ -164,7 +171,7 @@ class ProjectJobMapperTest {
         dto.setEnteryLocation("LOC");
 
         FFManifestChargesDtl entity = new FFManifestChargesDtl();
-        ProjectJobMapper.mapChargesFromDto(dto, entity, 100L);
+        projectJobMapper.mapChargesFromDto(dto, entity, 100L);
 
         assertEquals(100L, entity.getTransactionPoid());
         assertEquals(1L, entity.getDetRowId());
@@ -177,8 +184,8 @@ class ProjectJobMapperTest {
     @Test
     void testMapChargesFromDto_NullChecks() {
         assertDoesNotThrow(() -> {
-            ProjectJobMapper.mapChargesFromDto(null, new FFManifestChargesDtl(), 100L);
-            ProjectJobMapper.mapChargesFromDto(new ProjectJobChargesDto(), null, 100L);
+            projectJobMapper.mapChargesFromDto(null, new FFManifestChargesDtl(), 100L);
+            projectJobMapper.mapChargesFromDto(new ProjectJobChargesDto(), null, 100L);
         });
     }
 
@@ -225,7 +232,7 @@ class ProjectJobMapperTest {
         dto.setRemarks("REMARKS");
 
         FFManifestContainerDtl entity = new FFManifestContainerDtl();
-        ProjectJobMapper.mapContainerFromDto(dto, entity, 100L);
+        projectJobMapper.mapContainerFromDto(dto, entity, 100L);
 
         assertEquals(100L, entity.getTransactionPoid());
         assertEquals(1L, entity.getDetRowId());
@@ -239,8 +246,8 @@ class ProjectJobMapperTest {
     @Test
     void testMapContainerFromDto_NullChecks() {
         assertDoesNotThrow(() -> {
-            ProjectJobMapper.mapContainerFromDto(null, new FFManifestContainerDtl(), 100L);
-            ProjectJobMapper.mapContainerFromDto(new ProjectJobContainerDto(), null, 100L);
+            projectJobMapper.mapContainerFromDto(null, new FFManifestContainerDtl(), 100L);
+            projectJobMapper.mapContainerFromDto(new ProjectJobContainerDto(), null, 100L);
         });
     }
 
@@ -262,7 +269,7 @@ class ProjectJobMapperTest {
         dto.setDocumentStatus("STATUS");
 
         FFManifestTruckDtl entity = new FFManifestTruckDtl();
-        ProjectJobMapper.mapTruckFromDto(dto, entity, 100L);
+        projectJobMapper.mapTruckFromDto(dto, entity, 100L);
 
         assertEquals(100L, entity.getTransactionPoid());
         assertEquals(1L, entity.getDetRowId());
@@ -272,8 +279,8 @@ class ProjectJobMapperTest {
     @Test
     void testMapTruckFromDto_NullChecks() {
         assertDoesNotThrow(() -> {
-            ProjectJobMapper.mapTruckFromDto(null, new FFManifestTruckDtl(), 100L);
-            ProjectJobMapper.mapTruckFromDto(new ProjectJobTruckDto(), null, 100L);
+            projectJobMapper.mapTruckFromDto(null, new FFManifestTruckDtl(), 100L);
+            projectJobMapper.mapTruckFromDto(new ProjectJobTruckDto(), null, 100L);
         });
     }
 
@@ -304,7 +311,7 @@ class ProjectJobMapperTest {
         entity.setChargeableWeight(BigDecimal.valueOf(110.0));
 
         ProjectJobAirPkgDto dto = new ProjectJobAirPkgDto();
-        ProjectJobMapper.toAirPkgDto(entity, dto);
+        projectJobMapper.toAirPkgDto(entity, dto);
 
         assertEquals(1L, dto.getDetRowId());
         assertEquals(10L, dto.getNoOfPacks());
@@ -312,7 +319,7 @@ class ProjectJobMapperTest {
 
     @Test
     void testToAirPkgDto_NullEntity() {
-        ProjectJobMapper.toAirPkgDto(null, new ProjectJobAirPkgDto());
+        projectJobMapper.toAirPkgDto(null, new ProjectJobAirPkgDto());
     }
 
     @Test
@@ -330,7 +337,7 @@ class ProjectJobMapperTest {
         entity.setPaymentDate(LocalDateTime.now());
 
         ProjectJobBayanDto dto = new ProjectJobBayanDto();
-        ProjectJobMapper.toBayanDto(entity, dto);
+        projectJobMapper.toBayanDto(entity, dto);
 
         assertEquals(1L, dto.getDetRowId());
         assertEquals("BL123", dto.getBlAwbNumber());
@@ -338,7 +345,7 @@ class ProjectJobMapperTest {
 
     @Test
     void testToBayanDto_NullEntity() {
-        ProjectJobMapper.toBayanDto(null, new ProjectJobBayanDto());
+        projectJobMapper.toBayanDto(null, new ProjectJobBayanDto());
     }
 
     @Test
@@ -357,7 +364,7 @@ class ProjectJobMapperTest {
         entity.setRemarks("REM");
 
         ProjectJobChargesDto dto = new ProjectJobChargesDto();
-        ProjectJobMapper.toChargesDto(entity, dto, lovDataService);
+        projectJobMapper.toChargesDto(entity, dto);
 
         assertEquals(1L, dto.getDetRowId());
         assertEquals(BigDecimal.valueOf(10L), dto.getChargePoid());
@@ -365,7 +372,7 @@ class ProjectJobMapperTest {
 
     @Test
     void testToChargesDto_NullEntity() {
-        ProjectJobMapper.toChargesDto(null, new ProjectJobChargesDto(), lovDataService);
+        projectJobMapper.toChargesDto(null, new ProjectJobChargesDto());
     }
 
     @Test
@@ -383,7 +390,7 @@ class ProjectJobMapperTest {
         entity.setRemarks("REM");
 
         ProjectJobContainerDto dto = new ProjectJobContainerDto();
-        ProjectJobMapper.toContainerDto(entity, dto, lovDataService);
+        projectJobMapper.toContainerDto(entity, dto);
 
         assertEquals(1L, dto.getDetRowId());
         assertEquals("CONT123", dto.getContainerNo());
@@ -391,11 +398,12 @@ class ProjectJobMapperTest {
 
     @Test
     void testToContainerDto_NullEntity() {
-        ProjectJobMapper.toContainerDto(null, new ProjectJobContainerDto(), lovDataService);
+        projectJobMapper.toContainerDto(null, new ProjectJobContainerDto());
     }
 
     @Test
     void testToTruckDto() {
+
         FFManifestTruckDtl entity = new FFManifestTruckDtl();
         entity.setDetRowId(1L);
         entity.setBlAwbNumber("BL123");
@@ -416,7 +424,7 @@ class ProjectJobMapperTest {
         entity.setTruckNumber("TRUCK123");
 
         ProjectJobTruckDto dto = new ProjectJobTruckDto();
-        ProjectJobMapper.toTruckDto(entity, dto);
+        projectJobMapper.toTruckDto(entity, dto);
 
         assertEquals(1L, dto.getDetRowId());
         assertEquals("TRUCK123", dto.getTruckNumber());
@@ -424,7 +432,7 @@ class ProjectJobMapperTest {
 
     @Test
     void testToTruckDto_NullEntity() {
-        ProjectJobMapper.toTruckDto(null, new ProjectJobTruckDto());
+        projectJobMapper.toTruckDto(null, new ProjectJobTruckDto());
     }
 
     @Test
@@ -590,7 +598,7 @@ class ProjectJobMapperTest {
         dto.setTruckTransportTo("TOT");
 
         FFManifestHdr entity = new FFManifestHdr();
-        ProjectJobMapper.mapHdrFromDto(dto, entity);
+        projectJobMapper.mapHdrFromDto(dto, entity);
 
         assertEquals("JOB123", entity.getFfJobNo());
         assertEquals("TYPE", entity.getFfJobType());
@@ -599,8 +607,8 @@ class ProjectJobMapperTest {
     @Test
     void testMapHdrFromDto_NullChecks() {
         assertDoesNotThrow(() -> {
-            ProjectJobMapper.mapHdrFromDto(null, new FFManifestHdr());
-            ProjectJobMapper.mapHdrFromDto(new ProjectJobRequest(), null);
+            projectJobMapper.mapHdrFromDto(null, new FFManifestHdr());
+            projectJobMapper.mapHdrFromDto(new ProjectJobRequest(), null);
         });
     }
 
@@ -766,7 +774,7 @@ class ProjectJobMapperTest {
         entity.setTruckTransportTo("TTT");
 
         FFManifestHdrDtoResponse dto = new FFManifestHdrDtoResponse();
-        ProjectJobMapper.toHdrDto(entity, dto, lovDataService);
+        projectJobMapper.toHdrDto(entity, dto);
 
         assertEquals(100L, dto.getTransactionPoid());
         assertEquals("JOB1", dto.getFfJobNo());
@@ -774,14 +782,14 @@ class ProjectJobMapperTest {
 
     @Test
     void testToHdrDto_NullEntity() {
-        ProjectJobMapper.toHdrDto(null, new FFManifestHdrDtoResponse(), lovDataService);
+        projectJobMapper.toHdrDto(null, new FFManifestHdrDtoResponse());
     }
 
     @Test
     void testMapChargesFromDto_EmptyDto() {
         ProjectJobChargesDto dto = new ProjectJobChargesDto();
         FFManifestChargesDtl entity = new FFManifestChargesDtl();
-        ProjectJobMapper.mapChargesFromDto(dto, entity, 100L);
+        projectJobMapper.mapChargesFromDto(dto, entity, 100L);
         assertNull(entity.getRcptDaeOld());
         assertNull(entity.getCostInvDtOld());
         assertNull(entity.getUnitType());
@@ -791,17 +799,10 @@ class ProjectJobMapperTest {
     void testMapContainerFromDto_EmptyDto() {
         ProjectJobContainerDto dto = new ProjectJobContainerDto();
         FFManifestContainerDtl entity = new FFManifestContainerDtl();
-        ProjectJobMapper.mapContainerFromDto(dto, entity, 100L);
+        projectJobMapper.mapContainerFromDto(dto, entity, 100L);
         assertNull(entity.getContainerTypePoid());
         assertNull(entity.getComodityPoid());
         assertNull(entity.getDestinationPortPoid());
     }
 
-    @Test
-    void testConstructorIsPrivate() throws Exception {
-        java.lang.reflect.Constructor<ProjectJobMapper> constructor = ProjectJobMapper.class.getDeclaredConstructor();
-        assertTrue(java.lang.reflect.Modifier.isPrivate(constructor.getModifiers()));
-        constructor.setAccessible(true);
-        constructor.newInstance();
-    }
 }
