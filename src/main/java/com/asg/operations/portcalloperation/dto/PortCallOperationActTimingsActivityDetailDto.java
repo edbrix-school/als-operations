@@ -30,5 +30,8 @@ public class PortCallOperationActTimingsActivityDetailDto {
     @NotNull(message = "Send Email is required")
     private Boolean sendEmail;
 
+    @Valid
+    private List<PortCallOperationMailDetailDto> mailDetails;
+
     private ActionType actionType;
 }
