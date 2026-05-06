@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -24,4 +25,6 @@ public class PortCallOperationEstBertDetailResponseDto {
     private String remarks;
     private String berthingAttachments;
     private Long emailPoid;
+
+    private List<PortCallOperationMailDetailResponseDto> mailDetails;
 }
