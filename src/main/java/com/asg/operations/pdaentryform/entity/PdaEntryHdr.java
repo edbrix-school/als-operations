@@ -86,7 +86,7 @@ public class PdaEntryHdr extends BaseEntity {
 
     @Column(name = "SAIL_DATE")
     private LocalDate sailDate;
-
+    @AuditIgnore
     @Column(name = "ACTUAL_ARRIVAL_DATE")
     private LocalDate actualArrivalDate;
 

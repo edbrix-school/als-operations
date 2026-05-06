@@ -1515,7 +1515,79 @@ public class PdaEntryController {
         }
     }
 
+    // ==================== Principal Approval Status Operations ====================
+
+    @Operation(
+            summary = "Check principal approval status",
+            description = "Checks if principal approval is completed for a PDA entry. " +
+                    "Returns approval status and whether edit/delete operations are allowed. " +
+                    "For GENERAL ref type with principal approval completed, edit and delete are restricted.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved principal approval status",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "PDA entry not found",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/principal-approval-status")
+    public ResponseEntity<?> checkPrincipalApprovalStatus(
+            @Parameter(description = "Transaction POID", required = true)
+            @PathVariable Long transactionPoid
+    ) {
+        PdaEntryResponse entry = pdaEntryService.getPdaEntryById(
+                transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
+        
+        String refType = entry.getRefType();
+        String principalApproved = entry.getPrincipalApproved();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("transactionPoid", transactionPoid);
+        response.put("refType", refType);
+        response.put("principalApproved", principalApproved);
+        
+        boolean isPrincipalApprovalCompleted = "GENERAL".equals(refType) && "Y".equals(principalApproved);
+        response.put("isPrincipalApprovalCompleted", isPrincipalApprovalCompleted);
+        response.put("canEdit", !isPrincipalApprovalCompleted);
+        response.put("canDelete", !isPrincipalApprovalCompleted);
+        
+        String message = isPrincipalApprovalCompleted 
+            ? "Principal Approval is completed for this document. Edit and Delete operations are not allowed."
+            : "Principal Approval is not completed. Edit and Delete operations are allowed.";
+        
+        response.put("message", message);
+        
+        return ApiResponse.success("Principal Approval is completed for this document...", response);
+    }
+
     // ==================== Helper Methods ====================
+
+    @PostMapping("/{transactionPoid}/validate-edit")
+    public ResponseEntity<?> validatePdaEdit(
+            @PathVariable Long transactionPoid,
+            @RequestBody PdaEditValidationRequest request) {
+        
+        PdaEditValidationResponse response = pdaEntryService.validatePdaEdit(
+                transactionPoid, 
+                UserContext.getGroupPoid(), 
+                UserContext.getCompanyPoid(), 
+                UserContext.getUserPoid()
+        );
+        
+        return ApiResponse.success(response.getMessage(), response);
+    }
 
     /**
      * Parse sort parameter (format: "field,direction")
