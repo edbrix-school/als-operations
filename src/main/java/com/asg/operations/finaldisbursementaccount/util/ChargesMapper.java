@@ -13,7 +13,8 @@ public class ChargesMapper {
 //        entity.setQty(dto.getQty());
 //        entity.setDays(dto.getDays());
 //        entity.setPdaRate(dto.getPdaRate());
-
+        entity.setCurrencyCode(dto.getCurrencyCode());
+        entity.setCurrencyRate(dto.getCurrencyRate());
 //        entity.setAmount(dto.getAmount());
 //        entity.setRemarks(dto.getRemarks());
 //        entity.setRemarkQtyDays(dto.getRemarkQtyDays());
