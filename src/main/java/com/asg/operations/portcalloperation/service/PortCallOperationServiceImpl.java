@@ -239,10 +239,19 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         .ifPresent(emailRecord -> {
                             builder.emailSentOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).remarks(emailRecord.getEmailRemarks());
                         });
+                List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(dtl.getEmailPoid());
+                List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                        .addressee(msgDtl2.getAddressee())
+                        .company(msgDtl2.getCompany())
+                        .emailIds(msgDtl2.getToEmailId())
+                        .emailIdsCC(msgDtl2.getCcEmailId())
+                        .communicationType(msgDtl2.getEmailType())
+                        .build()).collect(Collectors.toList());
+                builder.mailDetails(mailDetails);
             }
 
             return builder.build();
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private List<PortCallOperationEstPrearrivalDetailResponseDto> mapEstPrearrivalDetailsToResponse(List<PortCallOperationEstPrearrivalDtl> details) {
@@ -264,6 +273,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         .ifPresent(emailRecord -> {
                             builder.emailSentOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).remarks(emailRecord.getEmailRemarks());
                         });
+
+                List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(dtl.getEmailPoid());
+                List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                        .addressee(msgDtl2.getAddressee())
+                        .company(msgDtl2.getCompany())
+                        .emailIds(msgDtl2.getToEmailId())
+                        .emailIdsCC(msgDtl2.getCcEmailId())
+                        .communicationType(msgDtl2.getEmailType())
+                        .build()).collect(Collectors.toList());
+                builder.mailDetails(mailDetails);
             }
 
             return builder.build();
@@ -285,6 +304,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         .ifPresent(emailRecord -> {
                             builder.sentStatus(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).details(emailRecord.getEmailRemarks());
                         });
+
+                List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(dtl.getEmailPoid());
+                List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                        .addressee(msgDtl2.getAddressee())
+                        .company(msgDtl2.getCompany())
+                        .emailIds(msgDtl2.getToEmailId())
+                        .emailIdsCC(msgDtl2.getCcEmailId())
+                        .communicationType(msgDtl2.getEmailType())
+                        .build()).collect(Collectors.toList());
+                builder.mailDetails(mailDetails);
             }
 
             return builder.build();
