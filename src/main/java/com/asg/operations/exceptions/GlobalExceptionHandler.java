@@ -2,6 +2,7 @@ package com.asg.operations.exceptions;
 
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.crew.dto.ErrorResponse;
+import com.asg.operations.projects.dto.FFErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -160,6 +161,16 @@ public class GlobalExceptionHandler {
         log.info("Validation errors at {}", request.getRequestURI());
 
         return ApiResponse.error("Validation error occurred", HttpStatus.BAD_REQUEST.value(), errors);
+    }
+
+    @ExceptionHandler(FFValidationException.class)
+    public ResponseEntity<FFErrorResponse> handleFFValidationException(FFValidationException ex) {
+        FFErrorResponse errorResponse = new FFErrorResponse(
+                "Validation Error",
+                ex.getMessage(),
+                ex.getErrors()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     @ExceptionHandler(com.asg.common.lib.exception.ValidationException.class)
