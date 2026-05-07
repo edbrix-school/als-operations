@@ -31,7 +31,7 @@ public class FFManifestChargesDtl extends BaseEntity implements BaseDetailEntity
     private Long detRowId;
 
     @Column(name = "CHARGE_POID")
-    private BigDecimal chargePoid;
+    private Long chargePoid;
 
     @Column(name = "CURRENCY_EXCHANGE")
     private BigDecimal currencyExchange;
@@ -46,7 +46,7 @@ public class FFManifestChargesDtl extends BaseEntity implements BaseDetailEntity
     private BigDecimal billingPrecharge;
 
     @Column(name = "PAID_AT_PORT_POID")
-    private BigDecimal paidAtPortPoid;
+    private Long paidAtPortPoid;
 
     @Column(name = "CURRENCY_CODE")
     @Size(max = 10)
@@ -72,7 +72,7 @@ public class FFManifestChargesDtl extends BaseEntity implements BaseDetailEntity
     private String costInvOld;
 
     @Column(name = "EQUIPMENT_POID")
-    private BigDecimal equipmentPoid;
+    private Long equipmentPoid;
 
     @Column(name = "TOTAL_BUYING_CHARGE")
     private BigDecimal totalBuyingCharge;
@@ -121,7 +121,7 @@ public class FFManifestChargesDtl extends BaseEntity implements BaseDetailEntity
     private String unitType;
 
     @Column(name = "TAX_POID")
-    private BigDecimal taxPoid;
+    private Long taxPoid;
 
     @Column(name = "TAX_PERCENTAGE")
     private BigDecimal taxPercentage;
@@ -149,10 +149,10 @@ public class FFManifestChargesDtl extends BaseEntity implements BaseDetailEntity
     private String cnIssueInvoice;
 
     @Column(name = "HOUSE_BL_POID")
-    private BigDecimal houseBlPoid;
+    private Long houseBlPoid;
 
     @Column(name = "SUPPLIER_POID")
-    private BigDecimal supplierPoid;
+    private Long supplierPoid;
 
     @Column(name = "CHARGE_BASIS")
     @Size(max = 20)
