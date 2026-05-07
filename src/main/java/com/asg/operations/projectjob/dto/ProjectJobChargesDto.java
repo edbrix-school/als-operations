@@ -92,7 +92,7 @@ public class ProjectJobChargesDto {
     private String cnIssueInvoice;
 
     private Long houseBlPoid;
-    private LovGetListDto houseBlPoidDel;
+    private LovGetListDto houseBlPoidLov;
     private Long supplierPoid;
 
     @Size(max = 20, message = "Charge basis must not exceed 20 characters")
