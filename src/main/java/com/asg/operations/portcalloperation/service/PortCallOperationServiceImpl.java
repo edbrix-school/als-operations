@@ -241,6 +241,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         });
                 List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(dtl.getEmailPoid());
                 List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                        .transactionPoid(msgDtl2.getTransactionPoid())
+                        .detRowId(msgDtl2.getDetRowId())
                         .addressee(msgDtl2.getAddressee())
                         .company(msgDtl2.getCompany())
                         .emailIds(msgDtl2.getToEmailId())
@@ -276,6 +278,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
                 List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(dtl.getEmailPoid());
                 List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                        .transactionPoid(msgDtl2.getTransactionPoid())
+                        .detRowId(msgDtl2.getDetRowId())
                         .addressee(msgDtl2.getAddressee())
                         .company(msgDtl2.getCompany())
                         .emailIds(msgDtl2.getToEmailId())
@@ -307,6 +311,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
                 List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(dtl.getEmailPoid());
                 List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                        .transactionPoid(msgDtl2.getTransactionPoid())
+                        .detRowId(msgDtl2.getDetRowId())
                         .addressee(msgDtl2.getAddressee())
                         .company(msgDtl2.getCompany())
                         .emailIds(msgDtl2.getToEmailId())
