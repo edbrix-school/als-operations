@@ -49,6 +49,8 @@ class ProjectJobServiceImplTest {
     @Mock private FFManifestContainerDtlRepository containerRepository;
     @Mock private FFManifestTruckDtlRepository truckRepository;
     @Mock private ProjectJobStoredProcRepository spRepostirory;
+
+    @Mock private LovDataService lovDataService;
     @Mock private LoggingService loggingService;
     @Mock private DocumentDeleteService documentDeleteService;
     @Mock private DocumentSearchService documentSearchService;
@@ -66,7 +68,7 @@ class ProjectJobServiceImplTest {
         projectJobService = new ProjectJobServiceImpl(
                 hdrRepository, chargesRepository, airPkgRepository, bayanRepository,
                 containerRepository, truckRepository, spRepostirory, loggingService,
-                documentDeleteService, documentSearchService, ctrlSheetDtlRepository,
+                lovDataService,documentDeleteService, documentSearchService, ctrlSheetDtlRepository,
                 addressMasterRepository, addressDetailsRepository, projectJobMapper);
 
         userContextMockedStatic = mockStatic(UserContext.class);

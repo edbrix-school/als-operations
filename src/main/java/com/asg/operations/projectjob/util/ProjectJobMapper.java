@@ -298,7 +298,7 @@ public class ProjectJobMapper {
         dto.setDetRowId(entity.getDetRowId());
 
         dto.setChargePoid(entity.getChargePoid());
-        dto.setChargesLov(getLov(longConvertion(entity.getChargePoid()), "CHARGE_MASTER_FF"));
+        dto.setChargesLov(getLov(entity.getChargePoid(), "CHARGE_MASTER_FF"));
         dto.setCurrencyExchange(entity.getCurrencyExchange());
         dto.setQuantity(entity.getQuantity());
         dto.setBuyingPercharge(entity.getBuyingPercharge());

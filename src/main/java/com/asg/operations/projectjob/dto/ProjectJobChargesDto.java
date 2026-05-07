@@ -1,6 +1,7 @@
 package com.asg.operations.projectjob.dto;
 
 import com.asg.common.lib.dto.LovGetListDto;
+import com.asg.common.lib.dto.LovGetListDto;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,13 +15,13 @@ public class ProjectJobChargesDto {
 
     private Long detRowId;
 
-    private BigDecimal chargePoid;
+    private Long chargePoid;
     private LovGetListDto chargesLov;
     private BigDecimal currencyExchange;
     private BigDecimal quantity;
     private BigDecimal buyingPercharge;
     private BigDecimal billingPrecharge;
-    private BigDecimal paidAtPortPoid;
+    private Long paidAtPortPoid;
 
 
     @Size(max = 10,message = "Currency code must be less than or equal to 10 characters")
@@ -39,7 +40,7 @@ public class ProjectJobChargesDto {
     @Size(max = 100, message = "Cost Invoice (old) must not exceed 100 characters")
     private String costInvOld;
 
-    private BigDecimal equipmentPoid;
+    private Long equipmentPoid;
     private BigDecimal totalBuyingCharge;
     private BigDecimal totalSellingCharge;
 
@@ -73,7 +74,7 @@ public class ProjectJobChargesDto {
     @Size(max = 25, message = "Unit type must not exceed 25 characters")
     private String unitType;
 
-    private BigDecimal taxPoid;
+    private Long taxPoid;
     private BigDecimal taxPercentage;
     private BigDecimal taxAmount;
     private BigDecimal taxInputAmount;
@@ -90,8 +91,9 @@ public class ProjectJobChargesDto {
     @Size(max = 100, message = "CN issue invoice must not exceed 100 characters")
     private String cnIssueInvoice;
 
-    private BigDecimal houseBlPoid;
-    private BigDecimal supplierPoid;
+    private Long houseBlPoid;
+    private LovGetListDto houseBlPoidDel;
+    private Long supplierPoid;
 
     @Size(max = 20, message = "Charge basis must not exceed 20 characters")
     private String chargeBasis;

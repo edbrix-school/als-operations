@@ -131,19 +131,19 @@ class ProjectJobMapperTest {
     void testMapChargesFromDto() {
         ProjectJobChargesDto dto = new ProjectJobChargesDto();
         dto.setDetRowId(1L);
-        dto.setChargePoid(BigDecimal.valueOf(10L));
+        dto.setChargePoid(10L);
         dto.setCurrencyExchange(BigDecimal.valueOf(1.0));
         dto.setQuantity(BigDecimal.valueOf(5.0));
         dto.setBuyingPercharge(BigDecimal.valueOf(50.0));
         dto.setBillingPrecharge(BigDecimal.valueOf(60.0));
-        dto.setPaidAtPortPoid(BigDecimal.valueOf(20L));
+        dto.setPaidAtPortPoid(20L);
         dto.setCurrencyCode("USD");
         dto.setPayMode("C"); // payMode is String(1)
         dto.setRcptNoOld("RCPT");
         dto.setChargeCodeOld("CHARGE");
         dto.setRcptDaeOld(LocalDateTime.now());
         dto.setCostInvOld("INV");
-        dto.setEquipmentPoid(BigDecimal.valueOf(30L));
+        dto.setEquipmentPoid(30L);
         dto.setTotalBuyingCharge(BigDecimal.valueOf(250.0));
         dto.setTotalSellingCharge(BigDecimal.valueOf(300.0));
         dto.setCostInvDtOld(LocalDateTime.now());
@@ -157,7 +157,7 @@ class ProjectJobMapperTest {
         dto.setRemarks("REM");
         dto.setShChargeInv("SH");
         dto.setUnitType("1");
-        dto.setTaxPoid(BigDecimal.valueOf(60L));
+        dto.setTaxPoid(60L);
         dto.setTaxPercentage(BigDecimal.valueOf(5.0));
         dto.setTaxAmount(BigDecimal.valueOf(12.5));
         dto.setTaxInputAmount(BigDecimal.valueOf(12.5));
@@ -165,8 +165,8 @@ class ProjectJobMapperTest {
         dto.setCnRefDocPoid("70"); // cnRefDocPoid is String
         dto.setCnRefDetRowId("80"); // cnRefDetRowId is String
         dto.setCnIssueInvoice("Y");
-        dto.setHouseBlPoid(BigDecimal.valueOf(90L));
-        dto.setSupplierPoid(BigDecimal.valueOf(100L));
+        dto.setHouseBlPoid(90L);
+        dto.setSupplierPoid(100L);
         dto.setChargeBasis("BASIS");
         dto.setEnteryLocation("LOC");
 
@@ -175,7 +175,7 @@ class ProjectJobMapperTest {
 
         assertEquals(100L, entity.getTransactionPoid());
         assertEquals(1L, entity.getDetRowId());
-        assertEquals(BigDecimal.valueOf(10L), entity.getChargePoid());
+        assertEquals(10L, entity.getChargePoid());
         assertNotNull(entity.getRcptDaeOld());
         assertNotNull(entity.getCostInvDtOld());
         assertNotNull(entity.getUnitType());
@@ -352,7 +352,7 @@ class ProjectJobMapperTest {
     void testToChargesDto() {
         FFManifestChargesDtl entity = new FFManifestChargesDtl();
         entity.setDetRowId(1L);
-        entity.setChargePoid(BigDecimal.valueOf(10L));
+        entity.setChargePoid(10L);
         entity.setCurrencyExchange(new BigDecimal("1.0"));
         entity.setQuantity(new BigDecimal("5.0"));
         entity.setBuyingPercharge(new BigDecimal("50.0"));
@@ -367,7 +367,7 @@ class ProjectJobMapperTest {
         projectJobMapper.toChargesDto(entity, dto);
 
         assertEquals(1L, dto.getDetRowId());
-        assertEquals(BigDecimal.valueOf(10L), dto.getChargePoid());
+        assertEquals(10L, dto.getChargePoid());
     }
 
     @Test

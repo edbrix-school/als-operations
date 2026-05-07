@@ -1,9 +1,6 @@
 package com.asg.operations.projectjob.service.impl;
 
-import com.asg.common.lib.dto.DeleteReasonDto;
-import com.asg.common.lib.dto.FilterDto;
-import com.asg.common.lib.dto.FilterRequestDto;
-import com.asg.common.lib.dto.RawSearchResult;
+import com.asg.common.lib.dto.*;
 import com.asg.common.lib.dto.request.LogRequestDto;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.security.util.UserContext;
@@ -58,6 +55,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
     private final FFManifestTruckDtlRepository truckRepository;
     private final ProjectJobStoredProcRepository spRepostirory;
     private final LoggingService loggingService;
+    private final LovDataService lovDataService;
     private final DocumentDeleteService documentDeleteService;
     private final DocumentSearchService documentSearchService;
     private final FFProjectsCtrlSheetDtlRepository ctrlSheetDtlRepository;
@@ -307,6 +305,13 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         charges.forEach(entity -> {
             ProjectJobChargesDto dto = new ProjectJobChargesDto();
             projectJobMapper.toChargesDto(entity, dto);
+            if (entity.getHouseBlPoid() != null) {
+                LovGetListDto lov = lovDataService.getDetailsByPoidAndLovNameFast(
+                        entity.getHouseBlPoid().longValue(),
+                        "HOUSE_BL_LOV"
+                );
+                dto.setHouseBlPoidDel(lov);
+            }
             chargesDto.add(dto);
 
         });
