@@ -291,6 +291,8 @@ public class FFManifestHdrDto {
     private Long projectPoid;
     private LovGetListDto projectLov;
     private Long projectCustomerPoid;
+    private LovGetListDto projectCustomerPoidLov;
+
     private LocalDateTime blIssueDate;
 
     @Size(max = 25, message = "Air Transport must not exceed 25 characters")

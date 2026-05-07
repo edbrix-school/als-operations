@@ -279,6 +279,16 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                 .map(h -> h.getProjectCustomerPoid())
                 .ifPresent(response::setProjectCustomerPoid);
 
+        LovGetListDto projectLov = null;
+        if (response.getProjectCustomerPoid() != null) {
+            projectLov = lovDataService.getDetailsByPoidAndLovNameFast(
+                    response.getProjectCustomerPoid(),
+                    "CUSTOMER_SUPPLIER_MASTER"
+            );
+        }
+
+
+
         List<FFManifestAirPkgDtl> airPkg = airPkgRepository.findByTransactionPoid(transactionPoid);
         List<FFManifestBayanDtl> bayan = bayanRepository.findByTransactionPoid(transactionPoid);
         List<FFManifestChargesDtl> charges = chargesRepository.findByTransactionPoid(transactionPoid);
@@ -310,7 +320,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                         entity.getHouseBlPoid().longValue(),
                         "HOUSE_BL_LOV"
                 );
-                dto.setHouseBlPoidDel(lov);
+                dto.setHouseBlPoidLov(lov);
             }
             chargesDto.add(dto);
 
@@ -337,6 +347,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         response.setCharges(chargesDto);
         response.setContainers(conationersDto);
         response.setTruckDetails(trucksDto);
+        response.setProjectCustomerPoidLov(projectLov);
 
         return response;
     }
