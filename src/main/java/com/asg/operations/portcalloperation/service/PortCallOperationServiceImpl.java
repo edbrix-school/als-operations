@@ -1643,6 +1643,18 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .ifPresent(emailRecord -> {
                         builder.emailSentOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).remarks(emailRecord.getEmailRemarks());
                     });
+
+            List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(entity.getEmailPoid());
+            List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                    .transactionPoid(msgDtl2.getTransactionPoid())
+                    .detRowId(msgDtl2.getDetRowId())
+                    .addressee(msgDtl2.getAddressee())
+                    .company(msgDtl2.getCompany())
+                    .emailIds(msgDtl2.getToEmailId())
+                    .emailIdsCC(msgDtl2.getCcEmailId())
+                    .communicationType(msgDtl2.getEmailType())
+                    .build()).collect(Collectors.toList());
+            builder.mailDetails(mailDetails);
         }
 
         return builder.build();
