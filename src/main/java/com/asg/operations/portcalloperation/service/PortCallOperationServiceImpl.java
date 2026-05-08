@@ -543,7 +543,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .termsConditions(dto.getTermsConditions())
                 .build();
 
-        hdr = hdrRepository.save(hdr);
+        hdr = hdrRepository.saveAndFlush(hdr);
         entityManager.refresh(hdr);
 
         // Save cargo details
@@ -607,7 +607,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         String key = hdr.getTransactionPoid().toString();
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, hdr.getDocRef()));
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), hdr.getDocRef()));
         return getOperationById(hdr.getTransactionPoid());
     }
 
