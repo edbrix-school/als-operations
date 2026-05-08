@@ -3176,8 +3176,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 response.put("documentSubmittedDate", cursorData.get("DOCUMENT_SUBMITTED_DATE"));
                 response.put("documentSubmittedBy", cursorData.get("DOCUMENT_SUBMITTED_BY"));
                 response.put("documentSubmittedStatus", cursorData.get("DOCUMENT_SUBMITTED_STATUS"));
-                response.put("verfieddate",entry.getVerificationAcceptedBy());
-                response.put("verfiedby",entry.getVerificationAcceptedDate());
             }
 
             return response;
