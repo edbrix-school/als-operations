@@ -696,9 +696,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Validate required header fields
         validateRecalculateFields(entry);
 
-        // Clear existing charges before loading to prevent duplication
-        logger.info("Clearing existing charges before loading default charges for transactionPoid: {}", transactionPoid);
-        callClearChargeDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+
 
         // Call stored procedure to load default charges
         String statusMessage = callLoadDefaultCharges(
