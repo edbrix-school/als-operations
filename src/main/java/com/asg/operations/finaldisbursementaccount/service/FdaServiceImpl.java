@@ -115,7 +115,7 @@ public class FdaServiceImpl implements FdaService {
         // If trigger doesn't set it, we set a fallback (though trigger should handle it)
         // Note: The trigger generates docRef based on FDA_SUB_TYPE and PDA_REF
         // For now, we'll let the trigger handle it, but we can set a fallback if needed
-        entity = pdaFdaHdrRepository.save(entity);
+        entity = pdaFdaHdrRepository.saveAndFlush(entity);
         entityManager.refresh(entity);
 
         if (dto.getCharges() != null && !dto.getCharges().isEmpty()) {
@@ -123,7 +123,7 @@ public class FdaServiceImpl implements FdaService {
         }
 
         String key = entity.getTransactionPoid().toString();
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, entity.getDocRef()));
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), entity.getDocRef()));
         return getFdaHeader(entity.getTransactionPoid(), groupPoid, companyPoid);
     }
 

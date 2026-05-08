@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -21,4 +22,6 @@ public class PortCallOperationActTimingDetailResponseDto {
     private Long emailPoid;
     private String details;
     private LocalDateTime sentStatus;
+
+    List<PortCallOperationMailDetailResponseDto> mailDetails;
 }

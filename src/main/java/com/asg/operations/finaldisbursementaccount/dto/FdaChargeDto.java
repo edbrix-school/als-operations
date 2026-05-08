@@ -34,7 +34,6 @@ public class FdaChargeDto {
     @PositiveOrZero(message = "Rate must be >= 0")
     private BigDecimal pdaRate;
 
-    @PositiveOrZero(message = "Amount must be >= 0")
     private BigDecimal amount;
 
     @Size(max = 2000, message = "Remarks cannot exceed 2000 characters")
@@ -55,10 +54,8 @@ public class FdaChargeDto {
     @Size(max = 100, message = "Remark Qty Days cannot exceed 100 characters")
     private String remarkQtyDays;
 
-    @PositiveOrZero(message = "Cost amount must be >= 0")
     private BigDecimal costAmount;
 
-    @PositiveOrZero(message = "FDA amount must be >= 0")
     private BigDecimal fdaAmount;
 
     private Integer seqNo;

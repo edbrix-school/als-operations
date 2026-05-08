@@ -27,7 +27,7 @@ import com.asg.operations.projects.util.ProjectMapper;
 import com.asg.operations.projectjob.entity.*;
 import com.asg.operations.projectjob.repository.*;
 import com.asg.operations.crew.dto.ValidationError;
-import com.asg.operations.exceptions.ValidationException;
+import com.asg.operations.exceptions.FFValidationException;
 import jakarta.persistence.EntityManager;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -853,7 +853,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         List<FFProjectsCtrlSheetDtl> existing = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
         boolean anyLinkedToJob = existing.stream().anyMatch(cs -> cs.getJobNoPoid() != null);
         if (anyLinkedToJob) {
-            throw new ValidationException("Cannot upload control sheet: one or more existing entries are linked to jobs. Please unlink them before uploading.",
+            throw new FFValidationException("Cannot upload control sheet: one or more existing entries are linked to jobs. Please unlink them before uploading.",
                     List.of(new ValidationError(null, "CONTROL_SHEET", "One or more existing control sheet entries are linked to jobs. Please unlink them before uploading.")));
         }
 
@@ -861,12 +861,12 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         try {
             parsedRows = parseControlSheetExcel(file);
         } catch (IOException e) {
-            throw new ValidationException("Failed to read Excel file: " + e.getMessage(),
+            throw new FFValidationException("Failed to read Excel file: " + e.getMessage(),
                     List.of(new ValidationError(null, "FILE", "Failed to read Excel file: " + e.getMessage())));
         }
 
         if (parsedRows.isEmpty()) {
-            throw new ValidationException("Excel file contains no data rows.",
+            throw new FFValidationException("Excel file contains no data rows.",
                     List.of(new ValidationError(null, "FILE", "Excel file contains no data rows.")));
         }
 
@@ -875,7 +875,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         Map<String, LovGetListDto> airlineDescMap = loadLovDescMap("AIRLINE");
         List<ValidationError> errors = validateExcelRows(parsedRows, portDescMap, airportDescMap, airlineDescMap);
         if (!errors.isEmpty()) {
-            throw new ValidationException("Excel pre-validation failed", errors);
+            throw new FFValidationException("Excel pre-validation failed", errors);
         }
 
         if (!existing.isEmpty()) {
@@ -946,7 +946,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
             List<ValidationError> columnErrors = validateColumnHeaders(sheet);
             if (!columnErrors.isEmpty()) {
-                throw new ValidationException("Excel template column structure is invalid", columnErrors);
+                throw new FFValidationException("Excel template column structure is invalid", columnErrors);
             }
 
             for (int rowIdx = 3; rowIdx <= sheet.getLastRowNum(); rowIdx++) {
@@ -1107,7 +1107,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                     "Vessel is required for SEA freight to determine the Line"));
         } else {
             com.asg.operations.finaldisbursementaccount.entity.ShipVesselMaster vessel =
-                    shipVesselMasterRepository.findFirstByVesselNameIgnoreCase(vesselRaw.trim()).orElse(null);
+                    shipVesselMasterRepository.findFirstByVesselNameTrimmedIgnoreCase(vesselRaw.trim()).orElse(null);
             if (vessel == null) {
                 errors.add(new ValidationError(row.getRowNum(), "VESSEL",
                         String.format("Vessel '%s' not found in the system.", vesselRaw.trim())));

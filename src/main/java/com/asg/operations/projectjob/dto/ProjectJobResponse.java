@@ -1,5 +1,6 @@
 package com.asg.operations.projectjob.dto;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,4 +14,5 @@ public class ProjectJobResponse extends FFManifestHdrDtoResponse {
     private List<ProjectJobChargesDto> charges;
     private List<ProjectJobContainerDto> containers;
     private List<ProjectJobTruckDto> truckDetails;
+    private LovGetListDto projectCustomerPoidLov;
 }

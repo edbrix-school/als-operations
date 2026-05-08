@@ -226,4 +226,9 @@ public interface PdaEntryService {
      */
     byte[] printPda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, BigDecimal otherPrincipalPoid) throws Exception;
 
+    /**
+     * Validate PDA edit - check if PDA can be edited
+     */
+    PdaEditValidationResponse validatePdaEdit(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
 }

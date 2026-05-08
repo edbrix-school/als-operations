@@ -239,10 +239,21 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         .ifPresent(emailRecord -> {
                             builder.emailSentOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).remarks(emailRecord.getEmailRemarks());
                         });
+                List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(dtl.getEmailPoid());
+                List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                        .transactionPoid(msgDtl2.getTransactionPoid())
+                        .detRowId(msgDtl2.getDetRowId())
+                        .addressee(msgDtl2.getAddressee())
+                        .company(msgDtl2.getCompany())
+                        .emailIds(msgDtl2.getToEmailId())
+                        .emailIdsCC(msgDtl2.getCcEmailId())
+                        .communicationType(msgDtl2.getEmailType())
+                        .build()).collect(Collectors.toList());
+                builder.mailDetails(mailDetails);
             }
 
             return builder.build();
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     private List<PortCallOperationEstPrearrivalDetailResponseDto> mapEstPrearrivalDetailsToResponse(List<PortCallOperationEstPrearrivalDtl> details) {
@@ -264,6 +275,18 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         .ifPresent(emailRecord -> {
                             builder.emailSentOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).remarks(emailRecord.getEmailRemarks());
                         });
+
+                List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(dtl.getEmailPoid());
+                List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                        .transactionPoid(msgDtl2.getTransactionPoid())
+                        .detRowId(msgDtl2.getDetRowId())
+                        .addressee(msgDtl2.getAddressee())
+                        .company(msgDtl2.getCompany())
+                        .emailIds(msgDtl2.getToEmailId())
+                        .emailIdsCC(msgDtl2.getCcEmailId())
+                        .communicationType(msgDtl2.getEmailType())
+                        .build()).collect(Collectors.toList());
+                builder.mailDetails(mailDetails);
             }
 
             return builder.build();
@@ -285,6 +308,18 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         .ifPresent(emailRecord -> {
                             builder.sentStatus(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).details(emailRecord.getEmailRemarks());
                         });
+
+                List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(dtl.getEmailPoid());
+                List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                        .transactionPoid(msgDtl2.getTransactionPoid())
+                        .detRowId(msgDtl2.getDetRowId())
+                        .addressee(msgDtl2.getAddressee())
+                        .company(msgDtl2.getCompany())
+                        .emailIds(msgDtl2.getToEmailId())
+                        .emailIdsCC(msgDtl2.getCcEmailId())
+                        .communicationType(msgDtl2.getEmailType())
+                        .build()).collect(Collectors.toList());
+                builder.mailDetails(mailDetails);
             }
 
             return builder.build();
@@ -508,7 +543,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .termsConditions(dto.getTermsConditions())
                 .build();
 
-        hdr = hdrRepository.save(hdr);
+        hdr = hdrRepository.saveAndFlush(hdr);
         entityManager.refresh(hdr);
 
         // Save cargo details
@@ -572,7 +607,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         String key = hdr.getTransactionPoid().toString();
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, hdr.getDocRef()));
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), hdr.getDocRef()));
         return getOperationById(hdr.getTransactionPoid());
     }
 
@@ -1608,6 +1643,18 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                     .ifPresent(emailRecord -> {
                         builder.emailSentOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).remarks(emailRecord.getEmailRemarks());
                     });
+
+            List<PortCallOperationDocsMsgsDtl2> docsMsgsDtl2Details = docsMsgsDtl2Repository.findByEmailPoid(entity.getEmailPoid());
+            List<PortCallOperationMailDetailResponseDto> mailDetails = docsMsgsDtl2Details.stream().map(msgDtl2 -> PortCallOperationMailDetailResponseDto.builder()
+                    .transactionPoid(msgDtl2.getTransactionPoid())
+                    .detRowId(msgDtl2.getDetRowId())
+                    .addressee(msgDtl2.getAddressee())
+                    .company(msgDtl2.getCompany())
+                    .emailIds(msgDtl2.getToEmailId())
+                    .emailIdsCC(msgDtl2.getCcEmailId())
+                    .communicationType(msgDtl2.getEmailType())
+                    .build()).collect(Collectors.toList());
+            builder.mailDetails(mailDetails);
         }
 
         return builder.build();
@@ -1627,31 +1674,34 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         Long nextDetRowId = estBertDtlRepository.findMaxDetRowIdByTransactionPoid(transactionPoid) + 1;
         Long emailPoidToUse;
+        PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(nextDetRowId)
+                .emailRemarks(dto.getRemarks())
+                .build();
+        newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
 
-        if (dto.getEmailPoid() == null) {
-            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+        Long nextMsg2DetRowId = docsMsgsDtl2Repository.findMaxDetRowIdByTransactionPoid(transactionPoid);
+        for (PortCallOperationMailDetailDto mailDetails : dto.getMailDetails()) {
+
+            nextMsg2DetRowId++;
+
+            PortCallOperationDocsMsgsDtl2 newMsgsDtl2 = PortCallOperationDocsMsgsDtl2.builder()
+                    .emailPoid(newMsgsDtl1.getEmailPoid())
                     .transactionPoid(transactionPoid)
-                    .detRowId(nextDetRowId)
-                    .emailRemarks(dto.getRemarks())
+                    .detRowId(nextMsg2DetRowId)
+                    .company(mailDetails.getCompany())
+                    .emailType(mailDetails.getCommunicationType())
+                    .addressee(mailDetails.getAddressee())
+                    .toEmailId(mailDetails.getEmailIds())
+                    .ccEmailId(mailDetails.getEmailIdsCC())
                     .build();
-            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            docsMsgsDtl1Repository.flush();
-            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL), which can
-            // differ from Hibernate's @GeneratedValue. Read the actual value from the database (latest row).
-            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, nextDetRowId);
-            if (actualEmailPoid == null) {
-                throw new IllegalStateException("Email Poid was not set by trigger after insert");
-            }
-            emailPoidToUse = actualEmailPoid;
-        } else {
-            emailPoidToUse = dto.getEmailPoid();
-            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
-                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
-            docsMsgsDtl1Repository.save(msgsDtl1);
+
+            docsMsgsDtl2Repository.save(newMsgsDtl2);
         }
 
-        if (dto.getSendEmail()) {
+        emailPoidToUse = newMsgsDtl1.getEmailPoid();
+        if (Boolean.TRUE.equals(dto.getSendEmail())) {
             PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
                     .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
@@ -1661,24 +1711,16 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        // Insert EstBertDtl with emailPoid=null first to avoid FK constraint violation (OPS_PC_EST_BERT_HDR_FK2
-        // may be checked at commit; parent row in same transaction can still cause "parent key not found").
         PortCallOperationEstBertDtl entity = PortCallOperationEstBertDtl.builder()
                 .transactionPoid(transactionPoid)
                 .detRowId(nextDetRowId)
                 .eta(dto.getEta())
                 .etb(dto.getEtb())
-                .emailPoid(null)
+                .emailPoid(emailPoidToUse)
                 .build();
 
         PortCallOperationEstBertDtl saved = estBertDtlRepository.save(entity);
         estBertDtlRepository.flush();
-
-        // Now set emailPoid using native SQL update to ensure Oracle sees the flushed parent row.
-        // Hibernate's entity update might check constraints before Oracle sees the parent row.
-        jdbcTemplate.update("UPDATE OPS_PC_EST_BERT_DTL SET EMAIL_POID = ? WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", emailPoidToUse, transactionPoid, nextDetRowId);
-        // Update the entity object to reflect the change
-        saved.setEmailPoid(emailPoidToUse);
 
         // Upload attachments if provided (optional)
         if (files != null && files.length > 0) {
@@ -1706,7 +1748,6 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                         builder.emailSentOn(emailRecord.getEmailSendOn() != null ? emailRecord.getEmailSendOn().atStartOfDay() : null).remarks(emailRecord.getEmailRemarks() != null ? emailRecord.getEmailRemarks() : null);
                     });
         }
-
         return builder.build();
     }
 
@@ -1724,36 +1765,35 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (dto.getEmailPoid() != null && !docsMsgsDtl1Repository.existsByEmailPoid(dto.getEmailPoid())) {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
+        Long emailPoidToUse = dto.getEmailPoid();
+        PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
+                .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
+        PortCallOperationDocsMsgsDtl1 oldMsgDtlEntity = new PortCallOperationDocsMsgsDtl1();
+        BeanUtils.copyProperties(msgsDtl1, oldMsgDtlEntity);
+        msgsDtl1.setEmailRemarks(dto.getRemarks());
+        PortCallOperationDocsMsgsDtl1 savedMsgDtl = docsMsgsDtl1Repository.save(msgsDtl1);
+        String msgLogDtl = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", savedMsgDtl.getTransactionPoid(), savedMsgDtl.getDetRowId());
+        loggingService.createLog(oldMsgDtlEntity, msgsDtl1, PortCallOperationDocsMsgsDtl1.class, UserContext.getDocumentId(), transactionPoid.toString(), msgLogDtl);
 
-        Long emailPoidToUse;
-        if (dto.getEmailPoid() == null) {
-            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
-                    .transactionPoid(transactionPoid)
-                    .detRowId(detRowId)
-                    .emailRemarks(dto.getRemarks())
-                    .build();
-            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            docsMsgsDtl1Repository.flush();
-            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL).
-            // Read the actual value from the database (latest row).
-            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, detRowId);
-            if (actualEmailPoid == null) {
-                throw new IllegalStateException("Email Poid was not set by trigger after insert");
-            }
-            emailPoidToUse = actualEmailPoid;
-        } else {
-            emailPoidToUse = dto.getEmailPoid();
-            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
-                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
-            PortCallOperationDocsMsgsDtl1 oldMsgDtlEntity = new PortCallOperationDocsMsgsDtl1();
-            BeanUtils.copyProperties(msgsDtl1, oldMsgDtlEntity);
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
-            PortCallOperationDocsMsgsDtl1 savedMsgDtl = docsMsgsDtl1Repository.save(msgsDtl1);
-            String msgLogDtl = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", savedMsgDtl.getTransactionPoid(), savedMsgDtl.getDetRowId());
-            loggingService.createLog(oldMsgDtlEntity, msgsDtl1, PortCallOperationDocsMsgsDtl1.class, UserContext.getDocumentId(), transactionPoid.toString(), msgLogDtl);
+        for (PortCallOperationMailDetailDto mailDetail : dto.getMailDetails()) {
+
+            PortCallOperationDocsMsgsDtl2 docsMsgsDtl2ForUpdate = docsMsgsDtl2Repository.findById(new PortCallOperationDocsMsgsDtl2Id(mailDetail.getTransactionPoid(), mailDetail.getDetRowId()))
+                    .orElseThrow(() -> new ResourceNotFoundException(String.format("Mail Detail not found for transactionpoid: %s and detRowId: %s", mailDetail.getTransactionPoid(), mailDetail.getDetRowId())));
+
+            PortCallOperationDocsMsgsDtl2 oldMsgDtl2Entity = new PortCallOperationDocsMsgsDtl2();
+            BeanUtils.copyProperties(docsMsgsDtl2ForUpdate, oldMsgDtl2Entity);
+            docsMsgsDtl2ForUpdate.setEmailType(mailDetail.getCommunicationType());
+            docsMsgsDtl2ForUpdate.setCompany(mailDetail.getCompany());
+            docsMsgsDtl2ForUpdate.setAddressee(mailDetail.getAddressee());
+            docsMsgsDtl2ForUpdate.setToEmailId(mailDetail.getEmailIds());
+            docsMsgsDtl2ForUpdate.setCcEmailId(mailDetail.getEmailIdsCC());
+
+            PortCallOperationDocsMsgsDtl2 savedMsgDtl2 = docsMsgsDtl2Repository.save(docsMsgsDtl2ForUpdate);
+            String msgLogDtl2 = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", savedMsgDtl2.getTransactionPoid(), savedMsgDtl2.getDetRowId());
+            loggingService.createLog(oldMsgDtl2Entity, docsMsgsDtl2ForUpdate, PortCallOperationDocsMsgsDtl2.class, UserContext.getDocumentId(), transactionPoid.toString(), msgLogDtl2);
         }
 
-        if (dto.getSendEmail()) {
+        if (Boolean.TRUE.equals(dto.getSendEmail())) {
             PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
                     .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", emailPoidToUse));
             if (msgsForSend.getEmailSendOn() == null) {
@@ -1887,28 +1927,34 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         Long emailPoidToUse;
-        if (dto.getEmailPoid() == null) {
-            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+        PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(detRowId)
+                .emailRemarks(dto.getRemarks())
+                .build();
+        newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+
+        Long nextMsg2DetRowId = docsMsgsDtl2Repository.findMaxDetRowIdByTransactionPoid(transactionPoid);
+        for (PortCallOperationMailDetailDto mailDetails : dto.getMailDetails()) {
+
+            nextMsg2DetRowId++;
+
+            PortCallOperationDocsMsgsDtl2 newMsgsDtl2 = PortCallOperationDocsMsgsDtl2.builder()
+                    .emailPoid(newMsgsDtl1.getEmailPoid())
                     .transactionPoid(transactionPoid)
-                    .detRowId(detRowId)
-                    .emailRemarks(dto.getRemarks())
+                    .detRowId(nextMsg2DetRowId)
+                    .company(mailDetails.getCompany())
+                    .emailType(mailDetails.getCommunicationType())
+                    .addressee(mailDetails.getAddressee())
+                    .toEmailId(mailDetails.getEmailIds())
+                    .ccEmailId(mailDetails.getEmailIdsCC())
                     .build();
-            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            docsMsgsDtl1Repository.flush();
-            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL).
-            // Read the actual value from the database (latest row).
-            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, detRowId);
-            if (actualEmailPoid == null) {
-                throw new IllegalStateException("Email Poid was not set by trigger after insert");
-            }
-            emailPoidToUse = actualEmailPoid;
-        } else {
-            emailPoidToUse = dto.getEmailPoid();
-            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
-                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
-            docsMsgsDtl1Repository.save(msgsDtl1);
+
+            docsMsgsDtl2Repository.save(newMsgsDtl2);
         }
+
+        emailPoidToUse = newMsgsDtl1.getEmailPoid();
+
 
         if (dto.getSendEmail()) {
             PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
@@ -2083,28 +2129,34 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             throw new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid());
         }
 
-        Long emailPoidToUse;
-        if (dto.getEmailPoid() == null) {
-            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
-                    .transactionPoid(transactionPoid)
-                    .detRowId(detRowId)
-                    .emailRemarks(dto.getRemarks())
-                    .build();
-            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            docsMsgsDtl1Repository.flush();
-            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL).
-            // Read the actual value from the database (latest row).
-            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, detRowId);
-            if (actualEmailPoid == null) {
-                throw new IllegalStateException("Email Poid was not set by trigger after insert");
-            }
-            emailPoidToUse = actualEmailPoid;
-        } else {
-            emailPoidToUse = dto.getEmailPoid();
-            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
-                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
-            docsMsgsDtl1Repository.save(msgsDtl1);
+        Long emailPoidToUse = dto.getEmailPoid();
+
+        PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
+                .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
+        PortCallOperationDocsMsgsDtl1 oldMsgDtlEntity = new PortCallOperationDocsMsgsDtl1();
+        BeanUtils.copyProperties(msgsDtl1, oldMsgDtlEntity);
+        msgsDtl1.setEmailRemarks(dto.getRemarks());
+        PortCallOperationDocsMsgsDtl1 savedMsgDtl = docsMsgsDtl1Repository.save(msgsDtl1);
+        String msgLogDtl = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", savedMsgDtl.getTransactionPoid(), savedMsgDtl.getDetRowId());
+        loggingService.createLog(oldMsgDtlEntity, msgsDtl1, PortCallOperationDocsMsgsDtl1.class, UserContext.getDocumentId(), transactionPoid.toString(), msgLogDtl);
+
+        for (PortCallOperationMailDetailDto mailDetail : dto.getMailDetails()) {
+
+            PortCallOperationDocsMsgsDtl2 docsMsgsDtl2ForUpdate = docsMsgsDtl2Repository.findById(new PortCallOperationDocsMsgsDtl2Id(mailDetail.getTransactionPoid(), mailDetail.getDetRowId()))
+                    .orElseThrow(() -> new ResourceNotFoundException(String.format("Mail Detail not found for transactionpoid: %s and detRowId: %s", mailDetail.getTransactionPoid(), mailDetail.getDetRowId())));
+
+            PortCallOperationDocsMsgsDtl2 oldMsgDtl2Entity = new PortCallOperationDocsMsgsDtl2();
+            BeanUtils.copyProperties(docsMsgsDtl2ForUpdate, oldMsgDtl2Entity);
+            docsMsgsDtl2ForUpdate.setEmailType(mailDetail.getCommunicationType());
+            docsMsgsDtl2ForUpdate.setCompany(mailDetail.getCompany());
+            docsMsgsDtl2ForUpdate.setAddressee(mailDetail.getAddressee());
+            docsMsgsDtl2ForUpdate.setToEmailId(mailDetail.getEmailIds());
+            docsMsgsDtl2ForUpdate.setCcEmailId(mailDetail.getEmailIdsCC());
+
+            PortCallOperationDocsMsgsDtl2 savedMsgDtl2 = docsMsgsDtl2Repository.save(docsMsgsDtl2ForUpdate);
+            String msgLogDtl2 = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", savedMsgDtl2.getTransactionPoid(), savedMsgDtl2.getDetRowId());
+            loggingService.createLog(oldMsgDtl2Entity, docsMsgsDtl2ForUpdate, PortCallOperationDocsMsgsDtl2.class, UserContext.getDocumentId(), transactionPoid.toString(), msgLogDtl2);
+
         }
 
         if (dto.getSendEmail()) {
@@ -2396,28 +2448,33 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         }
 
         Long emailPoidToUse;
-        if (dto.getEmailPoid() == null) {
-            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+        PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
+                .transactionPoid(transactionPoid)
+                .detRowId(detRowId)
+                .emailRemarks(dto.getRemarks())
+                .build();
+        newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
+
+        Long nextMsg2DetRowId = docsMsgsDtl2Repository.findMaxDetRowIdByTransactionPoid(transactionPoid);
+        for (PortCallOperationMailDetailDto mailDetails : dto.getMailDetails()) {
+
+            nextMsg2DetRowId++;
+
+            PortCallOperationDocsMsgsDtl2 newMsgsDtl2 = PortCallOperationDocsMsgsDtl2.builder()
+                    .emailPoid(newMsgsDtl1.getEmailPoid())
                     .transactionPoid(transactionPoid)
-                    .detRowId(detRowId)
-                    .emailRemarks(dto.getRemarks())
+                    .detRowId(nextMsg2DetRowId)
+                    .company(mailDetails.getCompany())
+                    .emailType(mailDetails.getCommunicationType())
+                    .addressee(mailDetails.getAddressee())
+                    .toEmailId(mailDetails.getEmailIds())
+                    .ccEmailId(mailDetails.getEmailIdsCC())
                     .build();
-            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            docsMsgsDtl1Repository.flush();
-            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL).
-            // Read the actual value from the database (latest row).
-            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, detRowId);
-            if (actualEmailPoid == null) {
-                throw new IllegalStateException("Email Poid was not set by trigger after insert");
-            }
-            emailPoidToUse = actualEmailPoid;
-        } else {
-            emailPoidToUse = dto.getEmailPoid();
-            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
-                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
-            docsMsgsDtl1Repository.save(msgsDtl1);
+
+            docsMsgsDtl2Repository.save(newMsgsDtl2);
         }
+
+        emailPoidToUse = newMsgsDtl1.getEmailPoid();
 
         if (dto.getSendEmail()) {
             PortCallOperationDocsMsgsDtl1 msgsForSend = docsMsgsDtl1Repository.findByEmailPoid(emailPoidToUse)
@@ -2549,28 +2606,33 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
 
-        Long emailPoidToUse;
-        if (dto.getEmailPoid() == null) {
-            PortCallOperationDocsMsgsDtl1 newMsgsDtl1 = PortCallOperationDocsMsgsDtl1.builder()
-                    .transactionPoid(transactionPoid)
-                    .detRowId(detRowId)
-                    .emailRemarks(dto.getRemarks())
-                    .build();
-            newMsgsDtl1 = docsMsgsDtl1Repository.save(newMsgsDtl1);
-            docsMsgsDtl1Repository.flush();
-            // DB trigger OPS_PC_DOCS_MSGS_DTL1_TRG sets EMAIL_POID on INSERT (sequence NEXTVAL).
-            // Read the actual value from the database (latest row).
-            Long actualEmailPoid = jdbcTemplate.queryForObject("SELECT MAX(EMAIL_POID) FROM OPS_PC_DOCS_MSGS_DTL1 WHERE TRANSACTION_POID = ? AND DET_ROW_ID = ?", Long.class, transactionPoid, detRowId);
-            if (actualEmailPoid == null) {
-                throw new IllegalStateException("Email Poid was not set by trigger after insert");
-            }
-            emailPoidToUse = actualEmailPoid;
-        } else {
-            emailPoidToUse = dto.getEmailPoid();
-            PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
-                    .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
-            msgsDtl1.setEmailRemarks(dto.getRemarks());
-            docsMsgsDtl1Repository.save(msgsDtl1);
+        Long emailPoidToUse = dto.getEmailPoid();
+
+        PortCallOperationDocsMsgsDtl1 msgsDtl1 = docsMsgsDtl1Repository.findByEmailPoid(dto.getEmailPoid())
+                .orElseThrow(() -> new ResourceNotFoundException("Email", "Email Poid", dto.getEmailPoid()));
+        PortCallOperationDocsMsgsDtl1 oldMsgDtlEntity = new PortCallOperationDocsMsgsDtl1();
+        BeanUtils.copyProperties(msgsDtl1, oldMsgDtlEntity);
+        msgsDtl1.setEmailRemarks(dto.getRemarks());
+        PortCallOperationDocsMsgsDtl1 savedMsgDtl = docsMsgsDtl1Repository.save(msgsDtl1);
+        String msgLogDtl = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", savedMsgDtl.getTransactionPoid(), savedMsgDtl.getDetRowId());
+        loggingService.createLog(oldMsgDtlEntity, msgsDtl1, PortCallOperationDocsMsgsDtl1.class, UserContext.getDocumentId(), transactionPoid.toString(), msgLogDtl);
+
+        for (PortCallOperationMailDetailDto mailDetail : dto.getMailDetails()) {
+
+            PortCallOperationDocsMsgsDtl2 docsMsgsDtl2ForUpdate = docsMsgsDtl2Repository.findById(new PortCallOperationDocsMsgsDtl2Id(mailDetail.getTransactionPoid(), mailDetail.getDetRowId()))
+                    .orElseThrow(() -> new ResourceNotFoundException(String.format("Mail Detail not found for transactionpoid: %s and detRowId: %s", mailDetail.getTransactionPoid(), mailDetail.getDetRowId())));
+
+            PortCallOperationDocsMsgsDtl2 oldMsgDtl2Entity = new PortCallOperationDocsMsgsDtl2();
+            BeanUtils.copyProperties(docsMsgsDtl2ForUpdate, oldMsgDtl2Entity);
+            docsMsgsDtl2ForUpdate.setEmailType(mailDetail.getCommunicationType());
+            docsMsgsDtl2ForUpdate.setCompany(mailDetail.getCompany());
+            docsMsgsDtl2ForUpdate.setAddressee(mailDetail.getAddressee());
+            docsMsgsDtl2ForUpdate.setToEmailId(mailDetail.getEmailIds());
+            docsMsgsDtl2ForUpdate.setCcEmailId(mailDetail.getEmailIdsCC());
+
+            PortCallOperationDocsMsgsDtl2 savedMsgDtl2 = docsMsgsDtl2Repository.save(docsMsgsDtl2ForUpdate);
+            String msgLogDtl2 = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", savedMsgDtl2.getTransactionPoid(), savedMsgDtl2.getDetRowId());
+            loggingService.createLog(oldMsgDtl2Entity, docsMsgsDtl2ForUpdate, PortCallOperationDocsMsgsDtl2.class, UserContext.getDocumentId(), transactionPoid.toString(), msgLogDtl2);
         }
 
         if (dto.getSendEmail()) {

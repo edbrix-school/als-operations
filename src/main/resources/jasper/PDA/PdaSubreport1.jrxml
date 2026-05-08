@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="PdaSubreport1" language="groovy" pageWidth="555" pageHeight="802" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="7e932559-6dc3-4a6f-8057-0b60fbe2e0b9">
+    <property name="ireport.zoom" value="2.1435888100000087"/>
+    <property name="ireport.x" value="0"/>
+    <property name="ireport.y" value="0"/>
+    <style name="style1" isBlankWhenNull="true" fontSize="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false">
+        <box>
+            <topPen lineWidth="1.0" lineColor="#000000"/>
+            <leftPen lineWidth="1.0" lineColor="#000000"/>
+            <bottomPen lineWidth="1.0" lineColor="#000000"/>
+            <rightPen lineWidth="1.0" lineColor="#000000"/>
+        </box>
+    </style>
+    <parameter name="DOC_KEY_POID" class="java.lang.String">
+        <defaultValueExpression><![CDATA[]]></defaultValueExpression>
+    </parameter>
+    <parameter name="P_PRINCIPAL_POID" class="java.lang.String">
+        <defaultValueExpression><![CDATA[]]></defaultValueExpression>
+    </parameter>
+    <parameter name="P_TAX_APPLICABLE" class="java.lang.String" isForPrompting="false">
+        <defaultValueExpression><![CDATA['N']]></defaultValueExpression>
+    </parameter>
+    <queryString>
+        <![CDATA[SELECT PED.TRANSACTION_POID,SCM.CHARGE_NAME,PED.CURRENCY_RATE,PED.QTY,PED.DAYS,PED.PDA_RATE,
+DECODE(NVL(PED.TAX_PERCENTAGE,0),0,DECODE(GTM.TAX_CATEGORY,'Z',TO_CHAR(NVL(PED.TAX_PERCENTAGE,0)),GTM.TAX_CATEGORY),PED.TAX_PERCENTAGE) AS TAX_PERCENTAGE,
+PED.TAX_AMOUNT,(PED.QTY*PED.DAYS*PED.PDA_RATE)*NVL(PED.CURRENCY_RATE,1) AS RATE,
+PED.RATE_TYPE_POID,PED.MANUAL,((PED.QTY*PED.DAYS*PED.PDA_RATE)+NVL(PED.TAX_AMOUNT,0))*NVL(PED.CURRENCY_RATE,1) AS AMOUNT,
+ROUND((((PED.QTY*PED.DAYS*PED.PDA_RATE)+NVL(PED.TAX_AMOUNT,0))/PEH.CURRENCY_RATE),GCM.CURRENCY_DECIMALS) AS TOTAL_RATE_HDR,
+PEH.CURRENCY_CODE,PED.REMARKS AS REMARKS
+FROM PDA_ENTRY_DTL PED
+INNER JOIN PDA_ENTRY_HDR PEH ON PEH.TRANSACTION_POID=PED.TRANSACTION_POID
+LEFT JOIN SHIP_CHARGE_MASTER SCM ON SCM.CHARGE_POID=PED.CHARGE_POID
+LEFT JOIN GLOBAL_TAX_MASTER GTM ON GTM.TAX_POID=SCM.TAX_POID
+LEFT JOIN GLOBAL_CURRENCY_MASTER GCM ON PEH.CURRENCY_CODE=GCM.CURRENCY_CODE
+WHERE PED.TRANSACTION_POID=$P{DOC_KEY_POID} AND PED.PRINCIPAL_POID=$P{P_PRINCIPAL_POID}
+ORDER BY PED.SEQNO]]>
+    </queryString>
+    <field name="TRANSACTION_POID" class="java.math.BigDecimal"/>
+    <field name="CHARGE_NAME" class="java.lang.String"/>
+    <field name="CURRENCY_RATE" class="java.math.BigDecimal"/>
+    <field name="QTY" class="java.math.BigDecimal"/>
+    <field name="DAYS" class="java.math.BigDecimal"/>
+    <field name="PDA_RATE" class="java.math.BigDecimal"/>
+    <field name="TAX_PERCENTAGE" class="java.lang.String"/>
+    <field name="TAX_AMOUNT" class="java.math.BigDecimal"/>
+    <field name="RATE" class="java.math.BigDecimal"/>
+    <field name="RATE_TYPE_POID" class="java.math.BigDecimal"/>
+    <field name="MANUAL" class="java.lang.String"/>
+    <field name="AMOUNT" class="java.math.BigDecimal"/>
+    <field name="TOTAL_RATE_HDR" class="java.math.BigDecimal"/>
+    <field name="CURRENCY_CODE" class="java.lang.String"/>
+    <field name="REMARKS" class="java.lang.String"/>
+    <variable name="BHD_TOTAL" class="java.math.BigDecimal" calculation="Sum">
+        <variableExpression><![CDATA[$F{AMOUNT}]]></variableExpression>
+    </variable>
+    <variable name="TOTAL_HDR_RATE" class="java.math.BigDecimal" calculation="Sum">
+        <variableExpression><![CDATA[$F{TOTAL_RATE_HDR}]]></variableExpression>
+    </variable>
+    <variable name="TOTAL_TAX_AMT" class="java.math.BigDecimal" calculation="Sum">
+        <variableExpression><![CDATA[$F{TAX_AMOUNT}]]></variableExpression>
+    </variable>
+    <variable name="TOTAL_RATE" class="java.math.BigDecimal" calculation="Sum">
+        <variableExpression><![CDATA[$F{RATE}]]></variableExpression>
+    </variable>
+    <columnHeader>
+        <band height="16" splitType="Stretch">
+            <staticText>
+                <reportElement x="29" y="0" width="226" height="15" uuid="984432d8-25e2-40d3-8ac4-f37bbbee5ba4"/>
+                <textElement textAlignment="Left" verticalAlignment="Top">
+                    <font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+                    <paragraph leftIndent="1"/>
+                </textElement>
+                <text><![CDATA[Particulars]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="414" y="0" width="70" height="15" uuid="6a860f72-eb8b-4d62-9116-f892e3987f5e"/>
+                <textElement textAlignment="Right" verticalAlignment="Top">
+                    <font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+                    <paragraph leftIndent="1" rightIndent="1"/>
+                </textElement>
+                <text><![CDATA[BHD]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="0" y="0" width="29" height="15" uuid="3331fea7-0361-4b1b-935f-ec08e558c16b"/>
+                <textElement textAlignment="Left" verticalAlignment="Top">
+                    <font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+                    <paragraph leftIndent="1"/>
+                </textElement>
+                <text><![CDATA[ Sl No]]></text>
+            </staticText>
+            <line>
+                <reportElement x="1" y="15" width="554" height="1" forecolor="#999999" uuid="7b1519d3-87cf-4c09-b483-409974a5bba3"/>
+                <graphicElement>
+                    <pen lineWidth="1.0" lineStyle="Solid"/>
+                </graphicElement>
+            </line>
+            <textField isBlankWhenNull="true">
+                <reportElement x="484" y="0" width="70" height="15" uuid="63ce0b90-fd48-476f-a4ad-b1c998d1399c"/>
+                <textElement textAlignment="Right" verticalAlignment="Top">
+                    <font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+                    <paragraph leftIndent="1" rightIndent="1"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{CURRENCY_CODE}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement x="360" y="0" width="55" height="15" uuid="066c65e1-c0fb-4754-a610-62aea9a6d4fe">
+                    <printWhenExpression><![CDATA[$P{P_TAX_APPLICABLE}.equalsIgnoreCase( "Y" )]]></printWhenExpression>
+                </reportElement>
+                <textElement textAlignment="Right" verticalAlignment="Top">
+                    <font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+                    <paragraph leftIndent="1"/>
+                </textElement>
+                <text><![CDATA[VAT Amt]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="321" y="0" width="40" height="15" uuid="52c022b0-0066-4921-8bd6-11e8440ada4d">
+                    <printWhenExpression><![CDATA[$P{P_TAX_APPLICABLE}.equalsIgnoreCase( "Y" )]]></printWhenExpression>
+                </reportElement>
+                <textElement textAlignment="Center" verticalAlignment="Top">
+                    <font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+                    <paragraph leftIndent="1"/>
+                </textElement>
+                <text><![CDATA[VAT %]]></text>
+            </staticText>
+            <staticText>
+                <reportElement x="255" y="0" width="66" height="15" uuid="cfb17ad3-0c92-48d9-acc2-fb4d9a717a94">
+                    <printWhenExpression><![CDATA[$P{P_TAX_APPLICABLE}.equalsIgnoreCase( "Y" )]]></printWhenExpression>
+                </reportElement>
+                <textElement textAlignment="Right" verticalAlignment="Top">
+                    <font size="10" isBold="true" pdfFontName="Helvetica-Bold"/>
+                    <paragraph leftIndent="1" rightIndent="3"/>
+                </textElement>
+                <text><![CDATA[Rate]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="26" splitType="Stretch">
+            <textField isStretchWithOverflow="true" isBlankWhenNull="true">
+                <reportElement x="29" y="0" width="226" height="15" uuid="c3418da0-c9c3-445d-a92e-b1cbf1e83370"/>
+                <textElement verticalAlignment="Top">
+                    <font size="9"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{CHARGE_NAME}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="0" width="29" height="15" uuid="e43adebe-ebbb-4668-a32b-a1a6bbfe95da"/>
+                <textElement textAlignment="Left" verticalAlignment="Top">
+                    <font size="9"/>
+                    <paragraph leftIndent="3"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>
+            </textField>
+            <line>
+                <reportElement positionType="FixRelativeToBottom" x="0" y="25" width="554" height="1" forecolor="#999999" uuid="1616165d-5dff-4003-afc1-b06809030894"/>
+                <graphicElement>
+                    <pen lineWidth="0.5" lineStyle="Dotted"/>
+                </graphicElement>
+            </line>
+            <textField pattern="#,##0.00" isBlankWhenNull="true">
+                <reportElement x="484" y="0" width="70" height="15" uuid="6820499f-e78a-4790-a78c-fc1a58ddf4f8"/>
+                <textElement textAlignment="Right" verticalAlignment="Top">
+                    <font size="9" isBold="false"/>
+                    <paragraph rightIndent="1"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{TOTAL_RATE_HDR}]]></textFieldExpression>
+            </textField>
+            <textField isStretchWithOverflow="true" isBlankWhenNull="true">
+                <reportElement x="42" y="14" width="230" height="12" uuid="b6edca5d-a928-461a-be1f-391195dac119"/>
+                <textElement verticalAlignment="Top">
+                    <font size="7"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{REMARKS}]]></textFieldExpression>
+            </textField>
+            <textField pattern="#,##0.000" isBlankWhenNull="true">
+                <reportElement x="414" y="0" width="70" height="15" uuid="a31c6605-b7f4-4487-84b5-279566e8a04f"/>
+                <textElement textAlignment="Right" verticalAlignment="Top">
+                    <font size="9"/>
+                    <paragraph rightIndent="1"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{AMOUNT}]]></textFieldExpression>
+            </textField>
+            <textField pattern="#,##0.000" isBlankWhenNull="true">
+                <reportElement x="360" y="0" width="55" height="15" uuid="739b3ac9-554e-4aef-9caa-9b27429a648e">
+                    <printWhenExpression><![CDATA[$P{P_TAX_APPLICABLE}.equalsIgnoreCase( "Y" )]]></printWhenExpression>
+                </reportElement>
+                <textElement textAlignment="Right" verticalAlignment="Top">
+                    <font size="9"/>
+                    <paragraph rightIndent="1"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{TAX_AMOUNT}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="321" y="0" width="40" height="15" uuid="a5874651-07b0-45e8-b152-f08baeef8109">
+                    <printWhenExpression><![CDATA[$P{P_TAX_APPLICABLE}.equalsIgnoreCase( "Y" )]]></printWhenExpression>
+                </reportElement>
+                <textElement textAlignment="Center" verticalAlignment="Middle">
+                    <font size="9"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{TAX_PERCENTAGE}]]></textFieldExpression>
+            </textField>
+            <textField pattern="#,##0.000" isBlankWhenNull="true">
+                <reportElement x="255" y="0" width="66" height="15" uuid="258c527a-86a9-4bb0-a6ba-502ece2f2447">
+                    <printWhenExpression><![CDATA[$P{P_TAX_APPLICABLE}.equalsIgnoreCase( "Y" )]]></printWhenExpression>
+                </reportElement>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="9"/>
+                    <paragraph rightIndent="1"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$F{RATE}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+    <lastPageFooter>
+        <band height="24">
+            <rectangle>
+                <reportElement x="414" y="0" width="70" height="20" forecolor="#000000" backcolor="#CCCCCC" uuid="c4909df3-1bae-418b-9cc9-579598072585"/>
+            </rectangle>
+            <textField pattern="#,##0.000" isBlankWhenNull="true">
+                <reportElement x="414" y="0" width="70" height="20" uuid="c4ea7b63-f07e-44b1-b9b7-59f79fc660e5"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+                    <paragraph rightIndent="3"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$V{BHD_TOTAL}]]></textFieldExpression>
+            </textField>
+            <rectangle>
+                <reportElement x="484" y="0" width="70" height="20" backcolor="#CCCCCC" uuid="7f2eea30-19ad-4c3f-a62b-9b320956e62c"/>
+            </rectangle>
+            <textField pattern="###0.00" isBlankWhenNull="true">
+                <reportElement x="484" y="0" width="69" height="20" uuid="d49b3986-965f-465b-9d32-ba043b821b83"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+                    <paragraph rightIndent="3"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$V{TOTAL_HDR_RATE}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement x="194" y="0" width="61" height="20" uuid="732ccd22-ad8c-4c25-8ffb-89506b88b76c"/>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="12" isBold="true" pdfFontName="Helvetica-Bold"/>
+                </textElement>
+                <text><![CDATA[TOTAL:- ]]></text>
+            </staticText>
+            <textField pattern="#,##0.000" isBlankWhenNull="true">
+                <reportElement style="style1" mode="Opaque" x="360" y="0" width="55" height="20" backcolor="#CCCCCC" uuid="6a5cd8ad-391a-492a-8453-22da9e43832d">
+                    <printWhenExpression><![CDATA[$P{P_TAX_APPLICABLE}.equalsIgnoreCase( "Y" )]]></printWhenExpression>
+                </reportElement>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="9" isBold="true" pdfFontName="Helvetica-Bold"/>
+                    <paragraph rightIndent="3"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$V{TOTAL_TAX_AMT}]]></textFieldExpression>
+            </textField>
+            <textField pattern="#,##0.000">
+                <reportElement style="style1" mode="Opaque" x="255" y="0" width="66" height="20" backcolor="#CCCCCC" uuid="94ff65ff-5d9c-47cd-89ab-33ba927720c8">
+                    <printWhenExpression><![CDATA[$P{P_TAX_APPLICABLE}.equalsIgnoreCase( "Y" )]]></printWhenExpression>
+                </reportElement>
+                <textElement textAlignment="Right" verticalAlignment="Middle">
+                    <font size="9"/>
+                    <paragraph rightIndent="3"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$V{TOTAL_RATE}]]></textFieldExpression>
+            </textField>
+            <staticText>
+                <reportElement style="style1" mode="Opaque" x="321" y="0" width="39" height="20" backcolor="#CCCCCC" uuid="1e88da3a-ecba-4d80-8929-e012a522f610">
+                    <printWhenExpression><![CDATA[$P{P_TAX_APPLICABLE}.equalsIgnoreCase( "Y" )]]></printWhenExpression>
+                </reportElement>
+                <textElement>
+                    <font size="9"/>
+                </textElement>
+                <text><![CDATA[]]></text>
+            </staticText>
+        </band>
+    </lastPageFooter>
+</jasperReport>

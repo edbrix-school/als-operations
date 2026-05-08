@@ -21,6 +21,7 @@ import com.asg.operations.projectjob.entity.*;
 import com.asg.operations.projectjob.repository.*;
 import com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl;
 import com.asg.operations.projects.repository.FFProjectsCtrlSheetDtlRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,14 +50,17 @@ class ProjectJobServiceImplTest {
     @Mock private FFManifestContainerDtlRepository containerRepository;
     @Mock private FFManifestTruckDtlRepository truckRepository;
     @Mock private ProjectJobStoredProcRepository spRepostirory;
+
+    @Mock private LovDataService lovDataService;
     @Mock private LoggingService loggingService;
     @Mock private DocumentDeleteService documentDeleteService;
     @Mock private DocumentSearchService documentSearchService;
     @Mock private FFProjectsCtrlSheetDtlRepository ctrlSheetDtlRepository;
     @Mock private GlobalAddressMasterRepository addressMasterRepository;
     @Mock private GlobalAddressDetailsRepository addressDetailsRepository;
-    @Mock private LovDataService lovDataService;
+    @Mock private com.asg.operations.projectjob.util.ProjectJobMapper projectJobMapper;
 
+    @Mock private EntityManager entityManager;
     private ProjectJobServiceImpl projectJobService;
     private MockedStatic<UserContext> userContextMockedStatic;
     private MockedStatic<DateUtil> dateUtilMockedStatic;
@@ -66,8 +70,8 @@ class ProjectJobServiceImplTest {
         projectJobService = new ProjectJobServiceImpl(
                 hdrRepository, chargesRepository, airPkgRepository, bayanRepository,
                 containerRepository, truckRepository, spRepostirory, loggingService,
-                documentDeleteService, documentSearchService, ctrlSheetDtlRepository,
-                addressMasterRepository, addressDetailsRepository, lovDataService);
+                lovDataService,documentDeleteService, documentSearchService, ctrlSheetDtlRepository,
+                addressMasterRepository, addressDetailsRepository, projectJobMapper,entityManager);
 
         userContextMockedStatic = mockStatic(UserContext.class);
         userContextMockedStatic.when(UserContext::getGroupPoid).thenReturn(1L);
@@ -303,6 +307,12 @@ class ProjectJobServiceImplTest {
         when(chargesRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestChargesDtl()));
         when(containerRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestContainerDtl()));
         when(truckRepository.findByTransactionPoid(100L)).thenReturn(Collections.singletonList(new FFManifestTruckDtl()));
+
+        doAnswer(invocation -> {
+            ProjectJobResponse resp = invocation.getArgument(1);
+            resp.setProjectPoid(50L);
+            return null;
+        }).when(projectJobMapper).toHdrDto(any(FFManifestHdr.class), any(ProjectJobResponse.class));
 
         ProjectLoadInJobsProcResponse procResponse = new ProjectLoadInJobsProcResponse();
         ProjectLoadHdrRow jobHeader = new ProjectLoadHdrRow();
