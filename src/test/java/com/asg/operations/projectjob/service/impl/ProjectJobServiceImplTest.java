@@ -21,6 +21,7 @@ import com.asg.operations.projectjob.entity.*;
 import com.asg.operations.projectjob.repository.*;
 import com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl;
 import com.asg.operations.projects.repository.FFProjectsCtrlSheetDtlRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,6 +60,7 @@ class ProjectJobServiceImplTest {
     @Mock private GlobalAddressDetailsRepository addressDetailsRepository;
     @Mock private com.asg.operations.projectjob.util.ProjectJobMapper projectJobMapper;
 
+    @Mock private EntityManager entityManager;
     private ProjectJobServiceImpl projectJobService;
     private MockedStatic<UserContext> userContextMockedStatic;
     private MockedStatic<DateUtil> dateUtilMockedStatic;
@@ -69,7 +71,7 @@ class ProjectJobServiceImplTest {
                 hdrRepository, chargesRepository, airPkgRepository, bayanRepository,
                 containerRepository, truckRepository, spRepostirory, loggingService,
                 lovDataService,documentDeleteService, documentSearchService, ctrlSheetDtlRepository,
-                addressMasterRepository, addressDetailsRepository, projectJobMapper);
+                addressMasterRepository, addressDetailsRepository, projectJobMapper,entityManager);
 
         userContextMockedStatic = mockStatic(UserContext.class);
         userContextMockedStatic.when(UserContext::getGroupPoid).thenReturn(1L);
