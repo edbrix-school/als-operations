@@ -112,7 +112,7 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", tariffHdr.getTransactionPoid()));
 
         String key = savedTariff.getTransactionPoid().toString();
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, savedTariff.getDocRef()));
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), savedTariff.getDocRef()));
 
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {
             saveChargeDetails(savedTariff, request.getChargeDetails());

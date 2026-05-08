@@ -213,7 +213,7 @@ public class SalesQuoteProjectsServiceImpl implements SalesQuoteProjectsService 
         }
 
         String key = savedEntity.getTransactionPoid().toString();
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, savedEntity.getDocRef()));
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), savedEntity.getDocRef()));
         return mapToResponse(savedEntity);
     }
 
