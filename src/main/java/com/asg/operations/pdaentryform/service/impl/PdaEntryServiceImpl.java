@@ -1778,10 +1778,10 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             LocalDate arrivalDate, LocalDate sailDate
     ) {
         try {
-            logger.info("[SP-18] PROC_PDA_BEFORE_SAVE_VAL_V2 - pdaPoid: {}, principalPoid: {}", pdaPoid, principalPoid);
+            logger.info("[SP-18] PROC_PDA_BEFORE_SAVE_VALIDATE - pdaPoid: {}, principalPoid: {}", pdaPoid, principalPoid);
 
             SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-                    .withProcedureName("PROC_PDA_BEFORE_SAVE_VAL_V2")
+                    .withProcedureName("PROC_PDA_BEFORE_SAVE_VALIDATE")
                     .withoutProcedureColumnMetaDataAccess()
                     .declareParameters(
                             new SqlParameter("P_LOGIN_GROUP_POID", Types.NUMERIC),
@@ -1793,35 +1793,30 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                             new SqlParameter("P_VESSEL_POID", Types.VARCHAR),
                             new SqlParameter("P_VOYAGE_NO", Types.VARCHAR),
                             new SqlParameter("P_VESSEL_VOYAGE_POID", Types.VARCHAR),
-                            new SqlParameter("P_ETA", Types.DATE),
-                            new SqlParameter("P_ETD", Types.DATE),
                             new SqlOutParameter("P_RESULT", Types.VARCHAR)
                     );
 
             Map<String, Object> inParams = new HashMap<>();
             inParams.put("P_LOGIN_GROUP_POID", groupPoid);
             inParams.put("P_LOGIN_COMPANY_POID", companyPoid);
-            inParams.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));  // NUMBER
-            inParams.put("P_PDA_POID", pdaPoid != null ? new BigDecimal(pdaPoid) : new BigDecimal("-999")); // NUMBER (-999 = new record per procedure logic)
-
-            inParams.put("P_PRINCIPAL_POID", principalPoid.toString());    // VARCHAR2
-            inParams.put("P_LINE_POID", linePoid.toString());              // VARCHAR2
-            inParams.put("P_VESSEL_POID", vesselPoid.toString());          // VARCHAR2
-            inParams.put("P_VOYAGE_NO", voyageNo);                         // VARCHAR2
-            inParams.put("P_VESSEL_VOYAGE_POID", voyagePoid.toString());   // VARCHAR2
-            inParams.put("P_ETA", arrivalDate != null ? java.sql.Date.valueOf(arrivalDate) : null);
-            inParams.put("P_ETD", sailDate != null ? java.sql.Date.valueOf(sailDate) : null);
+            inParams.put("P_LOGIN_USER_POID", new BigDecimal(userPoid));
+            inParams.put("P_PDA_POID", pdaPoid != null ? new BigDecimal(pdaPoid) : new BigDecimal("-999"));
+            inParams.put("P_PRINCIPAL_POID", principalPoid.toString());
+            inParams.put("P_LINE_POID", linePoid.toString());
+            inParams.put("P_VESSEL_POID", vesselPoid.toString());
+            inParams.put("P_VOYAGE_NO", voyageNo);
+            inParams.put("P_VESSEL_VOYAGE_POID", voyagePoid.toString());
 
             Map<String, Object> result = jdbcCall.execute(inParams);
 
             String spResult = (String) result.get("P_RESULT");
 
-            logger.info("[SP-18] PROC_PDA_BEFORE_SAVE_VAL_V2 - Completed. Result: {}", spResult);
+            logger.info("[SP-18] PROC_PDA_BEFORE_SAVE_VALIDATE - Completed. Result: {}", spResult);
 
             return spResult;
 
         } catch (Exception e) {
-            logger.error("[SP-18] PROC_PDA_BEFORE_SAVE_VAL_V2 - Error: {}", e.getMessage(), e);
+            logger.error("[SP-18] PROC_PDA_BEFORE_SAVE_VALIDATE - Error: {}", e.getMessage(), e);
             return null;
         }
     }
@@ -3181,6 +3176,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 response.put("documentSubmittedDate", cursorData.get("DOCUMENT_SUBMITTED_DATE"));
                 response.put("documentSubmittedBy", cursorData.get("DOCUMENT_SUBMITTED_BY"));
                 response.put("documentSubmittedStatus", cursorData.get("DOCUMENT_SUBMITTED_STATUS"));
+                response.put("verfieddate",entry.getVerificationAcceptedBy());
+                response.put("verfiedby",entry.getVerificationAcceptedDate());
             }
 
             return response;
