@@ -1475,7 +1475,7 @@ public class PdaEntryController {
     ) {
         String result = pdaEntryService.cancelPdaEntry(transactionPoid, UserContext.getGroupPoid(),
                 UserContext.getCompanyPoid(), UserContext.getUserPoid(), request.getCancelRemark());
-        return ApiResponse.success("PDA entry cancelled successfully", result);
+        return ApiResponse.success(result, null);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
