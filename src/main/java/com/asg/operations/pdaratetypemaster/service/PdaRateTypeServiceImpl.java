@@ -103,7 +103,7 @@ public class PdaRateTypeServiceImpl implements PdaRateTypeService {
         PdaRateTypeMaster rateType = mapper.toEntity(request, groupPoidBD, userId);
 
         PdaRateTypeMaster savedRateType = repository.save(rateType);
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), savedRateType.getRateTypePoid().toString());
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED.getDescription(), UserContext.getDocumentId(), savedRateType.getRateTypePoid().toString());
         return mapper.toResponse(savedRateType);
     }
 
