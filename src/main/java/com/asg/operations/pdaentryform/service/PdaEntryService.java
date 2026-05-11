@@ -179,7 +179,7 @@ public interface PdaEntryService {
     /**
      * Cancel PDA entry
      */
-    String cancelPdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String cancelRemark);
+    Map<String, Object> cancelPdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String cancelRemark);
 
     /**
      * Get submission log info
@@ -230,5 +230,17 @@ public interface PdaEntryService {
      * Validate PDA edit - check if PDA can be edited
      */
     PdaEditValidationResponse validatePdaEdit(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid);
+
+    /**
+     * Get charge tax information using PROC_GET_CHARGE_TAX_PER_V2
+     * Considers party tax slab and charge tax configuration
+     */
+    Map<String, Object> getChargeTaxInfoV2(Long companyPoid, String partyType, Long partyPoid, Long chargePoid);
+
+    /**
+     * Get principals for PDA entry (for print selection)
+     * Returns distinct principals from charge details of a PDA entry
+     */
+    List<Map<String, Object>> getPrincipalsForPdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid);
 
 }
