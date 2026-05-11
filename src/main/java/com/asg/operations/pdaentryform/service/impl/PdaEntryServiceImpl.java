@@ -3639,8 +3639,8 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entry.setDeleted("Y");
         entryHdrRepository.save(entry);
 
-        // Return the actual stored procedure result or success message
-        return (result != null && !result.trim().isEmpty()) ? result : "PDA entry cancelled successfully";
+        // Return the actual stored procedure result
+        return result;
     }
 
     @Override
