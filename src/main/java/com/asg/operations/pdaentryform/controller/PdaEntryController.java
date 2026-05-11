@@ -1473,9 +1473,17 @@ public class PdaEntryController {
             @PathVariable Long transactionPoid,
             @Valid @RequestBody CancelPdaRequest request
     ) {
-        String result = pdaEntryService.cancelPdaEntry(transactionPoid, UserContext.getGroupPoid(),
+        Map<String, Object> result = pdaEntryService.cancelPdaEntry(transactionPoid, UserContext.getGroupPoid(),
                 UserContext.getCompanyPoid(), UserContext.getUserPoid(), request.getCancelRemark());
-        return ApiResponse.success(result, null);
+        
+        String message = (String) result.get("message");
+        PdaEntryResponse updatedEntry = (PdaEntryResponse) result.get("updatedEntry");
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", message);
+        response.put("updatedEntry", updatedEntry);
+        
+        return ApiResponse.success(message, response);
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
@@ -1604,5 +1612,74 @@ public class PdaEntryController {
                 : Sort.Direction.ASC;
 
         return Sort.by(direction, field);
+    }
+
+    @Operation(
+            summary = "Get charge tax information (V2)",
+            description = "Gets tax percentage and tax POID for a specific charge and party combination using PROC_GET_CHARGE_TAX_PER_V2. " +
+                    "This version considers party tax slab configuration. " +
+                    "Used by frontend to calculate tax amounts in charge details."
+    )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/charge-tax-info-v2")
+    public ResponseEntity<?> getChargeTaxInfoV2(
+            @Parameter(description = "Charge POID", required = true)
+            @RequestParam Long chargePoid,
+            @Parameter(description = "Party POID", required = true)
+            @RequestParam Long partyPoid,
+            @Parameter(description = "Party Type (PRINCIPAL, SUPPLIER, CUSTOMER)", required = true)
+            @RequestParam String partyType
+    ) {
+        Map<String, Object> taxInfo = pdaEntryService.getChargeTaxInfoV2(
+                UserContext.getCompanyPoid(), partyType, partyPoid, chargePoid);
+
+        if (!taxInfo.isEmpty()) {
+            return ApiResponse.success("Tax information retrieved successfully", taxInfo);
+        }
+
+        return ApiResponse.success("No tax information found", new HashMap<>());
+    }
+
+    @Operation(
+            summary = "Get principals for PDA entry",
+            description = "Retrieves distinct principals from charge details of a PDA entry. " +
+                    "Used for print selection dropdown to show which principals are involved in the PDA. " +
+                    "Returns principal POID, code, and name.",
+            responses = {
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved principals",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = Map.class)
+                            )
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "404",
+                            description = "PDA entry not found",
+                            content = @Content(mediaType = "application/json")
+                    ),
+                    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                            responseCode = "401",
+                            description = "Unauthorized - Authentication required",
+                            content = @Content(mediaType = "application/json")
+                    )
+            },
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/{transactionPoid}/principals")
+    public ResponseEntity<?> getPrincipalsForPdaEntry(
+            @Parameter(description = "Transaction POID", required = true)
+            @PathVariable Long transactionPoid
+    ) {
+        List<Map<String, Object>> principals = pdaEntryService.getPrincipalsForPdaEntry(
+                transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("totalRecords", principals.size());
+        response.put("data", principals);
+
+        return ApiResponse.success("Principals retrieved successfully", response);
     }
 }
