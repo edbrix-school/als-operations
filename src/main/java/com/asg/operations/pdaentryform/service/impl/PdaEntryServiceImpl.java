@@ -275,6 +275,9 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entityManager.refresh(entry);
         logger.info("After initial save - salesmanPoid: {}", entry.getSalesmanPoid());
 
+        String key = entry.getTransactionPoid().toString();
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), entry.getDocRef()));
+
         // Call after save validation stored procedure
         callAfterSaveValidation(
                 groupPoid, companyPoid, userPoid, entry.getTransactionPoid(),
@@ -282,8 +285,6 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 entry.getVoyageNo(), entry.getVoyagePoid()
         );
 
-        String key = entry.getTransactionPoid().toString();
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, entry.getDocRef()));
         PdaEntryResponse response = toResponse(entry);
         return response;
     }
@@ -696,9 +697,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         // Validate required header fields
         validateRecalculateFields(entry);
 
-        // Clear existing charges before loading to prevent duplication
-        logger.info("Clearing existing charges before loading default charges for transactionPoid: {}", transactionPoid);
-        callClearChargeDetails(groupPoid, userPoid, companyPoid, transactionPoid);
+
 
         // Call stored procedure to load default charges
         String statusMessage = callLoadDefaultCharges(
@@ -3629,7 +3628,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         }
     }
 
-    public String cancelPdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String cancelRemark) {
+    public Map<String, Object> cancelPdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String cancelRemark) {
         PdaEntryHdr entry = entryHdrRepository.findByTransactionPoid(transactionPoid).orElseThrow(() -> new ResourceNotFoundException("PDA Entry not found"));
 
         String result = callCancelPdaEntry(groupPoid, companyPoid, userPoid, transactionPoid, cancelRemark);
@@ -3638,10 +3637,15 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         entry.setCancelRemark(cancelRemark);
         entry.setStatus("CANCELLED");
         entry.setDeleted("Y");
-        entryHdrRepository.save(entry);
+        entry = entryHdrRepository.save(entry);
+        entityManager.flush();
+        entityManager.refresh(entry);
 
-        // Return the actual stored procedure result or success message
-        return (result != null && !result.trim().isEmpty()) ? result : "PDA entry cancelled successfully";
+        // Return the actual stored procedure result along with updated entry
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", result);
+        response.put("updatedEntry", toResponse(entry));
+        return response;
     }
 
     @Override
@@ -4039,6 +4043,76 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             return errorResponse;
         }
     }
+    @Override
+    public Map<String, Object> getChargeTaxInfoV2(Long companyPoid, String partyType, Long partyPoid, Long chargePoid) {
+        try {
+            logger.info("[SP-V2] PROC_GET_CHARGE_TAX_PER_V2 - chargePoid: {}, partyType: {}, partyPoid: {}", chargePoid, partyType, partyPoid);
+
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("PROC_GET_CHARGE_TAX_PER_V2")
+                    .declareParameters(
+                            new SqlParameter("P_COMPANY_POID", Types.NUMERIC),
+                            new SqlParameter("P_PARTY_TYPE", Types.VARCHAR),
+                            new SqlParameter("P_PARTY_POID", Types.NUMERIC),
+                            new SqlParameter("P_CHARGE_POID", Types.NUMERIC),
+                            new SqlOutParameter("OUTDATA", OracleTypes.CURSOR)
+                    );
+
+            Map<String, Object> params = new HashMap<>();
+            params.put("P_COMPANY_POID", companyPoid);
+            params.put("P_PARTY_TYPE", partyType);
+            params.put("P_PARTY_POID", partyPoid);
+            params.put("P_CHARGE_POID", chargePoid);
+
+            Map<String, Object> result = jdbcCall.execute(params);
+            List<Map<String, Object>> taxDataList = (List<Map<String, Object>>) result.get("OUTDATA");
+
+            if (!taxDataList.isEmpty()) {
+                Map<String, Object> taxData = taxDataList.get(0);
+                logger.info("[SP-V2] PROC_GET_CHARGE_TAX_PER_V2 - Tax %: {}, Tax POID: {}",
+                        taxData.get("PERCENTAGE"), taxData.get("TAX_POID"));
+                return taxData;
+            }
+
+            logger.warn("[SP-V2] No tax info returned");
+            return new HashMap<>();
+
+        } catch (Exception e) {
+            logger.error("[SP-V2] PROC_GET_CHARGE_TAX_PER_V2 - Error: {}", e.getMessage(), e);
+            return new HashMap<>();
+        }
+    }
+
+
+    @Override
+    public List<Map<String, Object>> getPrincipalsForPdaEntry(Long transactionPoid, Long groupPoid, Long companyPoid) {
+        try {
+            logger.info("[SP-PRINCIPALS] Getting principals for PDA entry - transactionPoid: {}", transactionPoid);
+
+            String sql = "SELECT DISTINCT " +
+                    "SPM.PRINCIPAL_POID AS poid, " +
+                    "SPM.PRINCIPAL_CODE AS code, " +
+                    "SPM.PRINCIPAL_NAME AS description, " +
+                    "SPM.PRINCIPAL_POID AS value, " +
+                    "SPM.PRINCIPAL_NAME AS label, " +
+                    "0 AS seqNo " +
+                    "FROM PDA_ENTRY_DTL PED " +
+                    "INNER JOIN SHIP_PRINCIPAL_MASTER SPM " +
+                    "ON SPM.PRINCIPAL_POID = PED.PRINCIPAL_POID " +
+                    "WHERE PED.TRANSACTION_POID = ? " +
+                    "ORDER BY SPM.PRINCIPAL_NAME";
+
+            List<Map<String, Object>> principals = jdbcTemplate.queryForList(sql, transactionPoid);
+
+            logger.info("[SP-PRINCIPALS] Retrieved {} principals for transactionPoid: {}", principals.size(), transactionPoid);
+            return principals;
+
+        } catch (Exception e) {
+            logger.error("[SP-PRINCIPALS] Error getting principals for PDA entry: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
 }
 
 

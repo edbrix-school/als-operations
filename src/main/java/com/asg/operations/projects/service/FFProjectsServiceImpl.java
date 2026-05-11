@@ -171,7 +171,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         Long transactionPoid = projectsHdr.getTransactionPoid();
         
         String key = transactionPoid.toString();
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, projectsHdr.getDocRef()));
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), projectsHdr.getDocRef()));
 
 
         if (request.getChargeDetails() != null && !request.getChargeDetails().isEmpty()) {

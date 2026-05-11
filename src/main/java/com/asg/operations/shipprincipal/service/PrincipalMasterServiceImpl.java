@@ -243,7 +243,7 @@ public class PrincipalMasterServiceImpl implements PrincipalMasterService {
             }
         }
 
-        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED, UserContext.getDocumentId(), principalId.toString());
+        loggingService.createLogSummaryEntry(LogDetailsEnum.CREATED.getDescription(), UserContext.getDocumentId(), principalId.toString());
         log.info("Successfully created principal with id: {}", principalId);
         return getPrincipal(principalId);
     }

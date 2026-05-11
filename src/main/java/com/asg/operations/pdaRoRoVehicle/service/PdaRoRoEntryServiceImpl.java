@@ -77,7 +77,7 @@ public class PdaRoRoEntryServiceImpl implements PdaRoRoEntryService {
         entityManager.flush();
         entityManager.refresh(entity);
         String key = entity.getTransactionPoid().toString();
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED, entity.getDocRef()));
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), key, String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), entity.getDocRef()));
         return mapToResponse(entity);
     }
 
