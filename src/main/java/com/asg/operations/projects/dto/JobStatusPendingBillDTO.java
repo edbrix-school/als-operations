@@ -17,9 +17,10 @@ public class JobStatusPendingBillDTO {
     private String jobNo;
     private String blNo;
     private LocalDate etaAta;
-    private String viewBy;
-    private Long partyPoid;
-    private LovGetListDto partyLov;
+    private Long principalPoid;
+    private LovGetListDto principalLov;
+    private Long customerPoid;
+    private LovGetListDto customerLov;
     private String mode;
     private String jobStatus;
     private LocalDate completedOn;

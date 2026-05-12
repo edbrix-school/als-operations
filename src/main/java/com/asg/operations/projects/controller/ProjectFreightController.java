@@ -57,12 +57,11 @@ public class ProjectFreightController {
     @GetMapping("/job-status-pending-bills")
     public ResponseEntity<?> getJobStatusPendingBills(
             @PathVariable @NotNull Long projectId,
-            @RequestParam(required = false, defaultValue = "principal") String viewBy,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false, defaultValue = "asc") String sortDir) {
-        List<JobStatusPendingBillDTO> response = projectsService.getJobStatusPendingBills(projectId, viewBy, fromDate, toDate, sortBy, sortDir);
+        List<JobStatusPendingBillDTO> response = projectsService.getJobStatusPendingBills(projectId, fromDate, toDate, sortBy, sortDir);
         return ApiResponse.success("Job status and pending bills retrieved successfully", response);
     }
 
