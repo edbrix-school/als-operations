@@ -57,7 +57,7 @@ public class PdaEntryDtl extends BaseEntity {
     @Column(name = "PDA_RATE", nullable = false)
     @NotNull
     private BigDecimal pdaRate;
-
+   @AuditIgnore
     @Column(name = "TAX_POID")
     private Long taxPoid;
 
@@ -91,7 +91,7 @@ public class PdaEntryDtl extends BaseEntity {
     @Column(name = "DETAIL_FROM", length = 100)
     @Size(max = 100)
     private String detailFrom;
-
+    @AuditIgnore
     @Column(name = "MANUAL", length = 1)
     @Size(max = 1)
     private String manual;
