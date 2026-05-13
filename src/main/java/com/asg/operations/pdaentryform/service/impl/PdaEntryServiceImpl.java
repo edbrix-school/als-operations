@@ -2233,7 +2233,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         response.setOldChargeCode(entity.getOldChargeCode());
         response.setCreatedBy(entity.getCreatedBy());
         response.setCreatedDate(entity.getCreatedDate());
-        response.setLastModifiedBy(entity.getLastModifiedBy());
+        response.setLastModifiedBy(UserContext.getUserId());
         response.setLastModifiedDate(entity.getLastModifiedDate());
         return response;
     }
