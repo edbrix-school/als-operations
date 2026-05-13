@@ -36,6 +36,7 @@ public class PdaEntryDtl extends BaseEntity {
     @Column(name = "RATE_TYPE_POID")
     private Long rateTypePoid;
 
+    @AuditIgnore
     @Column(name = "PRINCIPAL_POID")
     private Long principalPoid;
 
