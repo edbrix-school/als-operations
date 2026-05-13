@@ -441,7 +441,8 @@ public class ProjectJobServiceImpl implements ProjectJobService {
 
     @Override
     public ProjectLoadInJobsProcResponse loadJobs(Long transactionPoid) {
-
-        return spRepostirory.callProjectsLoadInJobsProc(transactionPoid);
+        ProjectLoadInJobsProcResponse response=spRepostirory.callProjectsLoadInJobsProc(transactionPoid);
+        projectJobMapper.mapLoadJobsLOV(response);
+        return response;
     }
 }
