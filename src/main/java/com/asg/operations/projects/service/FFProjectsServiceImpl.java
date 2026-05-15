@@ -447,15 +447,12 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<JobStatusPendingBillDTO> getJobStatusPendingBills(Long transactionPoid, String viewBy, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
-        String normalizedViewBy = viewBy == null ? "principal" : viewBy.trim().toLowerCase(Locale.ROOT);
-        LocalDate from = fromDate != null ? fromDate : LocalDate.now();
-        LocalDate to = toDate != null ? toDate : from.plusDays(30);
+    public List<JobStatusPendingBillDTO> getJobStatusPendingBills(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
+        boolean filterByDate = fromDate != null && toDate != null;
 
         Map<Long, FFProjectsCtrlSheetDtl> controlSheetByJobId = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid).stream()
                 .filter(cs -> cs.getJobNoPoid() != null)
-                .filter(cs -> cs.getEtaAta() != null)
-                .filter(cs -> !cs.getEtaAta().isBefore(from) && !cs.getEtaAta().isAfter(to))
+                .filter(cs -> !filterByDate || (cs.getEtaAta() != null && !cs.getEtaAta().isBefore(fromDate) && !cs.getEtaAta().isAfter(toDate)))
                 .collect(Collectors.toMap(
                         FFProjectsCtrlSheetDtl::getJobNoPoid,
                         Function.identity(),
@@ -484,8 +481,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .map(entry -> mapToJobStatusPendingBillDTO(
                         entry.getValue(),
                         manifestById.get(entry.getKey()),
-                        bookedAmountByJobId.getOrDefault(entry.getKey(), BigDecimal.ZERO),
-                        normalizedViewBy))
+                        bookedAmountByJobId.getOrDefault(entry.getKey(), BigDecimal.ZERO)))
                 .collect(Collectors.toList());
         applySorting(result, sortBy, sortDir);
         assignDetRowIds(result, JobStatusPendingBillDTO::setDetRowId);
@@ -1398,25 +1394,22 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     }
 
     private JobStatusPendingBillDTO mapToJobStatusPendingBillDTO(FFProjectsCtrlSheetDtl cs, FFManifestHdr manifest,
-                                                                 BigDecimal bookedAmount, String viewBy) {
+                                                                 BigDecimal bookedAmount) {
         JobStatusPendingBillDTO dto = new JobStatusPendingBillDTO();
         dto.setJobId(cs.getJobNoPoid());
         dto.setJobNo(manifest != null ? manifest.getFfJobNo() : null);
         dto.setBlNo(manifest != null ? manifest.getMasterBlNo() : null);
         dto.setEtaAta(cs.getEtaAta());
-        dto.setViewBy(viewBy);
 
-        if ("customer".equals(viewBy)) {
-            Long customerPoid = manifest != null && manifest.getBillToCustomerPoid() != null
-                    ? manifest.getBillToCustomerPoid().longValue() : null;
-            dto.setPartyPoid(customerPoid);
-            dto.setPartyLov(getLov(customerPoid, "CUSTOMER_SUPPLIER_MASTER"));
-        } else {
-            Long principalPoid = manifest != null && manifest.getPrincipalPoid() != null
-                    ? manifest.getPrincipalPoid().longValue() : null;
-            dto.setPartyPoid(principalPoid);
-            dto.setPartyLov(getLov(principalPoid, "PRINCIPAL_MASTER"));
-        }
+        Long principalPoid = manifest != null && manifest.getPrincipalPoid() != null
+                ? manifest.getPrincipalPoid().longValue() : null;
+        dto.setPrincipalPoid(principalPoid);
+        dto.setPrincipalLov(getLov(principalPoid, "PRINCIPAL_MASTER"));
+
+        Long customerPoid = manifest != null && manifest.getBillToCustomerPoid() != null
+                ? manifest.getBillToCustomerPoid().longValue() : null;
+        dto.setCustomerPoid(customerPoid);
+        dto.setCustomerLov(getLov(customerPoid, "CUSTOMER_SUPPLIER_MASTER"));
 
         dto.setMode(manifest != null ? manifest.getShipmentMode() : cs.getFreightType());
         dto.setJobStatus(manifest != null ? manifest.getJobStatus() : null);

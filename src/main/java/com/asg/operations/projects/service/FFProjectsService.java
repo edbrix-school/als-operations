@@ -48,7 +48,7 @@ public interface FFProjectsService {
     /**
      * Get job status/pending bills rows
      */
-    List<JobStatusPendingBillDTO> getJobStatusPendingBills(Long transactionPoid, String viewBy, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
+    List<JobStatusPendingBillDTO> getJobStatusPendingBills(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir);
 
     /**
      * Get air freight jobs summary

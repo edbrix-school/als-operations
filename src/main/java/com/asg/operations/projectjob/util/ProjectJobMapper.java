@@ -9,13 +9,7 @@ import java.util.stream.Collectors;
 import com.asg.common.lib.dto.LovGetListDto;
 import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.utility.DateUtil;
-import com.asg.operations.projectjob.dto.FFManifestHdrDto;
-import com.asg.operations.projectjob.dto.FFManifestHdrDtoResponse;
-import com.asg.operations.projectjob.dto.ProjectJobAirPkgDto;
-import com.asg.operations.projectjob.dto.ProjectJobBayanDto;
-import com.asg.operations.projectjob.dto.ProjectJobChargesDto;
-import com.asg.operations.projectjob.dto.ProjectJobContainerDto;
-import com.asg.operations.projectjob.dto.ProjectJobTruckDto;
+import com.asg.operations.projectjob.dto.*;
 import com.asg.operations.projectjob.entity.FFManifestAirPkgDtl;
 import com.asg.operations.projectjob.entity.FFManifestBayanDtl;
 import com.asg.operations.projectjob.entity.FFManifestChargesDtl;
@@ -737,11 +731,8 @@ public class ProjectJobMapper {
         dto.setOtherDetails(entity.getOtherDetails());
         dto.setCustomsDeclarationNo(entity.getCustomsDeclarationNo());
         dto.setBillingTo(entity.getBillingTo());
-        try {
-            dto.setBillingToLov(entity.getBillingTo() != null ? getLov(Long.valueOf(entity.getBillingTo()), "FF_BILLING_TO") : null);
-        } catch (NumberFormatException e) {
-            dto.setBillingToLov(null);
-        }
+        dto.setBillingToLov(getLovByCode(entity.getBillingTo(), "FF_BILLING_TO"));
+
 
         dto.setMasterBlWeight(entity.getMasterBlWeight());
         dto.setMasterBlCurrency(entity.getMasterBlCurrency());
@@ -867,9 +858,30 @@ public class ProjectJobMapper {
         dto.setLastModifiedDate(entity.getLastModifiedDate());
     }
 
+    public void mapLoadJobsLOV(ProjectLoadInJobsProcResponse response) {
+        if (response == null || response.getHeader() == null) {
+            return;
+        }
+
+        response.setHeader(
+                response.getHeader().stream().map(val -> {
+                    val.setBillingToLov(
+                            getLovByCode(val.getBillingTo(), "FF_BILLING_TO")
+                    );
+                    return val;
+                }).toList()
+        );
+
+    }
+
     private LovGetListDto getLov(Long poid, String lovName) {
         if (poid == null) return null;
         return lovDataService.getDetailsByPoidAndLovNameFast(poid, lovName);
+    }
+
+    private LovGetListDto getLovByCode(String code, String lovName) {
+        if (code == null || code.isEmpty()) return null;
+        return lovDataService.getLovItemByCodeFast(code, lovName);
     }
 
     private Long longConvertion(BigDecimal previousValue){
