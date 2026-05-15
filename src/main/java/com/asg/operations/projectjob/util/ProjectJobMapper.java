@@ -1,18 +1,36 @@
 package com.asg.operations.projectjob.util;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.apache.poi.util.StringUtil;
+import org.springframework.stereotype.Component;
+
 import com.asg.common.lib.dto.LovGetListDto;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.utility.DateUtil;
-import com.asg.operations.projectjob.dto.*;
-import com.asg.operations.projectjob.entity.*;
-import lombok.RequiredArgsConstructor;
-import org.apache.poi.util.StringUtil;
-import org.springframework.stereotype.Component;
+import com.asg.operations.projectjob.dto.FFManifestHdrDto;
+import com.asg.operations.projectjob.dto.FFManifestHdrDtoResponse;
+import com.asg.operations.projectjob.dto.ProjectJobAirPkgDto;
+import com.asg.operations.projectjob.dto.ProjectJobBayanDto;
+import com.asg.operations.projectjob.dto.ProjectJobChargesDto;
+import com.asg.operations.projectjob.dto.ProjectJobContainerDto;
+import com.asg.operations.projectjob.dto.ProjectJobTruckDto;
+import com.asg.operations.projectjob.dto.ProjectLoadInJobsProcResponse;
+import com.asg.operations.projectjob.entity.FFManifestAirPkgDtl;
+import com.asg.operations.projectjob.entity.FFManifestBayanDtl;
+import com.asg.operations.projectjob.entity.FFManifestChargesDtl;
+import com.asg.operations.projectjob.entity.FFManifestContainerDtl;
+import com.asg.operations.projectjob.entity.FFManifestHdr;
+import com.asg.operations.projectjob.entity.FFManifestTruckDtl;
 
-import java.math.BigDecimal;
-import java.util.*;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
@@ -779,7 +797,7 @@ public class ProjectJobMapper {
 
         dto.setFfShJob(entity.getFfShJob());
         dto.setBillToCustomerPoid(entity.getBillToCustomerPoid());
-        dto.setBillToCustomerLov(getLov(entity.getBillToCustomerPoid(), "CUSTOMER_SUPPLIER_MASTER"));
+        dto.setBillToCustomerLov(getCustomerSupplierLov(entity.getBillToCustomerPoid(),"C"));
 
         dto.setPrincipalManual(entity.getPrincipalManual());
         dto.setMotherVslFinalDelv(entity.getMotherVslFinalDelv());
@@ -864,39 +882,84 @@ public class ProjectJobMapper {
                     );
 
                     String billingCode = val.getBillingToLov().getCode();
-                    LovGetListDto projectCustomerLov = null;
-                    if (billingCode != null && !billingCode.isBlank()) {
-
-                        Map<String, Object> lovResponse = lovDataService.getLovList(
-                                billingCode,
-                                UserContext.getGroupPoid(),
-                                UserContext.getCompanyPoid(),
-                                UserContext.getUserPoid(),
-                                "CUSTOMER_SUPPLIER_MASTER",
-                                0,
-                                1,
-                                null, null, null,
-                                Collections.singletonList(val.getProjectCustomerPoid())
-                        );
-
-                        Object defaultValuesObj = lovResponse.get("defaultValues");
-
-                        if (defaultValuesObj instanceof List<?> defaultValues && !defaultValues.isEmpty()) {
-                            LovGetListDto lovRes = (LovGetListDto) defaultValues.get(0);
-                            projectCustomerLov = lovRes != null ? lovRes : new LovGetListDto(val.getProjectCustomerPoid(), (String) null, (String) null, (Long) null, (String) null, (Integer) null, (String) null, (String) null);
-                        }
-
-                    } else {
-                        projectCustomerLov = lovDataService.getDetailsByPoidAndLovNameFast(
-                                val.getProjectCustomerPoid(),
-                                "CUSTOMER_SUPPLIER_MASTER"
-                        );
-                    }
+                    LovGetListDto projectCustomerLov = getCustomerSupplierLov(
+                            val.getProjectCustomerPoid(),
+                            billingCode
+                    );
                     val.setProjectCustomerLov(projectCustomerLov);
                     return val;
                 }).toList()
         );
 
+    }
+
+    public LovGetListDto getCustomerSupplierLov(Long poid, String filter) {
+
+        if (poid == null) {
+            return null;
+        }
+
+        if (filter != null && !filter.isBlank()) {
+
+            LovGetListDto billingLov = getLovFromBillingCode(
+                    filter,
+                    poid
+            );
+
+            if (billingLov != null) {
+                return billingLov;
+            }
+        }
+
+        LovGetListDto lov = lovDataService.getDetailsByPoidAndLovNameFast(
+                poid,
+                "CUSTOMER_SUPPLIER_MASTER"
+        );
+
+        return lov != null
+                ? lov
+                : new LovGetListDto(
+                poid,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private LovGetListDto getLovFromBillingCode(String filter,
+                                                Long poid) {
+
+        Map<String, Object> lovResponse = lovDataService.getLovList(
+                filter,
+                UserContext.getGroupPoid(),
+                UserContext.getCompanyPoid(),
+                UserContext.getUserPoid(),
+                "CUSTOMER_SUPPLIER_MASTER",
+                0,
+                0,
+                null,
+                null,
+                null,
+                Collections.singletonList(poid)
+        );
+
+        Object defaultValuesObj = lovResponse.get("defaultValues");
+
+        if (defaultValuesObj instanceof List<?> defaultValues
+                && !defaultValues.isEmpty()) {
+
+            Object lovObj = defaultValues.get(0);
+
+            if (lovObj instanceof LovGetListDto lovRes) {
+                return lovRes;
+            }
+        }
+
+        return null;
     }
 
     private LovGetListDto getLov(Long poid, String lovName) {

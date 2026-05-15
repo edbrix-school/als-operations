@@ -286,41 +286,13 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                 .map(h -> h.getProjectCustomerPoid())
                 .ifPresent(response::setProjectCustomerPoid);
 
-        LovGetListDto projectLov = null;
-        if (response.getProjectCustomerPoid() != null) {
-
             String billingCode = (response.getBillingToLov() != null)
                     ? response.getBillingToLov().getCode()
                     : null;
-
-            if (billingCode != null && !billingCode.isBlank()) {
-
-                Map<String, Object> lovResponse = lovDataService.getLovList(
-                        billingCode,
-                        UserContext.getGroupPoid(),
-                        UserContext.getCompanyPoid(),
-                        UserContext.getUserPoid(),
-                        "CUSTOMER_SUPPLIER_MASTER",
-                        0,
-                        1,
-                        null, null, null,
-                        Collections.singletonList(response.getProjectCustomerPoid())
-                );
-
-                Object defaultValuesObj = lovResponse.get("defaultValues");
-
-                if (defaultValuesObj instanceof List<?> defaultValues && !defaultValues.isEmpty()) {
-                    LovGetListDto lovRes = (LovGetListDto) defaultValues.get(0);
-                    projectLov = lovRes != null ? lovRes : new LovGetListDto(response.getProjectCustomerPoid(), (String) null, (String) null, (Long) null, (String) null, (Integer) null, (String) null, (String) null);
-                }
-
-            } else {
-                projectLov = lovDataService.getDetailsByPoidAndLovNameFast(
-                        response.getProjectCustomerPoid(),
-                        "CUSTOMER_SUPPLIER_MASTER"
-                );
-            }
-        }
+        LovGetListDto projectLov = projectJobMapper.getCustomerSupplierLov(
+                response.getProjectCustomerPoid(),
+                billingCode
+        );
 
 
         List<FFManifestAirPkgDtl> airPkg = airPkgRepository.findByTransactionPoid(transactionPoid);
