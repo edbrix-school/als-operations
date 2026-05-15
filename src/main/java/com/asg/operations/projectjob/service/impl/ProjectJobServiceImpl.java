@@ -113,7 +113,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         saveDetails(refreshedHdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
                 request.getContainers(), request.getTruckDetails());
 
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(),savedHdr.getTransactionPoid().toString(), String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), savedHdr.getDocRef()));
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedHdr.getTransactionPoid().toString(), String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), savedHdr.getDocRef()));
 
         if (ctrlSheetRow != null) {
             ctrlSheetRow.setJobNoPoid(refreshedHdr.getTransactionPoid());
@@ -288,12 +288,39 @@ public class ProjectJobServiceImpl implements ProjectJobService {
 
         LovGetListDto projectLov = null;
         if (response.getProjectCustomerPoid() != null) {
-            projectLov = lovDataService.getDetailsByPoidAndLovNameFast(
-                    response.getProjectCustomerPoid(),
-                    "CUSTOMER_SUPPLIER_MASTER"
-            );
-        }
 
+            String billingCode = (response.getBillingToLov() != null)
+                    ? response.getBillingToLov().getCode()
+                    : null;
+
+            if (billingCode != null && !billingCode.isBlank()) {
+
+                Map<String, Object> lovResponse = lovDataService.getLovList(
+                        billingCode,
+                        UserContext.getGroupPoid(),
+                        UserContext.getCompanyPoid(),
+                        UserContext.getUserPoid(),
+                        "CUSTOMER_SUPPLIER_MASTER",
+                        0,
+                        1,
+                        null, null, null,
+                        Collections.singletonList(response.getProjectCustomerPoid())
+                );
+
+                Object defaultValuesObj = lovResponse.get("defaultValues");
+
+                if (defaultValuesObj instanceof List<?> defaultValues && !defaultValues.isEmpty()) {
+                    LovGetListDto lovRes = (LovGetListDto) defaultValues.get(0);
+                    projectLov = lovRes != null ? lovRes : new LovGetListDto(response.getProjectCustomerPoid(), (String) null, (String) null, (Long) null, (String) null, (Integer) null, (String) null, (String) null);
+                }
+
+            } else {
+                projectLov = lovDataService.getDetailsByPoidAndLovNameFast(
+                        response.getProjectCustomerPoid(),
+                        "CUSTOMER_SUPPLIER_MASTER"
+                );
+            }
+        }
 
 
         List<FFManifestAirPkgDtl> airPkg = airPkgRepository.findByTransactionPoid(transactionPoid);
@@ -441,7 +468,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
 
     @Override
     public ProjectLoadInJobsProcResponse loadJobs(Long transactionPoid) {
-        ProjectLoadInJobsProcResponse response=spRepostirory.callProjectsLoadInJobsProc(transactionPoid);
+        ProjectLoadInJobsProcResponse response = spRepostirory.callProjectsLoadInJobsProc(transactionPoid);
         projectJobMapper.mapLoadJobsLOV(response);
         return response;
     }
