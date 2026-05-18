@@ -797,8 +797,7 @@ public class ProjectJobMapper {
 
         dto.setFfShJob(entity.getFfShJob());
         dto.setBillToCustomerPoid(entity.getBillToCustomerPoid());
-        dto.setBillToCustomerLov(getCustomerSupplierLov(entity.getBillToCustomerPoid(),"C"));
-
+        dto.setBillToCustomerLov(getCustomerSupplierLov(entity.getBillToCustomerPoid(),entity.getBillingTo()));
         dto.setPrincipalManual(entity.getPrincipalManual());
         dto.setMotherVslFinalDelv(entity.getMotherVslFinalDelv());
 
@@ -940,7 +939,7 @@ public class ProjectJobMapper {
                 UserContext.getUserPoid(),
                 "CUSTOMER_SUPPLIER_MASTER",
                 0,
-                0,
+                1,
                 null,
                 null,
                 null,

@@ -39,7 +39,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -286,9 +289,9 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                 .map(h -> h.getProjectCustomerPoid())
                 .ifPresent(response::setProjectCustomerPoid);
 
-            String billingCode = (response.getBillingToLov() != null)
-                    ? response.getBillingToLov().getCode()
-                    : null;
+        String billingCode = (response.getBillingToLov() != null)
+                ? response.getBillingToLov().getCode()
+                : null;
         LovGetListDto projectLov = projectJobMapper.getCustomerSupplierLov(
                 response.getProjectCustomerPoid(),
                 billingCode

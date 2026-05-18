@@ -5,6 +5,7 @@ import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LovDataService;
 import com.asg.operations.projectjob.entity.FFManifestHdr;
 import com.asg.operations.projectjob.repository.FFManifestHdrRepository;
+import com.asg.operations.projectjob.util.ProjectJobMapper;
 import com.asg.operations.projects.dto.*;
 import com.asg.operations.projects.entity.FFProjectsChargesDtl;
 import com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl;
@@ -22,6 +23,9 @@ public class ProjectMapper {
 
     @Autowired
     private LovDataService lovDataService;
+
+    @Autowired
+    private ProjectJobMapper projectJobMapper;
 
     @Autowired
     private FFManifestHdrRepository manifestHdrRepository;
@@ -155,9 +159,9 @@ public class ProjectMapper {
                 .billingTo(hdr.getBillingTo())
                 .billingToLov(getLovByCode(hdr.getBillingTo(), "FF_BILLING_TO"))
                 .billingPartyPoid(hdr.getBillingPartyPoid())
-                .billingPartyLov(getLov(hdr.getBillingPartyPoid(), "CUSTOMER_SUPPLIER_MASTER"))
+                .billingPartyLov(projectJobMapper.getCustomerSupplierLov(hdr.getBillingPartyPoid(),hdr.getBillingTo()))
                 .projectCustomerPoid(hdr.getProjectCustomerPoid())
-                .projectCustomerLov(getLov(hdr.getProjectCustomerPoid(), "CUSTOMER_SUPPLIER_MASTER"))
+                .projectCustomerLov(projectJobMapper.getCustomerSupplierLov(hdr.getProjectCustomerPoid(),hdr.getBillingTo()))
                 .principalPoid(hdr.getPrincipalPoid())
                 .principalLov(getLov(hdr.getPrincipalPoid(), "PRINCIPAL_MASTER"))
                 .shipmentMode(hdr.getShipmentMode() != null ? List.of(hdr.getShipmentMode().split(",")) : List.of())
