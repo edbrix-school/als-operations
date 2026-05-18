@@ -16,6 +16,7 @@ public class ProjectLoadHdrRow {
     private LovGetListDto billingToLov;
     private Long billingPartyPoid;
     private Long projectCustomerPoid;
+    private LovGetListDto projectCustomerLov;
     private Long principalPoid;
     private Long salesmanPoid;
     private Long linePoid;

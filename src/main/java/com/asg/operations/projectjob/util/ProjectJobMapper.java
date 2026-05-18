@@ -2,23 +2,35 @@ package com.asg.operations.projectjob.util;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.poi.util.StringUtil;
+import org.springframework.stereotype.Component;
+
 import com.asg.common.lib.dto.LovGetListDto;
+import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.utility.DateUtil;
-import com.asg.operations.projectjob.dto.*;
+import com.asg.operations.projectjob.dto.FFManifestHdrDto;
+import com.asg.operations.projectjob.dto.FFManifestHdrDtoResponse;
+import com.asg.operations.projectjob.dto.ProjectJobAirPkgDto;
+import com.asg.operations.projectjob.dto.ProjectJobBayanDto;
+import com.asg.operations.projectjob.dto.ProjectJobChargesDto;
+import com.asg.operations.projectjob.dto.ProjectJobContainerDto;
+import com.asg.operations.projectjob.dto.ProjectJobTruckDto;
+import com.asg.operations.projectjob.dto.ProjectLoadInJobsProcResponse;
 import com.asg.operations.projectjob.entity.FFManifestAirPkgDtl;
 import com.asg.operations.projectjob.entity.FFManifestBayanDtl;
 import com.asg.operations.projectjob.entity.FFManifestChargesDtl;
 import com.asg.operations.projectjob.entity.FFManifestContainerDtl;
 import com.asg.operations.projectjob.entity.FFManifestHdr;
 import com.asg.operations.projectjob.entity.FFManifestTruckDtl;
+
 import lombok.RequiredArgsConstructor;
-import org.apache.poi.util.StringUtil;
-import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
@@ -154,7 +166,7 @@ public class ProjectJobMapper {
         entity.setCargoDescription(dto.getCargoDescription());
         entity.setContainerSealNo(dto.getContainerSealNo());
         entity.setContainerIsoCode(dto.getContainerIsoCode());
-        entity.setContainerTypePoid(dto.getContainerTypePoid() != null ? dto.getContainerTypePoid(): null);
+        entity.setContainerTypePoid(dto.getContainerTypePoid() != null ? dto.getContainerTypePoid() : null);
         entity.setContainerSize(dto.getContainerSize());
         entity.setQuantity(dto.getQuantity());
 
@@ -167,7 +179,7 @@ public class ProjectJobMapper {
         entity.setNoOfPacks(dto.getNoOfPacks());
         entity.setPackUnit(dto.getPackUnit());
 
-        entity.setComodityPoid(dto.getComodityPoid() != null ?dto.getComodityPoid() : null);
+        entity.setComodityPoid(dto.getComodityPoid() != null ? dto.getComodityPoid() : null);
 
         entity.setDestinationPortPoid(
                 dto.getDestinationPortPoid() != null ? dto.getDestinationPortPoid() : null);
@@ -235,7 +247,7 @@ public class ProjectJobMapper {
         dto.setDetRowId(entity.getDetRowId());
 
         dto.setNoOfPacks(entity.getNoOfPacks());
-        dto.setPackUnit(StringUtil.isBlank(entity.getPackUnit())?null:entity.getPackUnit());
+        dto.setPackUnit(StringUtil.isBlank(entity.getPackUnit()) ? null : entity.getPackUnit());
         dto.setTotalWeight(entity.getTotalWeight());
         dto.setTotalVolume(entity.getTotalVolume());
 
@@ -344,7 +356,7 @@ public class ProjectJobMapper {
         dto.setContainerSealNo(entity.getContainerSealNo());
         dto.setContainerIsoCode(entity.getContainerIsoCode());
         dto.setContainerTypePoid(entity.getContainerTypePoid());
-        dto.setContainerTypeLov(getLov(longConvertion(entity.getContainerTypePoid()),"CONTAINER_TYPE_MASTER_FF"));
+        dto.setContainerTypeLov(getLov(longConvertion(entity.getContainerTypePoid()), "CONTAINER_TYPE_MASTER_FF"));
         dto.setContainerSize(entity.getContainerSize());
         dto.setQuantity(entity.getQuantity());
         dto.setGrsVolume(entity.getGrsVolume());
@@ -633,10 +645,10 @@ public class ProjectJobMapper {
         dto.setFfJobType(entity.getFfJobType());
 
         dto.setLinePoid(entity.getLinePoid());
-        dto.setLineLov(getLov(entity.getLinePoid(),"LINE_MASTER"));
+        dto.setLineLov(getLov(entity.getLinePoid(), "LINE_MASTER"));
         dto.setQuoatationPoid(entity.getQuoatationPoid());
         dto.setPrincipalPoid(entity.getPrincipalPoid());
-        dto.setPrincipalLov(getLov(entity.getPrincipalPoid(),"PRINCIPAL_MASTER"));
+        dto.setPrincipalLov(getLov(entity.getPrincipalPoid(), "PRINCIPAL_MASTER"));
 
         dto.setMasterBlNo(entity.getMasterBlNo());
         dto.setHouseBlNo(entity.getHouseBlNo());
@@ -648,7 +660,7 @@ public class ProjectJobMapper {
         dto.setConsignmentType(entity.getConsignmentType());
 
         dto.setSalesmanPoid(entity.getSalesmanPoid());
-        dto.setSalesmanLov(getLov(entity.getSalesmanPoid(),"SALESMAN"));
+        dto.setSalesmanLov(getLov(entity.getSalesmanPoid(), "SALESMAN"));
         dto.setAgentPoid(entity.getAgentPoid());
         dto.setAgentAcctNo(entity.getAgentAcctNo());
         dto.setAgentIataNo(entity.getAgentIataNo());
@@ -675,9 +687,9 @@ public class ProjectJobMapper {
         dto.setFeederVslArrivalDate(entity.getFeederVslArrivalDate());
 
         dto.setFeederLoadportPoid(entity.getFeederLoadportPoid());
-        dto.setFeederLoadPortLov(getLov(entity.getFeederLoadportPoid(),"PORT_MASTER"));
+        dto.setFeederLoadPortLov(getLov(entity.getFeederLoadportPoid(), "PORT_MASTER"));
         dto.setFeederUnloadportPoid(entity.getFeederUnloadportPoid());
-        dto.setFeederUnloadPortLov(getLov(entity.getFeederUnloadportPoid(),"PORT_MASTER"));
+        dto.setFeederUnloadPortLov(getLov(entity.getFeederUnloadportPoid(), "PORT_MASTER"));
 
         dto.setFlightNo(entity.getFlightNo());
         dto.setFlightDate(entity.getFlightDate());
@@ -691,14 +703,14 @@ public class ProjectJobMapper {
         dto.setConsigneeAddressPoid(entity.getConsigneeAddressPoid());
 
         dto.setNotifyPoid1(entity.getNotifyPoid1());
-        dto.setNotifyLov1(getLov(entity.getNotifyPoid1(),"ADDRESS_MASTER_PROJECTS_HX1"));
+        dto.setNotifyLov1(getLov(entity.getNotifyPoid1(), "ADDRESS_MASTER_PROJECTS_HX1"));
         dto.setNotifyAddressPoid1(entity.getNotifyAddressPoid1());
         dto.setNotifyPoid2(entity.getNotifyPoid2());
-        dto.setNotifyLov2(getLov(entity.getNotifyPoid2(),"ADDRESS_MASTER_PROJECTS_HX1"));
+        dto.setNotifyLov2(getLov(entity.getNotifyPoid2(), "ADDRESS_MASTER_PROJECTS_HX1"));
         dto.setNotifyAddressPoid2(entity.getNotifyAddressPoid2());
 
         dto.setCanRequireToSent(entity.getCanRequireToSent());
-        List<Long> commodityPoids=Optional.ofNullable(entity.getComodityPoid())
+        List<Long> commodityPoids = Optional.ofNullable(entity.getComodityPoid())
                 .filter(s -> !s.trim().isEmpty())
                 .map(s -> Arrays.stream(s.split(","))
                         .map(String::trim)
@@ -707,8 +719,8 @@ public class ProjectJobMapper {
                 .orElse(List.of());
         dto.setCommodityPoids(commodityPoids);
         dto.setCommodityLovs(commodityPoids.stream().
-                map(s->getLov(s,"COMODITY")).toList()
-                );
+                map(s -> getLov(s, "COMODITY")).toList()
+        );
         dto.setCargoDescription(entity.getCargoDescription());
         dto.setMarkNumbers(entity.getMarkNumbers());
 
@@ -785,7 +797,7 @@ public class ProjectJobMapper {
 
         dto.setFfShJob(entity.getFfShJob());
         dto.setBillToCustomerPoid(entity.getBillToCustomerPoid());
-        dto.setBillToCustomerLov(getLov(entity.getBillToCustomerPoid(),"CUSTOMER_SUPPLIER_MASTER"));
+        dto.setBillToCustomerLov(getCustomerSupplierLov(entity.getBillToCustomerPoid(),"C"));
 
         dto.setPrincipalManual(entity.getPrincipalManual());
         dto.setMotherVslFinalDelv(entity.getMotherVslFinalDelv());
@@ -795,7 +807,7 @@ public class ProjectJobMapper {
         dto.setDeliveryTo(entity.getDeliveryTo());
         dto.setProjectPoid(entity.getProjectPoid());
         dto.setProjectLov(
-                getLov(entity.getProjectPoid(),"PROJECTS")
+                getLov(entity.getProjectPoid(), "PROJECTS")
         );
 
         dto.setBlIssueDate(entity.getBlIssueDate());
@@ -868,10 +880,86 @@ public class ProjectJobMapper {
                     val.setBillingToLov(
                             getLovByCode(val.getBillingTo(), "FF_BILLING_TO")
                     );
+
+                    String billingCode = val.getBillingToLov().getCode();
+                    LovGetListDto projectCustomerLov = getCustomerSupplierLov(
+                            val.getProjectCustomerPoid(),
+                            billingCode
+                    );
+                    val.setProjectCustomerLov(projectCustomerLov);
                     return val;
                 }).toList()
         );
 
+    }
+
+    public LovGetListDto getCustomerSupplierLov(Long poid, String filter) {
+
+        if (poid == null) {
+            return null;
+        }
+
+        if (filter != null && !filter.isBlank()) {
+
+            LovGetListDto billingLov = getLovFromBillingCode(
+                    filter,
+                    poid
+            );
+
+            if (billingLov != null) {
+                return billingLov;
+            }
+        }
+
+        LovGetListDto lov = lovDataService.getDetailsByPoidAndLovNameFast(
+                poid,
+                "CUSTOMER_SUPPLIER_MASTER"
+        );
+
+        return lov != null
+                ? lov
+                : new LovGetListDto(
+                poid,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private LovGetListDto getLovFromBillingCode(String filter,
+                                                Long poid) {
+
+        Map<String, Object> lovResponse = lovDataService.getLovList(
+                filter,
+                UserContext.getGroupPoid(),
+                UserContext.getCompanyPoid(),
+                UserContext.getUserPoid(),
+                "CUSTOMER_SUPPLIER_MASTER",
+                0,
+                0,
+                null,
+                null,
+                null,
+                Collections.singletonList(poid)
+        );
+
+        Object defaultValuesObj = lovResponse.get("defaultValues");
+
+        if (defaultValuesObj instanceof List<?> defaultValues
+                && !defaultValues.isEmpty()) {
+
+            Object lovObj = defaultValues.get(0);
+
+            if (lovObj instanceof LovGetListDto lovRes) {
+                return lovRes;
+            }
+        }
+
+        return null;
     }
 
     private LovGetListDto getLov(Long poid, String lovName) {
@@ -884,8 +972,8 @@ public class ProjectJobMapper {
         return lovDataService.getLovItemByCodeFast(code, lovName);
     }
 
-    private Long longConvertion(BigDecimal previousValue){
-        if(previousValue!=null){
+    private Long longConvertion(BigDecimal previousValue) {
+        if (previousValue != null) {
             return previousValue.longValue();
         }
         return null;

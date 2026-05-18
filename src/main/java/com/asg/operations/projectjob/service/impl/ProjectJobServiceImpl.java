@@ -113,7 +113,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
         saveDetails(refreshedHdr.getTransactionPoid(), request.getAirPackages(), request.getBayanDetails(), request.getCharges(),
                 request.getContainers(), request.getTruckDetails());
 
-        loggingService.createLogSummaryEntry(UserContext.getDocumentId(),savedHdr.getTransactionPoid().toString(), String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), savedHdr.getDocRef()));
+        loggingService.createLogSummaryEntry(UserContext.getDocumentId(), savedHdr.getTransactionPoid().toString(), String.format("%s %s", LogDetailsEnum.CREATED.getDescription(), savedHdr.getDocRef()));
 
         if (ctrlSheetRow != null) {
             ctrlSheetRow.setJobNoPoid(refreshedHdr.getTransactionPoid());
@@ -286,14 +286,13 @@ public class ProjectJobServiceImpl implements ProjectJobService {
                 .map(h -> h.getProjectCustomerPoid())
                 .ifPresent(response::setProjectCustomerPoid);
 
-        LovGetListDto projectLov = null;
-        if (response.getProjectCustomerPoid() != null) {
-            projectLov = lovDataService.getDetailsByPoidAndLovNameFast(
-                    response.getProjectCustomerPoid(),
-                    "CUSTOMER_SUPPLIER_MASTER"
-            );
-        }
-
+            String billingCode = (response.getBillingToLov() != null)
+                    ? response.getBillingToLov().getCode()
+                    : null;
+        LovGetListDto projectLov = projectJobMapper.getCustomerSupplierLov(
+                response.getProjectCustomerPoid(),
+                billingCode
+        );
 
 
         List<FFManifestAirPkgDtl> airPkg = airPkgRepository.findByTransactionPoid(transactionPoid);
@@ -441,7 +440,7 @@ public class ProjectJobServiceImpl implements ProjectJobService {
 
     @Override
     public ProjectLoadInJobsProcResponse loadJobs(Long transactionPoid) {
-        ProjectLoadInJobsProcResponse response=spRepostirory.callProjectsLoadInJobsProc(transactionPoid);
+        ProjectLoadInJobsProcResponse response = spRepostirory.callProjectsLoadInJobsProc(transactionPoid);
         projectJobMapper.mapLoadJobsLOV(response);
         return response;
     }

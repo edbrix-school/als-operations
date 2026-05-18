@@ -130,7 +130,7 @@ public class PdaEntryController {
     @GetMapping("/{transactionPoid}")
     public ResponseEntity<?> getPdaEntryById(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         PdaEntryResponse response = pdaEntryService.getPdaEntryById(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
         loggingService.createLogSummaryEntry(LogDetailsEnum.VIEWED, UserContext.getDocumentId(), transactionPoid.toString());
@@ -218,7 +218,7 @@ public class PdaEntryController {
     @PutMapping("/{transactionPoid}")
     public ResponseEntity<?> updatePdaEntry(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Parameter(description = "PDA Entry request", required = true)
             @Valid @RequestBody PdaEntryRequest request
     ) {
@@ -259,7 +259,7 @@ public class PdaEntryController {
     @DeleteMapping("/{transactionPoid}")
     public ResponseEntity<?> deletePdaEntry(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Valid @RequestBody(required = false) DeleteReasonDto deleteReasonDto
     ) {
         pdaEntryService.deletePdaEntry(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(),deleteReasonDto);
@@ -297,7 +297,7 @@ public class PdaEntryController {
     @GetMapping("/{transactionPoid}/charge-details")
     public ResponseEntity<?> getChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         List<PdaEntryChargeDetailResponse> response = pdaEntryService.getChargeDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
         return ApiResponse.success("Charge details retrieved successfully", response);
@@ -345,7 +345,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/charge-details/bulk-save")
     public ResponseEntity<?> bulkSaveChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Parameter(description = "Bulk save request with charge details and delete IDs", required = true)
             @Valid @RequestBody BulkSaveChargeDetailsRequest request
     ) {
@@ -383,8 +383,8 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PutMapping("/{transactionPoid}/charge-details/{detRowId}")
     public ResponseEntity<?> updateChargeDetail(
-            @PathVariable Long transactionPoid,
-            @PathVariable Long detRowId,
+            @PathVariable("transactionPoid") Long transactionPoid,
+            @PathVariable("detRowId") Long detRowId,
             @Valid @RequestBody PdaEntryChargeDetailRequest request
     ) {
         PdaEntryChargeDetailResponse response = pdaEntryService.updateChargeDetail(
@@ -424,9 +424,9 @@ public class PdaEntryController {
     @DeleteMapping("/{transactionPoid}/charge-details/{detRowId}")
     public ResponseEntity<?> deleteChargeDetail(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Parameter(description = "Detail row ID", required = true)
-            @PathVariable Long detRowId
+            @PathVariable("detRowId") Long detRowId
     ) {
         pdaEntryService.deleteChargeDetail(transactionPoid, detRowId, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserId());
         return ApiResponse.success("Charge detail deleted successfully", null);
@@ -466,7 +466,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/charge-details/clear")
     public ResponseEntity<?> clearChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         String message = pdaEntryService.clearChargeDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success(message, null);
@@ -513,7 +513,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/recalculate")
     public ResponseEntity<?> recalculateChargeDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         List<PdaEntryChargeDetailResponse> response = pdaEntryService.recalculateChargeDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Charge details recalculated successfully", response);
@@ -560,7 +560,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/load-default-charges")
     public ResponseEntity<?> loadDefaultCharges(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         LoadDefaultChargesResponse response = pdaEntryService.loadDefaultCharges(
                 transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()
@@ -599,7 +599,7 @@ public class PdaEntryController {
     @GetMapping("/{transactionPoid}/vehicle-details")
     public ResponseEntity<?> getVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         List<PdaEntryVehicleDetailResponse> response = pdaEntryService.getVehicleDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
         return ApiResponse.success("Vehicle details retrieved successfully", response);
@@ -645,7 +645,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/vehicle-details/bulk-save")
     public ResponseEntity<?> bulkSaveVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Parameter(description = "Bulk save request with vehicle details and delete IDs", required = true)
             @Valid @RequestBody BulkSaveVehicleDetailsRequest request
     ) {
@@ -685,7 +685,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/vehicle-details/import")
     public ResponseEntity<?> importVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         pdaEntryService.importVehicleDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Vehicle details imported successfully", null);
@@ -723,7 +723,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/vehicle-details/clear")
     public ResponseEntity<?> clearVehicleDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         pdaEntryService.clearVehicleDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Vehicle details cleared successfully", null);
@@ -761,7 +761,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/vehicle-details/publish")
     public ResponseEntity<?> publishVehicleDetailsForImport(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         pdaEntryService.publishVehicleDetailsForImport(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Vehicle details published for import successfully", null);
@@ -798,7 +798,7 @@ public class PdaEntryController {
     @GetMapping("/{transactionPoid}/tdr-details")
     public ResponseEntity<?> getTdrDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         List<PdaEntryTdrDetailResponse> response = pdaEntryService.getTdrDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
         return ApiResponse.success("TDR details retrieved successfully", response);
@@ -845,7 +845,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/tdr-details/bulk-save")
     public ResponseEntity<?> bulkSaveTdrDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Parameter(description = "Bulk save request with TDR details and delete IDs", required = true)
             @Valid @RequestBody BulkSaveTdrDetailsRequest request
     ) {
@@ -879,7 +879,7 @@ public class PdaEntryController {
     @PostMapping(value = "/{transactionPoid}/tdr-details/import-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importTdrFile(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Parameter(description = "Excel file containing TDR details", required = true)
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file
     ) {
@@ -913,7 +913,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/tdr-details/upload")
     public ResponseEntity<?> uploadTdrDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @RequestParam(value = "file", required = false) org.springframework.web.multipart.MultipartFile file
     ) {
         List<PdaEntryTdrDetailResponse> result = pdaEntryService.uploadTdrDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), file);
@@ -946,7 +946,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/tdr-details/clear")
     public ResponseEntity<?> clearTdrDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         String result = pdaEntryService.clearTdrDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success(result, null);
@@ -978,7 +978,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/tdr-details/process-charges")
     public ResponseEntity<?> processTdrCharges(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         String result = pdaEntryService.processTdrCharges(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success(result, null);
@@ -1015,7 +1015,7 @@ public class PdaEntryController {
     @GetMapping("/{transactionPoid}/acknowledgment-details")
     public ResponseEntity<?> getAcknowledgmentDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         List<PdaEntryAcknowledgmentDetailResponse> response = pdaEntryService.getAcknowledgmentDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
         return ApiResponse.success("Acknowledgment details retrieved successfully", response);
@@ -1062,7 +1062,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/acknowledgment-details/bulk-save")
     public ResponseEntity<?> bulkSaveAcknowledgmentDetails(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Parameter(description = "Bulk save request with acknowledgment details and delete IDs", required = true)
             @Valid @RequestBody BulkSaveAcknowledgmentDetailsRequest request
     ) {
@@ -1073,7 +1073,7 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/acknow/upload-details")
     public ResponseEntity<?> uploadAcknowledgmentDetails(
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file
     ) {
         String result = pdaEntryService.uploadAcknowledgmentDetailsFromExcel(
@@ -1085,7 +1085,7 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/acknow/load-details")
     public ResponseEntity<?> loadAcknowledgmentDetails(
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         List<PdaEntryAcknowledgmentDetailResponse> result = pdaEntryService.uploadAcknowledgmentDetails(
                 transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
@@ -1104,7 +1104,7 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/acknow/clear-details")
     public ResponseEntity<?> clearAcknowledgmentDetails(
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         pdaEntryService.clearAcknowledgmentDetails(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Acknowledgment details cleared successfully", null);
@@ -1145,7 +1145,7 @@ public class PdaEntryController {
     @PostMapping("/validate-before-save")
     public ResponseEntity<?> validateBeforeSave(
             @Parameter(description = "Transaction POID (optional, for existing records)")
-            @RequestParam(required = false) Long transactionPoid,
+            @RequestParam(name = "transactionPoid", required = false) Long transactionPoid,
             @Parameter(description = "PDA Entry request to validate", required = true)
             @Valid @RequestBody PdaEntryRequest request
     ) {
@@ -1184,7 +1184,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/validate-after-save")
     public ResponseEntity<?> validateAfterSave(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         ValidationResponse response = pdaEntryService.validateAfterSave(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Validation completed", response);
@@ -1221,9 +1221,9 @@ public class PdaEntryController {
     @GetMapping("/vessel-details")
     public ResponseEntity<?> getVesselDetails(
             @Parameter(description = "Vessel POID", required = true)
-            @RequestParam Long vesselPoid,
+            @RequestParam("vesselPoid") Long vesselPoid,
             @Parameter(description = "Transaction POID (optional, for existing records)")
-            @RequestParam(required = false) Long transactionPoid
+            @RequestParam(name = "transactionPoid", required = false) Long transactionPoid
     ) {
         VesselDetailsResponse response = pdaEntryService.getVesselDetails(vesselPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Vessel details retrieved successfully", response);
@@ -1257,9 +1257,9 @@ public class PdaEntryController {
     @GetMapping("/voyage-details")
     public ResponseEntity<?> getVoyageDetails(
             @Parameter(description = "Voyage POID", required = true)
-            @RequestParam Long voyagePoid,
+            @RequestParam("voyagePoid") Long voyagePoid,
             @Parameter(description = "Transaction POID (optional, for existing records)")
-            @RequestParam(required = false) Long transactionPoid
+            @RequestParam(name = "transactionPoid", required = false) Long transactionPoid
     ) {
         Map<String, Object> response = pdaEntryService.getVoyageDetails(voyagePoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         return ApiResponse.success("Voyage details retrieved successfully", response);
@@ -1293,11 +1293,11 @@ public class PdaEntryController {
     @GetMapping("/charge-tax-info")
     public ResponseEntity<?> getChargeTaxInfo(
             @Parameter(description = "Charge POID", required = true)
-            @RequestParam Long chargePoid,
+            @RequestParam("chargePoid") Long chargePoid,
             @Parameter(description = "Party POID (Principal POID)", required = true)
-            @RequestParam Long partyPoid,
+            @RequestParam("partyPoid") Long partyPoid,
             @Parameter(description = "Party Type (default: PRINCIPAL)")
-            @RequestParam(defaultValue = "PRINCIPAL") String partyType,
+            @RequestParam(name = "partyType", defaultValue = "PRINCIPAL") String partyType,
             @Parameter(description = "Transaction Date (default: current date)")
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate transactionDate
     ) {
@@ -1351,7 +1351,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/create-fda")
     public ResponseEntity<?> createFdaFromPda(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         String result = pdaEntryService.createFdaFromPda(
                 UserContext.getGroupPoid(), 
@@ -1410,7 +1410,7 @@ public class PdaEntryController {
     @PostMapping("/{transactionPoid}/update-fda")
     public ResponseEntity<?> updateFda(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         String result = pdaEntryService.updateFda(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
         Map<String, String> responseData = new HashMap<>();
@@ -1422,7 +1422,7 @@ public class PdaEntryController {
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/fda-documents/view")
-    public ResponseEntity<?> viewFdaDocument(@PathVariable Long transactionPoid) {
+    public ResponseEntity<?> viewFdaDocument(@PathVariable("transactionPoid") Long transactionPoid) {
         FdaDocumentViewResponse response = pdaEntryService.getFdaDocumentInfo(
                 transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
         return ApiResponse.success("FDA document info retrieved successfully", response);
@@ -1430,7 +1430,7 @@ public class PdaEntryController {
 
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/fda-documents/accept")
-    public ResponseEntity<?> acceptFdaDocuments(@PathVariable Long transactionPoid) {
+    public ResponseEntity<?> acceptFdaDocuments(@PathVariable("transactionPoid") Long transactionPoid) {
         Map<String, Object> result = pdaEntryService.acceptFdaDocuments(
                 transactionPoid, UserContext.getGroupPoid(), 
                 UserContext.getCompanyPoid(), UserContext.getUserPoid());
@@ -1447,7 +1447,7 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/fda-documents/return")
     public ResponseEntity<?> returnFdaDocuments(
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Valid @RequestBody FdaDocumentReturnRequest request
     ) {
         Map<String, Object> result = pdaEntryService.rejectFdaDocs(
@@ -1459,7 +1459,7 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/documents/submit-to-accounts")
     public ResponseEntity<?> submitDocumentsToAccounts(
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Valid @RequestBody SubmitDocumentsRequest request) {
         Map<String, Object> result = pdaEntryService.submitPdaToFda(
                 transactionPoid, request.getVesselSailDate(), UserContext.getGroupPoid(), 
@@ -1470,7 +1470,7 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.EDIT)
     @PostMapping("/{transactionPoid}/cancel")
     public ResponseEntity<?> cancelPdaEntry(
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @Valid @RequestBody CancelPdaRequest request
     ) {
         Map<String, Object> result = pdaEntryService.cancelPdaEntry(transactionPoid, UserContext.getGroupPoid(),
@@ -1488,7 +1488,7 @@ public class PdaEntryController {
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/{transactionPoid}/submission-log")
-    public ResponseEntity<?> getSubmissionLog(@PathVariable Long transactionPoid) {
+    public ResponseEntity<?> getSubmissionLog(@PathVariable("transactionPoid") Long transactionPoid) {
         SubmissionLogResponse response = pdaEntryService.getSubmissionLogInfo(
                 transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
         return ApiResponse.success("Submission log info retrieved successfully", response);
@@ -1501,8 +1501,8 @@ public class PdaEntryController {
     @AllowedAction(UserRolesRightsEnum.PRINT)
     @GetMapping("/{transactionPoid}/print")
     public ResponseEntity<byte[]> printPda(
-            @PathVariable Long transactionPoid,
-            @RequestParam(required = false) BigDecimal otherPrincipalPoid
+            @PathVariable("transactionPoid") Long transactionPoid,
+            @RequestParam(name = "otherPrincipalPoid", required = false) BigDecimal otherPrincipalPoid
     ) {
         try {
             byte[] pdf = pdaEntryService.printPda(transactionPoid, UserContext.getGroupPoid(), 
@@ -1553,7 +1553,7 @@ public class PdaEntryController {
     @GetMapping("/{transactionPoid}/principal-approval-status")
     public ResponseEntity<?> checkPrincipalApprovalStatus(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         PdaEntryResponse entry = pdaEntryService.getPdaEntryById(
                 transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
@@ -1584,7 +1584,7 @@ public class PdaEntryController {
 
     @PostMapping("/{transactionPoid}/validate-edit")
     public ResponseEntity<?> validatePdaEdit(
-            @PathVariable Long transactionPoid,
+            @PathVariable("transactionPoid") Long transactionPoid,
             @RequestBody PdaEditValidationRequest request) {
         
         PdaEditValidationResponse response = pdaEntryService.validatePdaEdit(
@@ -1624,11 +1624,11 @@ public class PdaEntryController {
     @GetMapping("/charge-tax-info-v2")
     public ResponseEntity<?> getChargeTaxInfoV2(
             @Parameter(description = "Charge POID", required = true)
-            @RequestParam Long chargePoid,
+            @RequestParam("chargePoid") Long chargePoid,
             @Parameter(description = "Party POID", required = true)
-            @RequestParam Long partyPoid,
+            @RequestParam("partyPoid") Long partyPoid,
             @Parameter(description = "Party Type (PRINCIPAL, SUPPLIER, CUSTOMER)", required = true)
-            @RequestParam String partyType
+            @RequestParam("partyType") String partyType
     ) {
         Map<String, Object> taxInfo = pdaEntryService.getChargeTaxInfoV2(
                 UserContext.getCompanyPoid(), partyType, partyPoid, chargePoid);
@@ -1671,7 +1671,7 @@ public class PdaEntryController {
     @GetMapping("/{transactionPoid}/principals")
     public ResponseEntity<?> getPrincipalsForPdaEntry(
             @Parameter(description = "Transaction POID", required = true)
-            @PathVariable Long transactionPoid
+            @PathVariable("transactionPoid") Long transactionPoid
     ) {
         List<Map<String, Object>> principals = pdaEntryService.getPrincipalsForPdaEntry(
                 transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid());
