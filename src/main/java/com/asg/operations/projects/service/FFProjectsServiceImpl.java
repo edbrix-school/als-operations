@@ -13,6 +13,7 @@ import com.asg.common.lib.service.LovDataService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.exceptions.ResourceNotFoundException;
+import com.asg.operations.projectjob.util.ProjectJobMapper;
 import com.asg.operations.projects.dto.*;
 import com.asg.operations.projects.entity.FFProjectsChargesDtl;
 import com.asg.operations.projects.entity.FFProjectsCtrlSheetDtl;
@@ -129,6 +130,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     private final DocumentSearchService documentSearchService;
     private final LovDataService lovDataService;
     private final EntityManager entityManager;
+    private final ProjectJobMapper projectJobMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -1406,10 +1408,11 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setPrincipalPoid(principalPoid);
         dto.setPrincipalLov(getLov(principalPoid, "PRINCIPAL_MASTER"));
 
+        String billingTo=manifest.getBillingTo();
         Long customerPoid = manifest != null && manifest.getBillToCustomerPoid() != null
                 ? manifest.getBillToCustomerPoid().longValue() : null;
         dto.setCustomerPoid(customerPoid);
-        dto.setCustomerLov(getLov(customerPoid, "CUSTOMER_SUPPLIER_MASTER"));
+        dto.setCustomerLov(projectJobMapper.getCustomerSupplierLov(customerPoid,billingTo));
 
         dto.setMode(manifest != null ? manifest.getShipmentMode() : cs.getFreightType());
         dto.setJobStatus(manifest != null ? manifest.getJobStatus() : null);
