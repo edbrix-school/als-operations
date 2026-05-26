@@ -424,6 +424,7 @@ public class ProjectJobMapper {
 
         entity.setTransactionDate(Optional.ofNullable(dto.getTransactionDate()).orElse(DateUtil.getCurrentDateInUserTimeZone()));
         entity.setCompanyPoid(dto.getCompanyPoid());
+        entity.setDocId(dto.getDocId());
 
         entity.setFfJobNo(dto.getFfJobNo());
         entity.setFfJobType(dto.getFfJobType());
@@ -640,6 +641,7 @@ public class ProjectJobMapper {
         dto.setTransactionDate(entity.getTransactionDate());
         dto.setGroupPoid(entity.getGroupPoid());
         dto.setCompanyPoid(entity.getCompanyPoid());
+        dto.setDocId(entity.getDocId());
 
         dto.setFfJobNo(entity.getFfJobNo());
         dto.setFfJobType(entity.getFfJobType());
@@ -677,8 +679,11 @@ public class ProjectJobMapper {
         dto.setMotherVslEta(entity.getMotherVslEta());
 
         dto.setMotherVslLoadPortPoid(entity.getMotherVslLoadPortPoid());
+        dto.setMotherVslLoadPortLov(getLov(entity.getMotherVslLoadPortPoid(), "PORT_MASTER"));
         dto.setMotherVslUnloadPortPoid(entity.getMotherVslUnloadPortPoid());
+        dto.setMotherVslUnloadPortLov(getLov(entity.getMotherVslUnloadPortPoid(), "PORT_MASTER"));
         dto.setMotherVslTranshipPortPoid(entity.getMotherVslTranshipPortPoid());
+        dto.setMotherVslTranshipPortLov(getLov(entity.getMotherVslTranshipPortPoid(), "PORT_MASTER"));
 
         dto.setFeederVoyageNo(entity.getFeederVoyageNo());
         dto.setFeederVslName(entity.getFeederVslName());
@@ -695,7 +700,9 @@ public class ProjectJobMapper {
         dto.setFlightDate(entity.getFlightDate());
 
         dto.setAwportOfLoad(entity.getAwportOfLoad());
+        dto.setAwportOfLoadLov(getLovByCode(entity.getAwportOfLoad(), "FF_AIRPORTS"));
         dto.setAwportOfUnload(entity.getAwportOfUnload());
+        dto.setAwportOfUnloadLov(getLovByCode(entity.getAwportOfUnload(), "FF_AIRPORTS"));
 
         dto.setShipperPoid(entity.getShipperPoid());
         dto.setShipperAddressPoid(entity.getShipperAddressPoid());
@@ -753,6 +760,7 @@ public class ProjectJobMapper {
         dto.setAirArrivalport(entity.getAirArrivalport());
         dto.setAirDeparturePort(entity.getAirDeparturePort());
         dto.setCarrierCode(entity.getCarrierCode());
+        dto.setCarrierLov(getLovByCode(entity.getCarrierCode(), "AIRLINE"));
         dto.setAgentDetails(entity.getAgentDetails());
 
         dto.setRateChanges(entity.getRateChanges());
@@ -771,6 +779,7 @@ public class ProjectJobMapper {
         dto.setDeleted(entity.getDeleted());
 
         dto.setReleasedType(entity.getReleasedType());
+        dto.setReleasedTypeLov(getLovByCode(entity.getReleasedType(), "BL_RELEASE_TYPE"));
         dto.setRelasedSeqNo(entity.getRelasedSeqNo());
         dto.setReleasedGrantBy(entity.getReleasedGrantBy());
         dto.setReleasedGrantDate(entity.getReleasedGrantDate());

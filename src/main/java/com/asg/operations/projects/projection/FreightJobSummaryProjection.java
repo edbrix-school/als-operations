@@ -8,6 +8,9 @@ public interface FreightJobSummaryProjection {
     String getFreightMode();
     String getLine();
     LocalDate getEtaAta();
+    LocalDate getEtd();
+    LocalDate getArrivalDate();
+    LocalDate getSailDate();
     String getPol();
     String getPod();
     String getOrigin();
@@ -17,6 +20,11 @@ public interface FreightJobSummaryProjection {
     Double getPackages();
     Double getWeight();
     String getJobStatus();
+    String getDocumentStatus();
+    String getCarrierCode();
+    String getVesselName();
+    String getTransportFrom();
+    String getTransportTo();
     String getBlAwbNo();
     Long getPrincipalPoid();
 }
