@@ -35,6 +35,7 @@ public class FFProjectsCtrlSheetDetailResponse {
     private String description;
     private LocalDate sailDate;
     private String jobStatus;
+    private String active;
     private String createdBy;
     private LocalDateTime createdDate;
     private String lastModifiedBy;

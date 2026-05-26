@@ -29,4 +29,5 @@ public class FFProjectsCtrlSheetDetailRequest {
     private LocalDate sailDate; // For Sea Freight
     private String sfPOL;
     private String sfPOD;
+    private String active;
 }

@@ -156,7 +156,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + transactionPoid));
 
         List<FFProjectsChargesDtl> chargeDetails = projectsChargesDtlRepository.findByTransactionPoid(transactionPoid);
-        List<FFProjectsCtrlSheetDtl> ctrlSheetDetails = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
+        List<FFProjectsCtrlSheetDtl> ctrlSheetDetails = projectsCtrlSheetDtlRepository.findByTransactionPoidAndActive(transactionPoid, "Y");
 
         return  mapper.mapToResponse(projectsHdr, chargeDetails, ctrlSheetDetails);
     }
@@ -270,7 +270,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
         updateProjectControlSheets(requests, transactionPoid);
         
-        List<FFProjectsCtrlSheetDtl> details = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
+        List<FFProjectsCtrlSheetDtl> details = projectsCtrlSheetDtlRepository.findByTransactionPoidAndActive(transactionPoid, "Y");
         return details.stream()
                 .map(mapper::mapCtrlSheetDetailToResponse)
                 .collect(Collectors.toList());
@@ -282,9 +282,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         List<FFProjectsCtrlSheetDtl> details;
         
         if (freightType != null && !freightType.isEmpty()) {
-            details = projectsCtrlSheetDtlRepository.findByTransactionPoidAndFreightType(transactionPoid, freightType);
+            details = projectsCtrlSheetDtlRepository.findByTransactionPoidAndFreightTypeAndActive(transactionPoid, freightType, "Y");
         } else {
-            details = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
+            details = projectsCtrlSheetDtlRepository.findByTransactionPoidAndActive(transactionPoid, "Y");
         }
 
         return details.stream()
@@ -350,6 +350,11 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .lastModifiedDate(existing.getLastModifiedDate())
                 .build();
 
+        if ("N".equals(request.getActive()) && existing.getJobNoPoid() != null) {
+            throw new FFValidationException("Cannot deactivate control sheet: it is linked to a job.",
+                    List.of(new ValidationError(null, "ACTIVE", "Cannot deactivate a control sheet that is linked to a job.")));
+        }
+
         existing.setFreightType(request.getFreightType());
         existing.setJobNoPoid(request.getJobNoPoid());
         existing.setOrigin(request.getOriginPoid());
@@ -367,6 +372,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         existing.setSailDate(request.getSailDate());
         existing.setPol(request.getSfPOL());
         existing.setPod(request.getSfPOD());
+        if (request.getActive() != null) {
+            existing.setActive(request.getActive());
+        }
         existing.setLastModifiedBy(UserContext.getUserName());
         existing.setLastModifiedDate(LocalDateTime.now());
 
@@ -381,19 +389,12 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     @Override
     @Transactional(readOnly = true)
     public List<UpcomingJobDTO> getUpcomingJobsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
-        List<FFProjectsCtrlSheetDtl> controlSheets = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
-        List<Long> linkedJobIds = controlSheets.stream()
-                .map(FFProjectsCtrlSheetDtl::getJobNoPoid)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
-        Map<Long, FFManifestHdr> manifestById = manifestHdrRepository.findAllById(linkedJobIds).stream()
-                .collect(Collectors.toMap(FFManifestHdr::getTransactionPoid, Function.identity()));
+        List<FreightJobSummaryProjection> jobs = (fromDate != null && toDate != null)
+                ? freightJobProjectionRepository.findAllFreightJobsByDateRange(transactionPoid, fromDate, toDate)
+                : freightJobProjectionRepository.findAllFreightJobs(transactionPoid);
 
-        List<UpcomingJobDTO> result = controlSheets.stream()
-                .filter(cs -> fromDate == null || cs.getEtaAta() == null || !cs.getEtaAta().isBefore(fromDate))
-                .filter(cs -> toDate == null || cs.getEtaAta() == null || !cs.getEtaAta().isAfter(toDate))
-                .map(cs -> mapToUpcomingJobDTO(cs, manifestById.get(cs.getJobNoPoid())))
+        List<UpcomingJobDTO> result = jobs.stream()
+                .map(this::mapToUpcomingJobDTO)
                 .collect(Collectors.toList());
         applySorting(result, sortBy, sortDir);
         assignDetRowIds(result, UpcomingJobDTO::setDetRowId);
@@ -428,19 +429,12 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     @Override
     @Transactional(readOnly = true)
     public List<FreightSummaryDTO> getAllFreights(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
-        List<FFProjectsCtrlSheetDtl> controlSheets = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid);
-        List<Long> linkedJobIds = controlSheets.stream()
-                .map(FFProjectsCtrlSheetDtl::getJobNoPoid)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
-        Map<Long, FFManifestHdr> manifestById = manifestHdrRepository.findAllById(linkedJobIds).stream()
-                .collect(Collectors.toMap(FFManifestHdr::getTransactionPoid, Function.identity()));
+        List<FreightJobSummaryProjection> jobs = (fromDate != null && toDate != null)
+                ? freightJobProjectionRepository.findAllFreightJobsByDateRange(transactionPoid, fromDate, toDate)
+                : freightJobProjectionRepository.findAllFreightJobs(transactionPoid);
 
-        List<FreightSummaryDTO> result = controlSheets.stream()
-                .filter(cs -> fromDate == null || (cs.getEtaAta() != null && !cs.getEtaAta().isBefore(fromDate)))
-                .filter(cs -> toDate == null || (cs.getEtaAta() != null && !cs.getEtaAta().isAfter(toDate)))
-                .map(cs -> mapToFreightSummaryDTO(cs, manifestById.get(cs.getJobNoPoid())))
+        List<FreightSummaryDTO> result = jobs.stream()
+                .map(this::mapToFreightSummaryDTO)
                 .collect(Collectors.toList());
         applySorting(result, sortBy, sortDir);
         assignDetRowIds(result, FreightSummaryDTO::setDetRowId);
@@ -450,23 +444,13 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     @Override
     @Transactional(readOnly = true)
     public List<JobStatusPendingBillDTO> getJobStatusPendingBills(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
-        boolean filterByDate = fromDate != null && toDate != null;
+        List<FreightJobSummaryProjection> jobs = (fromDate != null && toDate != null)
+                ? freightJobProjectionRepository.findAllFreightJobsByDateRange(transactionPoid, fromDate, toDate)
+                : freightJobProjectionRepository.findAllFreightJobs(transactionPoid);
 
-        Map<Long, FFProjectsCtrlSheetDtl> controlSheetByJobId = projectsCtrlSheetDtlRepository.findByTransactionPoid(transactionPoid).stream()
-                .filter(cs -> cs.getJobNoPoid() != null)
-                .filter(cs -> !filterByDate || (cs.getEtaAta() != null && !cs.getEtaAta().isBefore(fromDate) && !cs.getEtaAta().isAfter(toDate)))
-                .collect(Collectors.toMap(
-                        FFProjectsCtrlSheetDtl::getJobNoPoid,
-                        Function.identity(),
-                        (existing, ignored) -> existing,
-                        LinkedHashMap::new
-                ));
+        if (jobs.isEmpty()) return Collections.emptyList();
 
-        if (controlSheetByJobId.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<Long> jobIds = new ArrayList<>(controlSheetByJobId.keySet());
+        List<Long> jobIds = jobs.stream().map(FreightJobSummaryProjection::getJobId).collect(Collectors.toList());
         Map<Long, FFManifestHdr> manifestById = manifestHdrRepository.findAllById(jobIds).stream()
                 .collect(Collectors.toMap(FFManifestHdr::getTransactionPoid, Function.identity()));
         Map<Long, BigDecimal> bookedAmountByJobId = manifestChargesRepository.findByTransactionPoidIn(jobIds).stream()
@@ -479,11 +463,10 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                         )
                 ));
 
-        List<JobStatusPendingBillDTO> result = controlSheetByJobId.entrySet().stream()
-                .map(entry -> mapToJobStatusPendingBillDTO(
-                        entry.getValue(),
-                        manifestById.get(entry.getKey()),
-                        bookedAmountByJobId.getOrDefault(entry.getKey(), BigDecimal.ZERO)))
+        List<JobStatusPendingBillDTO> result = jobs.stream()
+                .map(job -> manifestById.get(job.getJobId()))
+                .filter(Objects::nonNull)
+                .map(manifest -> mapToJobStatusPendingBillDTO(manifest, bookedAmountByJobId.getOrDefault(manifest.getTransactionPoid(), BigDecimal.ZERO)))
                 .collect(Collectors.toList());
         applySorting(result, sortBy, sortDir);
         assignDetRowIds(result, JobStatusPendingBillDTO::setDetRowId);
@@ -529,12 +512,15 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setHawbNo(job.getHawbNo());
         dto.setFlightNo(job.getFlightNo());
         dto.setOrigin(job.getOrigin());
+        dto.setOriginLov(getLov(parseLong(job.getOrigin()), "FF_AIRPORTS"));
         dto.setDestination(job.getDestination());
+        dto.setDestinationLov(getLov(parseLong(job.getDestination()), "FF_AIRPORTS"));
         dto.setCarrier(job.getCarrierCode());
+        dto.setCarrierLov(getLov(parseLong(job.getCarrierCode()), "AIRLINE"));
         dto.setEtd(job.getEtd());
         dto.setEta(job.getEtaAta());
         dto.setJobStatus(job.getJobStatus());
-        dto.setDocumentStatus(job.getDocumentStatus());
+        dto.setDocumentStatus(job.getDocumentStatus() != null ? job.getDocumentStatus() : "NA");
 
         // Air package fields
         if (pkg != null) {
@@ -601,7 +587,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setJobNo(job.getJobNo());
         dto.setVesselName(job.getVesselName());
         dto.setPol(job.getPol());
+        dto.setPolLov(getLov(parseLong(job.getPol()), "PORT_MASTER"));
         dto.setPod(job.getPod());
+        dto.setPodLov(getLov(parseLong(job.getPod()), "PORT_MASTER"));
         dto.setMasterBlNo(job.getMasterBlNo());
         dto.setHouseBlNo(job.getHouseBlNo());
         dto.setEta(job.getEtaAta());
@@ -618,6 +606,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
             dto.setMotherVoyageNo(header.getMotherVslVoyageNo());
             dto.setVoyageNo(header.getFeederVoyageNo());
             dto.setReleaseType(header.getReleasedType());
+            dto.setReleaseLov(getLov(parseLong(header.getReleasedType()), "BL_RELEASE_TYPE"));
             dto.setOfoqManifestRef(header.getOfoqMnfRef());
             dto.setRadioActive(header.getRadioAction());
         }
@@ -626,6 +615,8 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         if (container != null) {
             dto.setContainerNo(container.getContainerNo());
             dto.setContainerType(container.getContainerSize());
+            dto.setContainerTypeLov(container.getContainerTypePoid() != null
+                    ? getLov(container.getContainerTypePoid().longValue(), "LINE_CONTAINER_TYPE_MASTER") : null);
             dto.setSealNumber(container.getSealNo());
             dto.setCargoDescription(container.getCargoDescription());
             dto.setQty(container.getQuantity() != null ? container.getQuantity().doubleValue() : null);
@@ -634,7 +625,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
             dto.setCbm(container.getNetVolume() != null ? container.getNetVolume().doubleValue() : null);
             dto.setAppointmentDate(container.getCargoCollectionDate() != null ? container.getCargoCollectionDate().toLocalDate() : null);
             dto.setDeliveryDate(container.getDeliveryDate() != null ? container.getDeliveryDate().toLocalDate() : null);
-            dto.setDetention(container.getDetention());
+            dto.setDetention("Y".equalsIgnoreCase(container.getDetention()) ? "YES" : "NO");
             dto.setDestuffingFull(container.getUnloadDate() != null ? "Destuffed" : "Full");
             dto.setDocStatus(container.getDocStatus());
             dto.setRemarks(container.getRemarks());
@@ -890,6 +881,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                     .transactionPoid(transactionPoid)
                     .detRowId(++detRowId)
                     .freightType(ft)
+                    .active("Y")
                     .createdBy(currentUser)
                     .createdDate(now)
                     .lastModifiedBy(currentUser)
@@ -1349,7 +1341,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setPackages(p.getPackages());
         dto.setBlAwbNo(p.getBlAwbNo());
         dto.setOrigin(p.getOrigin());
+        dto.setOriginLov(getLov(parseLong(p.getOrigin()), "FF_AIRPORTS"));
         dto.setDestination(p.getDestination());
+        dto.setDestinationLov(getLov(parseLong(p.getDestination()), "FF_AIRPORTS"));
         dto.setPol(p.getPol());
         dto.setPod(p.getPod());
         dto.setLine(p.getLine());
@@ -1395,29 +1389,24 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         return dto;
     }
 
-    private JobStatusPendingBillDTO mapToJobStatusPendingBillDTO(FFProjectsCtrlSheetDtl cs, FFManifestHdr manifest,
-                                                                 BigDecimal bookedAmount) {
+    private JobStatusPendingBillDTO mapToJobStatusPendingBillDTO(FFManifestHdr manifest, BigDecimal bookedAmount) {
         JobStatusPendingBillDTO dto = new JobStatusPendingBillDTO();
-        dto.setJobId(cs.getJobNoPoid());
-        dto.setJobNo(manifest != null ? manifest.getFfJobNo() : null);
-        dto.setBlNo(manifest != null ? manifest.getMasterBlNo() : null);
-        dto.setEtaAta(cs.getEtaAta());
+        dto.setJobId(manifest.getTransactionPoid());
+        dto.setJobNo(manifest.getFfJobNo());
+        dto.setBlNo(manifest.getMasterBlNo());
+        dto.setEtaAta(manifest.getMotherVslEta() != null ? manifest.getMotherVslEta().toLocalDate() : null);
 
-        Long principalPoid = manifest != null && manifest.getPrincipalPoid() != null
-                ? manifest.getPrincipalPoid().longValue() : null;
+        Long principalPoid = manifest.getPrincipalPoid() != null ? manifest.getPrincipalPoid().longValue() : null;
         dto.setPrincipalPoid(principalPoid);
         dto.setPrincipalLov(getLov(principalPoid, "PRINCIPAL_MASTER"));
 
-        String billingTo=manifest.getBillingTo();
-        Long customerPoid = manifest != null && manifest.getBillToCustomerPoid() != null
-                ? manifest.getBillToCustomerPoid().longValue() : null;
+        Long customerPoid = manifest.getBillToCustomerPoid() != null ? manifest.getBillToCustomerPoid().longValue() : null;
         dto.setCustomerPoid(customerPoid);
-        dto.setCustomerLov(projectJobMapper.getCustomerSupplierLov(customerPoid,billingTo));
+        dto.setCustomerLov(projectJobMapper.getCustomerSupplierLov(customerPoid, manifest.getBillingTo()));
 
-        dto.setMode(manifest != null ? manifest.getShipmentMode() : cs.getFreightType());
-        dto.setJobStatus(manifest != null ? manifest.getJobStatus() : null);
-        dto.setCompletedOn(manifest != null && manifest.getJobClosedDate() != null
-                ? manifest.getJobClosedDate().toLocalDate() : null);
+        dto.setMode(manifest.getShipmentMode());
+        dto.setJobStatus(manifest.getJobStatus());
+        dto.setCompletedOn(manifest.getJobClosedDate() != null ? manifest.getJobClosedDate().toLocalDate() : null);
         dto.setBookedAmount(bookedAmount);
         return dto;
     }
@@ -1440,29 +1429,28 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         }
     }
 
-    private UpcomingJobDTO mapToUpcomingJobDTO(FFProjectsCtrlSheetDtl cs, FFManifestHdr manifest) {
+    private UpcomingJobDTO mapToUpcomingJobDTO(FreightJobSummaryProjection p) {
         UpcomingJobDTO dto = new UpcomingJobDTO();
-        dto.setJobId(cs.getJobNoPoid());
-        dto.setJobNo(manifest != null ? manifest.getFfJobNo() : null);
-        dto.setBlAwbNo(manifest != null ? manifest.getMasterBlNo() : null);
-        dto.setFreightType(cs.getFreightType());
-        dto.setLine(cs.getLine() != null ? String.valueOf(cs.getLine()) : null);
-        dto.setLineLov(getLov(cs.getLine(), "LINE_MASTER"));
-        dto.setEta(cs.getEtaAta());
-        dto.setEtd(cs.getEtd());
-        dto.setPol(cs.getPol());
-        dto.setPolLov(getLov(parseLong(cs.getPol()), "PORT_MASTER"));
-        dto.setPod(cs.getPod());
-        dto.setOrigin(cs.getOrigin() != null ? String.valueOf(cs.getOrigin()) : null);
-        dto.setOriginLov(getLov(cs.getOrigin(), "FF_AIRPORTS"));
-        dto.setDestination(cs.getDestination() != null ? String.valueOf(cs.getDestination()) : null);
-        dto.setDestinationLov(getLov(cs.getDestination(), "FF_AIRPORTS"));
-        dto.setDescription(cs.getDescription());
-        dto.setCbm(cs.getCbm());
-        dto.setPackages(cs.getNoOfPackages());
-        dto.setWeight(cs.getWeight());
-        dto.setJobStatus(manifest != null ? manifest.getJobStatus() : null);
-        dto.setCanCreateJob(cs.getJobNoPoid() == null);
+        dto.setJobId(p.getJobId());
+        dto.setJobNo(p.getJobNo());
+        dto.setBlAwbNo(p.getBlAwbNo());
+        dto.setFreightType(p.getFreightMode());
+        dto.setLine(p.getLine());
+        dto.setLineLov(getLov(parseLong(p.getLine()), "LINE_MASTER"));
+        dto.setEta(p.getEtaAta());
+        dto.setPol(p.getPol());
+        dto.setPolLov(getLov(parseLong(p.getPol()), "PORT_MASTER"));
+        dto.setPod(p.getPod());
+        dto.setOrigin(p.getOrigin());
+        dto.setOriginLov(getLov(parseLong(p.getOrigin()), "FF_AIRPORTS"));
+        dto.setDestination(p.getDestination());
+        dto.setDestinationLov(getLov(parseLong(p.getDestination()), "FF_AIRPORTS"));
+        dto.setDescription(p.getDescription());
+        dto.setCbm(p.getCbm());
+        dto.setPackages(p.getPackages());
+        dto.setWeight(p.getWeight());
+        dto.setJobStatus(p.getJobStatus());
+        dto.setCanCreateJob(false);
         return dto;
     }
 
@@ -1747,6 +1735,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                             .truckNumber(ctrl.getTruckNumber())
                             .description(ctrl.getDescription())
                             .sailDate(ctrl.getSailDate())
+                            .active("Y")
                             .createdBy(currentUser)
                             .createdDate(now)
                             .lastModifiedBy(currentUser)
@@ -1785,6 +1774,11 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                             .lastModifiedDate(existingCtrl.getLastModifiedDate())
                             .build();
 
+                    if ("N".equals(ctrl.getActive()) && existingCtrl.getJobNoPoid() != null) {
+                        throw new FFValidationException("Cannot deactivate control sheet: it is linked to a job.",
+                                List.of(new ValidationError(null, "ACTIVE", "Cannot deactivate a control sheet that is linked to a job.")));
+                    }
+
                     existingCtrl.setFreightType(ctrl.getFreightType());
                     existingCtrl.setJobNoPoid(ctrl.getJobNoPoid());
                     existingCtrl.setOrigin(ctrl.getOriginPoid());
@@ -1802,6 +1796,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                     existingCtrl.setSailDate(ctrl.getSailDate());
                     existingCtrl.setPod(ctrl.getSfPOD());
                     existingCtrl.setPol(ctrl.getSfPOL());
+                    if (ctrl.getActive() != null) {
+                        existingCtrl.setActive(ctrl.getActive());
+                    }
                     existingCtrl.setLastModifiedBy(currentUser);
                     existingCtrl.setLastModifiedDate(now);
                     toUpdate.add(existingCtrl);
