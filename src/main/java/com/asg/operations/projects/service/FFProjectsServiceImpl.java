@@ -633,6 +633,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
             // Use header-level totals
             dto.setWeight(job.getWeight());
             dto.setCbm(job.getCbm());
+            dto.setQtyPackages(job.getNoOfPacks());
         }
 
         return dto;
