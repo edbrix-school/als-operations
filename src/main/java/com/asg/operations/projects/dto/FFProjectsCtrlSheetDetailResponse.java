@@ -31,6 +31,10 @@ public class FFProjectsCtrlSheetDetailResponse {
     private LovGetListDto carrierLov;
     private Long linePoid;
     private LovGetListDto lineLov;
+    private String pol;
+    private LovGetListDto polLov;
+    private String pod;
+    private LovGetListDto podLov;
     private String truckNumber;
     private String description;
     private LocalDate sailDate;

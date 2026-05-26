@@ -113,10 +113,13 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.TRANSACTION_POID as jobId,
             j.FF_JOBNO as jobNo,
             j.FF_JOBTYPE as freightMode,
-            CAST(j.LINE_POID AS VARCHAR(50)) as line,
-            j.MOTHER_VSL_ETA as etaAta,
-            CAST(j.MOTHER_VSL_LOADPORT_POID AS VARCHAR(50)) as pol,
-            CAST(j.MOTHER_VSL_UNLOADPORT_POID AS VARCHAR(50)) as pod,
+            CAST(j.LINE_POID AS VARCHAR2(50)) as line,
+            TRUNC(j.MOTHER_VSL_ETA) as etaAta,
+            TRUNC(COALESCE(j.MOTHER_VSL_SAIL_DATE, j.FLIGHT_DATE)) as etd,
+            TRUNC(j.FEEDER_VSL_ARRIVAL_DATE) as arrivalDate,
+            TRUNC(j.MOTHER_VSL_SAIL_DATE) as sailDate,
+            CAST(j.MOTHER_VSL_LOADPORT_POID AS VARCHAR2(50)) as pol,
+            CAST(j.MOTHER_VSL_UNLOADPORT_POID AS VARCHAR2(50)) as pod,
             j.AWPORT_OF_LOAD as origin,
             j.AWPORT_OF_UNLOAD as destination,
             j.CARGO_DESCRIPTION as description,
@@ -124,6 +127,11 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.TOTAL_NO_OF_PACKS as packages,
             j.TOTAL_WEIGHT as weight,
             j.JOB_STATUS as jobStatus,
+            j.DOCUMENT_STATUS as documentStatus,
+            j.CARRIER_CODE as carrierCode,
+            j.MOTHER_VSL_NAME as vesselName,
+            j.TRUCK_TRANSPORT_FROM as transportFrom,
+            j.TRUCK_TRANSPORT_TO as transportTo,
             j.MASTER_BL_NO as blAwbNo,
             j.PRINCIPAL_POID as principalPoid
         FROM FF_MANIEST_HDR j
@@ -138,10 +146,13 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.TRANSACTION_POID as jobId,
             j.FF_JOBNO as jobNo,
             j.FF_JOBTYPE as freightMode,
-            CAST(j.LINE_POID AS VARCHAR(50)) as line,
-            j.MOTHER_VSL_ETA as etaAta,
-            CAST(j.MOTHER_VSL_LOADPORT_POID AS VARCHAR(50)) as pol,
-            CAST(j.MOTHER_VSL_UNLOADPORT_POID AS VARCHAR(50)) as pod,
+            CAST(j.LINE_POID AS VARCHAR2(50)) as line,
+            TRUNC(j.MOTHER_VSL_ETA) as etaAta,
+            TRUNC(COALESCE(j.MOTHER_VSL_SAIL_DATE, j.FLIGHT_DATE)) as etd,
+            TRUNC(j.FEEDER_VSL_ARRIVAL_DATE) as arrivalDate,
+            TRUNC(j.MOTHER_VSL_SAIL_DATE) as sailDate,
+            CAST(j.MOTHER_VSL_LOADPORT_POID AS VARCHAR2(50)) as pol,
+            CAST(j.MOTHER_VSL_UNLOADPORT_POID AS VARCHAR2(50)) as pod,
             j.AWPORT_OF_LOAD as origin,
             j.AWPORT_OF_UNLOAD as destination,
             j.CARGO_DESCRIPTION as description,
@@ -149,12 +160,17 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.TOTAL_NO_OF_PACKS as packages,
             j.TOTAL_WEIGHT as weight,
             j.JOB_STATUS as jobStatus,
+            j.DOCUMENT_STATUS as documentStatus,
+            j.CARRIER_CODE as carrierCode,
+            j.MOTHER_VSL_NAME as vesselName,
+            j.TRUCK_TRANSPORT_FROM as transportFrom,
+            j.TRUCK_TRANSPORT_TO as transportTo,
             j.MASTER_BL_NO as blAwbNo,
             j.PRINCIPAL_POID as principalPoid
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
-        AND CAST(j.MOTHER_VSL_ETA AS DATE) BETWEEN :fromDate AND :toDate
+        AND TRUNC(j.MOTHER_VSL_ETA) BETWEEN :fromDate AND :toDate
         ORDER BY j.TRANSACTION_POID
         """, nativeQuery = true)
     List<FreightJobSummaryProjection> findAllFreightJobsByDateRange(
@@ -168,10 +184,13 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.TRANSACTION_POID as jobId,
             j.FF_JOBNO as jobNo,
             j.FF_JOBTYPE as freightMode,
-            CAST(j.LINE_POID AS VARCHAR(50)) as line,
-            j.MOTHER_VSL_ETA as etaAta,
-            CAST(j.MOTHER_VSL_LOADPORT_POID AS VARCHAR(50)) as pol,
-            CAST(j.MOTHER_VSL_UNLOADPORT_POID AS VARCHAR(50)) as pod,
+            CAST(j.LINE_POID AS VARCHAR2(50)) as line,
+            TRUNC(j.MOTHER_VSL_ETA) as etaAta,
+            TRUNC(COALESCE(j.MOTHER_VSL_SAIL_DATE, j.FLIGHT_DATE)) as etd,
+            TRUNC(j.FEEDER_VSL_ARRIVAL_DATE) as arrivalDate,
+            TRUNC(j.MOTHER_VSL_SAIL_DATE) as sailDate,
+            CAST(j.MOTHER_VSL_LOADPORT_POID AS VARCHAR2(50)) as pol,
+            CAST(j.MOTHER_VSL_UNLOADPORT_POID AS VARCHAR2(50)) as pod,
             j.AWPORT_OF_LOAD as origin,
             j.AWPORT_OF_UNLOAD as destination,
             j.CARGO_DESCRIPTION as description,
@@ -179,12 +198,17 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.TOTAL_NO_OF_PACKS as packages,
             j.TOTAL_WEIGHT as weight,
             j.JOB_STATUS as jobStatus,
+            j.DOCUMENT_STATUS as documentStatus,
+            j.CARRIER_CODE as carrierCode,
+            j.MOTHER_VSL_NAME as vesselName,
+            j.TRUCK_TRANSPORT_FROM as transportFrom,
+            j.TRUCK_TRANSPORT_TO as transportTo,
             j.MASTER_BL_NO as blAwbNo,
             j.PRINCIPAL_POID as principalPoid
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
-        AND CAST(j.MOTHER_VSL_ETA AS DATE) BETWEEN :fromDate AND :toDate
+        AND TRUNC(j.MOTHER_VSL_ETA) BETWEEN :fromDate AND :toDate
         AND (j.JOB_STATUS IS NULL OR j.JOB_STATUS NOT IN ('COMPLETED', 'CLOSED'))
         ORDER BY j.MOTHER_VSL_ETA ASC
         """, nativeQuery = true)

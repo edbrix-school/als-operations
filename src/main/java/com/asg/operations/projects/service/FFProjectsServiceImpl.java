@@ -1335,15 +1335,24 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setWeight(p.getWeight());
         dto.setCbm(p.getCbm());
         dto.setEta(p.getEtaAta());
+        dto.setEtd(p.getEtd());
+        dto.setArrivalDate(p.getArrivalDate());
+        dto.setSailDate(p.getSailDate());
         dto.setJobStatus(p.getJobStatus());
+        dto.setDocumentStatus(p.getDocumentStatus());
         dto.setPrincipalPoid(p.getPrincipalPoid());
         dto.setPrincipalLov(getLov(p.getPrincipalPoid(), "PRINCIPAL_MASTER"));
         dto.setPackages(p.getPackages());
         dto.setBlAwbNo(p.getBlAwbNo());
         dto.setOrigin(p.getOrigin());
-        dto.setOriginLov(getLov(parseLong(p.getOrigin()), "FF_AIRPORTS"));
+        dto.setOriginLov(getLovByCode(p.getOrigin(), "FF_AIRPORTS"));
         dto.setDestination(p.getDestination());
-        dto.setDestinationLov(getLov(parseLong(p.getDestination()), "FF_AIRPORTS"));
+        dto.setDestinationLov(getLovByCode(p.getDestination(), "FF_AIRPORTS"));
+        dto.setCarrier(p.getCarrierCode());
+        dto.setCarrierLov(getLovByCode(p.getCarrierCode(), "AIRLINE"));
+        dto.setVesselName(p.getVesselName());
+        dto.setTransportFrom(p.getTransportFrom());
+        dto.setTransportTo(p.getTransportTo());
         dto.setPol(p.getPol());
         dto.setPod(p.getPod());
         dto.setLine(p.getLine());
@@ -1416,6 +1425,11 @@ public class FFProjectsServiceImpl implements FFProjectsService {
             return null;
         }
         return lovDataService.getDetailsByPoidAndLovNameFast(poid, lovName);
+    }
+
+    private LovGetListDto getLovByCode(String code, String lovName) {
+        if (code == null || code.isBlank()) return null;
+        return lovDataService.getLovItemByCodeFast(code, lovName);
     }
 
     private Long parseLong(String value) {
