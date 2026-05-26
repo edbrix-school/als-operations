@@ -83,6 +83,9 @@ public class FFProjectsCtrlSheetDtl {
     private String truckNumber;
 
 
+    @Column(name = "ACTIVE", length = 1)
+    private String active;
+
     @Column(name = "CREATED_BY", length = 20)
     @AuditIgnore
     private String createdBy;

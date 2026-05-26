@@ -1,5 +1,6 @@
 package com.asg.operations.projects.dto;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,7 +19,9 @@ public class SeaFreightSummaryDTO {
     private String motherVesselName;
     private String motherVoyageNo;
     private String pol;
+    private LovGetListDto polLov;
     private String pod;
+    private LovGetListDto podLov;
     private String masterBlNo;
     private String houseBlNo;
     private String houseBlNo2;
@@ -28,6 +31,7 @@ public class SeaFreightSummaryDTO {
     private LocalDate sailDate;
     private String bookingRef;
     private String releaseType;
+    private LovGetListDto releaseLov;
     private Double weight;
     private Double cbm;
     private String line;
@@ -40,6 +44,7 @@ public class SeaFreightSummaryDTO {
     // Container fields
     private String containerNo;
     private String containerType;
+    private LovGetListDto containerTypeLov;
     private String sealNumber;
     private String cargoDescription;
     private Double qty;

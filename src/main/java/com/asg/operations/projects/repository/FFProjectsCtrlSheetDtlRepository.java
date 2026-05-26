@@ -12,9 +12,13 @@ public interface FFProjectsCtrlSheetDtlRepository extends JpaRepository<FFProjec
 
     List<FFProjectsCtrlSheetDtl> findByTransactionPoid(Long transactionPoid);
 
+    List<FFProjectsCtrlSheetDtl> findByTransactionPoidAndActive(Long transactionPoid, String active);
+
     Optional<FFProjectsCtrlSheetDtl> findByTransactionPoidAndDetRowId(Long transactionPoid, Long detRowId);
 
     List<FFProjectsCtrlSheetDtl> findByTransactionPoidAndFreightType(Long transactionPoid, String freightType);
+
+    List<FFProjectsCtrlSheetDtl> findByTransactionPoidAndFreightTypeAndActive(Long transactionPoid, String freightType, String active);
 
     void deleteByTransactionPoidAndDetRowIdIn(Long transactionPoid, List<Long> detRowIds);
 
