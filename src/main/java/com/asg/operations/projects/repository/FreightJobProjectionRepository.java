@@ -52,16 +52,17 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
         SELECT
             j.TRANSACTION_POID as jobId,
             j.FF_JOBNO as jobNo,
-            CAST(j.MOTHER_VSL_LOADPORT_POID AS VARCHAR2(50)) as pol,
-            CAST(j.MOTHER_VSL_UNLOADPORT_POID AS VARCHAR2(50)) as pod,
+            CAST(j.FEEDER_LOADPORT_POID AS VARCHAR2(50)) as pol,
+            CAST(j.FEEDER_UNLOADPORT_POID AS VARCHAR2(50)) as pod,
             TRUNC(j.MOTHER_VSL_SAIL_DATE) as etd,
-            TRUNC(j.MOTHER_VSL_ETA) as etaAta,
+            TRUNC(j.FEEDER_VSL_ETA) as etaAta,
             TRUNC(j.FEEDER_VSL_ARRIVAL_DATE) as arrivalDate,
             TRUNC(j.MOTHER_VSL_SAIL_DATE) as sailDate,
             j.TOTAL_WEIGHT as weight,
             j.TOTAL_VOLUME as cbm,
+            j.TOTAL_NO_OF_PACKS as noOfPacks,
             j.LINE_POID as line,
-            j.MOTHER_VSL_NAME as vesselName,
+            j.FEEDER_VSL_NAME as vesselName,
             j.MASTER_BL_NO as masterBlNo,
             j.HOUSE_BL_NO as houseBlNo,
             j.CARGO_DESCRIPTION as description,
@@ -71,8 +72,8 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
         WHERE j.PROJECT_POID = :projectId
         AND (INSTR(','||j.SHIPMENT_MODE||',', ',SEA,') > 0 OR INSTR(','||j.SHIPMENT_MODE||',', ',SEA FREIGHT,') > 0)
         AND (j.DELETED IS NULL OR j.DELETED = 'N')
-        AND (:fromDate IS NULL OR TRUNC(j.MOTHER_VSL_ETA) >= :fromDate)
-        AND (:toDate IS NULL OR TRUNC(j.MOTHER_VSL_ETA) <= :toDate)
+        AND (:fromDate IS NULL OR TRUNC(j.FEEDER_VSL_ETA) >= :fromDate)
+        AND (:toDate IS NULL OR TRUNC(j.FEEDER_VSL_ETA) <= :toDate)
         ORDER BY j.TRANSACTION_POID
         """, nativeQuery = true)
     List<SeaFreightJobProjection> findSeaFreightJobsFiltered(
