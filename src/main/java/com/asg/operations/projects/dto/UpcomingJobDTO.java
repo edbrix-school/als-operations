@@ -33,4 +33,5 @@ public class UpcomingJobDTO {
     private Double weight;
     private String jobStatus;
     private Boolean canCreateJob;
+    private String active;
 }

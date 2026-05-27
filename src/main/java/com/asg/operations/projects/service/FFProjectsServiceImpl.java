@@ -1545,6 +1545,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setPackages(cs.getNoOfPackages());
         dto.setWeight(cs.getWeight());
         dto.setCanCreateJob(cs.getJobNoPoid() == null);
+        dto.setActive(cs.getActive());
 
         if (manifest != null) {
             dto.setJobNo(manifest.getFfJobNo());
