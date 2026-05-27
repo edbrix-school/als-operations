@@ -21,4 +21,5 @@ public interface SeaFreightJobProjection {
     String getDescription();
     String getJobStatus();
     String getDocumentStatus();
+    Long getPrincipalPoid();
 }

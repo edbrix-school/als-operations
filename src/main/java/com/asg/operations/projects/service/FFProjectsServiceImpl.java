@@ -404,40 +404,45 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     @Override
     @Transactional(readOnly = true)
     public FreightJobsSummaryDTO getAllFreightsSummary(Long transactionPoid, FreightFilterRequest filter) {
-        List<FreightJobSummaryProjection> allJobs = freightJobProjectionRepository.findAllFreightJobs(transactionPoid);
-        
-        List<FreightSummaryDTO> allFreights = allJobs.stream().map(this::mapToFreightSummaryDTO).collect(Collectors.toList());
-        assignDetRowIds(allFreights, FreightSummaryDTO::setDetRowId);
         List<AirFreightSummaryDTO> airFreights = getAirFreightsSummary(transactionPoid, null, null, null, null);
         List<SeaFreightSummaryDTO> seaFreights = getSeaFreightsSummary(transactionPoid, null, null, null, null);
         List<RoadFreightSummaryDTO> roadFreights = getRoadFreightsSummary(transactionPoid, null, null, null, null);
         List<UpcomingJobDTO> upcomingJobs = getUpcomingJobsList(transactionPoid, null, null, null, null);
-        
+
+        List<FreightSummaryDTO> allFreights = buildAllFreightsList(transactionPoid, null, null);
+        assignDetRowIds(allFreights, FreightSummaryDTO::setDetRowId);
+
         FreightJobsSummaryDTO.SummaryTotalsDTO totals = new FreightJobsSummaryDTO.SummaryTotalsDTO(
-                allJobs.size(),
+                allFreights.size(),
                 airFreights.size(),
                 seaFreights.size(),
                 roadFreights.size(),
                 upcomingJobs.size(),
-                allJobs.stream().mapToDouble(j -> j.getWeight() != null ? j.getWeight() : 0.0).sum(),
-                allJobs.stream().mapToDouble(j -> j.getCbm() != null ? j.getCbm() : 0.0).sum()
+                allFreights.stream().mapToDouble(j -> j.getWeight() != null ? j.getWeight() : 0.0).sum(),
+                allFreights.stream().mapToDouble(j -> j.getCbm() != null ? j.getCbm() : 0.0).sum()
         );
-        
+
         return new FreightJobsSummaryDTO(allFreights, airFreights, seaFreights, roadFreights, upcomingJobs, totals);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<FreightSummaryDTO> getAllFreights(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
-        List<FreightJobSummaryProjection> jobs = (fromDate != null && toDate != null)
-                ? freightJobProjectionRepository.findAllFreightJobsByDateRange(transactionPoid, fromDate, toDate)
-                : freightJobProjectionRepository.findAllFreightJobs(transactionPoid);
-
-        List<FreightSummaryDTO> result = jobs.stream()
-                .map(this::mapToFreightSummaryDTO)
-                .collect(Collectors.toList());
+        List<FreightSummaryDTO> result = buildAllFreightsList(transactionPoid, fromDate, toDate);
         applySorting(result, sortBy, sortDir);
         assignDetRowIds(result, FreightSummaryDTO::setDetRowId);
+        return result;
+    }
+
+    private List<FreightSummaryDTO> buildAllFreightsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate) {
+        List<AirFreightJobProjection> airJobs = freightJobProjectionRepository.findAirFreightJobsFiltered(transactionPoid, fromDate, toDate);
+        List<SeaFreightJobProjection> seaJobs = freightJobProjectionRepository.findSeaFreightJobsFiltered(transactionPoid, fromDate, toDate);
+        List<RoadFreightJobProjection> roadJobs = freightJobProjectionRepository.findRoadFreightJobsFiltered(transactionPoid, fromDate, toDate);
+
+        List<FreightSummaryDTO> result = new ArrayList<>();
+        airJobs.stream().map(this::mapAirToFreightSummary).forEach(result::add);
+        seaJobs.stream().map(this::mapSeaToFreightSummary).forEach(result::add);
+        roadJobs.stream().map(this::mapRoadToFreightSummary).forEach(result::add);
         return result;
     }
 
@@ -1325,6 +1330,78 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         for (int i = 0; i < list.size(); i++) {
             setter.accept(list.get(i), (long) (i + 1));
         }
+    }
+
+    private FreightSummaryDTO mapAirToFreightSummary(AirFreightJobProjection p) {
+        FreightSummaryDTO dto = new FreightSummaryDTO();
+        dto.setJobId(p.getJobId());
+        dto.setJobNo(p.getJobNo());
+        dto.setFreightType("AIR");
+        dto.setDescription(p.getDescription());
+        dto.setWeight(p.getWeight());
+        dto.setCbm(p.getCbm());
+        dto.setPackages(p.getNoOfPackages());
+        dto.setEtd(p.getEtd());
+        dto.setEta(p.getEtaAta());
+        dto.setJobStatus(p.getJobStatus());
+        dto.setDocumentStatus(p.getDocumentStatus() != null ? p.getDocumentStatus() : "NA");
+        dto.setPrincipalPoid(p.getPrincipalPoid());
+        dto.setPrincipalLov(getLov(p.getPrincipalPoid(), "PRINCIPAL_MASTER"));
+        dto.setOrigin(p.getOrigin());
+        dto.setOriginLov(getLovByCode(p.getOrigin(), "FF_AIRPORTS"));
+        dto.setDestination(p.getDestination());
+        dto.setDestinationLov(getLovByCode(p.getDestination(), "FF_AIRPORTS"));
+        dto.setCarrier(p.getCarrierCode());
+        dto.setCarrierLov(getLovByCode(p.getCarrierCode(), "AIRLINE"));
+        dto.setBlAwbNo(p.getMawbNo());
+        return dto;
+    }
+
+    private FreightSummaryDTO mapSeaToFreightSummary(SeaFreightJobProjection p) {
+        FreightSummaryDTO dto = new FreightSummaryDTO();
+        dto.setJobId(p.getJobId());
+        dto.setJobNo(p.getJobNo());
+        dto.setFreightType("SEA");
+        dto.setDescription(p.getDescription());
+        dto.setWeight(p.getWeight());
+        dto.setCbm(p.getCbm());
+        dto.setPackages(p.getNoOfPacks());
+        dto.setEtd(p.getEtd());
+        dto.setEta(p.getEtaAta());
+        dto.setArrivalDate(p.getArrivalDate());
+        dto.setSailDate(p.getSailDate());
+        dto.setJobStatus(p.getJobStatus());
+        dto.setDocumentStatus(p.getDocumentStatus());
+        dto.setPrincipalPoid(p.getPrincipalPoid());
+        dto.setPrincipalLov(getLov(p.getPrincipalPoid(), "PRINCIPAL_MASTER"));
+        dto.setPol(p.getPol());
+        dto.setPolLov(getLov(parseLong(p.getPol()), "PORT_MASTER"));
+        dto.setPod(p.getPod());
+        dto.setPodLov(getLov(parseLong(p.getPod()), "PORT_MASTER"));
+        dto.setVesselName(p.getVesselName());
+        dto.setLine(p.getLine() != null ? String.valueOf(p.getLine()) : null);
+        dto.setLineLov(getLov(p.getLine(), "LINE_MASTER"));
+        dto.setBlAwbNo(p.getMasterBlNo());
+        return dto;
+    }
+
+    private FreightSummaryDTO mapRoadToFreightSummary(RoadFreightJobProjection p) {
+        FreightSummaryDTO dto = new FreightSummaryDTO();
+        dto.setJobId(p.getJobId());
+        dto.setJobNo(p.getJobNo());
+        dto.setFreightType("ROAD");
+        dto.setDescription(p.getDescription());
+        dto.setWeight(p.getWeight());
+        dto.setCbm(p.getCbm());
+        dto.setEta(p.getEta());
+        dto.setJobStatus(p.getJobStatus());
+        dto.setDocumentStatus(p.getDocumentStatus());
+        dto.setPrincipalPoid(p.getPrincipalPoid());
+        dto.setPrincipalLov(getLov(p.getPrincipalPoid(), "PRINCIPAL_MASTER"));
+        dto.setTransportFrom(p.getTransportFrom());
+        dto.setTransportTo(p.getTransportTo());
+        dto.setBlAwbNo(p.getBlAwbNumber());
+        return dto;
     }
 
     private FreightSummaryDTO mapToFreightSummaryDTO(FreightJobSummaryProjection p) {
