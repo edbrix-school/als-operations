@@ -33,7 +33,8 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.DOCUMENT_STATUS as documentStatus,
             j.FLIGHT_NO as flightNo,
             j.HOUSE_BL_NO as hawbNo,
-            j.MASTER_BL_NO as mawbNo
+            j.MASTER_BL_NO as mawbNo,
+            j.PRINCIPAL_POID as principalPoid
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
         AND (INSTR(','||j.SHIPMENT_MODE||',', ',AIR,') > 0 OR INSTR(','||j.SHIPMENT_MODE||',', ',AIR FREIGHT,') > 0)
@@ -67,7 +68,8 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.HOUSE_BL_NO as houseBlNo,
             j.CARGO_DESCRIPTION as description,
             j.JOB_STATUS as jobStatus,
-            j.DOCUMENT_STATUS as documentStatus
+            j.DOCUMENT_STATUS as documentStatus,
+            j.PRINCIPAL_POID as principalPoid
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
         AND (INSTR(','||j.SHIPMENT_MODE||',', ',SEA,') > 0 OR INSTR(','||j.SHIPMENT_MODE||',', ',SEA FREIGHT,') > 0)
@@ -94,7 +96,8 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             j.TOTAL_VOLUME as cbm,
             j.CARGO_DESCRIPTION as description,
             j.JOB_STATUS as jobStatus,
-            j.DOCUMENT_STATUS as documentStatus
+            j.DOCUMENT_STATUS as documentStatus,
+            j.PRINCIPAL_POID as principalPoid
         FROM FF_MANIEST_HDR j
         WHERE j.PROJECT_POID = :projectId
         AND (INSTR(','||j.SHIPMENT_MODE||',', ',ROAD,') > 0 OR INSTR(','||j.SHIPMENT_MODE||',', ',ROAD FREIGHT,') > 0)
