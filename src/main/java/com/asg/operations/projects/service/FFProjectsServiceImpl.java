@@ -1348,11 +1348,11 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setPrincipalPoid(p.getPrincipalPoid());
         dto.setPrincipalLov(getLov(p.getPrincipalPoid(), "PRINCIPAL_MASTER"));
         dto.setOrigin(p.getOrigin());
-        dto.setOriginLov(getLovByCode(p.getOrigin(), "FF_AIRPORTS"));
+        dto.setOriginLov(getLov(parseLong(p.getOrigin()), "FF_AIRPORTS"));
         dto.setDestination(p.getDestination());
-        dto.setDestinationLov(getLovByCode(p.getDestination(), "FF_AIRPORTS"));
+        dto.setDestinationLov(getLov(parseLong(p.getDestination()), "FF_AIRPORTS"));
         dto.setCarrier(p.getCarrierCode());
-        dto.setCarrierLov(getLovByCode(p.getCarrierCode(), "AIRLINE"));
+        dto.setCarrierLov(getLov(parseLong(p.getCarrierCode()), "AIRLINE"));
         dto.setBlAwbNo(p.getMawbNo());
         return dto;
     }
@@ -1423,11 +1423,11 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setPackages(p.getPackages());
         dto.setBlAwbNo(p.getBlAwbNo());
         dto.setOrigin(p.getOrigin());
-        dto.setOriginLov(getLovByCode(p.getOrigin(), "FF_AIRPORTS"));
+        dto.setOriginLov(getLov(parseLong(p.getOrigin()), "FF_AIRPORTS"));
         dto.setDestination(p.getDestination());
-        dto.setDestinationLov(getLovByCode(p.getDestination(), "FF_AIRPORTS"));
+        dto.setDestinationLov(getLov(parseLong(p.getDestination()), "FF_AIRPORTS"));
         dto.setCarrier(p.getCarrierCode());
-        dto.setCarrierLov(getLovByCode(p.getCarrierCode(), "AIRLINE"));
+        dto.setCarrierLov(getLov(parseLong(p.getCarrierCode()), "AIRLINE"));
         dto.setVesselName(p.getVesselName());
         dto.setTransportFrom(p.getTransportFrom());
         dto.setTransportTo(p.getTransportTo());
@@ -1503,11 +1503,6 @@ public class FFProjectsServiceImpl implements FFProjectsService {
             return null;
         }
         return lovDataService.getDetailsByPoidAndLovNameFast(poid, lovName);
-    }
-
-    private LovGetListDto getLovByCode(String code, String lovName) {
-        if (code == null || code.isBlank()) return null;
-        return lovDataService.getLovItemByCodeFast(code, lovName);
     }
 
     private Long parseLong(String value) {
