@@ -389,12 +389,21 @@ public class FFProjectsServiceImpl implements FFProjectsService {
     @Override
     @Transactional(readOnly = true)
     public List<UpcomingJobDTO> getUpcomingJobsList(Long transactionPoid, LocalDate fromDate, LocalDate toDate, String sortBy, String sortDir) {
-        List<FreightJobSummaryProjection> jobs = (fromDate != null && toDate != null)
-                ? freightJobProjectionRepository.findAllFreightJobsByDateRange(transactionPoid, fromDate, toDate)
-                : freightJobProjectionRepository.findAllFreightJobs(transactionPoid);
+        List<FFProjectsCtrlSheetDtl> controlSheets = projectsCtrlSheetDtlRepository.findByTransactionPoidAndActive(transactionPoid, "Y");
 
-        List<UpcomingJobDTO> result = jobs.stream()
-                .map(this::mapToUpcomingJobDTO)
+        List<Long> linkedJobIds = controlSheets.stream()
+                .map(FFProjectsCtrlSheetDtl::getJobNoPoid)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, FFManifestHdr> manifestById = linkedJobIds.isEmpty() ? Collections.emptyMap()
+                : manifestHdrRepository.findAllById(linkedJobIds).stream()
+                        .collect(Collectors.toMap(FFManifestHdr::getTransactionPoid, Function.identity()));
+
+        List<UpcomingJobDTO> result = controlSheets.stream()
+                .filter(cs -> fromDate == null || cs.getEtaAta() == null || !cs.getEtaAta().isBefore(fromDate))
+                .filter(cs -> toDate == null || cs.getEtaAta() == null || !cs.getEtaAta().isAfter(toDate))
+                .map(cs -> mapToUpcomingJobDTO(cs, manifestById.get(cs.getJobNoPoid())))
                 .collect(Collectors.toList());
         applySorting(result, sortBy, sortDir);
         assignDetRowIds(result, UpcomingJobDTO::setDetRowId);
@@ -1516,28 +1525,57 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         }
     }
 
-    private UpcomingJobDTO mapToUpcomingJobDTO(FreightJobSummaryProjection p) {
+    private UpcomingJobDTO mapToUpcomingJobDTO(FFProjectsCtrlSheetDtl cs, FFManifestHdr manifest) {
         UpcomingJobDTO dto = new UpcomingJobDTO();
-        dto.setJobId(p.getJobId());
-        dto.setJobNo(p.getJobNo());
-        dto.setBlAwbNo(p.getBlAwbNo());
-        dto.setFreightType(p.getFreightMode());
-        dto.setLine(p.getLine());
-        dto.setLineLov(getLov(parseLong(p.getLine()), "LINE_MASTER"));
-        dto.setEta(p.getEtaAta());
-        dto.setPol(p.getPol());
-        dto.setPolLov(getLov(parseLong(p.getPol()), "PORT_MASTER"));
-        dto.setPod(p.getPod());
-        dto.setOrigin(p.getOrigin());
-        dto.setOriginLov(getLov(parseLong(p.getOrigin()), "FF_AIRPORTS"));
-        dto.setDestination(p.getDestination());
-        dto.setDestinationLov(getLov(parseLong(p.getDestination()), "FF_AIRPORTS"));
-        dto.setDescription(p.getDescription());
-        dto.setCbm(p.getCbm());
-        dto.setPackages(p.getPackages());
-        dto.setWeight(p.getWeight());
-        dto.setJobStatus(p.getJobStatus());
-        dto.setCanCreateJob(false);
+        dto.setJobId(cs.getJobNoPoid());
+        dto.setFreightType(cs.getFreightType());
+        dto.setDescription(cs.getDescription());
+        dto.setEta(cs.getEtaAta());
+        dto.setEtd(cs.getEtd());
+        dto.setLine(cs.getLine() != null ? String.valueOf(cs.getLine()) : null);
+        dto.setLineLov(getLov(cs.getLine(), "LINE_MASTER"));
+        dto.setOrigin(cs.getOrigin() != null ? String.valueOf(cs.getOrigin()) : null);
+        dto.setOriginLov(getLov(cs.getOrigin(), "FF_AIRPORTS"));
+        dto.setDestination(cs.getDestination() != null ? String.valueOf(cs.getDestination()) : null);
+        dto.setDestinationLov(getLov(cs.getDestination(), "FF_AIRPORTS"));
+        dto.setPol(cs.getPol());
+        dto.setPolLov(getLov(parseLong(cs.getPol()), "PORT_MASTER"));
+        dto.setPod(cs.getPod());
+        dto.setCbm(cs.getCbm());
+        dto.setPackages(cs.getNoOfPackages());
+        dto.setWeight(cs.getWeight());
+        dto.setCanCreateJob(cs.getJobNoPoid() == null);
+
+        if (manifest != null) {
+            dto.setJobNo(manifest.getFfJobNo());
+            dto.setBlAwbNo(manifest.getMasterBlNo());
+            dto.setJobStatus(manifest.getJobStatus());
+            if (dto.getWeight() == null && manifest.getTotalWeight() != null) {
+                dto.setWeight(manifest.getTotalWeight().doubleValue());
+            }
+            if (dto.getPackages() == null && manifest.getTotalNoOfPacks() != null) {
+                dto.setPackages(manifest.getTotalNoOfPacks().doubleValue());
+            }
+            if (dto.getCbm() == null && manifest.getTotalVolume() != null) {
+                dto.setCbm(manifest.getTotalVolume().doubleValue());
+            }
+            if (dto.getPol() == null && manifest.getFeederLoadportPoid() != null) {
+                dto.setPol(String.valueOf(manifest.getFeederLoadportPoid()));
+                dto.setPolLov(getLov(manifest.getFeederLoadportPoid(), "PORT_MASTER"));
+            }
+            if (dto.getPod() == null && manifest.getFeederUnloadportPoid() != null) {
+                dto.setPod(String.valueOf(manifest.getFeederUnloadportPoid()));
+            }
+            if (dto.getOrigin() == null && manifest.getAwportOfLoad() != null) {
+                dto.setOrigin(manifest.getAwportOfLoad());
+                dto.setOriginLov(getLov(parseLong(manifest.getAwportOfLoad()), "FF_AIRPORTS"));
+            }
+            if (dto.getDestination() == null && manifest.getAwportOfUnload() != null) {
+                dto.setDestination(manifest.getAwportOfUnload());
+                dto.setDestinationLov(getLov(parseLong(manifest.getAwportOfUnload()), "FF_AIRPORTS"));
+            }
+        }
+
         return dto;
     }
 
