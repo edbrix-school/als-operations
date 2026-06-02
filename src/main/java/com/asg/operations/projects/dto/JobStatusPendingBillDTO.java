@@ -24,5 +24,6 @@ public class JobStatusPendingBillDTO {
     private String mode;
     private String jobStatus;
     private LocalDate completedOn;
+    private LocalDate compilationDate;
     private BigDecimal bookedAmount;
 }

@@ -58,7 +58,7 @@ public interface FreightJobProjectionRepository extends JpaRepository<FFManifest
             TRUNC(j.MOTHER_VSL_SAIL_DATE) as etd,
             TRUNC(j.FEEDER_VSL_ETA) as etaAta,
             TRUNC(j.FEEDER_VSL_ARRIVAL_DATE) as arrivalDate,
-            TRUNC(j.MOTHER_VSL_SAIL_DATE) as sailDate,
+            TRUNC(j.FEEDER_VSL_SAIL_DATE) as sailDate,
             j.TOTAL_WEIGHT as weight,
             j.TOTAL_VOLUME as cbm,
             j.TOTAL_NO_OF_PACKS as noOfPacks,
