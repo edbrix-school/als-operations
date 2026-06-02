@@ -350,9 +350,10 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .lastModifiedDate(existing.getLastModifiedDate())
                 .build();
 
-        if ("N".equals(request.getActive()) && existing.getJobNoPoid() != null) {
-            throw new FFValidationException("Cannot deactivate control sheet: it is linked to a job.",
-                    List.of(new ValidationError(null, "ACTIVE", "Cannot deactivate a control sheet that is linked to a job.")));
+        Long effectiveJobNoPoid = request.getJobNoPoid() != null ? request.getJobNoPoid() : existing.getJobNoPoid();
+        if ("N".equals(request.getActive()) && effectiveJobNoPoid == null) {
+            throw new FFValidationException("Cannot deactivate control sheet without a job number.",
+                    List.of(new ValidationError(null, "ACTIVE", "Cannot deactivate a control sheet unless it has a job number.")));
         }
 
         existing.setFreightType(request.getFreightType());
@@ -382,6 +383,38 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
         String logDetail = String.format("KeyId = TRANSACTION_POID: %s DET_ROW_ID: %s", transactionPoid, detRowId);
         loggingService.createLogBatch(List.of(new com.asg.common.lib.dto.request.LogRequestDto<>(oldCtrl, existing, FFProjectsCtrlSheetDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail)));
+
+        return mapper.mapCtrlSheetDetailToResponse(existing);
+    }
+
+    @Override
+    @Transactional
+    public FFProjectsCtrlSheetDetailResponse toggleControlSheetActive(Long transactionPoid, Long detRowId, String active) {
+        if (!"Y".equals(active) && !"N".equals(active)) {
+            throw new FFValidationException("Invalid active flag value. Must be 'Y' or 'N'.",
+                    List.of(new ValidationError(null, "ACTIVE", "Active flag must be 'Y' or 'N'.")));
+        }
+
+        projectsHdrRepository.findByTransactionPoidAndDeleted(transactionPoid, "N")
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID: " + transactionPoid));
+
+        FFProjectsCtrlSheetDtl existing = projectsCtrlSheetDtlRepository
+                .findByTransactionPoidAndDetRowId(transactionPoid, detRowId)
+                .orElseThrow(() -> new ResourceNotFoundException("Control sheet row not found with Det Row ID: " + detRowId));
+
+        if ("N".equals(active) && existing.getJobNoPoid() != null) {
+            throw new FFValidationException("Cannot deactivate a control sheet row that is linked to a job.",
+                    List.of(new ValidationError(null, "ACTIVE", "Cannot deactivate a control sheet row that has a job number assigned.")));
+        }
+
+        existing.setActive(active);
+        existing.setLastModifiedBy(UserContext.getUserName());
+        existing.setLastModifiedDate(LocalDateTime.now());
+
+        projectsCtrlSheetDtlRepository.save(existing);
+
+        String logDetail = String.format("KeyId = TRANSACTION_POID: %s DET_ROW_ID: %s", transactionPoid, detRowId);
+        loggingService.createLogBatch(List.of(new LogRequestDto<>(null, existing, FFProjectsCtrlSheetDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail)));
 
         return mapper.mapCtrlSheetDetailToResponse(existing);
     }
@@ -477,11 +510,23 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                         )
                 ));
 
-        List<JobStatusPendingBillDTO> result = jobs.stream()
-                .map(job -> manifestById.get(job.getJobId()))
-                .filter(Objects::nonNull)
-                .map(manifest -> mapToJobStatusPendingBillDTO(manifest, bookedAmountByJobId.getOrDefault(manifest.getTransactionPoid(), BigDecimal.ZERO)))
-                .collect(Collectors.toList());
+        List<JobStatusPendingBillDTO> result = new ArrayList<>();
+        for (FreightJobSummaryProjection job : jobs) {
+            FFManifestHdr manifest = manifestById.get(job.getJobId());
+            if (manifest == null) continue;
+            BigDecimal bookedAmount = bookedAmountByJobId.getOrDefault(manifest.getTransactionPoid(), BigDecimal.ZERO);
+            String shipmentMode = manifest.getShipmentMode();
+            if (shipmentMode != null && shipmentMode.contains(",")) {
+                for (String mode : shipmentMode.split(",")) {
+                    String trimmed = mode.trim();
+                    if (!trimmed.isEmpty()) {
+                        result.add(mapToJobStatusPendingBillDTO(manifest, bookedAmount, trimmed));
+                    }
+                }
+            } else {
+                result.add(mapToJobStatusPendingBillDTO(manifest, bookedAmount, shipmentMode));
+            }
+        }
         applySorting(result, sortBy, sortDir);
         assignDetRowIds(result, JobStatusPendingBillDTO::setDetRowId);
         return result;
@@ -1485,12 +1530,22 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         return dto;
     }
 
-    private JobStatusPendingBillDTO mapToJobStatusPendingBillDTO(FFManifestHdr manifest, BigDecimal bookedAmount) {
+    private JobStatusPendingBillDTO mapToJobStatusPendingBillDTO(FFManifestHdr manifest, BigDecimal bookedAmount, String mode) {
         JobStatusPendingBillDTO dto = new JobStatusPendingBillDTO();
         dto.setJobId(manifest.getTransactionPoid());
         dto.setJobNo(manifest.getFfJobNo());
         dto.setBlNo(manifest.getMasterBlNo());
-        dto.setEtaAta(manifest.getMotherVslEta() != null ? manifest.getMotherVslEta().toLocalDate() : null);
+
+        String modeUpper = mode != null ? mode.toUpperCase().trim() : "";
+        LocalDate etaAta;
+        if (modeUpper.contains("AIR")) {
+            etaAta = manifest.getFlightDate() != null ? manifest.getFlightDate().toLocalDate() : null;
+        } else if (modeUpper.contains("SEA")) {
+            etaAta = manifest.getFeederVslEta() != null ? manifest.getFeederVslEta().toLocalDate() : null;
+        } else {
+            etaAta = manifest.getMotherVslEta() != null ? manifest.getMotherVslEta().toLocalDate() : null;
+        }
+        dto.setEtaAta(etaAta);
 
         Long principalPoid = manifest.getPrincipalPoid() != null ? manifest.getPrincipalPoid().longValue() : null;
         dto.setPrincipalPoid(principalPoid);
@@ -1500,9 +1555,11 @@ public class FFProjectsServiceImpl implements FFProjectsService {
         dto.setCustomerPoid(customerPoid);
         dto.setCustomerLov(projectJobMapper.getCustomerSupplierLov(customerPoid, manifest.getBillingTo()));
 
-        dto.setMode(manifest.getShipmentMode());
+        dto.setMode(mode);
         dto.setJobStatus(manifest.getJobStatus());
-        dto.setCompletedOn(manifest.getJobClosedDate() != null ? manifest.getJobClosedDate().toLocalDate() : null);
+        LocalDate jobClosedDate = manifest.getJobClosedDate() != null ? manifest.getJobClosedDate().toLocalDate() : null;
+        dto.setCompletedOn(jobClosedDate);
+        dto.setCompilationDate(jobClosedDate);
         dto.setBookedAmount(bookedAmount);
         return dto;
     }
@@ -1900,9 +1957,10 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                             .lastModifiedDate(existingCtrl.getLastModifiedDate())
                             .build();
 
-                    if ("N".equals(ctrl.getActive()) && existingCtrl.getJobNoPoid() != null) {
-                        throw new FFValidationException("Cannot deactivate control sheet: it is linked to a job.",
-                                List.of(new ValidationError(null, "ACTIVE", "Cannot deactivate a control sheet that is linked to a job.")));
+                    Long effectiveJobNoPoid = ctrl.getJobNoPoid() != null ? ctrl.getJobNoPoid() : existingCtrl.getJobNoPoid();
+                    if ("N".equals(ctrl.getActive()) && effectiveJobNoPoid == null) {
+                        throw new FFValidationException("Cannot deactivate control sheet without a job number.",
+                                List.of(new ValidationError(null, "ACTIVE", "Cannot deactivate a control sheet unless it has a job number.")));
                     }
 
                     existingCtrl.setFreightType(ctrl.getFreightType());

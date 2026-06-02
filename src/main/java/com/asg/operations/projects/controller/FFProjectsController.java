@@ -169,6 +169,17 @@ public class FFProjectsController {
         return ApiResponse.success("Control sheets retrieved successfully", response);
     }
 
+    @Operation(summary = "Toggle Control Sheet Active", description = "Toggle active/inactive status of a control sheet row. Rows linked to a job number cannot be made inactive.")
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PatchMapping("/{transactionPoid}/control-sheets/{detRowId}/toggle-active")
+    public ResponseEntity<?> toggleControlSheetActive(
+            @PathVariable @NotNull Long transactionPoid,
+            @PathVariable @NotNull Long detRowId,
+            @RequestParam @NotNull String active) {
+        FFProjectsCtrlSheetDetailResponse response = projectsService.toggleControlSheetActive(transactionPoid, detRowId, active);
+        return ApiResponse.success("Control sheet status updated successfully", response);
+    }
+
     @Operation(
             summary = "Upload Control Sheet from Excel",
             description = "Upload an Excel file to replace all control sheet entries for a project. " +
