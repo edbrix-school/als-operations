@@ -595,6 +595,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
             dto.setDetention(pkg.getDetention());
             dto.setRemarks(pkg.getRemarks());
             dto.setActualArrivalDate(pkg.getDeliveryDate() != null ? pkg.getDeliveryDate().toLocalDate() : null);
+            if (pkg.getDocStatus() != null) {
+                dto.setDocumentStatus(pkg.getDocStatus());
+            }
         } else {
             // Use header-level totals if no air packages
             dto.setNoOfPackages(job.getNoOfPackages());
@@ -757,6 +760,9 @@ public class FFProjectsServiceImpl implements FFProjectsService {
             dto.setExpiryDate(truck.getExpiryDate() != null ? truck.getExpiryDate().toLocalDate() : null);
             dto.setSubmittedDate(truck.getSubmittedDate() != null ? truck.getSubmittedDate().toLocalDate() : null);
             dto.setPaymentDate(truck.getPaymentDate() != null ? truck.getPaymentDate().toLocalDate() : null);
+            if (truck.getDocumentStatus() != null) {
+                dto.setDocumentStatus(truck.getDocumentStatus());
+            }
         } else {
             dto.setBlAwbNumber(job.getBlAwbNumber());
             dto.setEta(job.getEta());
