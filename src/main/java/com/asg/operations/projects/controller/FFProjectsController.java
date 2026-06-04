@@ -171,7 +171,7 @@ public class FFProjectsController {
 
     @Operation(summary = "Toggle Control Sheet Active", description = "Toggle active/inactive status of a control sheet row. Rows linked to a job number cannot be made inactive.")
     @AllowedAction(UserRolesRightsEnum.EDIT)
-    @PatchMapping("/{transactionPoid}/control-sheets/{detRowId}/toggle-active")
+    @PostMapping("/{transactionPoid}/control-sheets/{detRowId}/toggle-active")
     public ResponseEntity<?> toggleControlSheetActive(
             @PathVariable @NotNull Long transactionPoid,
             @PathVariable @NotNull Long detRowId,
