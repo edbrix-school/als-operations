@@ -14,4 +14,5 @@ public interface RoadFreightJobProjection {
     String getDescription();
     String getJobStatus();
     String getDocumentStatus();
+    Long getPrincipalPoid();
 }

@@ -75,6 +75,7 @@ public class ProjectMapper {
                 .sailDate(ctrlReq.getSailDate())
                 .pol(ctrlReq.getSfPOL())
                 .pod(ctrlReq.getSfPOD())
+                .active("Y")
                 .lastModifiedBy(UserContext.getUserName())
                 .lastModifiedDate(LocalDateTime.now())
                 .createdBy(UserContext.getUserName())
@@ -256,9 +257,14 @@ public class ProjectMapper {
                 .carrierLov(getLov(dtl.getCarrierPoid(), "AIRLINE"))
                 .linePoid(dtl.getLine())
                 .lineLov(getLov(dtl.getLine(), "LINE_MASTER"))
+                .pol(dtl.getPol())
+                .polLov(parseLovFromString(dtl.getPol(), "PORT_MASTER"))
+                .pod(dtl.getPod())
+                .podLov(parseLovFromString(dtl.getPod(), "PORT_MASTER"))
                 .truckNumber(dtl.getTruckNumber())
                 .description(dtl.getDescription())
                 .sailDate(dtl.getSailDate())
+                .active(dtl.getActive())
                 .createdBy(dtl.getCreatedBy())
                 .createdDate(dtl.getCreatedDate())
                 .lastModifiedBy(dtl.getLastModifiedBy())
@@ -274,6 +280,15 @@ public class ProjectMapper {
     private LovGetListDto getLovByCode(String code, String lovName) {
         if (code == null || code.isEmpty()) return null;
         return lovDataService.getLovItemByCodeFast(code, lovName);
+    }
+
+    private LovGetListDto parseLovFromString(String value, String lovName) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return getLov(Long.parseLong(value.trim()), lovName);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     public FFProjectsListResponse mapToListResponse(FFProjectsHdr hdr) {

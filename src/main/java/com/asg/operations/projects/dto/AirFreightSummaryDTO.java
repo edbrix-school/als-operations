@@ -1,5 +1,6 @@
 package com.asg.operations.projects.dto;
 
+import com.asg.common.lib.dto.LovGetListDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,8 +19,11 @@ public class AirFreightSummaryDTO {
     private String flightNo;
     private String flightNo2;
     private String origin;
+    private LovGetListDto originLov;
     private String destination;
+    private LovGetListDto destinationLov;
     private String carrier;
+    private LovGetListDto carrierLov;
     private LocalDate etd;
     private LocalDate eta;
     private LocalDate actualArrivalDate;

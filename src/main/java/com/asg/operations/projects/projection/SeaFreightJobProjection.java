@@ -13,6 +13,7 @@ public interface SeaFreightJobProjection {
     LocalDate getSailDate();
     Double getWeight();
     Double getCbm();
+    Double getNoOfPacks();
     Long getLine();
     String getVesselName();
     String getMasterBlNo();
@@ -20,4 +21,5 @@ public interface SeaFreightJobProjection {
     String getDescription();
     String getJobStatus();
     String getDocumentStatus();
+    Long getPrincipalPoid();
 }

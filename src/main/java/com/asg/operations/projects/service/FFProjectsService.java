@@ -119,4 +119,10 @@ public interface FFProjectsService {
      * Create job from upcoming control sheet entry
      */
     Long createJobFromUpcoming(Long transactionPoid, Long controlSheetDetRowId);
+
+    /**
+     * Set active/inactive status of a control sheet row.
+     * Rows linked to a job number cannot be made inactive.
+     */
+    FFProjectsCtrlSheetDetailResponse toggleControlSheetActive(Long transactionPoid, Long detRowId, String active);
 }

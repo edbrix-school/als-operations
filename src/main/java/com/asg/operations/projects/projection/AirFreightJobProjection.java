@@ -19,4 +19,5 @@ public interface AirFreightJobProjection {
     String getFlightNo();
     String getHawbNo();
     String getMawbNo();
+    Long getPrincipalPoid();
 }

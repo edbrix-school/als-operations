@@ -85,8 +85,11 @@ public class FFManifestHdrDto {
     private LocalDateTime motherVslEta;
 
     private Long motherVslLoadPortPoid;
+    private LovGetListDto motherVslLoadPortLov;
     private Long motherVslUnloadPortPoid;
+    private LovGetListDto motherVslUnloadPortLov;
     private Long motherVslTranshipPortPoid;
+    private LovGetListDto motherVslTranshipPortLov;
 
     @Size(max = 20, message = "Feeder Voyage Number must not exceed 20 characters")
     private String feederVoyageNo;
@@ -108,9 +111,11 @@ public class FFManifestHdrDto {
 
     @Size(max = 20, message = "Aw Port Of Load must not exceed 20 characters")
     private String awportOfLoad;
+    private LovGetListDto awportOfLoadLov;
 
     @Size(max = 20, message = "Aw Port Of UnLoad must not exceed 20 characters")
     private String awportOfUnload;
+    private LovGetListDto awportOfUnloadLov;
 
     private Long shipperPoid;
     private Long shipperAddressPoid;
@@ -184,6 +189,7 @@ public class FFManifestHdrDto {
 
     @Size(max = 20, message = "Carrier Code must not exceed 20 characters")
     private String carrierCode;
+    private LovGetListDto carrierLov;
 
     @Size(max = 100, message = "Agent Details must not exceed 100 characters")
     private String agentDetails;
@@ -218,6 +224,7 @@ public class FFManifestHdrDto {
 
     @Size(max = 30, message = "Released type must not exceed 30 characters")
     private String releasedType;
+    private LovGetListDto releasedTypeLov;
     private Long relasedSeqNo;
 
     @Size(max = 20, message = "Released Grant By must not exceed 20 characters")
