@@ -439,7 +439,6 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .map(cs -> mapToUpcomingJobDTO(cs, manifestById.get(cs.getJobNoPoid())))
                 .collect(Collectors.toList());
         applySorting(result, sortBy, sortDir);
-//        assignDetRowIds(result, UpcomingJobDTO::setDetRowId);
         return result;
     }
 
