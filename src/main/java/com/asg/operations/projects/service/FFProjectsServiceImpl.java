@@ -1590,6 +1590,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
     private UpcomingJobDTO mapToUpcomingJobDTO(FFProjectsCtrlSheetDtl cs, FFManifestHdr manifest) {
         UpcomingJobDTO dto = new UpcomingJobDTO();
+        dto.setDetRowId(cs.getDetRowId());
         dto.setJobId(cs.getJobNoPoid());
         dto.setFreightType(cs.getFreightType());
         dto.setDescription(cs.getDescription());
