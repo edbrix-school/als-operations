@@ -188,7 +188,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                         entry.setSailDate(((java.sql.Timestamp) sailDateObj).toLocalDateTime().toLocalDate());
                     }
                 }
-                if (voyageDetails.get("totalQuantity") != null) {
+                if (request.getTotalQuantity() == null && voyageDetails.get("totalQuantity") != null) {
                     Object totalQuantityObj = voyageDetails.get("totalQuantity");
                     if (totalQuantityObj instanceof BigDecimal) {
                         entry.setTotalQuantity(((BigDecimal) totalQuantityObj).longValue());
@@ -386,8 +386,13 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                         entry.setSailDate(((java.sql.Timestamp) sailDateObj).toLocalDateTime().toLocalDate());
                     }
                 }
-                if (voyageDetails.get("totalQuantity") != null) {
-                    entry.setTotalQuantity((Long) voyageDetails.get("totalQuantity"));
+                if (request.getTotalQuantity() == null && voyageDetails.get("totalQuantity") != null) {
+                    Object totalQuantityObj = voyageDetails.get("totalQuantity");
+                    if (totalQuantityObj instanceof BigDecimal) {
+                        entry.setTotalQuantity(((BigDecimal) totalQuantityObj).longValue());
+                    } else if (totalQuantityObj instanceof Number) {
+                        entry.setTotalQuantity(((Number) totalQuantityObj).longValue());
+                    }
                 }
                 if (voyageDetails.get("numberOfDays") != null) {
                     entry.setNumberOfDays((Long) voyageDetails.get("numberOfDays"));
@@ -4114,6 +4119,5 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
 }
-
 
 
