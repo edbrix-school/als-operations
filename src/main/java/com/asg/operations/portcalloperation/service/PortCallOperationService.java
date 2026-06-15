@@ -30,6 +30,8 @@ public interface PortCallOperationService {
 
     void deleteOperation(Long id, DeleteReasonDto deleteReasonDto);
 
+    PdaTransactionDetailResponseDto getPdaTransactionDetail(String pdaTransactionPoid);
+
     // Stored Procedure Methods
     Map<String, Object> loadPda(String pdaPoid, Long groupPoid, Long companyPoid, Long userPoid);
 
