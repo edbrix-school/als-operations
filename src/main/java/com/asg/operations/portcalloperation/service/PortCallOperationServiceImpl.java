@@ -1438,7 +1438,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 "       vvc.NEXT_PORT_POID AS nextPortPoid, " +
                 "       spm2.PORT_CODE AS nextPortCode, " +
                 "       spm2.PORT_NAME AS nextPortDesc, " +
-                "       pda.COMODITY_POID AS comodityPoid, " +
+                "       scm.COMODITY_POID AS comodityPoid, " +
                 "       scm.COMODITY_CODE AS comodityCode, " +
                 "       scm.COMODITY_NAME AS comodityDesc, " +
                 "       scm.COMMODITY_CATEGORY_POID AS productPoid, " +
@@ -1513,7 +1513,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     }
 
     /**
-     * Builds an {@link LovItem} (poid / code / description) from the prefixed columns of the query.
+     * Builds an {@link LovItem} from the prefixed columns of the query. The description is exposed as
+     * the LOV {@code label} and the poid as the LOV {@code value}.
      * Returns {@code null} when every value is absent so empty LOVs are not emitted.
      */
     private LovItem buildLov(Long poid, String code, String description) {
@@ -1524,12 +1525,28 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         item.setPoid(poid);
         item.setCode(code);
         item.setDescription(description);
+        item.setLabel(description);
+        item.setValue(poid);
         return item;
     }
 
+    /**
+     * Reads a POID-style column tolerantly. Several *_POID columns are stored as VARCHAR2, so
+     * {@link java.sql.ResultSet#getLong} blows up ("Fail to convert to internal representation")
+     * on blank/non-numeric values. Read the raw string and parse instead, returning {@code null}
+     * when the value is absent or not a whole number.
+     */
     private Long getLong(java.sql.ResultSet rs, String column) throws java.sql.SQLException {
-        long value = rs.getLong(column);
-        return rs.wasNull() ? null : value;
+        String value = rs.getString(column);
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            log.warn("Could not parse column '{}' value '{}' as Long", column, value);
+            return null;
+        }
     }
 
     private LocalDate getLocalDate(java.sql.ResultSet rs, String column) throws java.sql.SQLException {
