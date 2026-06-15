@@ -12,6 +12,7 @@ import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.utility.DateUtil;
 import com.asg.common.lib.utility.PaginationUtil;
 import com.asg.operations.common.repository.GlobalParameterRepository;
+import com.asg.operations.commonlov.dto.LovItem;
 import com.asg.operations.exceptions.CustomException;
 import com.asg.operations.exceptions.ResourceNotFoundException;
 import com.asg.operations.finaldisbursementaccount.repository.PdaFdaHdrRepository;
@@ -1401,6 +1402,155 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     }
 
     // Stored Procedure Implementations
+    @Override
+    public PdaTransactionDetailResponseDto getPdaTransactionDetail(String pdaTransactionPoid) {
+        String sql = "SELECT pda.DOC_REF AS pdaDocRef, " +
+                "       pda.VOYAGE_POID AS jobPoid, " +
+                "       vvc.JOB_NO AS jobCode, " +
+                "       'VESSEL/VOYAGE/LINE :' || vs.VESSEL_NAME || '/' || vvc.VOYAGE_NO || '/' || slm.LINE_CODE AS jobDesc, " +
+                "       pda.PRINCIPAL_POID AS principalPoid, " +
+                "       pm.PRINCIPAL_CODE AS principalCode, " +
+                "       pm.PRINCIPAL_NAME AS principalDesc, " +
+                "       vm.VESSEL_POID AS vesselPoid, " +
+                "       vsm.VESSEL_CODE AS vesselCode, " +
+                "       vsm.VESSEL_NAME || ' ' || vsm.IMO_NUMBER AS vesselDesc, " +
+                "       NVL(pda.GRT, vm.GRT) AS grt, " +
+                "       NVL(pda.NRT, vm.NRT) AS nrt, " +
+                "       NVL(pda.DWT, pda.DWT) AS dwt, " +
+                "       NVL(pda.IMO_NUMBER, pda.IMO_NUMBER) AS imoNumber, " +
+                "       vm.BEAM AS beam, " +
+                "       NVL(pda.VESSEL_TYPE_POID, vm.VESSEL_TYPE_POID) AS vesselTypePoid, " +
+                "       vst.VESSEL_TYPE_CODE AS vesselTypeCode, " +
+                "       vst.VESSEL_TYPE_NAME AS vesselTypeDesc, " +
+                "       vm.VESSEL_LENGTH AS loa, " +
+                "       vm.FLAG_OF_COUNTRY AS flagOfCountry, " +
+                "       NVL(pda.VOYAGE_NO, vvc.VOYAGE_NO) AS voyageNo, " +
+                "       pda.PORT_POID AS portOfCallPoid, " +
+                "       spm.PORT_CODE AS portOfCallCode, " +
+                "       spm.PORT_NAME AS portOfCallDesc, " +
+                "       spm.BERTHS AS berths, " +
+                "       pda.ARRIVAL_DATE AS eta, " +
+                "       pda.SAIL_DATE AS etd, " +
+                "       pda.VESSEL_HANDLED_BY AS operator, " +
+                "       vvc.START_PORT_POID AS previousPortPoid, " +
+                "       spm1.PORT_CODE AS previousPortCode, " +
+                "       spm1.PORT_NAME AS previousPortDesc, " +
+                "       vvc.NEXT_PORT_POID AS nextPortPoid, " +
+                "       spm2.PORT_CODE AS nextPortCode, " +
+                "       spm2.PORT_NAME AS nextPortDesc, " +
+                "       pda.COMODITY_POID AS comodityPoid, " +
+                "       scm.COMODITY_CODE AS comodityCode, " +
+                "       scm.COMODITY_NAME AS comodityDesc, " +
+                "       scm.COMMODITY_CATEGORY_POID AS productPoid, " +
+                "       sccm.COMMODITY_CATEGORY_CODE AS productCode, " +
+                "       sccm.COMMODITY_CATEGORY_NAME AS productDesc, " +
+                "       CASE WHEN stum.STOCK_UNIT_CODE = 'CBM' THEN pda.TOTAL_QUANTITY ELSE NULL END AS qntyInCBM, " +
+                "       CASE WHEN stum.STOCK_UNIT_CODE = 'MT' THEN pda.TOTAL_QUANTITY ELSE NULL END AS qntyInMT, " +
+                "       CASE WHEN stum.STOCK_UNIT_CODE NOT IN ('CBM','MT') OR stum.STOCK_UNIT_CODE IS NULL THEN pda.TOTAL_QUANTITY ELSE NULL END AS qntyInNo, " +
+                "       pda.OPERATION_TYPE AS type, " +
+                "       pda.PORT_POID AS port " +
+                "FROM PDA_ENTRY_HDR pda " +
+                "LEFT JOIN SHIP_VOYAGE_HDR vvc ON vvc.TRANSACTION_POID = pda.VOYAGE_POID " +
+                "LEFT JOIN SHIP_VESSEL_MASTER vm ON vm.VESSEL_POID = vvc.VESSEL_POID " +
+                "LEFT JOIN SHIP_COMODITY_MASTER scm ON scm.COMODITY_POID = pda.COMPANY_POID " +
+                "LEFT JOIN SHIP_LINE_MASTER slm ON vvc.LINE_POID = slm.LINE_POID " +
+                "LEFT JOIN SHIP_VESSEL_MASTER vs ON vs.VESSEL_POID = vvc.VESSEL_POID " +
+                "LEFT JOIN SHIP_PRINCIPAL_MASTER pm ON pm.PRINCIPAL_POID = pda.PRINCIPAL_POID " +
+                "LEFT JOIN SHIP_VESSEL_MASTER vsm ON vsm.VESSEL_POID = vm.VESSEL_POID " +
+                "LEFT JOIN SHIP_VESSEL_TYPE_MASTER vst ON vst.VESSEL_TYPE_POID = pda.VESSEL_TYPE_POID OR vst.VESSEL_TYPE_POID = vm.VESSEL_TYPE_POID " +
+                "LEFT JOIN SHIP_PORT_MASTER spm ON spm.PORT_POID = pda.PORT_POID " +
+                "LEFT JOIN SHIP_PORT_MASTER spm1 ON spm1.PORT_POID = vvc.START_PORT_POID " +
+                "LEFT JOIN SHIP_PORT_MASTER spm2 ON spm2.PORT_POID = vvc.NEXT_PORT_POID " +
+                "LEFT JOIN SHIP_COMMODITY_CATEGORY_MASTER sccm ON sccm.COMMODITY_CATEGORY_POID = scm.COMMODITY_CATEGORY_POID " +
+                "LEFT JOIN STOCK_UNIT_MASTER stum ON stum.STOCK_UNIT_CODE = pda.UNIT " +
+                "WHERE pda.TRANSACTION_POID = ?";
+
+        try {
+            log.info("[QUERY] getPdaTransactionDetail - pdaTransactionPoid: {}", pdaTransactionPoid);
+            List<PdaTransactionDetailResponseDto> results = jdbcTemplate.query(
+                    sql,
+                    (rs, rowNum) -> PdaTransactionDetailResponseDto.builder()
+                            .pdaDocRef(rs.getString("pdaDocRef"))
+                            .job(buildLov(getLong(rs, "jobPoid"), rs.getString("jobCode"), rs.getString("jobDesc")))
+                            .principal(buildLov(getLong(rs, "principalPoid"), rs.getString("principalCode"), rs.getString("principalDesc")))
+                            .vessel(buildLov(getLong(rs, "vesselPoid"), rs.getString("vesselCode"), rs.getString("vesselDesc")))
+                            .vesselType(buildLov(getLong(rs, "vesselTypePoid"), rs.getString("vesselTypeCode"), rs.getString("vesselTypeDesc")))
+                            .portOfCall(buildLov(getLong(rs, "portOfCallPoid"), rs.getString("portOfCallCode"), rs.getString("portOfCallDesc")))
+                            .previousPort(buildLov(getLong(rs, "previousPortPoid"), rs.getString("previousPortCode"), rs.getString("previousPortDesc")))
+                            .nextPort(buildLov(getLong(rs, "nextPortPoid"), rs.getString("nextPortCode"), rs.getString("nextPortDesc")))
+                            .comodity(buildLov(getLong(rs, "comodityPoid"), rs.getString("comodityCode"), rs.getString("comodityDesc")))
+                            .product(buildLov(getLong(rs, "productPoid"), rs.getString("productCode"), rs.getString("productDesc")))
+                            .grt(rs.getBigDecimal("grt"))
+                            .nrt(rs.getBigDecimal("nrt"))
+                            .dwt(rs.getBigDecimal("dwt"))
+                            .imoNumber(rs.getString("imoNumber"))
+                            .beam(rs.getBigDecimal("beam"))
+                            .loa(rs.getBigDecimal("loa"))
+                            .flagOfCountry(rs.getString("flagOfCountry"))
+                            .voyageNo(rs.getString("voyageNo"))
+                            .eta(getLocalDate(rs, "eta"))
+                            .etd(getLocalDate(rs, "etd"))
+                            .operator(rs.getString("operator"))
+                            .berths(splitBerths(rs.getString("berths")))
+                            .qntyInCBM(getLong(rs, "qntyInCBM"))
+                            .qntyInMT(getLong(rs, "qntyInMT"))
+                            .qntyInNo(getLong(rs, "qntyInNo"))
+                            .type(rs.getString("type"))
+                            .port(getLong(rs, "port"))
+                            .build(),
+                    pdaTransactionPoid);
+
+            if (results.isEmpty()) {
+                throw new ResourceNotFoundException("No PDA transaction found for poid: " + pdaTransactionPoid);
+            }
+            return results.get(0);
+        } catch (ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[QUERY] getPdaTransactionDetail - Error: {}", e.getMessage(), e);
+            throw new CustomException("Error loading PDA transaction detail: " + e.getMessage(), 500);
+        }
+    }
+
+    /**
+     * Builds an {@link LovItem} (poid / code / description) from the prefixed columns of the query.
+     * Returns {@code null} when every value is absent so empty LOVs are not emitted.
+     */
+    private LovItem buildLov(Long poid, String code, String description) {
+        if (poid == null && code == null && description == null) {
+            return null;
+        }
+        LovItem item = new LovItem();
+        item.setPoid(poid);
+        item.setCode(code);
+        item.setDescription(description);
+        return item;
+    }
+
+    private Long getLong(java.sql.ResultSet rs, String column) throws java.sql.SQLException {
+        long value = rs.getLong(column);
+        return rs.wasNull() ? null : value;
+    }
+
+    private LocalDate getLocalDate(java.sql.ResultSet rs, String column) throws java.sql.SQLException {
+        java.sql.Date value = rs.getDate(column);
+        return value == null ? null : value.toLocalDate();
+    }
+
+    /**
+     * Splits the semicolon-separated berths string into a list, trimming entries and dropping blanks.
+     * Returns an empty list when there is no value.
+     */
+    private List<String> splitBerths(String berths) {
+        if (StringUtils.isBlank(berths)) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(berths.split(";"))
+                .map(String::trim)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
+    }
+
     @Override
     public Map<String, Object> loadPda(String pdaPoid, Long groupPoid, Long companyPoid, Long userPoid) {
         try {
