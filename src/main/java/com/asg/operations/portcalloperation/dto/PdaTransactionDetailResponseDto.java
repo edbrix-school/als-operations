@@ -36,6 +36,7 @@ public class PdaTransactionDetailResponseDto {
     private LovItem nextPort;
     private LovItem comodity;
     private LovItem product;
+    private LovItem typeOfCall;
 
     private BigDecimal grt;
     private BigDecimal nrt;
