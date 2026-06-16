@@ -1448,6 +1448,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 "       CASE WHEN stum.STOCK_UNIT_CODE = 'MT' THEN pda.TOTAL_QUANTITY ELSE NULL END AS qntyInMT, " +
                 "       CASE WHEN stum.STOCK_UNIT_CODE NOT IN ('CBM','MT') OR stum.STOCK_UNIT_CODE IS NULL THEN pda.TOTAL_QUANTITY ELSE NULL END AS qntyInNo, " +
                 "       pda.OPERATION_TYPE AS type, " +
+                "       toc.POID AS typeOfCallPoid, " +
+                "       toc.CODE AS typeOfCallCode, " +
+                "       toc.DESCRIPTION AS typeOfCallDesc, " +
                 "       pda.PORT_POID AS port " +
                 "FROM PDA_ENTRY_HDR pda " +
                 "LEFT JOIN SHIP_VOYAGE_HDR vvc ON vvc.TRANSACTION_POID = pda.VOYAGE_POID " +
@@ -1463,6 +1466,17 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 "LEFT JOIN SHIP_PORT_MASTER spm2 ON spm2.PORT_POID = vvc.NEXT_PORT_POID " +
                 "LEFT JOIN SHIP_COMMODITY_CATEGORY_MASTER sccm ON sccm.COMMODITY_CATEGORY_POID = scm.COMMODITY_CATEGORY_POID " +
                 "LEFT JOIN STOCK_UNIT_MASTER stum ON stum.STOCK_UNIT_CODE = pda.UNIT " +
+                "LEFT JOIN ( " +
+                "    SELECT 1 AS POID, 'LOADING' AS CODE, '' AS DESCRIPTION FROM DUAL " +
+                "    UNION ALL " +
+                "    SELECT 2 AS POID, 'DISCHARGING' AS CODE, '' AS DESCRIPTION FROM DUAL " +
+                "    UNION ALL " +
+                "    SELECT 3 AS POID, 'LOADING/DISCHARGING' AS CODE, '' AS DESCRIPTION FROM DUAL " +
+                "    UNION ALL " +
+                "    SELECT 4 AS POID, 'DRY_DOCK' AS CODE, '' AS DESCRIPTION FROM DUAL " +
+                "    UNION ALL " +
+                "    SELECT 5 AS POID, 'OPA' AS CODE, '' AS DESCRIPTION FROM DUAL " +
+                ") toc ON toc.CODE = pda.OPERATION_TYPE " +
                 "WHERE pda.TRANSACTION_POID = ?";
 
         try {
@@ -1496,6 +1510,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .qntyInMT(getLong(rs, "qntyInMT"))
                             .qntyInNo(getLong(rs, "qntyInNo"))
                             .type(rs.getString("type"))
+                            .typeOfCall(buildLov(getLong(rs, "typeOfCallPoid"), rs.getString("typeOfCallCode"), rs.getString("typeOfCallDesc")))
                             .port(getLong(rs, "port"))
                             .build(),
                     pdaTransactionPoid);
