@@ -699,6 +699,17 @@ public class PdaEntryServiceImpl implements PdaEntryService {
 
         canEdit(entry);
 
+        // Check if there are unsaved changes (matching legacy ProcessShowDefCharge behavior)
+        // This ensures that if Total Quantity is newly entered, user must save first
+        // Legacy: if (common.IsCurrentDocumentChanged()) { common.showMessage("Please save the changes and proceed..."); return; }
+        // Note: In REST API context, we assume frontend handles save state, but we validate required fields are saved
+        if (entry.getTotalQuantity() == null) {
+            throw new ValidationException(
+                    "Please save the changes and proceed...",
+                    List.of(new ValidationError("totalQuantity", "Total Quantity must be saved before processing default charges"))
+            );
+        }
+
         // Validate required header fields
         validateRecalculateFields(entry);
 
