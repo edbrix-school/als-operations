@@ -439,7 +439,6 @@ public class FFProjectsServiceImpl implements FFProjectsService {
                 .map(cs -> mapToUpcomingJobDTO(cs, manifestById.get(cs.getJobNoPoid())))
                 .collect(Collectors.toList());
         applySorting(result, sortBy, sortDir);
-        assignDetRowIds(result, UpcomingJobDTO::setDetRowId);
         return result;
     }
 
@@ -1590,6 +1589,7 @@ public class FFProjectsServiceImpl implements FFProjectsService {
 
     private UpcomingJobDTO mapToUpcomingJobDTO(FFProjectsCtrlSheetDtl cs, FFManifestHdr manifest) {
         UpcomingJobDTO dto = new UpcomingJobDTO();
+        dto.setDetRowId(cs.getDetRowId());
         dto.setJobId(cs.getJobNoPoid());
         dto.setFreightType(cs.getFreightType());
         dto.setDescription(cs.getDescription());

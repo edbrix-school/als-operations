@@ -188,7 +188,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                         entry.setSailDate(((java.sql.Timestamp) sailDateObj).toLocalDateTime().toLocalDate());
                     }
                 }
-                if (voyageDetails.get("totalQuantity") != null) {
+                if (request.getTotalQuantity() == null && voyageDetails.get("totalQuantity") != null) {
                     Object totalQuantityObj = voyageDetails.get("totalQuantity");
                     if (totalQuantityObj instanceof BigDecimal) {
                         entry.setTotalQuantity(((BigDecimal) totalQuantityObj).longValue());
@@ -386,8 +386,13 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                         entry.setSailDate(((java.sql.Timestamp) sailDateObj).toLocalDateTime().toLocalDate());
                     }
                 }
-                if (voyageDetails.get("totalQuantity") != null) {
-                    entry.setTotalQuantity((Long) voyageDetails.get("totalQuantity"));
+                if (request.getTotalQuantity() == null && voyageDetails.get("totalQuantity") != null) {
+                    Object totalQuantityObj = voyageDetails.get("totalQuantity");
+                    if (totalQuantityObj instanceof BigDecimal) {
+                        entry.setTotalQuantity(((BigDecimal) totalQuantityObj).longValue());
+                    } else if (totalQuantityObj instanceof Number) {
+                        entry.setTotalQuantity(((Number) totalQuantityObj).longValue());
+                    }
                 }
                 if (voyageDetails.get("numberOfDays") != null) {
                     entry.setNumberOfDays((Long) voyageDetails.get("numberOfDays"));
@@ -693,6 +698,17 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         ));
 
         canEdit(entry);
+
+        // Check if there are unsaved changes (matching legacy ProcessShowDefCharge behavior)
+        // This ensures that if Total Quantity is newly entered, user must save first
+        // Legacy: if (common.IsCurrentDocumentChanged()) { common.showMessage("Please save the changes and proceed..."); return; }
+        // Note: In REST API context, we assume frontend handles save state, but we validate required fields are saved
+        if (entry.getTotalQuantity() == null) {
+            throw new ValidationException(
+                    "Please save the changes and proceed...",
+                    List.of(new ValidationError("totalQuantity", "Total Quantity must be saved before processing default charges"))
+            );
+        }
 
         // Validate required header fields
         validateRecalculateFields(entry);
@@ -3718,6 +3734,17 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
     private ExcelConfig getExcelConfig(String docId) {
+        List<ExcelConfig> configs = getAllExcelConfigs(docId);
+        if (configs.isEmpty()) {
+            throw new ValidationException(
+                    "Excel configuration not found",
+                    List.of(new ValidationError("file", "No Excel configuration found for DOC_ID: " + docId))
+            );
+        }
+        return configs.get(0);
+    }
+
+    private List<ExcelConfig> getAllExcelConfigs(String docId) {
         SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
                 .withProcedureName("PROC_GLOB_EXCEL_IMPORT_SHEETS")
                 .declareParameters(
@@ -3734,22 +3761,27 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 )
         );
 
-        List<Map<String, Object>> configs = (List<Map<String, Object>>) result.get("OUTDATA");
-        if (configs == null || configs.isEmpty()) {
+        List<Map<String, Object>> configRows = (List<Map<String, Object>>) result.get("OUTDATA");
+        if (configRows == null || configRows.isEmpty()) {
             throw new ValidationException(
                     "Excel configuration not found",
                     List.of(new ValidationError("file", "No Excel configuration found for DOC_ID: " + docId))
             );
         }
 
-        Map<String, Object> configRow = configs.get(0);
-        ExcelConfig config = new ExcelConfig();
-        config.startRowNumber = ((Number) configRow.get("START_ROW_NUMBER")).intValue();
-        config.startColNumber = ((Number) configRow.get("START_COL_NUMBER")).intValue();
-        config.endColNumber = ((Number) configRow.get("END_COL_NUMBER")).intValue();
-        config.tempTableName = (String) configRow.get("TEMP_TABLE_NAME");
-        config.excelSheetName = (String) configRow.get("EXCEL_SHEET_NAME");
-        return config;
+        List<ExcelConfig> configs = new ArrayList<>();
+        for (Map<String, Object> configRow : configRows) {
+            ExcelConfig config = new ExcelConfig();
+            config.startRowNumber = ((Number) configRow.get("START_ROW_NUMBER")).intValue();
+            config.startColNumber = ((Number) configRow.get("START_COL_NUMBER")).intValue();
+            config.endColNumber = ((Number) configRow.get("END_COL_NUMBER")).intValue();
+            config.tempTableName = (String) configRow.get("TEMP_TABLE_NAME");
+            config.excelSheetName = (String) configRow.get("EXCEL_SHEET_NAME");
+            configs.add(config);
+        }
+
+        logger.info("Loaded {} Excel configurations for docId: {}", configs.size(), docId);
+        return configs;
     }
 
     protected void saveImportedDataAsync(int startRowNumber, List<List<Object>> rowsCollection, String tempTableName) {
@@ -3877,13 +3909,14 @@ public class PdaEntryServiceImpl implements PdaEntryService {
         canEdit(entry);
 
         String docId = "110-160_1";
-        ExcelConfig config = getExcelConfig(docId);
-        logger.info("Excel config - startRowNumber: {}, startColNumber: {}, endColNumber: {}, tempTable: {}",
-                config.startRowNumber, config.startColNumber, config.endColNumber, config.tempTableName);
+        List<ExcelConfig> configs = getAllExcelConfigs(docId);
+        logger.info("Found {} Excel sheet configurations for docId: {}", configs.size(), docId);
 
-        jdbcTemplate.update("DELETE FROM " + config.tempTableName);
-
-        List<List<Object>> rowsCollection = new ArrayList<>();
+        // Clear all temp tables
+        for (ExcelConfig config : configs) {
+            jdbcTemplate.update("DELETE FROM " + config.tempTableName);
+            logger.info("Cleared temp table: {}", config.tempTableName);
+        }
 
         try (org.apache.poi.ss.usermodel.Workbook workbook = org.apache.poi.ss.usermodel.WorkbookFactory.create(file.getInputStream())) {
             if (workbook == null) {
@@ -3893,47 +3926,53 @@ public class PdaEntryServiceImpl implements PdaEntryService {
                 );
             }
 
-            org.apache.poi.ss.usermodel.Sheet sheet = config.excelSheetName != null
-                    ? workbook.getSheet(config.excelSheetName)
-                    : workbook.getSheetAt(0);
+            // Process each sheet configuration
+            int totalInserted = 0;
+            for (ExcelConfig config : configs) {
+                logger.info("Processing sheet: {} -> tempTable: {}", config.excelSheetName, config.tempTableName);
 
-            if (sheet == null) {
-                String sheetName = config.excelSheetName != null ? config.excelSheetName : "at index 0";
-                throw new ValidationException(
-                        "Excel sheet " + sheetName + " not able to open...",
-                        List.of(new ValidationError("file", "Excel sheet " + sheetName + " not able to open..."))
-                );
-            }
+                org.apache.poi.ss.usermodel.Sheet sheet = config.excelSheetName != null
+                        ? workbook.getSheet(config.excelSheetName)
+                        : workbook.getSheetAt(0);
 
-            for (org.apache.poi.ss.usermodel.Row row : sheet) {
-                List<Object> colCollection = new ArrayList<>();
-                for (int cn = config.startColNumber - 1; cn <= config.endColNumber - 1; cn++) {
-                    org.apache.poi.ss.usermodel.Cell cell = row.getCell(cn, org.apache.poi.ss.usermodel.Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
-                    switch (cell.getCellType()) {
-                        case NUMERIC -> colCollection.add(cell.getNumericCellValue());
-                        case STRING -> colCollection.add(cell.getStringCellValue());
-                        case BOOLEAN -> colCollection.add(cell.getBooleanCellValue());
-                        default -> colCollection.add("");
-                    }
+                if (sheet == null) {
+                    logger.warn("Excel sheet {} not found, skipping...", config.excelSheetName);
+                    continue;
                 }
-                rowsCollection.add(colCollection);
+
+                List<List<Object>> rowsCollection = new ArrayList<>();
+                for (org.apache.poi.ss.usermodel.Row row : sheet) {
+                    List<Object> colCollection = new ArrayList<>();
+                    for (int cn = config.startColNumber - 1; cn <= config.endColNumber - 1; cn++) {
+                        org.apache.poi.ss.usermodel.Cell cell = row.getCell(cn, org.apache.poi.ss.usermodel.Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                        switch (cell.getCellType()) {
+                            case NUMERIC -> colCollection.add(cell.getNumericCellValue());
+                            case STRING -> colCollection.add(cell.getStringCellValue());
+                            case BOOLEAN -> colCollection.add(cell.getBooleanCellValue());
+                            default -> colCollection.add("");
+                        }
+                    }
+                    rowsCollection.add(colCollection);
+                }
+
+                logger.info("Sheet {}: Total rows read: {}", config.excelSheetName, rowsCollection.size());
+
+                saveImportedDataAsync(config.startRowNumber, rowsCollection, config.tempTableName);
+
+                // Verify data was inserted
+                Integer insertedCount = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM " + config.tempTableName, Integer.class);
+                logger.info("Sheet {}: Rows inserted into {}: {}", config.excelSheetName, config.tempTableName, insertedCount);
+                totalInserted += insertedCount;
             }
+
+            logger.info("Total rows inserted across all sheets: {}", totalInserted);
         } catch (Exception e) {
             throw new ValidationException(
                     "Error processing Excel file",
                     List.of(new ValidationError("file", "Failed to read Excel file: " + e.getMessage()))
             );
         }
-
-        logger.info("Total rows read from Excel: {}, Rows to be inserted (after startRowNumber {}): {}",
-                rowsCollection.size(), config.startRowNumber, Math.max(0, rowsCollection.size() - config.startRowNumber + 1));
-
-        saveImportedDataAsync(config.startRowNumber, rowsCollection, config.tempTableName);
-
-        // Verify data was inserted
-        Integer insertedCount = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM " + config.tempTableName, Integer.class);
-        logger.info("Rows inserted into temp table {}: {}", config.tempTableName, insertedCount);
 
         if (callStoredProcedure) {
             String result = callImportTdrDetail(groupPoid, userPoid, companyPoid, transactionPoid);
@@ -3945,7 +3984,7 @@ public class PdaEntryServiceImpl implements PdaEntryService {
             }
             return result != null ? result : "TDR details uploaded successfully from Excel";
         } else {
-            return String.format("Successfully imported %d rows to temp table. Click 'Load Details' to process.", insertedCount);
+            return "Successfully imported data from all sheets. Click 'Load Details' to process.";
         }
     }
 
@@ -4114,6 +4153,5 @@ public class PdaEntryServiceImpl implements PdaEntryService {
     }
 
 }
-
 
 

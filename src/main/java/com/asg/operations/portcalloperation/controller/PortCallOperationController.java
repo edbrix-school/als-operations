@@ -445,6 +445,18 @@ public class PortCallOperationController {
         return success("Operation deleted successfully");
     }
 
+    @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/pda-transaction-detail/{pdaTransactionPoid}")
+    @Operation(
+            summary = "Get PDA transaction detail",
+            description = "Retrieve PDA transaction header detail (job, principal, vessel, ports, commodity LOVs and voyage info) by PDA transaction POID",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getPdaTransactionDetail(@Parameter(description = "PDA Transaction POID") @PathVariable String pdaTransactionPoid) {
+        PdaTransactionDetailResponseDto result = portCallOperationService.getPdaTransactionDetail(pdaTransactionPoid);
+        return success("PDA transaction detail retrieved successfully", result);
+    }
+
     // Stored Procedure Endpoints
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/load-pda/{pdaPoid}")
