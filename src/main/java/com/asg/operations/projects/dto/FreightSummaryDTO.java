@@ -1,6 +1,7 @@
 package com.asg.operations.projects.dto;
 
 import com.asg.common.lib.dto.LovGetListDto;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,8 +21,11 @@ public class FreightSummaryDTO {
     private String description;
     private Double weight;
     private Double cbm;
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate eta;
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate etd;
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate arrivalDate;
     private String jobStatus;
     private String documentStatus;
@@ -38,6 +42,7 @@ public class FreightSummaryDTO {
     private LovGetListDto podLov;
     private String line;
     private LovGetListDto lineLov;
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate sailDate;
     private String vesselName;
     private String truckNumber;

@@ -1,6 +1,7 @@
 package com.asg.operations.projects.dto;
 
 import com.asg.common.lib.dto.LovGetListDto;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,7 +19,9 @@ public class UpcomingJobDTO {
     private String freightType;
     private String line;
     private LovGetListDto lineLov;
+    @JsonFormat(pattern = "dd-MMM-yy")
     private LocalDate eta;
+    @JsonFormat(pattern = "dd-MMM-yy")
     private LocalDate etd;
     private String pol;
     private LovGetListDto polLov;
