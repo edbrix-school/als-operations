@@ -21,11 +21,11 @@ public class FreightSummaryDTO {
     private String description;
     private Double weight;
     private Double cbm;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate eta;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate etd;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate arrivalDate;
     private String jobStatus;
     private String documentStatus;
@@ -42,7 +42,7 @@ public class FreightSummaryDTO {
     private LovGetListDto podLov;
     private String line;
     private LovGetListDto lineLov;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate sailDate;
     private String vesselName;
     private String truckNumber;

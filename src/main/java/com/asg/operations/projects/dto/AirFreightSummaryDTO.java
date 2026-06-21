@@ -25,11 +25,11 @@ public class AirFreightSummaryDTO {
     private LovGetListDto destinationLov;
     private String carrier;
     private LovGetListDto carrierLov;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate etd;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate eta;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate actualArrivalDate;
     private Double noOfPackages;
     private Double weight;
@@ -39,9 +39,9 @@ public class AirFreightSummaryDTO {
     private String description;
     private String jobStatus;
     private String documentStatus;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate appointmentDate;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate deliveryDate;
     private String imcoClassUnno;
     private String detention;

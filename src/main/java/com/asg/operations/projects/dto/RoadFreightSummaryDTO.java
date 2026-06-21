@@ -19,7 +19,7 @@ public class RoadFreightSummaryDTO {
     private String transportFrom;
     private String transportTo;
     private String origin;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate eta;
     private Double weight;
     private Double cbm;
@@ -32,15 +32,15 @@ public class RoadFreightSummaryDTO {
     private Double duty;
     private Double vat;
     private Double totalPaid;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate expiryDate;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate submittedDate;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate paymentDate;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate appointmentDate;
-    @JsonFormat(pattern = "dd-MMM-yy")
+    @JsonFormat(pattern = "dd-MMM-yyyy")
     private LocalDate deliveryDate;
     private String detention;
     private String remarks;
