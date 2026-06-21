@@ -1,5 +1,6 @@
 package com.asg.operations.projects.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ public class RoadFreightSummaryDTO {
     private String transportFrom;
     private String transportTo;
     private String origin;
+    @JsonFormat(pattern = "dd-MMM-yy")
     private LocalDate eta;
     private Double weight;
     private Double cbm;
@@ -30,10 +32,15 @@ public class RoadFreightSummaryDTO {
     private Double duty;
     private Double vat;
     private Double totalPaid;
+    @JsonFormat(pattern = "dd-MMM-yy")
     private LocalDate expiryDate;
+    @JsonFormat(pattern = "dd-MMM-yy")
     private LocalDate submittedDate;
+    @JsonFormat(pattern = "dd-MMM-yy")
     private LocalDate paymentDate;
+    @JsonFormat(pattern = "dd-MMM-yy")
     private LocalDate appointmentDate;
+    @JsonFormat(pattern = "dd-MMM-yy")
     private LocalDate deliveryDate;
     private String detention;
     private String remarks;
