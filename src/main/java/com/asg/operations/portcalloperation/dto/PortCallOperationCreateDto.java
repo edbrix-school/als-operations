@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -56,6 +57,17 @@ public class PortCallOperationCreateDto {
     private String termsConditions;
 
     private String husbandryCrewReqBy;
+
+    private Long pdaRefPoid;
+
+    private BigDecimal pdaAnchorageStayDays;
+
+    private BigDecimal pdaBerthStayDays;
+
+    private BigDecimal pdaPortStayDays;
+
+    @Size(max = 1000, message = "PDA FDA Remarks should not exceed 1000 characters")
+    private String pdaFdaRemarks;
 
     @Valid
     private List<PortCallOperationCargoDetailDto> cargoDetails;

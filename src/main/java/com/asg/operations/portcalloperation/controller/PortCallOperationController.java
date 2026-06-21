@@ -495,6 +495,18 @@ public class PortCallOperationController {
     }
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
+    @GetMapping("/pdas-by-voyage/{voyagePoid}")
+    @Operation(
+            summary = "Get PDAs by Voyage POID",
+            description = "Retrieve fully-approved PDAs for the given voyage, returning POID, doc ref code, and a combined principal/vessel/voyage description",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<?> getPdasByVoyagePoid(@Parameter(description = "Voyage POID") @PathVariable Long voyagePoid) {
+        List<PdaByVoyageResponseDto> result = portCallOperationService.getPdasByVoyagePoid(voyagePoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        return success("PDAs retrieved successfully", result);
+    }
+
+    @AllowedAction(UserRolesRightsEnum.VIEW)
     @GetMapping("/load-email-list/{transactionPoid}")
     @Operation(
             summary = "Load Email List",

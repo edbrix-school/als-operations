@@ -518,6 +518,9 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 throw new ResourceNotFoundException("Vessel Voyage", "Vessel Voyage Poid", dto.getVesselVoyagePoid());
             }
         }
+        if (dto.getPdaRefPoid() != null) {
+            validatePdaApproved(dto.getPdaRefPoid(), UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        }
 
         validateFinalMailDetailState(null, dto.getMailDetails(), true);
 
@@ -542,6 +545,11 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .portOfCallPoid(dto.getPortOfCallPoid())
                 .specialInstructions(dto.getSpecialInstructions())
                 .termsConditions(dto.getTermsConditions())
+                .pdaRefPoid(dto.getPdaRefPoid())
+                .pdaAnchorageStayDays(dto.getPdaAnchorageStayDays())
+                .pdaBerthStayDays(dto.getPdaBerthStayDays())
+                .pdaPortStayDays(dto.getPdaPortStayDays())
+                .pdaFdaRemarks(dto.getPdaFdaRemarks())
                 .build();
 
         hdr = hdrRepository.saveAndFlush(hdr);
@@ -639,9 +647,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
         if (dto.getPdaRefPoid() != null) {
-            if (!pdaEntryHdrRepository.existsByTransactionPoid(dto.getPdaRefPoid())) {
-                throw new ResourceNotFoundException("PDA Entry", "PDA Ref Poid", dto.getPdaRefPoid());
-            }
+            validatePdaApproved(dto.getPdaRefPoid(), groupPoid, UserContext.getCompanyPoid(), userPoid);
         }
         if (dto.getFdaRefPoid() != null) {
             if (!pdaFdaHdrRepository.existsByTransactionPoid(dto.getFdaRefPoid())) {
@@ -795,6 +801,24 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
 
         loggingService.logChanges(oldHdr, hdr, PortCallOperationHdr.class, UserContext.getDocumentId(), id.toString(), LogDetailsEnum.MODIFIED, "TRANSACTION_POID");
         return getOperationById(id);
+    }
+
+    private void validatePdaApproved(Long pdaRefPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        if (!pdaEntryHdrRepository.existsByTransactionPoid(pdaRefPoid)) {
+            throw new ResourceNotFoundException("PDA Entry", "PDA Ref Poid", pdaRefPoid);
+        }
+        String sql = "SELECT FUNC_GLOB_APPROVAL_STATUS(?, ?, ?, '110-160', TO_CHAR(?)) FROM DUAL";
+        try {
+            String status = jdbcTemplate.queryForObject(sql, String.class, groupPoid, companyPoid, userPoid, pdaRefPoid);
+            if (!"FINAL_APPROVAL_COMPLETED".equals(status)) {
+                throw new ValidationException("PDA approval is pending. Only approved PDAs can be used for Port Call creation.");
+            }
+        } catch (ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[VALIDATION] validatePdaApproved - Error checking approval status for pdaRefPoid {}: {}", pdaRefPoid, e.getMessage(), e);
+            throw new CustomException("Error checking PDA approval status: " + e.getMessage(), 500);
+        }
     }
 
     private void validateFinalMailDetailState(Long transactionPoid, List<PortCallOperationMailDetailDto> mailDetails, boolean isCreate) {
@@ -1524,6 +1548,32 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         } catch (Exception e) {
             log.error("[QUERY] getPdaTransactionDetail - Error: {}", e.getMessage(), e);
             throw new CustomException("Error loading PDA transaction detail: " + e.getMessage(), 500);
+        }
+    }
+
+    @Override
+    public List<PdaByVoyageResponseDto> getPdasByVoyagePoid(Long voyagePoid, Long groupPoid, Long companyPoid, Long userPoid) {
+        String sql =
+                "SELECT PEH.TRANSACTION_POID AS POID, PEH.DOC_REF AS CODE, " +
+                "SPM.PRINCIPAL_NAME || ' / ' || SVM.VESSEL_NAME || ' / ' || PEH.VOYAGE_NO AS DESCRIPTION " +
+                "FROM PDA_ENTRY_HDR PEH " +
+                "INNER JOIN SHIP_PRINCIPAL_MASTER SPM ON SPM.PRINCIPAL_POID = PEH.PRINCIPAL_POID " +
+                "INNER JOIN SHIP_VESSEL_MASTER SVM ON SVM.VESSEL_POID = PEH.VESSEL_POID " +
+                "WHERE PEH.VOYAGE_POID = ? " +
+                "AND FUNC_GLOB_APPROVAL_STATUS(?, ?, ?, '110-160', TO_CHAR(PEH.TRANSACTION_POID)) = 'FINAL_APPROVAL_COMPLETED'";
+        try {
+            log.info("[QUERY] getPdasByVoyagePoid - voyagePoid: {}", voyagePoid);
+            return jdbcTemplate.query(
+                    sql,
+                    (rs, rowNum) -> PdaByVoyageResponseDto.builder()
+                            .poid(getLong(rs, "POID"))
+                            .code(rs.getString("CODE"))
+                            .description(rs.getString("DESCRIPTION"))
+                            .build(),
+                    voyagePoid, groupPoid, companyPoid, userPoid);
+        } catch (Exception e) {
+            log.error("[QUERY] getPdasByVoyagePoid - Error: {}", e.getMessage(), e);
+            throw new CustomException("Error loading PDAs by voyage poid: " + e.getMessage(), 500);
         }
     }
 
