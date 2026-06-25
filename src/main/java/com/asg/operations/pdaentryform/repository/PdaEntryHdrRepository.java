@@ -107,12 +107,12 @@ public interface PdaEntryHdrRepository extends JpaRepository<PdaEntryHdr, Long> 
 
     boolean existsByTransactionPoid(Long transactionPoid);
 
-    @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END " +
+    @Query(value = "SELECT COUNT(*) " +
             "FROM PDA_ENTRY_HDR " +
             "WHERE TRANSACTION_POID = :transactionPoid " +
             "AND NVL(STATUS, 'N') = 'CONFIRMED' " +
             "AND NVL(DELETED, 'N') = 'N'", nativeQuery = true)
-    boolean existsConfirmedAndNotDeleted(@Param("transactionPoid") Long transactionPoid);
+    Integer countConfirmedAndNotDeleted(@Param("transactionPoid") Long transactionPoid);
 }
 
 
