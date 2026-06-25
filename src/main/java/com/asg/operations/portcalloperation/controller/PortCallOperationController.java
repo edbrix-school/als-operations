@@ -502,7 +502,7 @@ public class PortCallOperationController {
             security = @SecurityRequirement(name = "bearerAuth")
     )
     public ResponseEntity<?> getPdasByVoyagePoid(@Parameter(description = "Voyage POID") @PathVariable Long voyagePoid) {
-        List<PdaByVoyageResponseDto> result = portCallOperationService.getPdasByVoyagePoid(voyagePoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+        List<PdaByVoyageResponseDto> result = portCallOperationService.getPdasByVoyagePoid(voyagePoid);
         return success("PDAs retrieved successfully", result);
     }
 
