@@ -807,7 +807,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         if (!pdaEntryHdrRepository.existsByTransactionPoid(pdaRefPoid)) {
             throw new ResourceNotFoundException("PDA Entry", "PDA Ref Poid", pdaRefPoid);
         }
-        if (!pdaEntryHdrRepository.existsConfirmedAndNotDeleted(pdaRefPoid)) {
+        if (pdaEntryHdrRepository.countConfirmedAndNotDeleted(pdaRefPoid) == 0) {
             throw new ValidationException("PDA is not confirmed. Only confirmed PDAs can be used for Port Call creation.");
         }
     }
