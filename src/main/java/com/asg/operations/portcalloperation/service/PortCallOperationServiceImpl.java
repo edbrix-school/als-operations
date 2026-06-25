@@ -519,7 +519,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
         if (dto.getPdaRefPoid() != null) {
-            validatePdaApproved(dto.getPdaRefPoid(), UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid());
+            validatePdaApproved(dto.getPdaRefPoid());
         }
 
         validateFinalMailDetailState(null, dto.getMailDetails(), true);
@@ -647,7 +647,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
             }
         }
         if (dto.getPdaRefPoid() != null) {
-            validatePdaApproved(dto.getPdaRefPoid(), groupPoid, UserContext.getCompanyPoid(), userPoid);
+            validatePdaApproved(dto.getPdaRefPoid());
         }
         if (dto.getFdaRefPoid() != null) {
             if (!pdaFdaHdrRepository.existsByTransactionPoid(dto.getFdaRefPoid())) {
@@ -803,21 +803,12 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
         return getOperationById(id);
     }
 
-    private void validatePdaApproved(Long pdaRefPoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    private void validatePdaApproved(Long pdaRefPoid) {
         if (!pdaEntryHdrRepository.existsByTransactionPoid(pdaRefPoid)) {
             throw new ResourceNotFoundException("PDA Entry", "PDA Ref Poid", pdaRefPoid);
         }
-        String sql = "SELECT FUNC_GLOB_APPROVAL_STATUS(?, ?, ?, '110-160', TO_CHAR(?)) FROM DUAL";
-        try {
-            String status = jdbcTemplate.queryForObject(sql, String.class, groupPoid, companyPoid, userPoid, pdaRefPoid);
-            if (!"FINAL_APPROVAL_COMPLETED".equals(status)) {
-                throw new ValidationException("PDA approval is pending. Only approved PDAs can be used for Port Call creation.");
-            }
-        } catch (ValidationException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("[VALIDATION] validatePdaApproved - Error checking approval status for pdaRefPoid {}: {}", pdaRefPoid, e.getMessage(), e);
-            throw new CustomException("Error checking PDA approval status: " + e.getMessage(), 500);
+        if (!pdaEntryHdrRepository.existsConfirmedAndNotDeleted(pdaRefPoid)) {
+            throw new ValidationException("PDA is not confirmed. Only confirmed PDAs can be used for Port Call creation.");
         }
     }
 
@@ -1552,7 +1543,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
     }
 
     @Override
-    public List<PdaByVoyageResponseDto> getPdasByVoyagePoid(Long voyagePoid, Long groupPoid, Long companyPoid, Long userPoid) {
+    public List<PdaByVoyageResponseDto> getPdasByVoyagePoid(Long voyagePoid) {
         String sql =
                 "SELECT PEH.TRANSACTION_POID AS POID, PEH.DOC_REF AS CODE, " +
                 "SPM.PRINCIPAL_NAME || ' / ' || SVM.VESSEL_NAME || ' / ' || PEH.VOYAGE_NO AS DESCRIPTION " +
@@ -1560,7 +1551,8 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 "INNER JOIN SHIP_PRINCIPAL_MASTER SPM ON SPM.PRINCIPAL_POID = PEH.PRINCIPAL_POID " +
                 "INNER JOIN SHIP_VESSEL_MASTER SVM ON SVM.VESSEL_POID = PEH.VESSEL_POID " +
                 "WHERE PEH.VOYAGE_POID = ? " +
-                "AND FUNC_GLOB_APPROVAL_STATUS(?, ?, ?, '110-160', TO_CHAR(PEH.TRANSACTION_POID)) = 'FINAL_APPROVAL_COMPLETED'";
+                "AND NVL(PEH.DELETED, 'N') = 'N' " +
+                "AND NVL(PEH.STATUS, 'N') = 'CONFIRMED'";
         try {
             log.info("[QUERY] getPdasByVoyagePoid - voyagePoid: {}", voyagePoid);
             return jdbcTemplate.query(
@@ -1570,7 +1562,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .code(rs.getString("CODE"))
                             .description(rs.getString("DESCRIPTION"))
                             .build(),
-                    voyagePoid, groupPoid, companyPoid, userPoid);
+                    voyagePoid);
         } catch (Exception e) {
             log.error("[QUERY] getPdasByVoyagePoid - Error: {}", e.getMessage(), e);
             throw new CustomException("Error loading PDAs by voyage poid: " + e.getMessage(), 500);
