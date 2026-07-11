@@ -32,7 +32,7 @@ public interface PortCallOperationService {
 
     PdaTransactionDetailResponseDto getPdaTransactionDetail(String pdaTransactionPoid);
 
-    List<PdaByVoyageResponseDto> getPdasByVoyagePoid(Long voyagePoid, Long groupPoid, Long companyPoid, Long userPoid);
+    List<PdaByVoyageResponseDto> getPdasByVoyagePoid(Long voyagePoid);
 
     // Stored Procedure Methods
     Map<String, Object> loadPda(String pdaPoid, Long groupPoid, Long companyPoid, Long userPoid);

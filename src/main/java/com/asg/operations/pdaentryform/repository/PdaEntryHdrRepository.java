@@ -106,6 +106,13 @@ public interface PdaEntryHdrRepository extends JpaRepository<PdaEntryHdr, Long> 
     Optional<PdaEntryHdr> findByTransactionPoid(Long transactionPoid);
 
     boolean existsByTransactionPoid(Long transactionPoid);
+
+    @Query(value = "SELECT COUNT(*) " +
+            "FROM PDA_ENTRY_HDR " +
+            "WHERE TRANSACTION_POID = :transactionPoid " +
+            "AND NVL(STATUS, 'N') = 'CONFIRMED' " +
+            "AND NVL(DELETED, 'N') = 'N'", nativeQuery = true)
+    Integer countConfirmedAndNotDeleted(@Param("transactionPoid") Long transactionPoid);
 }
 
 
