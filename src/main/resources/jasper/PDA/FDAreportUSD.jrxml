@@ -178,7 +178,7 @@ WHERE PFH.TRANSACTION_POID=$P{DOC_KEY_POID}]]>
                     <subreportParameterExpression><![CDATA[$F{COMPANY_POID}]]></subreportParameterExpression>
                 </subreportParameter>
                 <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
-                <subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Templates//DocHeaderSubReport.jrxml"]]></subreportExpression>
+                <subreportExpression><![CDATA[$P{SUB_HEADER}]]></subreportExpression>
             </subreport>
         </band>
     </title>
@@ -517,7 +517,7 @@ WHERE PFH.TRANSACTION_POID=$P{DOC_KEY_POID}]]>
                 <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
                 <returnValue subreportVariable="TOTAL" toVariable="RETURN_TOTAL"/>
                 <returnValue subreportVariable="TOTAL_USD" toVariable="RETURN_TOTAL_USD"/>
-                <subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "PDA//FDA_Subreport_USD_ProcCall.jrxml"]]></subreportExpression>
+                <subreportExpression><![CDATA[$P{SUB_FDA_DETAIL}]]></subreportExpression>
             </subreport>
         </band>
         <band height="93">
@@ -678,7 +678,7 @@ WHERE PFH.TRANSACTION_POID=$P{DOC_KEY_POID}]]>
                     <subreportParameterExpression><![CDATA[$P{DOC_ID}]]></subreportParameterExpression>
                 </subreportParameter>
                 <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
-                <subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Templates//DocFooterSubReport.jrxml"]]></subreportExpression>
+                <subreportExpression><![CDATA[$P{SUB_FOOTER}]]></subreportExpression>
             </subreport>
             <textField isBlankWhenNull="true">
                 <reportElement x="462" y="10" width="58" height="12" forecolor="#666666" uuid="780ac3d0-f803-48ab-8529-25d99c0c1020"/>
@@ -850,7 +850,7 @@ WHERE PFH.TRANSACTION_POID=$P{DOC_KEY_POID}]]>
                     <subreportParameterExpression><![CDATA["110-161"]]></subreportParameterExpression>
                 </subreportParameter>
                 <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
-                <subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Templates//DocFooterSubReport.jrxml"]]></subreportExpression>
+                <subreportExpression><![CDATA[$P{SUB_FOOTER}]]></subreportExpression>
             </subreport>
             <textField isBlankWhenNull="true">
                 <reportElement x="330" y="28" width="190" height="15" uuid="9eb98521-a58a-45dd-a718-5b7df09e04c2"/>
