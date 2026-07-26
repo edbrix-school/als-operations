@@ -2,6 +2,7 @@ package com.asg.operations.finaldisbursementaccount.controller;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
+import com.asg.common.lib.service.DocumentDownloadHeaderService;
 import com.asg.common.lib.security.util.UserContext;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
@@ -47,6 +48,7 @@ public class FdaController {
 
     private final FdaService fdaService;
     private final LoggingService loggingService;
+    private final DocumentDownloadHeaderService downloadHeaderService;
 
     @Operation(summary = "Get all FDA", description = "Returns paginated list of FDA with optional filters. Supports pagination with page and size parameters.", responses = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "FDA list fetched successfully", content = @Content(schema = @Schema(implementation = Page.class)))
@@ -387,8 +389,11 @@ public class FdaController {
             byte[] pdfBytes = fdaService.printFda(transactionPoid, UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), currency);
 
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"FDA_Report_" + transactionPoid + "_" + currency + ".pdf\"")
+                    .headers(downloadHeaderService.buildAttachmentHeaders(
+                            UserContext.getDocumentId(),
+                            transactionPoid,
+                            "FDA_Report_" + currency,
+                            "pdf"))
                     .contentType(MediaType.APPLICATION_PDF)
                     .body(pdfBytes);
         } catch (Exception e) {

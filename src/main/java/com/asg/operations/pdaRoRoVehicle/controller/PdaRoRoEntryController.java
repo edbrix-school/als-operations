@@ -5,6 +5,7 @@ import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDownloadHeaderService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
@@ -43,6 +44,7 @@ public class PdaRoRoEntryController {
 
     private final PdaRoRoEntryService pdaRoroEntryService;
     private final LoggingService loggingService;
+    private final DocumentDownloadHeaderService downloadHeaderService;
 
     @AllowedAction(UserRolesRightsEnum.CREATE)
     @PostMapping
@@ -162,8 +164,11 @@ public class PdaRoRoEntryController {
             );
             
             return ResponseEntity.ok()
-                    .header("Content-Type", "application/pdf")
-                    .header("Content-Disposition", "attachment; filename=\"RoRo_TallySheet_" + transactionPoid + ".pdf\"")
+                    .headers(downloadHeaderService.buildAttachmentHeaders(
+                            UserContext.getDocumentId(),
+                            transactionPoid,
+                            "RoRo_TallySheet",
+                            "pdf"))
                     .body(pdfBytes);
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate Tally Sheet PDF: " + e.getMessage(), e);
