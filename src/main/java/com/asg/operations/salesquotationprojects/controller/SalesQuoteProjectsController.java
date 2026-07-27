@@ -6,6 +6,7 @@ import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.dto.excel.ExcelFileData;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDownloadHeaderService;
 import com.asg.common.lib.service.ExcelExportService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
@@ -13,6 +14,7 @@ import com.asg.operations.common.ApiResponse;
 import com.asg.operations.salesquotationprojects.dto.AddressDetailsDto;
 import com.asg.operations.salesquotationprojects.dto.SalesQuoteProjectsRequest;
 import com.asg.operations.salesquotationprojects.dto.SalesQuoteProjectsResponse;
+import com.asg.operations.salesquotationprojects.entity.SalesQuoteProjectsHdr;
 import com.asg.operations.salesquotationprojects.service.SalesQuoteProjectsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +49,7 @@ public class SalesQuoteProjectsController {
     private final SalesQuoteProjectsService salesQuoteProjectsService;
     private final LoggingService loggingService;
     private final ExcelExportService excelExportService;
+    private final DocumentDownloadHeaderService downloadHeaderService;
 
     @AllowedAction(UserRolesRightsEnum.VIEW)
     @PostMapping("/list")
@@ -145,7 +148,11 @@ public class SalesQuoteProjectsController {
         try {
             byte[] pdf = salesQuoteProjectsService.print(transactionPoid);
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sales-quotation-project-" + transactionPoid + ".pdf")
+                    .headers(downloadHeaderService.buildAttachmentHeaders(
+                            SalesQuoteProjectsHdr.class,
+                            transactionPoid,
+                            "sales-quotation-project",
+                            "pdf"))
                     .contentType(MediaType.APPLICATION_PDF)
                     .body(pdf);
         } catch (Exception e) {
