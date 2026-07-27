@@ -1,6 +1,7 @@
 package com.asg.operations.pdaRoRoVehicle.controller;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.service.DocumentDownloadHeaderService;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
 import com.asg.operations.pdaRoRoVehicle.service.PdaRoRoEntryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,9 +11,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -34,6 +37,13 @@ class PdaRoRoEntryControllerTest {
 
     @Mock
     private com.asg.common.lib.service.LoggingService loggingService;
+
+    @Spy
+
+    private DocumentDownloadHeaderService downloadHeaderService =
+
+            new DocumentDownloadHeaderService(mock(JdbcTemplate.class));
+
 
     @InjectMocks
     private PdaRoRoEntryController pdaRoRoEntryController;
