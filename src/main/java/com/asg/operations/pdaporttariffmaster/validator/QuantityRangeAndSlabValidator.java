@@ -13,19 +13,12 @@ public class QuantityRangeAndSlabValidator implements ConstraintValidator<Quanti
         if (req == null) return true;
 
         boolean isValid = true;
+        ctx.disableDefaultConstraintViolation();
 
-        // 1. quantityFrom <= quantityTo
-        if (req.getQuantityFrom() != null &&
-                req.getQuantityTo() != null &&
-                req.getQuantityFrom().compareTo(req.getQuantityTo()) > 0) {
+        // Quantity From/To range is validated on the charge (TariffSlabValidator)
+        // so messages can include chargePoid + slab row number.
 
-            ctx.buildConstraintViolationWithTemplate("Quantity From must be less than or equal to Quantity To")
-                    .addPropertyNode("quantityFrom")
-                    .addConstraintViolation();
-            isValid = false;
-        }
-
-        // 2. At least one day/rate pair must be provided
+        // At least one day/rate pair must be provided
         boolean hasAnyPair =
                 (req.getDays1() != null || req.getRate1() != null) ||
                         (req.getDays2() != null || req.getRate2() != null) ||
@@ -33,15 +26,14 @@ public class QuantityRangeAndSlabValidator implements ConstraintValidator<Quanti
                         (req.getDays4() != null || req.getRate4() != null);
 
         if (!hasAnyPair) {
-            ctx.buildConstraintViolationWithTemplate("At least one day/rate pair must be provided")
+            String rowPrefix = (req.getDetRowId() != null && req.getDetRowId() > 0)
+                    ? "Slab detRowId " + req.getDetRowId() + ": "
+                    : "";
+            ctx.buildConstraintViolationWithTemplate(rowPrefix + "At least one day/rate pair must be provided")
                     .addConstraintViolation();
             isValid = false;
         }
 
-        // Disable default messages
-        ctx.disableDefaultConstraintViolation();
-
         return isValid;
     }
 }
-
