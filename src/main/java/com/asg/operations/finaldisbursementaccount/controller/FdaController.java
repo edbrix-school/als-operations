@@ -10,6 +10,7 @@ import com.asg.operations.common.ApiResponse;
 import com.asg.operations.common.PageResponse;
 import com.asg.operations.finaldisbursementaccount.dto.CreateFdaHeaderRequest;
 import com.asg.operations.finaldisbursementaccount.dto.*;
+import com.asg.operations.finaldisbursementaccount.entity.PdaFdaHdr;
 import com.asg.operations.finaldisbursementaccount.service.FdaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -390,7 +391,7 @@ public class FdaController {
 
             return ResponseEntity.ok()
                     .headers(downloadHeaderService.buildAttachmentHeaders(
-                            UserContext.getDocumentId(),
+                            PdaFdaHdr.class,
                             transactionPoid,
                             "FDA_Report_" + currency,
                             "pdf"))

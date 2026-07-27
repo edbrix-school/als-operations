@@ -14,6 +14,7 @@ import com.asg.operations.common.ApiResponse;
 import com.asg.operations.salesquotationprojects.dto.AddressDetailsDto;
 import com.asg.operations.salesquotationprojects.dto.SalesQuoteProjectsRequest;
 import com.asg.operations.salesquotationprojects.dto.SalesQuoteProjectsResponse;
+import com.asg.operations.salesquotationprojects.entity.SalesQuoteProjectsHdr;
 import com.asg.operations.salesquotationprojects.service.SalesQuoteProjectsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -148,7 +149,7 @@ public class SalesQuoteProjectsController {
             byte[] pdf = salesQuoteProjectsService.print(transactionPoid);
             return ResponseEntity.ok()
                     .headers(downloadHeaderService.buildAttachmentHeaders(
-                            UserContext.getDocumentId(),
+                            SalesQuoteProjectsHdr.class,
                             transactionPoid,
                             "sales-quotation-project",
                             "pdf"))

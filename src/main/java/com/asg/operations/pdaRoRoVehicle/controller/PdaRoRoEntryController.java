@@ -10,6 +10,7 @@ import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.ApiResponse;
 import com.asg.operations.pdaRoRoVehicle.dto.*;
+import com.asg.operations.pdaRoRoVehicle.entity.PdaRoRoEntryHdr;
 import com.asg.operations.pdaRoRoVehicle.service.PdaRoRoEntryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -165,7 +166,7 @@ public class PdaRoRoEntryController {
             
             return ResponseEntity.ok()
                     .headers(downloadHeaderService.buildAttachmentHeaders(
-                            UserContext.getDocumentId(),
+                            PdaRoRoEntryHdr.class,
                             transactionPoid,
                             "RoRo_TallySheet",
                             "pdf"))
