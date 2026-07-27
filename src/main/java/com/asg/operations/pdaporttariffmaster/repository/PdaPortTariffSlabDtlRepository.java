@@ -20,6 +20,9 @@ public interface PdaPortTariffSlabDtlRepository extends JpaRepository<PdaPortTar
     @Query("SELECT s FROM PdaPortTariffSlabDtl s WHERE s.id.transactionPoid = :transactionPoid AND s.id.chargeDetRowId = :chargeDetRowId")
     List<PdaPortTariffSlabDtl> findByTransactionPoidAndChargeDetRowId(@Param("transactionPoid") Long transactionPoid, @Param("chargeDetRowId") Long chargeDetRowId);
 
+    @Query("SELECT COALESCE(MAX(s.id.detRowId), 0) FROM PdaPortTariffSlabDtl s WHERE s.id.transactionPoid = :transactionPoid AND s.id.chargeDetRowId = :chargeDetRowId")
+    Long findMaxDetRowIdByTransactionPoidAndChargeDetRowId(@Param("transactionPoid") Long transactionPoid, @Param("chargeDetRowId") Long chargeDetRowId);
+
     @Modifying
     @Query("DELETE FROM PdaPortTariffSlabDtl s WHERE s.id.transactionPoid = :transactionPoid AND s.id.chargeDetRowId = :chargeDetRowId")
     void deleteByTransactionPoidAndChargeDetRowId(@Param("transactionPoid") Long transactionPoid, @Param("chargeDetRowId") Long chargeDetRowId);

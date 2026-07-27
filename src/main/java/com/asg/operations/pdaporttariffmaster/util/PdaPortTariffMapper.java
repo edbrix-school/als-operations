@@ -199,6 +199,7 @@ public class PdaPortTariffMapper {
         PdaPortTariffHdr entity = new PdaPortTariffHdr();
         entity.setGroupPoid(UserContext.getGroupPoid());
         entity.setCompanyPoid(UserContext.getCompanyPoid());
+        entity.setDocRef(request.getDocRef());
         entity.setPorts(request.getPort());
         entity.setVesselTypes(listToString(request.getVesselTypes()));
         entity.setPeriodFrom(request.getPeriodFrom());

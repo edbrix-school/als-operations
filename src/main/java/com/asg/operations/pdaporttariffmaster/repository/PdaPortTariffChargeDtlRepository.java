@@ -16,6 +16,9 @@ public interface PdaPortTariffChargeDtlRepository extends JpaRepository<PdaPortT
     @Query("SELECT c FROM PdaPortTariffChargeDtl c WHERE c.id.transactionPoid = :transactionPoid")
     List<PdaPortTariffChargeDtl> findByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
 
+    @Query("SELECT COALESCE(MAX(c.id.detRowId), 0) FROM PdaPortTariffChargeDtl c WHERE c.id.transactionPoid = :transactionPoid")
+    Long findMaxDetRowIdByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
+
     @Modifying
     @Query("DELETE FROM PdaPortTariffChargeDtl c WHERE c.id.transactionPoid = :transactionPoid")
     void deleteByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
