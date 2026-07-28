@@ -20,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -135,9 +134,9 @@ public class SalesQuoteProjectsController {
 
         ExcelFileData data = excelExportService.generateExcel("140-100", String.valueOf(transactionPoid), null, "Sales Quotation Projects Charge Details.xlsx");
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = downloadHeaderService.buildAttachmentHeaders(
+                SalesQuoteProjectsHdr.class, transactionPoid, "sales-quotation-projects-charge-details", "xlsx");
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-        headers.setContentDisposition(ContentDisposition.builder("attachment").filename(data.getFileName()).build());
 
         return ResponseEntity.ok().headers(headers).body(data.getContent());
     }

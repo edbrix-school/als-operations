@@ -7,9 +7,11 @@ import com.asg.common.lib.dto.excel.ExcelFileData;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDownloadHeaderService;
 import com.asg.common.lib.service.ExcelExportService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.operations.portcalloperation.dto.*;
+import com.asg.operations.portcalloperation.entity.PortCallOperationHdr;
 import com.asg.operations.portcalloperation.service.PortCallOperationPcInfoAttachmentService;
 import com.asg.operations.portcalloperation.service.PortCallOperationScreenAttachmentService;
 import com.asg.operations.portcalloperation.service.PortCallOperationService;
@@ -29,7 +31,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -62,6 +63,7 @@ public class PortCallOperationController {
     private final PortCallOperationPcInfoAttachmentService pcInfoAttachmentService;
     private final PortCallOperationScreenAttachmentService screenAttachmentService;
     private final ExcelExportService excelExportService;
+    private final DocumentDownloadHeaderService downloadHeaderService;
     private final ObjectMapper objectMapper;
     private final Validator validator;
 
@@ -1377,9 +1379,9 @@ public class PortCallOperationController {
 
         ExcelFileData data = excelExportService.generateExcel("110-163-crew", String.valueOf(transactionPoid), null, "Husbandry Crew Details.xlsx");
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = downloadHeaderService.buildAttachmentHeaders(
+                PortCallOperationHdr.class, transactionPoid, "husbandry-crew-details", "xlsx");
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-        headers.setContentDisposition(ContentDisposition.builder("attachment").filename(data.getFileName()).build());
 
         return ResponseEntity.ok().headers(headers).body(data.getContent());
     }
@@ -1391,9 +1393,9 @@ public class PortCallOperationController {
 
         ExcelFileData data = excelExportService.generateExcel("110-163-pda", String.valueOf(transactionPoid), null, "PDA Charge Details.xlsx");
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = downloadHeaderService.buildAttachmentHeaders(
+                PortCallOperationHdr.class, transactionPoid, "pda-charge-details", "xlsx");
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-        headers.setContentDisposition(ContentDisposition.builder("attachment").filename(data.getFileName()).build());
 
         return ResponseEntity.ok().headers(headers).body(data.getContent());
     }
@@ -1403,9 +1405,9 @@ public class PortCallOperationController {
 
         ExcelFileData data = excelExportService.generateExcel("110-163-fda", String.valueOf(transactionPoid), null, "FDA_Charge_Details.xlsx");
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = downloadHeaderService.buildAttachmentHeaders(
+                PortCallOperationHdr.class, transactionPoid, "fda-charge-details", "xlsx");
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-        headers.setContentDisposition(ContentDisposition.builder("attachment").filename(data.getFileName()).build());
 
         return ResponseEntity.ok().headers(headers).body(data.getContent());
     }

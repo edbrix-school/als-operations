@@ -5,9 +5,11 @@ import com.asg.common.lib.dto.DeleteReasonDto;
 import com.asg.common.lib.dto.FilterRequestDto;
 import com.asg.common.lib.enums.UserRolesRightsEnum;
 import com.asg.common.lib.security.util.UserContext;
+import com.asg.common.lib.service.DocumentDownloadHeaderService;
 import com.asg.common.lib.service.LoggingService;
 import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.pdaentryform.dto.*;
+import com.asg.operations.pdaentryform.entity.PdaEntryHdr;
 import com.asg.operations.pdaporttariffmaster.dto.PageResponse;
 import com.asg.operations.pdaentryform.service.PdaEntryService;
 import com.asg.operations.pdaentryform.service.impl.PdaEntryServiceImpl.TaxInfo;
@@ -49,6 +51,7 @@ public class PdaEntryController {
 
     private final PdaEntryService pdaEntryService;
     private final LoggingService loggingService;
+    private final DocumentDownloadHeaderService downloadHeaderService;
 
     // ==================== Header CRUD Operations ====================
 
@@ -1508,13 +1511,9 @@ public class PdaEntryController {
             byte[] pdf = pdaEntryService.printPda(transactionPoid, UserContext.getGroupPoid(), 
                     UserContext.getCompanyPoid(), UserContext.getUserPoid(), otherPrincipalPoid);
             
-            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            org.springframework.http.HttpHeaders headers = downloadHeaderService.buildInlineHeaders(
+                    PdaEntryHdr.class, transactionPoid, "pda", "pdf");
             headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
-            headers.setContentDisposition(
-                org.springframework.http.ContentDisposition.builder("inline")
-                    .filename("PDA_" + transactionPoid + ".pdf")
-                    .build()
-            );
             
             return ResponseEntity.ok().headers(headers).body(pdf);
             
