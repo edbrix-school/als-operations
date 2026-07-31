@@ -395,7 +395,6 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
     }
 
     private void saveChargeDetails(PdaPortTariffHdr tariffHdr, List<PdaPortTariffChargeDetailRequest> chargeDetails) {
-        int seqNo = 1;
         long nextChargeDetRowId = Optional.ofNullable(
                 chargeDtlRepository.findMaxDetRowIdByTransactionPoid(tariffHdr.getTransactionPoid())
         ).orElse(0L) + 1;
@@ -410,12 +409,6 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 if (!pdaRateTypeMasterRepository.existsByRateTypePoid(chargeRequest.getRateTypePoid())) {
                     throw new ResourceNotFoundException("Rate Type Master", "Rate Type Poid", chargeRequest.getRateTypePoid());
                 }
-            }
-
-            if (chargeRequest.getSeqNo() == null) {
-                chargeRequest.setSeqNo(seqNo++);
-            } else {
-                seqNo = chargeRequest.getSeqNo() + 1;
             }
 
             PdaPortTariffChargeDtlId chargeId = new PdaPortTariffChargeDtlId();
