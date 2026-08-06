@@ -1,6 +1,7 @@
 package com.asg.operations.pdaratetypemaster.service;
 
 import com.asg.common.lib.dto.DeleteReasonDto;
+import com.asg.common.lib.enums.LogDetailsEnum;
 import com.asg.operations.common.Util.FormulaValidator;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeRequestDTO;
 import com.asg.operations.pdaratetypemaster.dto.PdaRateTypeResponseDTO;
@@ -86,6 +87,7 @@ public class PdaRateTypeServiceImplTest {
 
         assertNotNull(result);
         verify(repository).save(any(PdaRateTypeMaster.class));
+        verify(loggingService).createLogSummaryEntry(eq(LogDetailsEnum.CREATED), any(), eq("1"));
     }
 
     @Test
