@@ -53,7 +53,8 @@ class PdaPortTariffHdrServiceImplTest {
 
         when(tariffHdrRepository.findByTransactionPoid(1L)).thenReturn(Optional.of(tariff));
         when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
-        when(mapper.toResponseWithChargeDetails(eq(tariff), any())).thenReturn(expectedResponse);
+        when(slabDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
+        when(mapper.toResponseWithChargeDetails(eq(tariff), any(), any())).thenReturn(expectedResponse);
 
         PdaPortTariffMasterResponse result = tariffService.getTariffById(1L);
 
@@ -93,12 +94,13 @@ class PdaPortTariffHdrServiceImplTest {
 
         when(tariffHdrRepository.findByTransactionPoid(1L)).thenReturn(Optional.of(tariff));
         when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
-        when(mapper.toChargeDetailsResponse(any(), eq(1L))).thenReturn(expectedResponse);
+        when(slabDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
+        when(mapper.toChargeDetailsResponse(any(), eq(1L), any())).thenReturn(expectedResponse);
 
         ChargeDetailsResponse result = tariffService.getChargeDetails(1L, true);
 
         assertNotNull(result);
-        verify(mapper).toChargeDetailsResponse(any(), eq(1L));
+        verify(mapper).toChargeDetailsResponse(any(), eq(1L), any());
     }
 
     @Test
@@ -117,7 +119,8 @@ class PdaPortTariffHdrServiceImplTest {
 
         when(tariffHdrRepository.findByTransactionPoid(1L)).thenReturn(Optional.of(tariff));
         when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
-        when(mapper.toChargeDetailsResponse(any(), eq(1L))).thenReturn(expectedResponse);
+        when(slabDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
+        when(mapper.toChargeDetailsResponse(any(), eq(1L), any())).thenReturn(expectedResponse);
 
         ChargeDetailsResponse result = tariffService.bulkSaveChargeDetails(1L, request);
 
@@ -144,7 +147,8 @@ class PdaPortTariffHdrServiceImplTest {
             when(tariffHdrRepository.saveAndFlush(savedTariff)).thenReturn(savedTariff);
             when(tariffHdrRepository.findByTransactionPoid(1L)).thenReturn(Optional.of(savedTariff));
             when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
-            when(mapper.toResponseWithChargeDetails(eq(savedTariff), any())).thenReturn(expectedResponse);
+            when(slabDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
+            when(mapper.toResponseWithChargeDetails(eq(savedTariff), any(), any())).thenReturn(expectedResponse);
 
             PdaPortTariffMasterResponse result = tariffService.createTariff(request);
 
@@ -171,7 +175,8 @@ class PdaPortTariffHdrServiceImplTest {
             when(tariffHdrRepository.findByTransactionPoid(1L)).thenReturn(Optional.of(existingTariff));
             when(tariffHdrRepository.save(existingTariff)).thenReturn(existingTariff);
             when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
-            when(mapper.toResponseWithChargeDetails(eq(existingTariff), any())).thenReturn(expectedResponse);
+            when(slabDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
+            when(mapper.toResponseWithChargeDetails(eq(existingTariff), any(), any())).thenReturn(expectedResponse);
 
             PdaPortTariffMasterResponse result = tariffService.updateTariff(1L, request);
 
@@ -207,7 +212,8 @@ class PdaPortTariffHdrServiceImplTest {
             when(mapper.toEntity(any())).thenReturn(savedTariff);
             when(tariffHdrRepository.saveAndFlush(savedTariff)).thenReturn(savedTariff);
             when(chargeDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
-            when(mapper.toResponseWithChargeDetails(any(), any())).thenReturn(expectedResponse);
+            when(slabDtlRepository.findByTransactionPoid(1L)).thenReturn(Collections.emptyList());
+            when(mapper.toResponseWithChargeDetails(any(), any(), any())).thenReturn(expectedResponse);
 
             PdaPortTariffMasterResponse result = tariffService.copyTariff(1L, request);
 
