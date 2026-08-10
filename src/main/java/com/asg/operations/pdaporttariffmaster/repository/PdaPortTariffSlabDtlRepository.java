@@ -17,6 +17,9 @@ public interface PdaPortTariffSlabDtlRepository extends JpaRepository<PdaPortTar
     @Query("DELETE FROM PdaPortTariffSlabDtl s WHERE s.id.transactionPoid = :transactionPoid")
     void deleteByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
 
+    @Query("SELECT s FROM PdaPortTariffSlabDtl s WHERE s.id.transactionPoid = :transactionPoid")
+    List<PdaPortTariffSlabDtl> findByTransactionPoid(@Param("transactionPoid") Long transactionPoid);
+
     @Query("SELECT s FROM PdaPortTariffSlabDtl s WHERE s.id.transactionPoid = :transactionPoid AND s.id.chargeDetRowId = :chargeDetRowId")
     List<PdaPortTariffSlabDtl> findByTransactionPoidAndChargeDetRowId(@Param("transactionPoid") Long transactionPoid, @Param("chargeDetRowId") Long chargeDetRowId);
 
