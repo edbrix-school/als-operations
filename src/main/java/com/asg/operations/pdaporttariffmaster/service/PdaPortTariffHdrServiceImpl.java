@@ -37,6 +37,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -81,16 +82,9 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
         List<PdaPortTariffChargeDtl> chargeDetails = chargeDtlRepository.findByTransactionPoid(transactionPoid);
+        Map<Long, List<PdaPortTariffSlabDtl>> slabDetailsByChargeDetRowId = loadSlabDetailsByChargeDetRowId(transactionPoid);
 
-        // Always load slabs from DB. Skipping when entity is managed leaves slabDetails null
-        // after create/update in the same transaction (parent collection never populated).
-        for (PdaPortTariffChargeDtl chargeDetail : chargeDetails) {
-            List<PdaPortTariffSlabDtl> slabDetails = slabDtlRepository.findByTransactionPoidAndChargeDetRowId(
-                    transactionPoid, chargeDetail.getId().getDetRowId());
-            chargeDetail.setSlabDetails(slabDetails);
-        }
-
-        return mapper.toResponseWithChargeDetails(tariff, chargeDetails);
+        return mapper.toResponseWithChargeDetails(tariff, chargeDetails, slabDetailsByChargeDetRowId);
     }
 
     @Override
@@ -196,16 +190,11 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
                 .orElseThrow(() -> new ResourceNotFoundException("PdaPortTariffHdr", "transactionPoid", transactionPoid));
 
         List<PdaPortTariffChargeDtl> chargeDetails = chargeDtlRepository.findByTransactionPoid(transactionPoid);
+        Map<Long, List<PdaPortTariffSlabDtl>> slabDetailsByChargeDetRowId = includeSlabs
+                ? loadSlabDetailsByChargeDetRowId(transactionPoid)
+                : Map.of();
 
-        if (includeSlabs) {
-            for (PdaPortTariffChargeDtl chargeDetail : chargeDetails) {
-                List<PdaPortTariffSlabDtl> slabDetails = slabDtlRepository.findByTransactionPoidAndChargeDetRowId(
-                        transactionPoid, chargeDetail.getId().getDetRowId());
-                chargeDetail.setSlabDetails(slabDetails);
-            }
-        }
-
-        return mapper.toChargeDetailsResponse(chargeDetails, transactionPoid);
+        return mapper.toChargeDetailsResponse(chargeDetails, transactionPoid, slabDetailsByChargeDetRowId);
     }
 
     @Override
@@ -222,6 +211,11 @@ public class PdaPortTariffHdrServiceImpl implements PdaPortTariffHdrService {
         entityManager.clear();
 
         return getChargeDetails(transactionPoid, true);
+    }
+
+    private Map<Long, List<PdaPortTariffSlabDtl>> loadSlabDetailsByChargeDetRowId(Long transactionPoid) {
+        return slabDtlRepository.findByTransactionPoid(transactionPoid).stream()
+                .collect(Collectors.groupingBy(slab -> slab.getId().getChargeDetRowId()));
     }
 
     private void updateChargeDetails(PdaPortTariffHdr tariffHdr, List<PdaPortTariffChargeDetailRequest> chargeDetails) {
