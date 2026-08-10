@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -138,6 +139,10 @@ public class PdaPortTariffMapper {
 
     // Entity to Response (Charge Detail)
     public PdaPortTariffChargeDetailResponse toChargeDetailResponse(PdaPortTariffChargeDtl entity) {
+        return toChargeDetailResponse(entity, entity.getSlabDetails());
+    }
+
+    public PdaPortTariffChargeDetailResponse toChargeDetailResponse(PdaPortTariffChargeDtl entity, List<PdaPortTariffSlabDtl> slabDetails) {
         PdaPortTariffChargeDetailResponse response = new PdaPortTariffChargeDetailResponse();
         response.setDetRowId(entity.getId().getDetRowId());
         response.setChargePoid(entity.getChargePoid());
@@ -158,10 +163,9 @@ public class PdaPortTariffMapper {
         response.setHarborCallTypeDet(lovService.getLovItemByCode(entity.getHarborCallType(), "HARBOR_CALL_TYPE", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
         response.setIsEnabledDet(lovService.getLovItemByCode(entity.getIsEnabled(), "YES_NO", UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid()));
 
-        // Map slab details if loaded
-        if (entity.getSlabDetails() != null && !entity.getSlabDetails().isEmpty()) {
+        if (slabDetails != null && !slabDetails.isEmpty()) {
             response.setSlabDetails(
-                    entity.getSlabDetails().stream()
+                    slabDetails.stream()
                             .map(this::toSlabDetailResponse)
                             .collect(Collectors.toList())
             );
@@ -234,11 +238,20 @@ public class PdaPortTariffMapper {
 
     // Entity to Response with separate charge details
     public PdaPortTariffMasterResponse toResponseWithChargeDetails(PdaPortTariffHdr entity, List<PdaPortTariffChargeDtl> chargeDetails) {
+        return toResponseWithChargeDetails(entity, chargeDetails, Map.of());
+    }
+
+    public PdaPortTariffMasterResponse toResponseWithChargeDetails(
+            PdaPortTariffHdr entity,
+            List<PdaPortTariffChargeDtl> chargeDetails,
+            Map<Long, List<PdaPortTariffSlabDtl>> slabDetailsByChargeDetRowId) {
         PdaPortTariffMasterResponse response = toResponse(entity);
         if (chargeDetails != null && !chargeDetails.isEmpty()) {
             response.setChargeDetails(
                     chargeDetails.stream()
-                            .map(this::toChargeDetailResponse)
+                            .map(charge -> toChargeDetailResponse(
+                                    charge,
+                                    slabDetailsByChargeDetRowId.get(charge.getId().getDetRowId())))
                             .collect(Collectors.toList())
             );
             sortChargeAndSlabDetails(response.getChargeDetails());
@@ -248,12 +261,21 @@ public class PdaPortTariffMapper {
 
     // Convert charge details to response
     public ChargeDetailsResponse toChargeDetailsResponse(List<PdaPortTariffChargeDtl> chargeDetails, Long transactionPoid) {
+        return toChargeDetailsResponse(chargeDetails, transactionPoid, Map.of());
+    }
+
+    public ChargeDetailsResponse toChargeDetailsResponse(
+            List<PdaPortTariffChargeDtl> chargeDetails,
+            Long transactionPoid,
+            Map<Long, List<PdaPortTariffSlabDtl>> slabDetailsByChargeDetRowId) {
         ChargeDetailsResponse response = new ChargeDetailsResponse();
         response.setTransactionPoid(transactionPoid);
         if (chargeDetails != null && !chargeDetails.isEmpty()) {
             response.setChargeDetails(
                     chargeDetails.stream()
-                            .map(this::toChargeDetailResponse)
+                            .map(charge -> toChargeDetailResponse(
+                                    charge,
+                                    slabDetailsByChargeDetRowId.get(charge.getId().getDetRowId())))
                             .collect(Collectors.toList())
             );
             sortChargeAndSlabDetails(response.getChargeDetails());
