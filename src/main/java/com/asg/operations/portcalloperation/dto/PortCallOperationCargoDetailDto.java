@@ -28,6 +28,9 @@ public class PortCallOperationCargoDetailDto {
     private BigDecimal qtyCbm;
     private BigDecimal noOfQty;
 
+    @Size(max = 50, message = "UOM should not exceed 50 characters")
+    private String uom;
+
     @Size(max = 100, message = "Call Type should not exceed 100 characters")
     private String callType;
 

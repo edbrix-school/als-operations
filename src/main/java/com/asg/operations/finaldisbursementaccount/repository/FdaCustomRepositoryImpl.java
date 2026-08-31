@@ -270,4 +270,27 @@ public class FdaCustomRepositoryImpl implements FdaCustomRepository {
 
         return (String) query.getOutputParameterValue("P_RESULT");
     }
+
+    @Override
+    public String customApproval(Long groupPoid, Long companyPoid, Long userPoid, Long fdaPoid, String docId, String action) {
+
+        StoredProcedureQuery query = em.createStoredProcedureQuery("PROC_PDA_FDA_CUSTOM_APPROVAL")
+                .registerStoredProcedureParameter("P_LOGIN_GROUP_POID", Long.class, ParameterMode.IN)
+                .registerStoredProcedureParameter("P_LOGIN_COMPANY_POID", Long.class, ParameterMode.IN)
+                .registerStoredProcedureParameter("P_LOGIN_USER_POID", Long.class, ParameterMode.IN)
+                .registerStoredProcedureParameter("P_DOC_KEY_POID", Long.class, ParameterMode.IN)
+                .registerStoredProcedureParameter("P_DOC_ID", String.class, ParameterMode.IN)
+                .registerStoredProcedureParameter("P_ACTION", String.class, ParameterMode.IN)
+                .registerStoredProcedureParameter("P_STATUS", String.class, ParameterMode.OUT)
+                .setParameter("P_LOGIN_GROUP_POID", groupPoid)
+                .setParameter("P_LOGIN_COMPANY_POID", companyPoid)
+                .setParameter("P_LOGIN_USER_POID", userPoid)
+                .setParameter("P_DOC_KEY_POID", fdaPoid)
+                .setParameter("P_DOC_ID", docId)
+                .setParameter("P_ACTION", action);
+
+        query.execute();
+
+        return (String) query.getOutputParameterValue("P_STATUS");
+    }
 }

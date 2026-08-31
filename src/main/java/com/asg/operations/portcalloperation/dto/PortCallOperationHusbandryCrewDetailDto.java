@@ -35,5 +35,8 @@ public class PortCallOperationHusbandryCrewDetailDto {
     @Size(max = 4000, message = "Crew Attachments should not exceed 4000 characters")
     private String crewAttachments;
 
+    @Size(max = 50, message = "Crew Sign Status should not exceed 50 characters")
+    private String crewSignStatus;
+
     private ActionType actionType;
 }

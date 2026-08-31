@@ -49,4 +49,7 @@ public class PortCallOperationHusbandryCrewDtl extends BaseEntity {
 
     @Column(name = "CREW_ATTACHMENTS", length = 4000)
     private String crewAttachments;
+
+    @Column(name = "CREW_SIGN_STATUS", length = 50)
+    private String crewSignStatus;
 }

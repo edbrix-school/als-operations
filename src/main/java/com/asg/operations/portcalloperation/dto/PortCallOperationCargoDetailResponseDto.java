@@ -21,6 +21,7 @@ public class PortCallOperationCargoDetailResponseDto {
     private BigDecimal qtyMt;
     private BigDecimal qtyCbm;
     private BigDecimal noOfQty;
+    private String uom;
     private String callType;
     private Long portOfCallPoid;
     private String berth;
