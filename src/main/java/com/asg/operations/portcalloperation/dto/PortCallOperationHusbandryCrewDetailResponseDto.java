@@ -21,4 +21,5 @@ public class PortCallOperationHusbandryCrewDetailResponseDto {
     private String crewSeamanNo;
     private String crewRank;
     private String crewAttachments;
+    private String crewSignStatus;
 }

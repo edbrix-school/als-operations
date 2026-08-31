@@ -56,4 +56,6 @@ public interface FdaService {
 
     byte[] printFda(Long transactionPoid, Long groupPoid, Long companyPoid, Long userPoid, String currency) throws Exception;
 
+    String customApproval(Long groupPoid, Long companyPoid, Long userPoid, Long fdaPoid, String action);
+
 }

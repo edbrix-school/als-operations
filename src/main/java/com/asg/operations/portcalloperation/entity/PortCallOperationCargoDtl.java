@@ -46,6 +46,9 @@ public class PortCallOperationCargoDtl extends BaseEntity {
     @Column(name = "NO_OF_QTY")
     private BigDecimal noOfQty;
 
+    @Column(name = "UOM", length = 50)
+    private String uom;
+
     @Column(name = "CALL_TYPE", length = 100)
     private String callType;
 

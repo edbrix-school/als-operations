@@ -601,5 +601,10 @@ public class FdaServiceImpl implements FdaService {
             throw new RuntimeException("FDA PDF generation failed: " + e.getMessage(), e);
         }
     }
+    @Override
+    @Transactional
+    public String customApproval(Long groupPoid, Long companyPoid, Long userPoid, Long fdaPoid, String action) {
+        return fdaCustomRepository.customApproval(groupPoid, companyPoid, userPoid, fdaPoid, "110-161", action);
+    }
 
 }

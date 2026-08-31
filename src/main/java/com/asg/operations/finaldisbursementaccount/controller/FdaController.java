@@ -371,6 +371,23 @@ public class FdaController {
         return ApiResponse.success("Logs fetched successfully", logs);
     }
 
+    @AllowedAction(UserRolesRightsEnum.EDIT)
+    @PostMapping("/{transactionPoid}/custom-approval")
+    @Operation(summary = "Custom approval action", description = "Handles FINAL_APPROVAL_COMPLETED and APPROVAL_CANCELLED actions for FDA")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Action processed successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Action failed")
+    })
+    public ResponseEntity<?> customApproval(
+            @Parameter(description = "Transaction identifier", required = true) @PathVariable Long transactionPoid,
+            @Parameter(description = "Action: FINAL_APPROVAL_COMPLETED or APPROVAL_CANCELLED", required = true) @RequestParam String action) {
+        String result = fdaService.customApproval(UserContext.getGroupPoid(), UserContext.getCompanyPoid(), UserContext.getUserPoid(), transactionPoid, action);
+        if (StringUtils.isNotBlank(result) && result.toUpperCase().contains("SUCCESS")) {
+            return ApiResponse.success(result);
+        }
+        return ApiResponse.error(result, 400);
+    }
+
     @AllowedAction(UserRolesRightsEnum.PRINT)
     @GetMapping(path = "/{transactionPoid}/print", produces = MediaType.APPLICATION_PDF_VALUE)
     @Operation(summary = "Print FDA report", description = "Generate and download PDF report for an FDA")

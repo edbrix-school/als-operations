@@ -201,6 +201,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .qtyMt(dtl.getQtyMt())
                 .qtyCbm(dtl.getQtyCbm())
                 .noOfQty(dtl.getNoOfQty())
+                .uom(dtl.getUom())
                 .callType(dtl.getCallType())
                 .portOfCallPoid(dtl.getPortOfCallPoid())
                 .berth(dtl.getBerth())
@@ -424,6 +425,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                 .crewSeamanNo(dtl.getCrewSeamanNo())
                 .crewRank(dtl.getCrewRank())
                 .crewAttachments(dtl.getCrewAttachments())
+                .crewSignStatus(dtl.getCrewSignStatus())
                 .build()).collect(Collectors.toList());
     }
 
@@ -570,6 +572,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .qtyMt(cargoDto.getQtyMt())
                             .qtyCbm(cargoDto.getQtyCbm())
                             .noOfQty(cargoDto.getNoOfQty())
+                            .uom(cargoDto.getUom())
                             .callType(cargoDto.getCallType())
                             .portOfCallPoid(cargoDto.getPortOfCallPoid())
                             .berth(cargoDto.getBerth())
@@ -706,6 +709,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .qtyMt(cargoDto.getQtyMt())
                             .qtyCbm(cargoDto.getQtyCbm())
                             .noOfQty(cargoDto.getNoOfQty())
+                            .uom(cargoDto.getUom())
                             .callType(cargoDto.getCallType())
                             .portOfCallPoid(cargoDto.getPortOfCallPoid())
                             .berth(cargoDto.getBerth())
@@ -737,6 +741,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setQtyMt(cargoDto.getQtyMt());
                                 existing.setQtyCbm(cargoDto.getQtyCbm());
                                 existing.setNoOfQty(cargoDto.getNoOfQty());
+                                existing.setUom(cargoDto.getUom());
                                 existing.setCallType(cargoDto.getCallType());
                                 existing.setPortOfCallPoid(cargoDto.getPortOfCallPoid());
                                 existing.setBerth(cargoDto.getBerth());
@@ -1253,6 +1258,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                             .crewPptNumber(detailDto.getCrewPptNumber())
                             .crewSeamanNo(detailDto.getCrewSeamanNo())
                             .crewRank(detailDto.getCrewRank())
+                            .crewSignStatus(detailDto.getCrewSignStatus())
                             .build());
                     if (husbandryCrewDetRowIdByDetailIndexOut != null) {
                         husbandryCrewDetRowIdByDetailIndexOut[i] = saved.getDetRowId();
@@ -1280,6 +1286,7 @@ public class PortCallOperationServiceImpl implements PortCallOperationService {
                                 existing.setCrewPptNumber(detailDto.getCrewPptNumber());
                                 existing.setCrewSeamanNo(detailDto.getCrewSeamanNo());
                                 existing.setCrewRank(detailDto.getCrewRank());
+                                existing.setCrewSignStatus(detailDto.getCrewSignStatus());
                                 existing = husbandryCrewDtlRepository.save(existing);
                                 String logDetail = String.format("KeyId = TRANSACTION_POID %s: DET_ROW_ID %s", existing.getTransactionPoid(), existing.getDetRowId());
                                 loggingService.createLog(oldDetail, existing, PortCallOperationHusbandryCrewDtl.class, UserContext.getDocumentId(), transactionPoid.toString(), logDetail);

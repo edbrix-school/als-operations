@@ -26,4 +26,6 @@ public interface FdaCustomRepository {
     PartyGlResponse getPartyGl(Long groupPoid, Long companyPoid, Long userPoid, Long partyPoid, String partyType);
 
     String createFdaFromPda(Long groupPoid, Long companyPoid, Long userPoid, Long pdaTransactionPoid);
+
+    String customApproval(Long groupPoid, Long companyPoid, Long userPoid, Long fdaPoid, String docId, String action);
 }
